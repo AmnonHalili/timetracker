@@ -1,0 +1,95 @@
+import { TimeEntry } from "@prisma/client"
+import { eachDayOfInterval, endOfMonth, format, isSameDay, startOfMonth, getDay } from "date-fns"
+
+export type DailyReport = {
+    date: Date
+    dayName: string
+    isWorkDay: boolean
+    startTime: Date | null
+    endTime: Date | null
+    totalDurationHours: number
+    status: 'MET' | 'MISSED' | 'OFF' | 'PENDING'
+}
+
+export type MonthlyReport = {
+    days: DailyReport[]
+    totalMonthlyHours: number
+    totalTargetHours: number
+}
+
+export function getMonthlyReport(
+    entries: TimeEntry[],
+    currentDate: Date,
+    dailyTarget: number,
+    workDays: number[]
+): MonthlyReport {
+    const monthStart = startOfMonth(currentDate)
+    const monthEnd = endOfMonth(currentDate)
+    // Cap at today if showing current month to avoid "Missed" for future days? 
+    // For report usually we show whole month. Let's show whole month but handle future status.
+    const today = new Date()
+
+    const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd })
+    let totalMonthlyHours = 0
+    let totalTargetHours = 0
+
+    const days: DailyReport[] = daysInMonth.map((day) => {
+        const isWorkDay = workDays.includes(getDay(day))
+
+        // Find entries for this day
+        const dayEntries = entries.filter(e => isSameDay(new Date(e.startTime), day))
+
+        let dailyDuration = 0
+        let firstStart: Date | null = null
+        let lastEnd: Date | null = null
+
+        if (dayEntries.length > 0) {
+            //Sort by start time
+            dayEntries.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+            firstStart = new Date(dayEntries[0].startTime)
+
+            const lastEntry = dayEntries[dayEntries.length - 1]
+            lastEnd = lastEntry.endTime ? new Date(lastEntry.endTime) : null // If running, null
+
+            dayEntries.forEach(e => {
+                const start = new Date(e.startTime)
+                const end = e.endTime ? new Date(e.endTime) : (isSameDay(day, today) ? new Date() : start)
+                // If entry is running today, calc up to now. If running on past day (forgot to close), maybe cap at end of day? 
+                // For simplicity, let's use 'now' if it's today, otherwise it's weird data (0 duration).
+
+                const duration = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
+                dailyDuration += duration
+            })
+        }
+
+        totalMonthlyHours += dailyDuration
+        if (isWorkDay && day <= today) {
+            totalTargetHours += dailyTarget
+        }
+
+        // Determine Status
+        let status: DailyReport['status'] = 'OFF'
+
+        if (isWorkDay) {
+            if (day > today) {
+                status = 'PENDING'
+            } else if (dailyDuration >= dailyTarget) {
+                status = 'MET'
+            } else {
+                status = 'MISSED'
+            }
+        }
+
+        return {
+            date: day,
+            dayName: format(day, 'EEEE'),
+            isWorkDay,
+            startTime: firstStart,
+            endTime: lastEnd,
+            totalDurationHours: dailyDuration,
+            status
+        }
+    })
+
+    return { days, totalMonthlyHours, totalTargetHours }
+}

@@ -1,99 +1,67 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
 
 generator client {
   provider = "prisma-client-js"
 }
 
-datasource db {
-  provider = "postgresql"
-}
-
-// User model with role-based access control
 model User {
-  id           String       @id @default(cuid())
-  email        String       @unique
-  password     String       // Hashed password
-  name         String
-  role         UserRole     @default(PENDING)
-  dailyTarget  Float        @default(8.0) // Daily work hours target (in hours)
-  workDays     Int[]        @default([1, 2, 3, 4, 5]) // Array of work days (0=Sunday, 1=Monday, etc.)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  id            String      @id @default(cuid())
+  email         String      @unique
+  password      String
+  name          String
+  role          Role        @default(EMPLOYEE)
+  status        Status      @default(PENDING)
+  dailyTarget   Float       @default(9.0)
+  workDays      Int[]       // [0,1,2,3,4] for Sun-Thu
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
   
-  // Relations
-  timeEntries  TimeEntry[]
-  assignedTasks Task[]      @relation("AssignedTasks")
-  createdTasks Task[]      @relation("CreatedTasks")
-
-  @@index([email])
-  @@index([role])
+  timeEntries   TimeEntry[]
+  tasks         Task[]
 }
 
-// User roles with approval workflow
-enum UserRole {
-  PENDING   // New user waiting for approval
-  USER      // Regular user
-  ADMIN     // Admin with full access
-}
-
-// Time entry model for tracking work hours
 model TimeEntry {
-  id        String    @id @default(cuid())
-  userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  start     DateTime  // Start time of work session
-  end       DateTime? // End time of work session (null if still running)
-  duration  Float?    // Duration in hours (calculated)
-  note      String?   // Optional note about the work session
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  @@index([userId])
-  @@index([start])
-  @@index([userId, start])
-}
-
-// Task model for admin assignment and user completion
-model Task {
-  id          String      @id @default(cuid())
-  title       String
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startTime   DateTime
+  endTime     DateTime?
   description String?
-  status      TaskStatus  @default(TODO)
-  priority    Priority    @default(MEDIUM)
-  dueDate     DateTime?
-  
-  // Assignment
-  assignedToId String?
-  assignedTo   User?      @relation("AssignedTasks", fields: [assignedToId], references: [id], onDelete: SetNull)
-  
-  // Creation tracking
-  createdById  String
-  createdBy    User       @relation("CreatedTasks", fields: [createdById], references: [id], onDelete: Cascade)
-  
-  // Timestamps
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  completedAt  DateTime?
-
-  @@index([assignedToId])
-  @@index([createdById])
-  @@index([status])
-  @@index([dueDate])
+  isManual    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  breaks      TimeBreak[]
 }
 
-// Task status
-enum TaskStatus {
-  TODO        // Not started
-  IN_PROGRESS // Currently being worked on
-  COMPLETED   // Finished
-  CANCELLED   // Cancelled by admin
+model TimeBreak {
+  id          String    @id @default(cuid())
+  timeEntryId String
+  timeEntry   TimeEntry @relation(fields: [timeEntryId], references: [id], onDelete: Cascade)
+  startTime   DateTime
+  endTime     DateTime?
 }
 
-// Task priority
-enum Priority {
-  LOW
-  MEDIUM
-  HIGH
-  URGENT
+model Task {
+  id           String   @id @default(cuid())
+  title        String
+  isCompleted  Boolean  @default(false)
+  assignedToId String
+  assignedTo   User     @relation(fields: [assignedToId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+enum Role {
+  ADMIN
+  EMPLOYEE
+}
+
+enum Status {
+  PENDING
+  ACTIVE
+  REJECTED
 }

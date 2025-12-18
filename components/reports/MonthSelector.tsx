@@ -1,0 +1,58 @@
+"use client"
+
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useRouter, useSearchParams } from "next/navigation"
+import { format, setMonth } from "date-fns"
+
+export function MonthSelector() {
+    const router = useRouter()
+    const searchParams = useSearchParams()
+
+    const currentMonth = searchParams.get("month") ? parseInt(searchParams.get("month")!) : new Date().getMonth()
+    const currentYear = searchParams.get("year") ? parseInt(searchParams.get("year")!) : new Date().getFullYear()
+
+    const handleMonthChange = (value: string) => {
+        const params = new URLSearchParams(searchParams)
+        params.set("month", value)
+        router.push(`?${params.toString()}`)
+    }
+
+    const handleYearChange = (value: string) => {
+        const params = new URLSearchParams(searchParams)
+        params.set("year", value)
+        router.push(`?${params.toString()}`)
+    }
+
+    const months = Array.from({ length: 12 }, (_, i) => i)
+    const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i) // Last 2 years + next 2
+
+    return (
+        <div className="flex gap-2">
+            <Select value={currentMonth.toString()} onValueChange={handleMonthChange}>
+                <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Month" />
+                </SelectTrigger>
+                <SelectContent>
+                    {months.map((month) => (
+                        <SelectItem key={month} value={month.toString()}>
+                            {format(setMonth(new Date(), month), "MMMM")}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+
+            <Select value={currentYear.toString()} onValueChange={handleYearChange}>
+                <SelectTrigger className="w-[120px]">
+                    <SelectValue placeholder="Year" />
+                </SelectTrigger>
+                <SelectContent>
+                    {years.map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                            {year}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </div>
+    )
+}

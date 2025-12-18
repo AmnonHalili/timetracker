@@ -1,4 +1,14 @@
-export default function Home() {
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { redirect } from "next/navigation"
+
+export default async function Home() {
+  const session = await getServerSession(authOptions)
+
+  if (session) {
+    redirect("/dashboard")
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary">
       <div className="container mx-auto px-4 py-8 md:py-16">
@@ -8,9 +18,17 @@ export default function Home() {
             <h1 className="text-4xl md:text-6xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
               WorkTracker
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground">
+            <p className="text-lg md:text-xl text-muted-foreground mb-8">
               A minimalist work hours and task tracker with real-time balance calculation
             </p>
+            <div className="flex justify-center gap-4">
+              <a href="/login" className="inline-flex items-center justify-center rounded-md bg-primary px-8 py-3 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90">
+                Log In
+              </a>
+              <a href="/register" className="inline-flex items-center justify-center rounded-md border border-input bg-background px-8 py-3 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground">
+                Register
+              </a>
+            </div>
           </div>
 
           {/* Feature Cards */}
