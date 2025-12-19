@@ -134,7 +134,7 @@ export function EntryHistory({ entries }: EntryHistoryProps) {
                     <div className="flex items-center px-4 pb-2 text-xs font-medium text-muted-foreground">
                         <span>Description</span>
                         <div className="ml-auto flex items-center gap-8">
-                            <span className="w-[85px] text-center">Time</span>
+                            <span className="w-[120px] text-center">Time</span>
                             <span className="w-[60px] text-center">Duration</span>
                             <span className="w-[40px]"></span>
                         </div>
@@ -162,7 +162,7 @@ export function EntryHistory({ entries }: EntryHistoryProps) {
                                 )}
 
                                 <div className="ml-auto flex items-center gap-8">
-                                    <span className="text-sm text-muted-foreground w-[85px] text-center">
+                                    <span className="text-sm text-muted-foreground w-[120px] text-center whitespace-nowrap">
                                         {getTimeRange(entry.startTime, entry.endTime)}
                                     </span>
                                     <span className="font-mono text-sm w-[60px] text-center">
