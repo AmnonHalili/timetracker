@@ -14,6 +14,8 @@ export default function RegisterPage() {
     const [name, setName] = useState("")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
+    const [role, setRole] = useState<"EMPLOYEE" | "ADMIN">("EMPLOYEE")
+    const [projectName, setProjectName] = useState("")
     const [error, setError] = useState("")
     const [success, setSuccess] = useState(false)
     const [loading, setLoading] = useState(false)
@@ -27,7 +29,7 @@ export default function RegisterPage() {
             const res = await fetch("/api/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, email, password }),
+                body: JSON.stringify({ name, email, password, role, projectName }),
             })
 
             const data = await res.json()
@@ -81,6 +83,25 @@ export default function RegisterPage() {
                             <p>{error}</p>
                         </div>
                     )}
+                    <div className="flex gap-4 mb-4">
+                        <Button
+                            type="button"
+                            variant={role === "EMPLOYEE" ? "default" : "outline"}
+                            className="w-1/2"
+                            onClick={() => setRole("EMPLOYEE")}
+                        >
+                            Join a Team
+                        </Button>
+                        <Button
+                            type="button"
+                            variant={role === "ADMIN" ? "default" : "outline"}
+                            className="w-1/2"
+                            onClick={() => setRole("ADMIN")}
+                        >
+                            Create Team
+                        </Button>
+                    </div>
+
                     <div className="space-y-2">
                         <Label htmlFor="name">Full Name</Label>
                         <Input
@@ -112,6 +133,22 @@ export default function RegisterPage() {
                             required
                         />
                     </div>
+
+                    {role === "ADMIN" && (
+                        <div className="space-y-2">
+                            <Label htmlFor="projectName">Team / Project Name</Label>
+                            <Input
+                                id="projectName"
+                                placeholder="Acme Inc."
+                                value={projectName}
+                                onChange={(e) => setProjectName(e.target.value)}
+                                required
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                You will be the admin of this project.
+                            </p>
+                        </div>
+                    )}
                 </CardContent>
                 <CardFooter className="flex flex-col gap-4">
                     <Button type="submit" className="w-full" disabled={loading}>
