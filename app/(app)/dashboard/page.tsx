@@ -6,7 +6,7 @@ import { redirect } from "next/navigation"
 import { StatsWidget } from "@/components/dashboard/StatsWidget"
 import { ControlBar } from "@/components/dashboard/ControlBar"
 import { EntryForm } from "@/components/dashboard/EntryForm"
-import { TodayList } from "@/components/dashboard/TodayList"
+import { EntryHistory } from "@/components/dashboard/EntryHistory"
 import { isSameDay } from "date-fns"
 
 export default async function DashboardPage() {
@@ -30,15 +30,9 @@ export default async function DashboardPage() {
     const stats = calculateBalance(user)
     const activeEntry = user.timeEntries.find(e => e.endTime === null)
 
-    // Filter for today's entries for the list
-    console.log("Dashboard: User ID", user.id)
-    console.log("Dashboard: Total Entries", user.timeEntries.length)
-    const todayEntries = user.timeEntries.filter(entry => {
-        const isToday = isSameDay(new Date(entry.startTime), new Date())
-        if (!isToday && user.timeEntries.length < 5) console.log("Entry skipped (not today):", entry.startTime)
-        return isToday
-    }).reverse()
-    console.log("Dashboard: Today Entries", todayEntries.length)
+    // For list, use all entries, reverse chronology
+    const historyEntries = [...user.timeEntries].reverse()
+    console.log("Dashboard: History Entries", historyEntries.length)
 
     // Calculate remaining hours for today
     const remainingHours = Math.max(0, user.dailyTarget - stats.todayWorked)
@@ -62,9 +56,9 @@ export default async function DashboardPage() {
                 </div>
             </div>
 
-            {/* Today List */}
+            {/* History List */}
             <div className="pt-8">
-                <TodayList entries={todayEntries} />
+                <EntryHistory entries={historyEntries} />
             </div>
         </div>
     )
