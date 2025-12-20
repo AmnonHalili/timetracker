@@ -171,12 +171,23 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
-    const { id, description } = await req.json()
+    const { id, description, startTime, endTime } = await req.json()
 
     try {
+        const data: any = {}
+        if (description !== undefined) data.description = description
+        if (startTime) {
+            data.startTime = new Date(startTime)
+            data.isManual = true
+        }
+        if (endTime) {
+            data.endTime = new Date(endTime)
+            data.isManual = true
+        }
+
         const updated = await prisma.timeEntry.update({
             where: { id },
-            data: { description }
+            data
         })
 
         return NextResponse.json({ entry: updated })

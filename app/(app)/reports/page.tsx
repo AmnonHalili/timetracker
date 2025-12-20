@@ -8,6 +8,8 @@ import { ReportTable } from "@/components/reports/ReportTable"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { startOfMonth, endOfMonth } from "date-fns"
 import { UserSelector } from "@/components/reports/UserSelector"
+import { getReportData } from "@/lib/report-service"
+import { ExportButton } from "@/components/reports/ExportButton"
 
 export default async function ReportsPage({
     searchParams,
@@ -56,30 +58,10 @@ export default async function ReportsPage({
     const month = searchParams.month ? parseInt(searchParams.month) : today.getMonth()
     const year = searchParams.year ? parseInt(searchParams.year) : today.getFullYear()
 
-    const reportDate = new Date(year, month, 1) // First day of selected month
+    const data = await getReportData(targetUserId, year, month)
 
-    // Fetch entries for the entire month
-    const start = startOfMonth(reportDate)
-    const end = endOfMonth(reportDate)
-
-    // Fetch entries for the target user (NOT necessarily the session user)
-    const user = await prisma.user.findUnique({
-        where: { id: targetUserId },
-        include: {
-            timeEntries: {
-                where: {
-                    startTime: {
-                        gte: start,
-                        lte: end,
-                    },
-                },
-            },
-        },
-    })
-
-    if (!user) return <div>User not found</div>
-
-    const report = getMonthlyReport(user.timeEntries, reportDate, user.dailyTarget, user.workDays)
+    if (!data) return <div>User not found</div>
+    const { report } = data
 
     return (
         <div className="container mx-auto p-4 md:p-8 space-y-8">
@@ -93,6 +75,7 @@ export default async function ReportsPage({
                         <UserSelector users={projectUsers} currentUserId={targetUserId} />
                     )}
                     <MonthSelector />
+                    <ExportButton />
                 </div>
             </div>
 

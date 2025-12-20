@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { format, isToday, isYesterday } from "date-fns"
-import { Keyboard } from "lucide-react"
+import { Keyboard, Pencil } from "lucide-react"
+import { EditEntryDialog } from "./EditEntryDialog"
 
 interface TimeEntry {
     id: string
@@ -22,16 +23,40 @@ interface EntryHistoryProps {
 
 export function EntryHistory({ entries }: EntryHistoryProps) {
     const router = useRouter()
-    const [editingId, setEditingId] = useState<string | null>(null)
-    const [tempDesc, setTempDesc] = useState("")
-
-    // Local state for optimistic updates
+    const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null)
+    const [editDialogOpen, setEditDialogOpen] = useState(false)
     const [localEntries, setLocalEntries] = useState(entries)
 
-    // Sync local state when server props change
     useEffect(() => {
         setLocalEntries(entries)
     }, [entries])
+
+    const handleEditStart = (entry: TimeEntry) => {
+        setEditingEntry(entry)
+        setEditDialogOpen(true)
+    }
+
+    const handleDialogSave = async (id: string, updates: { startTime?: Date; endTime?: Date; description?: string }) => {
+        setLocalEntries(current => current.map(e =>
+            e.id === id ? { ...e, ...updates } : e
+        ))
+
+        try {
+            await fetch("/api/time-entries", {
+                method: "PATCH",
+                body: JSON.stringify({ id, ...updates }),
+            })
+            router.refresh()
+        } catch (e) {
+            console.error("Failed to save", e)
+        }
+    }
+
+    const handleDelete = async (id: string) => {
+        if (!confirm("Delete this entry?")) return
+        await fetch(`/api/time-entries?id=${id}`, { method: "DELETE" })
+        router.refresh()
+    }
 
     // Helper to calculate duration string
     const getDuration = (start: Date, end: Date | null, breaks?: any[]) => {
@@ -62,42 +87,6 @@ export function EntryHistory({ entries }: EntryHistoryProps) {
         return `${formatTime(new Date(start))} - ${formatTime(new Date(end))}`
     }
 
-    const handleEditStart = (entry: TimeEntry) => {
-        setEditingId(entry.id)
-        setTempDesc(entry.description || "")
-    }
-
-    const handleEditSave = async (id: string) => {
-        // Optimistic update
-        setLocalEntries(current => current.map(e =>
-            e.id === id ? { ...e, description: tempDesc } : e
-        ))
-        setEditingId(null)
-
-        try {
-            await fetch("/api/time-entries", {
-                method: "PATCH",
-                body: JSON.stringify({ id, description: tempDesc }),
-            })
-            router.refresh()
-        } catch (e) {
-            console.error("Failed to save", e)
-        }
-    }
-
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, id: string) => {
-        if (e.key === 'Enter') {
-            e.preventDefault()
-            handleEditSave(id)
-        }
-    }
-
-    const handleDelete = async (id: string) => {
-        if (!confirm("Delete this entry?")) return
-        await fetch(`/api/time-entries?id=${id}`, { method: "DELETE" })
-        router.refresh()
-    }
-
     // Group entries by date
     const groupedEntries = localEntries.reduce((groups, entry) => {
         const date = new Date(entry.startTime)
@@ -114,18 +103,7 @@ export function EntryHistory({ entries }: EntryHistoryProps) {
         return groups
     }, {} as Record<string, TimeEntry[]>)
 
-    // Sort keys: Today first, then Yesterday, then others descending
-    // Since we formatted keys as strings, we might need original dates for sorting if mixed.
-    // For simplicity, let's trust the input 'entries' are already sorted by startTime desc from server.
-    // We just iterate the keys in the order they appear (if insertion order is preserved).
-    // Actually, 'entries' are sorted, so the first entry encountered dictates the first group.
-
-    // JS objects don't strictly guarantee order, but Object.keys usually return int keys sorted, string keys ins order.
-    // Maps are safer for insertion order. Let's use Object.entries on the result but we rely on the loop order.
-    // Or better: explicit list of groups.
-
     const groupsList = Object.entries(groupedEntries)
-    // No need to re-sort if we trust source order and insertion order.
 
     return (
         <div className="space-y-8">
@@ -144,24 +122,18 @@ export function EntryHistory({ entries }: EntryHistoryProps) {
 
                     <div className="border-t border-b divide-y bg-background">
                         {groupEntries.map((entry) => (
-                            <div key={entry.id} className="flex items-center p-4 hover:bg-muted/10 transition-colors h-14">
-                                {editingId === entry.id ? (
-                                    <Input
-                                        value={tempDesc}
-                                        onChange={(e) => setTempDesc(e.target.value)}
-                                        onBlur={() => handleEditSave(entry.id)}
-                                        onKeyDown={(e) => handleKeyDown(e, entry.id)}
-                                        autoFocus
-                                        className="h-8 w-full max-w-sm"
-                                    />
-                                ) : (
-                                    <span
-                                        className="text-sm cursor-pointer hover:underline underline-offset-4 decoration-muted-foreground/50"
-                                        onClick={() => handleEditStart(entry)}
-                                    >
+                            <div key={entry.id} className="flex items-center p-4 hover:bg-muted/10 transition-colors h-14 group">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-auto p-0 text-muted-foreground hover:text-primary flex items-center gap-2"
+                                    onClick={() => handleEditStart(entry)}
+                                >
+                                    <div className="text-sm font-medium text-foreground">
                                         {entry.description || "Add description"}
-                                    </span>
-                                )}
+                                    </div>
+                                    <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </Button>
 
                                 <div className="ml-auto flex items-center gap-8">
                                     <span className="text-sm text-muted-foreground w-[120px] text-center whitespace-nowrap flex items-center justify-center gap-1">
@@ -191,6 +163,13 @@ export function EntryHistory({ entries }: EntryHistoryProps) {
                     No time entries found.
                 </div>
             )}
+
+            <EditEntryDialog
+                entry={editingEntry}
+                open={editDialogOpen}
+                onOpenChange={setEditDialogOpen}
+                onSave={handleDialogSave}
+            />
         </div>
     )
 }
