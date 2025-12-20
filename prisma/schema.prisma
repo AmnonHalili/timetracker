@@ -23,6 +23,7 @@ model User {
   
   timeEntries   TimeEntry[]
   tasks         Task[]
+  notifications Notification[]
   
   projectId     String?
   project       Project?    @relation(fields: [projectId], references: [id])
@@ -97,4 +98,22 @@ enum Status {
   PENDING
   ACTIVE
   REJECTED
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      NotificationType @default(INFO)
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+}
+
+enum NotificationType {
+  INFO
+  WARNING
+  SUCCESS
+  ERROR
 }

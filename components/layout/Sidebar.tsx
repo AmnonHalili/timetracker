@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { UserNav } from "./UserNav"
 import { signOut } from "next-auth/react"
+import { NotificationBell } from "./NotificationBell"
 
 export function Sidebar() {
     const pathname = usePathname()
@@ -41,10 +42,11 @@ export function Sidebar() {
 
     return (
         <div className="flex flex-col h-screen w-64 border-r bg-background">
-            <div className="p-6 border-b">
+            <div className="p-6 border-b flex items-center justify-between">
                 <Link href="/dashboard" className="text-xl font-bold">
                     HourTrack
                 </Link>
+                <NotificationBell />
             </div>
 
             <div className="flex-1 overflow-y-auto py-6">
@@ -66,19 +68,13 @@ export function Sidebar() {
                 </nav>
             </div>
 
-            <div className="p-4 border-t bg-muted/20">
-                <div className="mb-4">
-                    {/* We can keep UserNav here or just use the separate Log out button as requested */}
-                    {/* <UserNav /> */}
-                </div>
-                <Button
-                    variant="ghost"
-                    className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => signOut({ callbackUrl: "/login" })}
-                >
-                    Log out
-                </Button>
-            </div>
+            <Button
+                variant="ghost"
+                className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={() => signOut({ callbackUrl: "/login" })}
+            >
+                Log out
+            </Button>
         </div>
     )
 }

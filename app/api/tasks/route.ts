@@ -35,6 +35,16 @@ export async function POST(req: Request) {
             }
         })
 
+        // Create notification for the assignee
+        await prisma.notification.create({
+            data: {
+                userId: assignedToId,
+                title: "New Task Assigned",
+                message: `You have been assigned a new task: "${title}"`,
+                type: "INFO"
+            }
+        })
+
         return NextResponse.json(task)
     } catch (e) {
         return NextResponse.json({ message: "Error creating task" }, { status: 500 })
