@@ -6,17 +6,50 @@ import { redirect } from "next/navigation"
 import { MonthSelector } from "@/components/reports/MonthSelector"
 import { ReportTable } from "@/components/reports/ReportTable"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { endOfMonth, startOfMonth } from "date-fns"
+import { startOfMonth, endOfMonth } from "date-fns"
+import { UserSelector } from "@/components/reports/UserSelector"
 
 export default async function ReportsPage({
     searchParams,
 }: {
-    searchParams: { month?: string; year?: string }
+    searchParams: { month?: string; year?: string; userId?: string }
 }) {
     const session = await getServerSession(authOptions)
 
     if (!session) {
         redirect("/login")
+    }
+
+    // Security & User Logic
+    let targetUserId = session.user.id
+    let projectUsers: { id: string; name: string | null; email: string }[] = []
+
+    const currentUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { id: true, role: true, projectId: true }
+    })
+
+    if (!currentUser) redirect("/login")
+
+    // If Admin, fetch project users and handle targetUserId
+    if (currentUser.role === "ADMIN" && currentUser.projectId) {
+        // Fetch all active users in the project
+        projectUsers = await prisma.user.findMany({
+            where: {
+                projectId: currentUser.projectId,
+                status: "ACTIVE"
+            },
+            select: { id: true, name: true, email: true },
+            orderBy: { name: "asc" }
+        })
+
+        // If userId param is present, verify it belongs to the project
+        if (searchParams.userId) {
+            const requestedUser = projectUsers.find(u => u.id === searchParams.userId)
+            if (requestedUser) {
+                targetUserId = searchParams.userId
+            }
+        }
     }
 
     const today = new Date()
@@ -29,8 +62,9 @@ export default async function ReportsPage({
     const start = startOfMonth(reportDate)
     const end = endOfMonth(reportDate)
 
+    // Fetch entries for the target user (NOT necessarily the session user)
     const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
+        where: { id: targetUserId },
         include: {
             timeEntries: {
                 where: {
@@ -54,7 +88,12 @@ export default async function ReportsPage({
                     <h1 className="text-3xl font-bold tracking-tight">Monthly Reports</h1>
                     <p className="text-muted-foreground">View your detailed work history</p>
                 </div>
-                <MonthSelector />
+                <div className="flex gap-2">
+                    {currentUser.role === "ADMIN" && (
+                        <UserSelector users={projectUsers} currentUserId={targetUserId} />
+                    )}
+                    <MonthSelector />
+                </div>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
@@ -87,7 +126,7 @@ export default async function ReportsPage({
                 </Card>
             </div>
 
-            <ReportTable days={report.days} />
+            <ReportTable days={report.days} showWarnings={currentUser.role === "ADMIN"} />
         </div>
     )
 }

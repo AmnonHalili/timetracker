@@ -5,12 +5,14 @@ import { Input } from "@/components/ui/input"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { format, isToday, isYesterday } from "date-fns"
+import { Keyboard } from "lucide-react"
 
 interface TimeEntry {
     id: string
     startTime: Date
     endTime: Date | null
     description?: string | null
+    isManual?: boolean
     breaks?: { startTime: Date; endTime: Date | null }[]
 }
 
@@ -162,7 +164,8 @@ export function EntryHistory({ entries }: EntryHistoryProps) {
                                 )}
 
                                 <div className="ml-auto flex items-center gap-8">
-                                    <span className="text-sm text-muted-foreground w-[120px] text-center whitespace-nowrap">
+                                    <span className="text-sm text-muted-foreground w-[120px] text-center whitespace-nowrap flex items-center justify-center gap-1">
+                                        {entry.isManual && <Keyboard className="h-3 w-3 text-muted-foreground/70" title="Manual Entry" />}
                                         {getTimeRange(entry.startTime, entry.endTime)}
                                     </span>
                                     <span className="font-mono text-sm w-[60px] text-center">

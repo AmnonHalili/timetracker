@@ -9,6 +9,8 @@ import { EntryForm } from "@/components/dashboard/EntryForm"
 import { EntryHistory } from "@/components/dashboard/EntryHistory"
 import { isSameDay } from "date-fns"
 
+import { TeamStatusWidget } from "@/components/dashboard/TeamStatusWidget"
+
 export default async function DashboardPage() {
     const session = await getServerSession(authOptions)
 
@@ -27,6 +29,47 @@ export default async function DashboardPage() {
 
     if (!user) return <div>User not found</div>
 
+    // Team Status Logic (Admin Only)
+    let teamStatus: any[] = []
+    if (user.role === "ADMIN" && user.projectId) {
+        const projectUsers = await prisma.user.findMany({
+            where: {
+                projectId: user.projectId,
+                status: "ACTIVE",
+                NOT: { id: user.id } // Optional: Exclude self? Or include? Let's exclude for "Team View"
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                timeEntries: {
+                    where: { endTime: null },
+                    include: { breaks: { where: { endTime: null } } }
+                }
+            }
+        })
+
+        teamStatus = projectUsers.map(u => {
+            const activeEntry = u.timeEntries[0] // There should be at most one active entry
+            let status: 'WORKING' | 'BREAK' | 'OFFLINE' = 'OFFLINE'
+            let lastActive: Date | undefined = undefined
+
+            if (activeEntry) {
+                const activeBreak = activeEntry.breaks && activeEntry.breaks.length > 0
+                status = activeBreak ? 'BREAK' : 'WORKING'
+                lastActive = activeEntry.startTime
+            }
+
+            return {
+                userId: u.id,
+                name: u.name,
+                email: u.email,
+                status,
+                lastActive
+            }
+        })
+    }
+
     const stats = calculateBalance(user)
     const activeEntry = user.timeEntries.find(e => e.endTime === null)
 
@@ -42,15 +85,24 @@ export default async function DashboardPage() {
             {/* Header / Title if needed, or just spacers as per design */}
 
             {/* Stats Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
                 {/* Left: Stats */}
-                <StatsWidget
-                    extraHours={stats.balance}
-                    remainingHours={remainingHours}
-                />
+                <div className="lg:col-span-1">
+                    <StatsWidget
+                        extraHours={stats.balance}
+                        remainingHours={remainingHours}
+                    />
+                </div>
 
-                {/* Right: Timer & manual entry */}
-                <div className="space-y-4">
+                {/* Middle (for Admin) or Right: Team Status */}
+                {user.role === "ADMIN" && (
+                    <div className="lg:col-span-1">
+                        <TeamStatusWidget teamStatus={teamStatus} />
+                    </div>
+                )}
+
+                {/* Right: Timer & manual entry - Takes remaining space */}
+                <div className={`space-y-4 ${user.role === 'ADMIN' ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
                     <ControlBar activeEntry={activeEntry} />
                     <EntryForm />
                 </div>

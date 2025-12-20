@@ -14,8 +14,13 @@ export async function GET(req: Request) {
     }
 
     try {
+        const currentUser = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { projectId: true }
+        })
+
         const where = session.user.role === "ADMIN"
-            ? {}
+            ? { assignedTo: { projectId: currentUser?.projectId } }
             : { assignedToId: session.user.id }
 
         const tasks = await prisma.task.findMany({
@@ -45,6 +50,21 @@ export async function POST(req: Request) {
     }
 
     try {
+        // Verify the assigned user belongs to the admin's project
+        const currentUser = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { projectId: true }
+        })
+
+        const targetUser = await prisma.user.findUnique({
+            where: { id: assignedToId },
+            select: { projectId: true }
+        })
+
+        if (!currentUser?.projectId || targetUser?.projectId !== currentUser.projectId) {
+            return NextResponse.json({ message: "Cannot assign task to user outside your project" }, { status: 403 })
+        }
+
         const task = await prisma.task.create({
             data: {
                 title,

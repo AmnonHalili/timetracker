@@ -4,11 +4,15 @@ import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 
+import { AlertTriangle } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+
 interface ReportTableProps {
     days: DailyReport[]
+    showWarnings?: boolean
 }
 
-export function ReportTable({ days }: ReportTableProps) {
+export function ReportTable({ days, showWarnings }: ReportTableProps) {
     return (
         <div className="rounded-md border">
             <Table>
@@ -25,7 +29,21 @@ export function ReportTable({ days }: ReportTableProps) {
                 <TableBody>
                     {days.map((day) => (
                         <TableRow key={day.date.toISOString()} className={cn(!day.isWorkDay && "bg-muted/30")}>
-                            <TableCell className="font-medium">{format(day.date, "dd/MM/yyyy")}</TableCell>
+                            <TableCell className="font-medium flex items-center gap-2">
+                                {format(day.date, "dd/MM/yyyy")}
+                                {showWarnings && day.hasManualEntries && (
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger>
+                                                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>Contains manual entries</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                )}
+                            </TableCell>
                             <TableCell>{day.dayName}</TableCell>
                             <TableCell>
                                 {day.startTime ? format(day.startTime, "HH:mm") : "-"}

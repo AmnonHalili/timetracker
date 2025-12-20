@@ -9,6 +9,7 @@ export type DailyReport = {
     endTime: Date | null
     totalDurationHours: number
     status: 'MET' | 'MISSED' | 'OFF' | 'PENDING'
+    hasManualEntries: boolean
 }
 
 export type MonthlyReport = {
@@ -80,6 +81,9 @@ export function getMonthlyReport(
             }
         }
 
+        // Check for manual entries
+        const hasManualEntries = dayEntries.some(e => e.isManual)
+
         return {
             date: day,
             dayName: format(day, 'EEEE'),
@@ -87,7 +91,8 @@ export function getMonthlyReport(
             startTime: firstStart,
             endTime: lastEnd,
             totalDurationHours: dailyDuration,
-            status
+            status,
+            hasManualEntries
         }
     })
 

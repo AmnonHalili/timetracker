@@ -14,8 +14,17 @@ export default async function TasksPage() {
 
     const isAdmin = session.user.role === "ADMIN"
 
+    // Get current user's project ID
+    const currentUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { projectId: true }
+    })
+
     // Fetch Tasks
-    const where = isAdmin ? {} : { assignedToId: session.user.id }
+    const where = isAdmin
+        ? { assignedTo: { projectId: currentUser?.projectId } }
+        : { assignedToId: session.user.id }
+
     const tasks = await prisma.task.findMany({
         where,
         include: { assignedTo: true },
@@ -23,8 +32,12 @@ export default async function TasksPage() {
     })
 
     // Fetch Users (Only if admin, for the dropdown)
-    const users = isAdmin ? await prisma.user.findMany({
-        where: { status: "ACTIVE" }, // Only active users
+    // MUST be scoped to the same project
+    const users = isAdmin && currentUser?.projectId ? await prisma.user.findMany({
+        where: {
+            status: "ACTIVE",
+            projectId: currentUser.projectId
+        },
         select: { id: true, name: true, email: true }
     }) : []
 

@@ -22,11 +22,13 @@ export async function POST(req: Request) {
     }
 
     try {
-        const { name, email, password } = await req.json()
+        const { name, email, password, role } = await req.json()
 
         if (!name || !email || !password) {
             return NextResponse.json({ message: "Missing required fields" }, { status: 400 })
         }
+
+        const newRole = role === "ADMIN" ? "ADMIN" : "EMPLOYEE"
 
         // Check if user exists
         const exists = await prisma.user.findUnique({ where: { email } })
@@ -41,7 +43,7 @@ export async function POST(req: Request) {
                 name,
                 email,
                 password: hashedPassword,
-                role: "EMPLOYEE",
+                role: newRole,
                 status: "ACTIVE", // Auto-activate team members added by admin
                 projectId: currentUser.projectId
             }
