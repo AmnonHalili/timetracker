@@ -32,6 +32,11 @@ export function Sidebar() {
             label: "Team",
             active: pathname === "/team",
         },
+        {
+            href: "/settings",
+            label: "Settings",
+            active: pathname === "/settings",
+        },
     ]
 
     return (

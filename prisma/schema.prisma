@@ -19,6 +19,7 @@ model User {
   workDays      Int[]       // [0,1,2,3,4] for Sun-Thu
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+  image         String?     // Base64 or URL
   
   timeEntries   TimeEntry[]
   tasks         Task[]
