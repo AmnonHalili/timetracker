@@ -26,6 +26,8 @@ export function CreateTaskDialog({ users }: CreateTaskDialogProps) {
     const [open, setOpen] = useState(false)
     const [title, setTitle] = useState("")
     const [assignedToId, setAssignedToId] = useState("")
+    const [priority, setPriority] = useState("MEDIUM")
+    const [deadline, setDeadline] = useState("")
     const [loading, setLoading] = useState(false)
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -35,11 +37,13 @@ export function CreateTaskDialog({ users }: CreateTaskDialogProps) {
         try {
             await fetch("/api/tasks", {
                 method: "POST",
-                body: JSON.stringify({ title, assignedToId }),
+                body: JSON.stringify({ title, assignedToId, priority, deadline }),
             })
             setOpen(false)
             setTitle("")
             setAssignedToId("")
+            setPriority("MEDIUM")
+            setDeadline("")
             router.refresh()
         } catch (error) {
             console.error(error)
@@ -94,6 +98,36 @@ export function CreateTaskDialog({ users }: CreateTaskDialogProps) {
                                     </SelectContent>
                                 </Select>
                             </div>
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="priority" className="text-right">
+                                Priority
+                            </Label>
+                            <div className="col-span-3">
+                                <Select value={priority} onValueChange={setPriority}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select priority" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="LOW">Low</SelectItem>
+                                        <SelectItem value="MEDIUM">Medium</SelectItem>
+                                        <SelectItem value="HIGH">High</SelectItem>
+                                        <SelectItem value="URGENT">Urgent</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="deadline" className="text-right">
+                                Deadline
+                            </Label>
+                            <Input
+                                id="deadline"
+                                type="date"
+                                value={deadline}
+                                onChange={(e) => setDeadline(e.target.value)}
+                                className="col-span-3"
+                            />
                         </div>
                     </div>
                     <DialogFooter>

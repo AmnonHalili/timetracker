@@ -58,13 +58,34 @@ model TimeBreak {
 }
 
 model Task {
-  id           String   @id @default(cuid())
+  id           String       @id @default(cuid())
   title        String
-  isCompleted  Boolean  @default(false)
+  description  String?
+  status       TaskStatus   @default(TODO)
+  priority     TaskPriority @default(MEDIUM)
+  deadline     DateTime?
+  
+  // Deprecated but kept for now to avoid data loss during rapid proto
+  isCompleted  Boolean      @default(false) 
+
   assignedToId String
-  assignedTo   User     @relation(fields: [assignedToId], references: [id], onDelete: Cascade)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  assignedTo   User         @relation(fields: [assignedToId], references: [id], onDelete: Cascade)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  BLOCKED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
 }
 
 enum Role {
