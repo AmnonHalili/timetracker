@@ -10,6 +10,7 @@ import { startOfMonth, endOfMonth } from "date-fns"
 import { UserSelector } from "@/components/reports/UserSelector"
 import { getReportData } from "@/lib/report-service"
 import { ExportButton } from "@/components/reports/ExportButton"
+import { Charts } from "@/components/reports/Charts"
 
 export default async function ReportsPage({
     searchParams,
@@ -55,10 +56,10 @@ export default async function ReportsPage({
     }
 
     const today = new Date()
-    const month = searchParams.month ? parseInt(searchParams.month) : today.getMonth()
-    const year = searchParams.year ? parseInt(searchParams.year) : today.getFullYear()
+    const currentMonth = searchParams.month ? parseInt(searchParams.month) : today.getMonth()
+    const currentYear = searchParams.year ? parseInt(searchParams.year) : today.getFullYear()
 
-    const data = await getReportData(targetUserId, year, month)
+    const data = await getReportData(targetUserId, currentYear, currentMonth)
 
     if (!data) return <div>User not found</div>
     const { report } = data
@@ -70,12 +71,17 @@ export default async function ReportsPage({
                     <h1 className="text-3xl font-bold tracking-tight">Monthly Reports</h1>
                     <p className="text-muted-foreground">View your detailed work history</p>
                 </div>
-                <div className="flex gap-2">
-                    {currentUser.role === "ADMIN" && (
-                        <UserSelector users={projectUsers} currentUserId={targetUserId} />
-                    )}
-                    <MonthSelector />
-                    <ExportButton />
+                <div className="flex flex-col gap-6">
+                    {/* Controls Row */}
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        {currentUser.role === "ADMIN" && (
+                            <UserSelector currentUserId={targetUserId} users={projectUsers} />
+                        )}
+                        <div className="flex items-center gap-2">
+                            <MonthSelector year={currentYear} month={currentMonth} />
+                            <ExportButton userId={targetUserId} year={currentYear} month={currentMonth} />
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -108,6 +114,9 @@ export default async function ReportsPage({
                     </CardContent>
                 </Card>
             </div>
+
+
+            <Charts days={report.days} />
 
             <ReportTable days={report.days} showWarnings={currentUser.role === "ADMIN"} />
         </div>
