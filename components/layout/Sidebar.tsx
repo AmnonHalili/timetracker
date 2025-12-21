@@ -48,8 +48,8 @@ export function Sidebar() {
     return (
         <div className="flex flex-col h-screen w-64 border-r bg-background">
             <div className="p-6 border-b flex items-center justify-between">
-                <Link href="/dashboard" className="text-xl font-bold">
-                    HourTrack
+                <Link href="/dashboard" className="flex items-center gap-2">
+                    <img src="/logo.png" alt="Collabo Logo" className="h-12 w-auto" />
                 </Link>
                 <NotificationBell />
             </div>

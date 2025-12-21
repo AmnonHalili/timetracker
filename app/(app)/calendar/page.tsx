@@ -43,11 +43,17 @@ export default async function CalendarPage({
 
     // If Admin and in a project, fetch all project tasks. Otherwise, just own tasks.
     if (currentUser?.role === "ADMIN" && currentUser?.projectId) {
-        whereClause.assignedTo = {
-            projectId: currentUser.projectId
+        whereClause.assignees = {
+            some: {
+                projectId: currentUser.projectId
+            }
         }
     } else {
-        whereClause.assignedToId = session.user.id
+        whereClause.assignees = {
+            some: {
+                id: session.user.id
+            }
+        }
     }
 
     const tasks = await prisma.task.findMany({
@@ -58,7 +64,7 @@ export default async function CalendarPage({
             deadline: true,
             priority: true,
             status: true,
-            assignedTo: {
+            assignees: {
                 select: {
                     name: true,
                     email: true

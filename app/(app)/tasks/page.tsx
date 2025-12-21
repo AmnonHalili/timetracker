@@ -21,13 +21,14 @@ export default async function TasksPage() {
     })
 
     // Fetch Tasks
+    // Fetch Tasks
     const where = isAdmin
-        ? { assignedTo: { projectId: currentUser?.projectId } }
-        : { assignedToId: session.user.id }
+        ? { assignees: { some: { projectId: currentUser?.projectId } } }
+        : { assignees: { some: { id: session.user.id } } }
 
     const tasks = await prisma.task.findMany({
         where,
-        include: { assignedTo: true },
+        include: { assignees: true },
         orderBy: { createdAt: "desc" }
     })
 

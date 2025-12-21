@@ -56,7 +56,7 @@ export function TaskList({ tasks, isAdmin }: TaskListProps) {
                             </label>
                             {isAdmin && (
                                 <p className="text-xs text-muted-foreground">
-                                    Assigned to: {task.assignedTo.name || task.assignedTo.email}
+                                    Assigned to: {task.assignees?.map((u: any) => u.name || u.email).join(", ") || "Unassigned"}
                                 </p>
                             )}
                         </div>

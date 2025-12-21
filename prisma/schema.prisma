@@ -69,8 +69,9 @@ model Task {
   // Deprecated but kept for now to avoid data loss during rapid proto
   isCompleted  Boolean      @default(false) 
 
-  assignedToId String
-  assignedTo   User         @relation(fields: [assignedToId], references: [id], onDelete: Cascade)
+  // assignedToId String // Removed for Many-to-Many
+  // assignedTo   User         @relation(fields: [assignedToId], references: [id], onDelete: Cascade) // Removed
+  assignees    User[]
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 }

@@ -93,13 +93,16 @@ export function MonthGrid({ date, data }: MonthGridProps) {
                                                 task.priority === 'HIGH' ? "bg-orange-50 border-orange-200 text-orange-700" :
                                                     "bg-background border-border text-muted-foreground"
                                         )}
-                                        title={`${task.title} - ${task.assignedTo?.name || 'Unknown'}`}
+                                        title={`${task.title} - ${task.assignees?.map((u: any) => u.name).join(', ') || 'Unassigned'}`}
                                     >
                                         <div className="flex justify-between items-center gap-1">
                                             <span className="truncate">{task.title}</span>
-                                            {task.assignedTo?.name && (
-                                                <span className="text-[8px] opacity-70 uppercase tracking-tighter">
-                                                    {task.assignedTo.name.split(' ')[0]}
+                                            {task.assignees?.length > 0 && (
+                                                <span className="text-[8px] opacity-70 uppercase tracking-tighter flex gap-0.5">
+                                                    {task.assignees.slice(0, 2).map((u: any) => (
+                                                        <span key={u.email}>{u.name.split(' ')[0]}</span>
+                                                    ))}
+                                                    {task.assignees.length > 2 && <span>+</span>}
                                                 </span>
                                             )}
                                         </div>

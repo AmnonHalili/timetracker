@@ -13,22 +13,40 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Plus } from "lucide-react"
 
 interface CreateTaskDialogProps {
     users: { id: string; name: string | null; email: string }[]
+    onTaskCreated?: () => void
 }
 
-export function CreateTaskDialog({ users }: CreateTaskDialogProps) {
+export function CreateTaskDialog({ users: initialUsers, onTaskCreated }: CreateTaskDialogProps) {
     const router = useRouter()
-    const [open, setOpen] = useState(false)
+    const [isOpen, setIsOpen] = useState(false) // Standardized to isOpen
     const [title, setTitle] = useState("")
-    const [assignedToId, setAssignedToId] = useState("")
+    const [assignedToIds, setAssignedToIds] = useState<string[]>([])
     const [priority, setPriority] = useState("MEDIUM")
     const [deadline, setDeadline] = useState("")
+    const [description, setDescription] = useState("")
+    const [users, setUsers] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
+
+
+    useEffect(() => {
+        if (isOpen) {
+            // Fetch users for assignment
+            // If initialUsers is empty or we want fresh list
+            fetch("/api/team?all=true")
+                .then(res => res.json())
+                .then(data => setUsers(data))
+                .catch(err => {
+                    console.error("Failed to load users", err)
+                    setUsers(initialUsers) // Fallback
+                })
+        }
+    }, [isOpen, initialUsers])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -37,13 +55,21 @@ export function CreateTaskDialog({ users }: CreateTaskDialogProps) {
         try {
             await fetch("/api/tasks", {
                 method: "POST",
-                body: JSON.stringify({ title, assignedToId, priority, deadline }),
+                body: JSON.stringify({
+                    title,
+                    assignedToIds,
+                    priority,
+                    deadline,
+                    description
+                }),
             })
-            setOpen(false)
+            setIsOpen(false)
             setTitle("")
-            setAssignedToId("")
+            setAssignedToIds([])
             setPriority("MEDIUM")
             setDeadline("")
+            setDescription("")
+            onTaskCreated?.()
             router.refresh()
         } catch (error) {
             console.error(error)
@@ -52,8 +78,16 @@ export function CreateTaskDialog({ users }: CreateTaskDialogProps) {
         }
     }
 
+    const toggleUser = (userId: string) => {
+        setAssignedToIds(prev =>
+            prev.includes(userId)
+                ? prev.filter(id => id !== userId)
+                : [...prev, userId]
+        )
+    }
+
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
                 <Button>
                     <Plus className="mr-2 h-4 w-4" /> Add Task
@@ -64,7 +98,7 @@ export function CreateTaskDialog({ users }: CreateTaskDialogProps) {
                     <DialogHeader>
                         <DialogTitle>Create New Task</DialogTitle>
                         <DialogDescription>
-                            Assign a new task to an employee.
+                            Assign a new task to one or more employees.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
@@ -80,23 +114,29 @@ export function CreateTaskDialog({ users }: CreateTaskDialogProps) {
                                 required
                             />
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="user" className="text-right">
+                        <div className="grid grid-cols-4 items-start gap-4">
+                            <Label className="text-right pt-2">
                                 Assign To
                             </Label>
-                            <div className="col-span-3">
-                                <Select value={assignedToId} onValueChange={setAssignedToId} required>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select employee" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {users.map((user) => (
-                                            <SelectItem key={user.id} value={user.id}>
+                            <div className="col-span-3 border rounded-md max-h-40 overflow-y-auto p-2 space-y-2">
+                                {users.length === 0 ? (
+                                    <p className="text-xs text-muted-foreground">Loading users...</p>
+                                ) : (
+                                    users.map(user => (
+                                        <div key={user.id} className="flex items-center space-x-2">
+                                            <input
+                                                type="checkbox"
+                                                id={`user-${user.id}`}
+                                                checked={assignedToIds.includes(user.id)}
+                                                onChange={() => toggleUser(user.id)}
+                                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                            />
+                                            <Label htmlFor={`user-${user.id}`} className="cursor-pointer text-sm font-normal">
                                                 {user.name || user.email}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                            </Label>
+                                        </div>
+                                    ))
+                                )}
                             </div>
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">

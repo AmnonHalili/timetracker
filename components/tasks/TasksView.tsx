@@ -24,11 +24,11 @@ interface Task {
     priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
     deadline: Date | null
     isCompleted: boolean // Deprecated in UI but present in data
-    assignedTo: {
+    assignees: {
         id: string
         name: string | null
         email: string | null
-    }
+    }[]
 }
 
 interface User {
@@ -51,7 +51,10 @@ export function TasksView({ initialTasks, users, isAdmin }: TasksViewProps) {
     // Filter tasks
     const filteredTasks = initialTasks.filter(task => {
         if (filterUserId === "all") return true
-        return task.assignedTo.id === filterUserId
+        if (task.assignees && task.assignees.length > 0) {
+            return task.assignees.some((a: any) => a.id === filterUserId)
+        }
+        return false
     })
 
     const handleStatusChange = async (id: string, newStatus: string) => {
@@ -77,15 +80,6 @@ export function TasksView({ initialTasks, users, isAdmin }: TasksViewProps) {
             case 'MEDIUM': return 'bg-blue-500 hover:bg-blue-500'
             case 'LOW': return 'bg-slate-500 hover:bg-slate-500'
             default: return 'bg-slate-500'
-        }
-    }
-
-    const getStatusVariant = (s: string) => {
-        switch (s) {
-            case 'DONE': return 'outline' // or success color
-            case 'IN_PROGRESS': return 'default'
-            case 'BLOCKED': return 'destructive'
-            default: return 'secondary'
         }
     }
 
@@ -123,17 +117,23 @@ export function TasksView({ initialTasks, users, isAdmin }: TasksViewProps) {
                                         <Badge className={`text-[10px] h-5 ${getPriorityColor(task.priority)}`}>
                                             {task.priority}
                                         </Badge>
-                                        <span className={`text-sm font-medium ${task.status === 'DONE' ? 'line-through text-muted-foreground' : ''}`}>
+                                        <div className="flex -space-x-2 overflow-hidden ml-2">
+                                            {task.assignees?.map((assignee: any) => (
+                                                <div
+                                                    key={assignee.id}
+                                                    className="inline-block h-6 w-6 rounded-full ring-2 ring-background bg-muted flex items-center justify-center text-[10px] font-medium"
+                                                    title={assignee.name}
+                                                >
+                                                    {assignee.name ? assignee.name.substring(0, 2).toUpperCase() : '??'}
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <span className={`text-sm font-medium ml-2 ${task.status === 'DONE' ? 'line-through text-muted-foreground' : ''}`}>
                                             {task.title}
                                         </span>
                                     </div>
 
-                                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                                        {isAdmin && (
-                                            <span>
-                                                Assigned to: <strong>{task.assignedTo.name || task.assignedTo.email}</strong>
-                                            </span>
-                                        )}
+                                    <div className="flex items-center gap-4 text-xs text-muted-foreground pl-1">
                                         {task.deadline && (
                                             <span className={`flex items-center gap-1 ${isPast(new Date(task.deadline)) && !isToday(new Date(task.deadline)) && task.status !== 'DONE' ? 'text-red-500 font-bold' : ''}`}>
                                                 <Calendar className="h-3 w-3" />
