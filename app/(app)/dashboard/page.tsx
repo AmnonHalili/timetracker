@@ -81,36 +81,34 @@ export default async function DashboardPage() {
     const remainingHours = Math.max(0, user.dailyTarget - stats.todayWorked)
 
     return (
-        <div className="w-full space-y-8">
-            {/* Header / Title if needed, or just spacers as per design */}
-
-            {/* Stats Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
-                {/* Left: Stats */}
-                <div className="lg:col-span-1">
+        <div className="w-full">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+                {/* Main Content Area */}
+                <div className="lg:col-span-3 space-y-8">
+                    {/* Stats */}
                     <StatsWidget
                         extraHours={stats.balance}
                         remainingHours={remainingHours}
                     />
+
+                    {/* Timer & Controls */}
+                    <div className="space-y-4">
+                        <ControlBar activeEntry={activeEntry} />
+                        <EntryForm />
+                    </div>
+
+                    {/* History List */}
+                    <div className="pt-4">
+                        <EntryHistory entries={historyEntries} />
+                    </div>
                 </div>
 
-                {/* Middle (for Admin) or Right: Team Status */}
+                {/* Right Sidebar - Team Status (Admin Only) */}
                 {user.role === "ADMIN" && (
-                    <div className="lg:col-span-1">
+                    <div className="lg:col-span-1 lg:sticky lg:top-8">
                         <TeamStatusWidget teamStatus={teamStatus} />
                     </div>
                 )}
-
-                {/* Right: Timer & manual entry - Takes remaining space */}
-                <div className={`space-y-4 ${user.role === 'ADMIN' ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
-                    <ControlBar activeEntry={activeEntry} />
-                    <EntryForm />
-                </div>
-            </div>
-
-            {/* History List */}
-            <div className="pt-8">
-                <EntryHistory entries={historyEntries} />
             </div>
         </div>
     )
