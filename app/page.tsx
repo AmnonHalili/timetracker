@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { ArrowRight, CheckCircle2, Clock, Users, BarChart3, ShieldCheck } from "lucide-react"
+export const dynamic = "force-dynamic"
 
 export default async function Home() {
   try {
