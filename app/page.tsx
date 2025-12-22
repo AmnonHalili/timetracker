@@ -2,7 +2,6 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { ArrowRight, CheckCircle2, Clock, Users, BarChart3, ShieldCheck } from "lucide-react"
-import Image from "next/image"
 
 export default async function Home() {
   const session = await getServerSession(authOptions)
@@ -17,7 +16,7 @@ export default async function Home() {
       <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Image src="/logo.png" alt="Collabo Logo" width={100} height={32} className="h-8 w-auto" priority />
+            <img src="/logo.png" alt="Collabo Logo" width={100} height={32} className="h-8 w-auto" />
           </div>
           <div className="flex items-center gap-4">
             <a href="/login" className="text-sm font-medium hover:text-primary transition-colors">
@@ -147,7 +146,7 @@ export default async function Home() {
       <footer className="border-t py-12 bg-muted/20">
         <div className="container mx-auto px-4 text-center">
           <div className="flex justify-center mb-4">
-            <Image src="/logo.png" alt="Collabo Logo" width={120} height={40} className="h-10 w-auto opacity-80" />
+            <img src="/logo.png" alt="Collabo Logo" width={120} height={40} className="h-10 w-auto opacity-80" />
           </div>
           <p className="text-muted-foreground text-sm mb-8 max-w-md mx-auto">
             The modern solution for time and project management.
