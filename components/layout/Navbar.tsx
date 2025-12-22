@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
+import Image from "next/image"
 import { UserNav } from "./UserNav"
 
 export function Navbar() {
@@ -30,8 +31,8 @@ export function Navbar() {
         <div className="border-b">
             <div className="flex h-16 items-center px-4 container mx-auto">
                 <div className="mr-8 hidden md:flex">
-                    <Link href="/dashboard" className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
-                        WorkTracker
+                    <Link href="/dashboard" className="flex items-center gap-2">
+                        <Image src="/logo.png" alt="Collabo Logo" width={90} height={28} className="h-7 w-auto" priority />
                     </Link>
                 </div>
                 <nav className="flex items-center space-x-4 lg:space-x-6 mx-6">

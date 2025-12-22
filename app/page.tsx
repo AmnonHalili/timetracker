@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { ArrowRight, CheckCircle2, Clock, Users, BarChart3, ShieldCheck } from "lucide-react"
+import Image from "next/image"
 
 export default async function Home() {
   const session = await getServerSession(authOptions)
@@ -15,8 +16,8 @@ export default async function Home() {
       {/* Navbar / Header */}
       <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="font-bold text-xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">
-            WorkTracker
+          <div className="flex items-center gap-2">
+            <Image src="/logo.png" alt="Collabo Logo" width={100} height={32} className="h-8 w-auto" priority />
           </div>
           <div className="flex items-center gap-4">
             <a href="/login" className="text-sm font-medium hover:text-primary transition-colors">
@@ -38,7 +39,7 @@ export default async function Home() {
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
             The all-in-one platform for tracking work hours, managing projects, and leading teams.
-            Simple enough for freelancers, powerful enough for managers.
+            Simple enough for freelancers, powerful enough for high-growth teams.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <a href="/register" className="inline-flex items-center justify-center rounded-full bg-primary px-8 py-3 text-lg font-medium text-primary-foreground shadow-lg hover:bg-primary/90 transition-all hover:scale-105">
@@ -89,7 +90,7 @@ export default async function Home() {
               </div>
               <h2 className="text-3xl md:text-4xl font-bold">Take Control of Your Projects</h2>
               <p className="text-muted-foreground text-lg leading-relaxed">
-                WorkTracker isn&apos;t just for individuals. It&apos;s built for teams.
+                Collabo isn&apos;t just for individuals. It&apos;s built for teams.
                 Open a new project and become the <strong>Project Manager</strong> instantly.
               </p>
               <ul className="space-y-4 pt-4">
@@ -145,13 +146,15 @@ export default async function Home() {
       {/* Footer */}
       <footer className="border-t py-12 bg-muted/20">
         <div className="container mx-auto px-4 text-center">
-          <div className="font-bold text-2xl mb-4">WorkTracker</div>
+          <div className="flex justify-center mb-4">
+            <Image src="/logo.png" alt="Collabo Logo" width={120} height={40} className="h-10 w-auto opacity-80" />
+          </div>
           <p className="text-muted-foreground text-sm mb-8 max-w-md mx-auto">
             The modern solution for time and project management.
             Built with Next.js, TypeScript, and Prisma.
           </p>
           <div className="text-muted-foreground text-xs">
-            © {new Date().getFullYear()} WorkTracker. All rights reserved.
+            © {new Date().getFullYear()} Collabo. All rights reserved.
           </div>
         </div>
       </footer>
