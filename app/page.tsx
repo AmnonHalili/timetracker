@@ -4,10 +4,14 @@ import { redirect } from "next/navigation"
 import { ArrowRight, CheckCircle2, Clock, Users, BarChart3, ShieldCheck } from "lucide-react"
 
 export default async function Home() {
-  const session = await getServerSession(authOptions)
-
-  if (session) {
-    redirect("/dashboard")
+  try {
+    const session = await getServerSession(authOptions)
+    if (session) {
+      redirect("/dashboard")
+    }
+  } catch (error) {
+    console.error("Failed to retrieve session:", error)
+    // Fallback: render landing page if auth/DB fails
   }
 
   return (
