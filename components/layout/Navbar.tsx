@@ -32,7 +32,7 @@ export function Navbar() {
             <div className="flex h-16 items-center px-4 container mx-auto">
                 <div className="mr-8 hidden md:flex">
                     <Link href="/dashboard" className="flex items-center gap-2">
-                        <Image src="/logo.png" alt="Collabo Logo" width={90} height={28} className="h-7 w-auto" priority />
+                        <Image src="/logo.png" alt="Collabo Logo" width={120} height={40} className="h-10 w-auto" priority />
                     </Link>
                 </div>
                 <nav className="flex items-center space-x-4 lg:space-x-6 mx-6">
