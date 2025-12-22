@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
 import { useState, useRef } from "react"
-import { User, Lock, Sliders, Upload, Loader2, Save } from "lucide-react"
+import { User, Upload, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 
 interface ProfileFormProps {
     user: {
@@ -51,7 +52,7 @@ function ProfileForm({ user }: ProfileFormProps) {
             if (!res.ok) throw new Error("Failed to update")
             router.refresh()
             alert("Profile updated!")
-        } catch (error) {
+        } catch {
             alert("Error updating profile")
         } finally {
             setLoading(false)
@@ -71,7 +72,7 @@ function ProfileForm({ user }: ProfileFormProps) {
                         onClick={() => fileInputRef.current?.click()}
                     >
                         {image ? (
-                            <img src={image} alt="Profile" className="w-full h-full object-cover" />
+                            <Image src={image} alt="Profile" fill className="object-cover" />
                         ) : (
                             <User className="h-8 w-8 text-muted-foreground" />
                         )}
@@ -136,8 +137,8 @@ function SecurityForm() {
             setNewPassword("")
             setConfirmPassword("")
             alert("Password changed successfully")
-        } catch (error: any) {
-            alert(error.message)
+        } catch (error) {
+            alert(error instanceof Error ? error.message : "Error updating password")
         } finally {
             setLoading(false)
         }
@@ -190,7 +191,7 @@ function PreferencesForm({ user }: { user: { dailyTarget: number } }) {
             if (!res.ok) throw new Error("Failed to update")
             router.refresh()
             alert("Preferences updated!")
-        } catch (error) {
+        } catch {
             alert("Error updating preferences")
         } finally {
             setLoading(false)
@@ -214,7 +215,7 @@ function PreferencesForm({ user }: { user: { dailyTarget: number } }) {
                         onChange={e => setTarget(e.target.value)}
                     />
                     <p className="text-xs text-muted-foreground">
-                        This is used to calculate your "Remaining Hours" for the day.
+                        This is used to calculate your &quot;Remaining Hours&quot; for the day.
                     </p>
                 </div>
             </CardContent>

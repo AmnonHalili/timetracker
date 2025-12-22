@@ -4,12 +4,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useRouter, useSearchParams } from "next/navigation"
 import { format, setMonth } from "date-fns"
 
-export function MonthSelector() {
+interface MonthSelectorProps {
+    year: number
+    month: number
+}
+
+export function MonthSelector({ year: propsYear, month: propsMonth }: MonthSelectorProps) {
     const router = useRouter()
     const searchParams = useSearchParams()
 
-    const currentMonth = searchParams.get("month") ? parseInt(searchParams.get("month")!) : new Date().getMonth()
-    const currentYear = searchParams.get("year") ? parseInt(searchParams.get("year")!) : new Date().getFullYear()
+    const currentMonth = propsMonth ?? (searchParams.get("month") ? parseInt(searchParams.get("month")!) : new Date().getMonth())
+    const currentYear = propsYear ?? (searchParams.get("year") ? parseInt(searchParams.get("year")!) : new Date().getFullYear())
 
     const handleMonthChange = (value: string) => {
         const params = new URLSearchParams(searchParams)

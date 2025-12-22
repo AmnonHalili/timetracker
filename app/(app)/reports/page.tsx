@@ -1,12 +1,12 @@
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { getMonthlyReport } from "@/lib/report-calculations"
+
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { MonthSelector } from "@/components/reports/MonthSelector"
 import { ReportTable } from "@/components/reports/ReportTable"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { startOfMonth, endOfMonth } from "date-fns"
+
 import { UserSelector } from "@/components/reports/UserSelector"
 import { getReportData } from "@/lib/report-service"
 import { ExportButton } from "@/components/reports/ExportButton"

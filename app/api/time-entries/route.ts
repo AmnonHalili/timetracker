@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 
 // GET: Fetch currently running entry + recent history
-export async function GET(req: Request) {
+export async function GET() {
     const session = await getServerSession(authOptions)
 
     if (!session || !session.user) {
@@ -22,7 +22,7 @@ export async function GET(req: Request) {
         const activeEntry = entries.find(e => e.endTime === null)
 
         return NextResponse.json({ entries, activeEntry })
-    } catch (error) {
+    } catch {
         return NextResponse.json({ message: "Error fetching entries" }, { status: 500 })
     }
 }
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
-    const { action, manualData } = await req.json() // action: 'start' | 'stop' | 'pause' | 'resume' | 'manual'
+    const { action, manualData }: { action: 'start' | 'stop' | 'pause' | 'resume' | 'manual', manualData?: Record<string, unknown> } = await req.json() // action: 'start' | 'stop' | 'pause' | 'resume' | 'manual'
 
     try {
         // 1. START TIMER
@@ -141,7 +141,7 @@ export async function POST(req: Request) {
         // 5. MANUAL ENTRY
         if (action === "manual") {
             console.log("API: Creating manual entry", manualData)
-            const { start, end, description } = manualData
+            const { start, end, description } = manualData as { start: string; end: string; description?: string }
             const entry = await prisma.timeEntry.create({
                 data: {
                     userId: session.user.id,
@@ -171,9 +171,11 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
-    const { id, description, startTime, endTime } = await req.json()
+    const payload = await req.json() as { id: string; description?: string; startTime?: string; endTime?: string }
+    const { id, description, startTime, endTime } = payload
 
     try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const data: any = {}
         if (description !== undefined) data.description = description
         if (startTime) {
@@ -191,7 +193,7 @@ export async function PATCH(req: Request) {
         })
 
         return NextResponse.json({ entry: updated })
-    } catch (error) {
+    } catch {
         return NextResponse.json({ message: "Error updating entry" }, { status: 500 })
     }
 }
@@ -212,7 +214,7 @@ export async function DELETE(req: Request) {
         })
 
         return NextResponse.json({ message: "Deleted" })
-    } catch (error) {
+    } catch {
         return NextResponse.json({ message: "Error deleting entry" }, { status: 500 })
     }
 }

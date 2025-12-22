@@ -31,7 +31,7 @@ export function TodayList({ entries }: TodayListProps) {
     }, [entries])
 
     // Helper to calculate duration string
-    const getDuration = (start: Date, end: Date | null, breaks?: any[]) => {
+    const getDuration = (start: Date, end: Date | null, breaks?: Array<{ startTime: Date; endTime: Date | null }>) => {
         const now = new Date().getTime()
         const startTime = new Date(start).getTime()
         const endTime = end ? new Date(end).getTime() : now
@@ -84,8 +84,8 @@ export function TodayList({ entries }: TodayListProps) {
                 body: JSON.stringify({ id, description: tempDesc }),
             })
             router.refresh()
-        } catch (e) {
-            console.error("Failed to save", e)
+        } catch {
+            console.error("Failed to save")
             // Revert on failure request? mostly overkill for this simple app but good practice
             // For now assuming success or user will refresh if it failed.
         }

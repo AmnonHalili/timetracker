@@ -11,16 +11,16 @@ export async function PATCH(req: Request) {
     }
 
     try {
-        const { name, image } = await req.json()
+        const payload: Record<string, unknown> = await req.json()
 
         // Basic validation
-        if (!name && !image) {
+        if (!payload.name && payload.image === undefined) {
             return NextResponse.json({ message: "Nothing to update" }, { status: 400 })
         }
 
-        const data: any = {}
-        if (name) data.name = name
-        if (image !== undefined) data.image = image // Allow clearing image if explicitly null? for now assume string
+        const data: Record<string, unknown> = {}
+        if (payload.name) data.name = payload.name
+        if (payload.image !== undefined) data.image = payload.image
 
         const updatedUser = await prisma.user.update({
             where: { id: session.user.id },

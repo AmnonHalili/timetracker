@@ -1,15 +1,28 @@
 "use client"
 
-import { useState } from "react"
+
 import { MonthGrid } from "./MonthGrid"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import { format, addMonths, subMonths } from "date-fns"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 
 interface CalendarViewProps {
     initialDate: Date
-    data: any
+    data: {
+        dailyReports: Array<{
+            date: Date | string;
+            totalDurationHours: number;
+            status: string;
+        }>
+        tasks: Array<{
+            id: string;
+            title: string;
+            deadline: Date | string | null;
+            priority: 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW';
+            assignees: Array<{ name: string; email: string }>;
+        }>
+    }
 }
 
 export function CalendarView({ initialDate, data }: CalendarViewProps) {

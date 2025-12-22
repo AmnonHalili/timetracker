@@ -1,6 +1,6 @@
 "use client"
 
-import { Bell, Check } from "lucide-react"
+import { Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
     Popover,
@@ -33,8 +33,8 @@ export function NotificationBell() {
                 setNotifications(data)
                 setUnreadCount(data.filter((n: Notification) => !n.isRead).length)
             }
-        } catch (e) {
-            console.error("Failed to fetch notifications")
+        } catch {
+            console.error("Failed to mark as read")
         }
     }
 
@@ -82,7 +82,7 @@ export function NotificationBell() {
                 <div className="flex items-center justify-between p-4 border-b">
                     <h4 className="font-semibold text-sm">Notifications</h4>
                     {unreadCount > 0 && (
-                        <Button variant="ghost" size="xs" onClick={markAllRead} className="h-auto p-1 text-xs text-muted-foreground hover:text-primary">
+                        <Button variant="ghost" size="sm" onClick={markAllRead} className="h-auto p-1 text-xs text-muted-foreground hover:text-primary">
                             Mark all read
                         </Button>
                     )}

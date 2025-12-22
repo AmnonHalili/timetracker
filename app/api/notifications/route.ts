@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 
-export async function GET(req: Request) {
+export async function GET() {
     const session = await getServerSession(authOptions)
     if (!session) return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
 
@@ -40,7 +40,7 @@ export async function PATCH(req: Request) {
         }
 
         return NextResponse.json({ message: "No action" })
-    } catch (e) {
+    } catch {
         return NextResponse.json({ message: "Error updating notification" }, { status: 500 })
     }
 }

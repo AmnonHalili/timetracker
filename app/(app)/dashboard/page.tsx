@@ -7,7 +7,7 @@ import { StatsWidget } from "@/components/dashboard/StatsWidget"
 import { ControlBar } from "@/components/dashboard/ControlBar"
 import { EntryForm } from "@/components/dashboard/EntryForm"
 import { EntryHistory } from "@/components/dashboard/EntryHistory"
-import { isSameDay } from "date-fns"
+
 
 import { TeamStatusWidget } from "@/components/dashboard/TeamStatusWidget"
 
@@ -30,7 +30,13 @@ export default async function DashboardPage() {
     if (!user) return <div>User not found</div>
 
     // Team Status Logic (Admin Only)
-    let teamStatus: any[] = []
+    let teamStatus: Array<{
+        userId: string;
+        name: string | null;
+        email: string;
+        status: 'WORKING' | 'BREAK' | 'OFFLINE';
+        lastActive?: Date;
+    }> = []
     if (user.role === "ADMIN" && user.projectId) {
         const projectUsers = await prisma.user.findMany({
             where: {
@@ -93,7 +99,7 @@ export default async function DashboardPage() {
 
                     {/* Timer & Controls */}
                     <div className="space-y-4">
-                        <ControlBar activeEntry={activeEntry} />
+                        <ControlBar activeEntry={activeEntry || null} />
                         <EntryForm />
                     </div>
 

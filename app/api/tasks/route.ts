@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 
 // GET tasks is handled in the page server component usually, but if we need client fetch:
-export async function GET(req: Request) {
+export async function GET() {
     const session = await getServerSession(authOptions)
     if (!session) return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
 
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
         })
 
         return NextResponse.json(task)
-    } catch (e) {
+    } catch {
         return NextResponse.json({ message: "Error creating task" }, { status: 500 })
     }
 }
@@ -139,7 +139,7 @@ export async function PATCH(req: Request) {
         })
 
         return NextResponse.json(task)
-    } catch (e) {
+    } catch {
         return NextResponse.json({ message: "Error updating task" }, { status: 500 })
     }
 }

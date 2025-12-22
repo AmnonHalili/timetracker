@@ -89,7 +89,7 @@ export default async function Home() {
               </div>
               <h2 className="text-3xl md:text-4xl font-bold">Take Control of Your Projects</h2>
               <p className="text-muted-foreground text-lg leading-relaxed">
-                WorkTracker isn't just for individuals. It's built for teams.
+                WorkTracker isn&apos;t just for individuals. It&apos;s built for teams.
                 Open a new project and become the <strong>Project Manager</strong> instantly.
               </p>
               <ul className="space-y-4 pt-4">

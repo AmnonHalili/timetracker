@@ -8,7 +8,12 @@ import { Button } from "@/components/ui/button"
 
 interface TaskListProps {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    tasks: any[]
+    tasks: Array<{
+        id: string;
+        title: string;
+        isCompleted: boolean;
+        assignees: Array<{ name: string | null; email: string }>;
+    }>
     isAdmin: boolean
 }
 
@@ -56,7 +61,7 @@ export function TaskList({ tasks, isAdmin }: TaskListProps) {
                             </label>
                             {isAdmin && (
                                 <p className="text-xs text-muted-foreground">
-                                    Assigned to: {task.assignees?.map((u: any) => u.name || u.email).join(", ") || "Unassigned"}
+                                    Assigned to: {task.assignees?.map((u) => u.name || u.email).join(", ") || "Unassigned"}
                                 </p>
                             )}
                         </div>

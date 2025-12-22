@@ -5,7 +5,13 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 
 interface ControlBarProps {
-    activeEntry: any | null
+    activeEntry: {
+        startTime: Date | string
+        breaks?: Array<{
+            startTime: Date | string
+            endTime: Date | string | null
+        }>
+    } | null
 }
 
 export function ControlBar({ activeEntry }: ControlBarProps) {
@@ -15,7 +21,7 @@ export function ControlBar({ activeEntry }: ControlBarProps) {
 
     console.log("ControlBar: activeEntry", activeEntry)
 
-    const isPaused = activeEntry?.breaks?.some((b: any) => !b.endTime)
+    const isPaused = activeEntry?.breaks?.some((b) => !b.endTime)
 
     useEffect(() => {
         if (!activeEntry) {
@@ -28,7 +34,7 @@ export function ControlBar({ activeEntry }: ControlBarProps) {
             const start = new Date(activeEntry.startTime).getTime()
             let totalBreakTime = 0
 
-            activeEntry.breaks?.forEach((b: any) => {
+            activeEntry.breaks?.forEach((b) => {
                 const bStart = new Date(b.startTime).getTime()
                 const bEnd = b.endTime ? new Date(b.endTime).getTime() : now
                 totalBreakTime += (bEnd - bStart)

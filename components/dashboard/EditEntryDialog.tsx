@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState, useEffect } from "react"
-import { Loader2 } from "lucide-react"
+import { Loader2, Keyboard } from "lucide-react"
 import { format } from "date-fns"
 
 interface TimeEntry {
@@ -50,7 +50,7 @@ export function EditEntryDialog({ entry, open, onOpenChange, onSave }: EditEntry
         setLoading(true)
 
         try {
-            const updates: any = { description }
+            const updates: { startTime?: Date; endTime?: Date; description: string } = { description }
 
             // Only update times if changed
             const originalStart = new Date(entry.startTime).getTime()
@@ -135,14 +135,15 @@ export function EditEntryDialog({ entry, open, onOpenChange, onSave }: EditEntry
                                 onChange={(e) => setEnd(e.target.value)}
                                 className="col-span-3"
                                 disabled={!entry?.endTime} // Disable end time edit if it's currently running (or allow closing it?)
-                                // Let's allow editing end time only if it exists. If running, use the 'Stop' button in dashboard.
-                                description={!entry?.endTime ? "Use Stop button to end timer" : undefined}
+                            // Let's allow editing end time only if it exists. If running, use the 'Stop' button in dashboard.
                             />
+                            {!entry?.endTime && <p className="col-start-2 col-span-3 text-[10px] text-muted-foreground mt-1">Use Stop button to end timer</p>}
                         </div>
                     </div>
                     <DialogFooter>
                         <Button type="submit" disabled={loading}>
                             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {entry?.isManual && <Keyboard className="h-3 w-3 text-muted-foreground/70 mr-1" />}
                             Save Changes
                         </Button>
                     </DialogFooter>

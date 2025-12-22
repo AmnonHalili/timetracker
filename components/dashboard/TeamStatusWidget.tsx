@@ -17,7 +17,7 @@ interface TeamStatusWidgetProps {
 export function TeamStatusWidget({ teamStatus }: TeamStatusWidgetProps) {
     const workingCount = teamStatus.filter(m => m.status === 'WORKING').length
     const breakCount = teamStatus.filter(m => m.status === 'BREAK').length
-    const offlineCount = teamStatus.filter(m => m.status === 'OFFLINE').length
+
 
     return (
         <Card className="h-full min-h-[500px] border bg-card text-card-foreground shadow-sm">

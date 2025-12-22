@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { hash } from "bcryptjs"
 import { NextResponse } from "next/server"
+import { Role, Status } from "@prisma/client"
 
 export async function POST(req: Request) {
     try {
@@ -44,26 +45,22 @@ export async function POST(req: Request) {
             userStatus = "ACTIVE" // Auto-approve creator
         }
 
-        // We use 'any' cast for role/status to avoid enum import issues in simple API route if types aren't perfect
-        // In a strictly typed env we would import { Role, Status } from '@prisma/client'
-
         const user = await prisma.user.create({
             data: {
                 email,
                 password: hashedPassword,
                 name,
-                role: userRole as any,
-                status: userStatus as any,
+                role: userRole as Role,
+                status: userStatus as Status,
                 projectId,
             },
         })
 
-        const { password: _, ...userWithoutPassword } = user
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const userWithoutPassword = { ...user } as any
+        delete userWithoutPassword.password
 
-        return NextResponse.json(
-            { message: "User created successfully", user: userWithoutPassword },
-            { status: 201 }
-        )
+        return NextResponse.json(userWithoutPassword, { status: 201 })
     } catch (error) {
         console.error("Registration error:", error)
         return NextResponse.json(

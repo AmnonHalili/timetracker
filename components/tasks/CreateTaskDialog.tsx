@@ -30,7 +30,7 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated }: CreateT
     const [priority, setPriority] = useState("MEDIUM")
     const [deadline, setDeadline] = useState("")
     const [description, setDescription] = useState("")
-    const [users, setUsers] = useState<any[]>([])
+    const [users, setUsers] = useState<Array<{ id: string; name: string | null; email: string }>>([])
     const [loading, setLoading] = useState(false)
 
 
@@ -41,8 +41,8 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated }: CreateT
             fetch("/api/team?all=true")
                 .then(res => res.json())
                 .then(data => setUsers(data))
-                .catch(err => {
-                    console.error("Failed to load users", err)
+                .catch(() => {
+                    console.error("Failed to load users")
                     setUsers(initialUsers) // Fallback
                 })
         }
@@ -71,8 +71,8 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated }: CreateT
             setDescription("")
             onTaskCreated?.()
             router.refresh()
-        } catch (error) {
-            console.error(error)
+        } catch {
+            console.error("Failed to create task")
         } finally {
             setLoading(false)
         }

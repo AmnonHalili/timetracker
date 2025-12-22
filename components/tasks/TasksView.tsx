@@ -1,9 +1,9 @@
 "use client"
 
-import { Checkbox } from "@/components/ui/checkbox"
+
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { Trash2, Calendar, AlertCircle } from "lucide-react"
+import { Trash2, Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
     Select,
@@ -17,19 +17,7 @@ import { Badge } from "@/components/ui/badge"
 import { format, isPast, isToday } from "date-fns"
 
 // Ensure interface matches Schema
-interface Task {
-    id: string
-    title: string
-    status: 'TODO' | 'IN_PROGRESS' | 'DONE' | 'BLOCKED'
-    priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
-    deadline: Date | null
-    isCompleted: boolean // Deprecated in UI but present in data
-    assignees: {
-        id: string
-        name: string | null
-        email: string | null
-    }[]
-}
+
 
 interface User {
     id: string
@@ -38,7 +26,14 @@ interface User {
 }
 
 interface TasksViewProps {
-    initialTasks: any[] // Using any here to bypass strict typing issues with Prisma JSON dates before they are parsed
+    initialTasks: Array<{
+        id: string;
+        title: string;
+        status: string;
+        priority: string;
+        deadline: Date | string | null;
+        assignees: Array<{ id: string; name: string | null }>;
+    }>
     users: User[]
     isAdmin: boolean
 }
@@ -52,7 +47,7 @@ export function TasksView({ initialTasks, users, isAdmin }: TasksViewProps) {
     const filteredTasks = initialTasks.filter(task => {
         if (filterUserId === "all") return true
         if (task.assignees && task.assignees.length > 0) {
-            return task.assignees.some((a: any) => a.id === filterUserId)
+            return task.assignees.some((a) => a.id === filterUserId)
         }
         return false
     })
@@ -118,11 +113,11 @@ export function TasksView({ initialTasks, users, isAdmin }: TasksViewProps) {
                                             {task.priority}
                                         </Badge>
                                         <div className="flex -space-x-2 overflow-hidden ml-2">
-                                            {task.assignees?.map((assignee: any) => (
+                                            {task.assignees?.map((assignee) => (
                                                 <div
                                                     key={assignee.id}
                                                     className="inline-block h-6 w-6 rounded-full ring-2 ring-background bg-muted flex items-center justify-center text-[10px] font-medium"
-                                                    title={assignee.name}
+                                                    title={assignee.name || undefined}
                                                 >
                                                     {assignee.name ? assignee.name.substring(0, 2).toUpperCase() : '??'}
                                                 </div>

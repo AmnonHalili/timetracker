@@ -7,7 +7,13 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
 interface TimerProps {
-    activeEntry: any | null // Start time string
+    activeEntry: {
+        startTime: Date | string
+        breaks?: Array<{
+            startTime: Date | string
+            endTime: Date | string | null
+        }>
+    } | null
 }
 
 export function Timer({ activeEntry }: TimerProps) {
@@ -18,7 +24,7 @@ export function Timer({ activeEntry }: TimerProps) {
     console.log("Timer: activeEntry", activeEntry)
 
     // Calculate elapsed time locally every second
-    const isPaused = activeEntry?.breaks?.some((b: any) => !b.endTime)
+    const isPaused = activeEntry?.breaks?.some((b) => !b.endTime)
 
     useEffect(() => {
         if (!activeEntry) {
@@ -31,7 +37,7 @@ export function Timer({ activeEntry }: TimerProps) {
             const start = new Date(activeEntry.startTime).getTime()
             let totalBreakTime = 0
 
-            activeEntry.breaks?.forEach((b: any) => {
+            activeEntry.breaks?.forEach((b) => {
                 const bStart = new Date(b.startTime).getTime()
                 const bEnd = b.endTime ? new Date(b.endTime).getTime() : now
                 totalBreakTime += (bEnd - bStart)

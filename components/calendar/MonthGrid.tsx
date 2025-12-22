@@ -13,13 +13,23 @@ import {
     isToday,
     isSameDay
 } from "date-fns"
-import { CheckCircle2, Clock, AlertCircle } from "lucide-react"
+
 
 interface MonthGridProps {
     date: Date
     data: {
-        dailyReports: any[]
-        tasks: any[]
+        dailyReports: Array<{
+            date: Date | string;
+            totalDurationHours: number;
+            status: string;
+        }>
+        tasks: Array<{
+            id: string;
+            title: string;
+            deadline: Date | string | null;
+            priority: 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW';
+            assignees: Array<{ name: string; email: string }>;
+        }>
     }
 }
 
@@ -47,7 +57,7 @@ export function MonthGrid({ date, data }: MonthGridProps) {
             </div>
 
             <div className="grid grid-cols-7 gap-1 lg:gap-2 auto-rows-fr">
-                {calendarDays.map((day, dayIdx) => {
+                {calendarDays.map((day) => {
                     // Find daily report for this day
                     const dailyData = data.dailyReports.find(r => isSameDay(new Date(r.date), day))
 
@@ -84,7 +94,7 @@ export function MonthGrid({ date, data }: MonthGridProps) {
                             </div>
 
                             <div className="space-y-1 mt-2">
-                                {daysTasks.map((task: any) => (
+                                {daysTasks.map((task) => (
                                     <div
                                         key={task.id}
                                         className={cn(
@@ -93,13 +103,13 @@ export function MonthGrid({ date, data }: MonthGridProps) {
                                                 task.priority === 'HIGH' ? "bg-orange-50 border-orange-200 text-orange-700" :
                                                     "bg-background border-border text-muted-foreground"
                                         )}
-                                        title={`${task.title} - ${task.assignees?.map((u: any) => u.name).join(', ') || 'Unassigned'}`}
+                                        title={`${task.title} - ${task.assignees?.map((u) => u.name).join(', ') || 'Unassigned'}`}
                                     >
                                         <div className="flex justify-between items-center gap-1">
                                             <span className="truncate">{task.title}</span>
                                             {task.assignees?.length > 0 && (
                                                 <span className="text-[8px] opacity-70 uppercase tracking-tighter flex gap-0.5">
-                                                    {task.assignees.slice(0, 2).map((u: any) => (
+                                                    {task.assignees.slice(0, 2).map((u) => (
                                                         <span key={u.email}>{u.name.split(' ')[0]}</span>
                                                     ))}
                                                     {task.assignees.length > 2 && <span>+</span>}

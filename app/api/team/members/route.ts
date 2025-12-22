@@ -49,7 +49,9 @@ export async function POST(req: Request) {
             }
         })
 
-        const { password: _, ...userWithoutPassword } = newUser
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const userWithoutPassword = { ...newUser } as any
+        delete userWithoutPassword.password
 
         return NextResponse.json({ user: userWithoutPassword }, { status: 201 })
     } catch (error) {

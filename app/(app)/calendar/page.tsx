@@ -34,7 +34,10 @@ export default async function CalendarPage({
         select: { role: true, projectId: true }
     })
 
-    const whereClause: any = {
+    const whereClause: {
+        deadline: { gte: Date; lte: Date };
+        assignees?: { some: { projectId: string } | { id: string } };
+    } = {
         deadline: {
             gte: monthStart,
             lte: monthEnd
@@ -74,7 +77,8 @@ export default async function CalendarPage({
     })
 
     const data = {
-        dailyReports: reportData?.report.days || [],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        dailyReports: (reportData as any)?.report?.days || [],
         tasks: tasks
     }
 

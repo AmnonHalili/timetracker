@@ -5,7 +5,13 @@ import { Download } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 import { useState } from "react"
 
-export function ExportButton() {
+interface ExportButtonProps {
+    userId: string
+    year: number
+    month: number
+}
+
+export function ExportButton({ userId, year, month }: ExportButtonProps) {
     const searchParams = useSearchParams()
     const [loading, setLoading] = useState(false)
 
@@ -13,11 +19,10 @@ export function ExportButton() {
         setLoading(true)
         const params = new URLSearchParams(searchParams)
 
-        // Default to current month/year if missing (matching page logic)
-        const today = new Date()
-        if (!params.has("month")) params.set("month", today.getMonth().toString())
-        if (!params.has("year")) params.set("year", today.getFullYear().toString())
-        // userId is optional (if missing, API assumes current user, which is correct)
+        // Use props if provided, otherwise fallback to params or current date
+        if (!params.has("month")) params.set("month", month.toString())
+        if (!params.has("year")) params.set("year", year.toString())
+        if (!params.has("userId")) params.set("userId", userId)
 
         try {
             const res = await fetch(`/api/reports/export?${params.toString()}`)
