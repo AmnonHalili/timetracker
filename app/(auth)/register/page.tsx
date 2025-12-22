@@ -8,8 +8,13 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertCircle, Loader2, CheckCircle2 } from "lucide-react"
 
-export default function RegisterPage() {
+import { signIn } from "next-auth/react"
+import { useRouter } from "next/navigation"
 
+export default function RegisterPage() {
+    const router = useRouter()
+
+    // ... (state variables remain the same)
     const [name, setName] = useState("")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
@@ -37,7 +42,24 @@ export default function RegisterPage() {
                 throw new Error(data.message || "Something went wrong")
             }
 
-            setSuccess(true)
+            if (role === "ADMIN") {
+                // Auto-login for Admins
+                const result = await signIn("credentials", {
+                    email,
+                    password,
+                    redirect: false,
+                })
+
+                if (result?.error) {
+                    throw new Error("Registration successful, but login failed. Please log in manually.")
+                }
+
+                router.push("/dashboard")
+                router.refresh()
+            } else {
+                // Show success message for Employees (Pending Approval)
+                setSuccess(true)
+            }
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : "An error occurred during registration")
         } finally {
