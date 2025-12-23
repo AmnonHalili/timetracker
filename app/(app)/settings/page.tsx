@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ProfileForm, SecurityForm } from "@/components/settings/SettingsForms"
+import { AppearanceForm } from "@/components/settings/AppearanceForm"
 
 export default async function SettingsPage() {
     const session = await getServerSession(authOptions)
@@ -35,6 +36,7 @@ export default async function SettingsPage() {
                 <TabsList className="w-full justify-start h-auto p-1 bg-muted/50 rounded-lg">
                     <TabsTrigger value="profile" className="flex-1 max-w-[200px]">Profile</TabsTrigger>
                     <TabsTrigger value="security" className="flex-1 max-w-[200px]">Security</TabsTrigger>
+                    <TabsTrigger value="appearance" className="flex-1 max-w-[200px]">Appearance</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="profile" className="mt-6">
@@ -43,6 +45,10 @@ export default async function SettingsPage() {
 
                 <TabsContent value="security" className="mt-6">
                     <SecurityForm />
+                </TabsContent>
+
+                <TabsContent value="appearance" className="mt-6">
+                    <AppearanceForm />
                 </TabsContent>
             </Tabs>
         </div>
