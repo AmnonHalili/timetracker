@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 
 // GET: Fetch currently running entry + recent history
-export async function GET(req: Request) {
+export async function GET() {
     const session = await getServerSession(authOptions)
 
     if (!session || !session.user) {

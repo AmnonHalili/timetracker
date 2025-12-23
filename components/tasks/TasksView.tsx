@@ -43,7 +43,6 @@ export function TasksView({ initialTasks, users, isAdmin }: TasksViewProps) {
     const router = useRouter()
     const [tasks, setTasks] = useState(initialTasks)
     const [filterUserId, setFilterUserId] = useState<string>("all")
-    const [loadingId, setLoadingId] = useState<string | null>(null)
 
     // Sync local state when server data changes (e.g., after task creation)
     useEffect(() => {
@@ -145,7 +144,6 @@ export function TasksView({ initialTasks, users, isAdmin }: TasksViewProps) {
                                     <Checkbox
                                         checked={task.status === 'DONE'}
                                         onCheckedChange={(checked) => handleCheckboxChange(task.id, task.status, checked as boolean)}
-                                        disabled={loadingId === task.id}
                                         className="mt-1"
                                     />
                                     <div className="space-y-1 flex-1">
@@ -180,7 +178,6 @@ export function TasksView({ initialTasks, users, isAdmin }: TasksViewProps) {
                                         <Select
                                             value={task.status}
                                             onValueChange={(val) => handleStatusChange(task.id, val)}
-                                            disabled={loadingId === task.id}
                                         >
                                             <SelectTrigger className="w-[130px] h-8 text-xs">
                                                 <SelectValue />
