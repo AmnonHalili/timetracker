@@ -29,6 +29,7 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated }: CreateT
     const [assignedToIds, setAssignedToIds] = useState<string[]>([])
     const [priority, setPriority] = useState("MEDIUM")
     const [deadline, setDeadline] = useState("")
+    const [deadlineTime, setDeadlineTime] = useState("")
     const [description, setDescription] = useState("")
     const [users, setUsers] = useState<Array<{ id: string; name: string | null; email: string }>>([])
     const [loading, setLoading] = useState(false)
@@ -53,13 +54,21 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated }: CreateT
         setLoading(true)
 
         try {
+            let finalDeadline = deadline;
+            if (deadline && deadlineTime) {
+                finalDeadline = `${deadline}T${deadlineTime}:00`
+            } else if (deadline) {
+                // If only date is selected, maybe default to end of day? Or just date object (00:00 local).
+                // Let's keep it simple as just the date string for now, backend parses generic date.
+            }
+
             await fetch("/api/tasks", {
                 method: "POST",
                 body: JSON.stringify({
                     title,
                     assignedToIds,
                     priority,
-                    deadline,
+                    deadline: finalDeadline,
                     description
                 }),
             })
@@ -68,6 +77,7 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated }: CreateT
             setAssignedToIds([])
             setPriority("MEDIUM")
             setDeadline("")
+            setDeadlineTime("")
             setDescription("")
             onTaskCreated?.()
             router.refresh()
@@ -161,13 +171,22 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated }: CreateT
                             <Label htmlFor="deadline" className="text-right">
                                 Deadline
                             </Label>
-                            <Input
-                                id="deadline"
-                                type="date"
-                                value={deadline}
-                                onChange={(e) => setDeadline(e.target.value)}
-                                className="col-span-3"
-                            />
+                            <div className="col-span-3 flex gap-2">
+                                <Input
+                                    id="deadline"
+                                    type="date"
+                                    value={deadline}
+                                    onChange={(e) => setDeadline(e.target.value)}
+                                    className="flex-1"
+                                />
+                                <Input
+                                    type="time"
+                                    value={deadlineTime}
+                                    onChange={(e) => setDeadlineTime(e.target.value)}
+                                    className="w-32"
+                                    placeholder="Time"
+                                />
+                            </div>
                         </div>
                     </div>
                     <DialogFooter>
