@@ -6,6 +6,7 @@ interface TeamMemberStatus {
     userId: string
     name: string | null
     email: string
+    role: "ADMIN" | "EMPLOYEE"
     status: 'WORKING' | 'BREAK' | 'OFFLINE'
     lastActive?: Date
 }
@@ -20,21 +21,13 @@ export function TeamStatusWidget({ teamStatus }: TeamStatusWidgetProps) {
 
 
     return (
-        <Card className="h-full min-h-[500px] border bg-card text-card-foreground shadow-sm">
-            <CardHeader className="pb-3 place-items-start">
-                <CardTitle className="text-base font-medium flex flex-col gap-2 w-full">
-                    <span>Live Team Status</span>
-                    <div className="flex gap-2 text-[10px] font-normal w-full">
-                        <Badge variant="outline" className="border-green-500 text-green-600 bg-green-50 px-2 py-0.5 h-5">
-                            {workingCount} Working
-                        </Badge>
-                        <Badge variant="outline" className="border-yellow-500 text-yellow-600 bg-yellow-50 px-2 py-0.5 h-5">
-                            {breakCount} Break
-                        </Badge>
-                    </div>
+        <Card className="h-fit border bg-card text-card-foreground shadow-sm">
+            <CardHeader className="p-4 pb-2">
+                <CardTitle className="text-sm font-medium w-full text-center">
+                    Live Team Status
                 </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 pt-2">
                 <div className="space-y-4 max-h-[calc(100vh-250px)] overflow-y-auto pr-2 custom-scrollbar">
                     {teamStatus.length === 0 ? (
                         <p className="text-sm text-muted-foreground">No team members found.</p>
@@ -53,7 +46,12 @@ export function TeamStatusWidget({ teamStatus }: TeamStatusWidgetProps) {
                                         </div>
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-sm font-medium leading-none truncate">{member.name || member.email}</p>
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-sm font-medium leading-none truncate">{member.name || member.email}</p>
+                                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-secondary text-secondary-foreground">
+                                                {member.role === 'ADMIN' ? 'Manager' : 'Employee'}
+                                            </span>
+                                        </div>
                                         <p className="text-[10px] text-muted-foreground mt-1 truncate">
                                             {member.status === 'OFFLINE' ? 'Offline' : (
                                                 member.status === 'WORKING' ? 'Working since ' + member.lastActive?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :

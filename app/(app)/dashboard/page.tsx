@@ -34,6 +34,7 @@ export default async function DashboardPage() {
         userId: string;
         name: string | null;
         email: string;
+        role: "ADMIN" | "EMPLOYEE";
         status: 'WORKING' | 'BREAK' | 'OFFLINE';
         lastActive?: Date;
     }> = []
@@ -48,6 +49,7 @@ export default async function DashboardPage() {
                 id: true,
                 name: true,
                 email: true,
+                role: true, // Fetch role
                 timeEntries: {
                     where: { endTime: null },
                     include: { breaks: { where: { endTime: null } } }
@@ -70,6 +72,7 @@ export default async function DashboardPage() {
                 userId: u.id,
                 name: u.name,
                 email: u.email,
+                role: u.role, // Pass role
                 status,
                 lastActive
             }
@@ -88,9 +91,9 @@ export default async function DashboardPage() {
 
     return (
         <div className="w-full">
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-8 items-start">
                 {/* Main Content Area */}
-                <div className="lg:col-span-3 space-y-8">
+                <div className="space-y-8 min-w-0">
                     {/* Stats */}
                     <StatsWidget
                         extraHours={stats.balance}
@@ -111,7 +114,7 @@ export default async function DashboardPage() {
 
                 {/* Right Sidebar - Team Status (Admin Only) */}
                 {user.role === "ADMIN" && (
-                    <div className="lg:col-span-1 lg:sticky lg:top-8">
+                    <div className="lg:sticky lg:top-8">
                         <TeamStatusWidget teamStatus={teamStatus} />
                     </div>
                 )}
