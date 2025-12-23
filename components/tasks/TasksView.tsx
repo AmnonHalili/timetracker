@@ -145,23 +145,14 @@ export function TasksView({ initialTasks, users, isAdmin }: TasksViewProps) {
                                     />
                                     <div className="space-y-1 flex-1">
                                         <div className="flex items-center gap-2">
-                                            <Badge className={`text-[10px] h-5 ${getPriorityColor(task.priority)}`}>
-                                                {task.priority}
-                                            </Badge>
-                                            <div className="flex -space-x-2 overflow-hidden ml-2">
-                                                {task.assignees?.map((assignee) => (
-                                                    <div
-                                                        key={assignee.id}
-                                                        className="inline-block h-6 w-6 rounded-full ring-2 ring-background bg-muted flex items-center justify-center text-[10px] font-medium"
-                                                        title={assignee.name || undefined}
-                                                    >
-                                                        {assignee.name ? assignee.name.substring(0, 2).toUpperCase() : '??'}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                            <span className={`text-sm font-medium ml-2 ${task.status === 'DONE' ? 'line-through text-muted-foreground' : ''}`}>
+                                            <span className={`text-sm font-medium ${task.status === 'DONE' ? 'line-through text-muted-foreground' : ''}`}>
                                                 {task.title}
                                             </span>
+                                            {task.assignees && task.assignees.length > 0 && (
+                                                <span className="text-xs text-muted-foreground ml-2">
+                                                    ({task.assignees.map(a => a.name).join(', ')})
+                                                </span>
+                                            )}
                                         </div>
 
                                         <div className="flex items-center gap-4 text-xs text-muted-foreground pl-1">
@@ -176,6 +167,10 @@ export function TasksView({ initialTasks, users, isAdmin }: TasksViewProps) {
                                 </div>
 
                                 <div className="flex items-center gap-2">
+                                    <Badge className={`text-[10px] h-5 w-16 flex items-center justify-center ${getPriorityColor(task.priority)}`}>
+                                        {task.priority}
+                                    </Badge>
+
                                     {task.status !== 'DONE' && (
                                         <Select
                                             value={task.status}
