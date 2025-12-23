@@ -30,11 +30,9 @@ export async function POST(req: Request) {
         const resetUrl = `${process.env.NEXTAUTH_URL}/reset-password?token=${resetToken}`
 
         const transporter = nodemailer.createTransport({
-            service: "gmail",
-            // explicit host/port settings for clarity
             host: "smtp.gmail.com",
-            port: 465,
-            secure: true, // true for 465, false for other ports
+            port: 587,
+            secure: false, // Use `true` for port 465, `false` for all other ports
             auth: {
                 user: process.env.GMAIL_USER,
                 pass: process.env.GMAIL_PASS,
