@@ -10,7 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { UserSelector } from "@/components/reports/UserSelector"
 import { getReportData } from "@/lib/report-service"
 import { ExportButton } from "@/components/reports/ExportButton"
-import { Charts } from "@/components/reports/Charts"
 
 export default async function ReportsPage({
     searchParams,
@@ -91,7 +90,7 @@ export default async function ReportsPage({
                 </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Total Worked</CardTitle>
@@ -105,24 +104,10 @@ export default async function ReportsPage({
                         <CardTitle className="text-sm font-medium">Target Hours</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        {/* Note: Target depends on work days passed so far? Or total potential? Current logic sums targets for passed days */}
                         <div className="text-2xl font-bold">{report.totalTargetHours.toFixed(2)} hrs</div>
                     </CardContent>
                 </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Monthly Balance</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className={`text-2xl font-bold ${(report.totalMonthlyHours - report.totalTargetHours) >= 0 ? "text-green-600" : "text-red-500"}`}>
-                            {(report.totalMonthlyHours - report.totalTargetHours).toFixed(2)} hrs
-                        </div>
-                    </CardContent>
-                </Card>
             </div>
-
-
-            <Charts days={report.days} />
 
             <ReportTable days={report.days} showWarnings={currentUser.role === "ADMIN"} />
         </div>
