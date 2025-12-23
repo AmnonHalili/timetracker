@@ -75,10 +75,16 @@ export default async function ReportsPage({
                     {/* Controls Row */}
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         {currentUser.role === "ADMIN" && (
-                            <UserSelector currentUserId={targetUserId} users={projectUsers} />
+                            <div className="flex flex-col gap-2">
+                                <label className="text-sm font-medium text-muted-foreground">User</label>
+                                <UserSelector currentUserId={targetUserId} users={projectUsers} />
+                            </div>
                         )}
-                        <div className="flex items-center gap-2">
-                            <MonthSelector year={currentYear} month={currentMonth} />
+                        <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4">
+                            <div className="flex flex-col gap-2">
+                                <label className="text-sm font-medium text-muted-foreground">Period</label>
+                                <MonthSelector year={currentYear} month={currentMonth} />
+                            </div>
                             <ExportButton userId={targetUserId} year={currentYear} month={currentMonth} />
                         </div>
                     </div>
