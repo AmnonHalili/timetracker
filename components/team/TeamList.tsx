@@ -62,6 +62,8 @@ export function TeamList({ users }: TeamListProps) {
     // Delete dialog state
     const [deleteDialogUser, setDeleteDialogUser] = useState<User | null>(null)
     const [deleting, setDeleting] = useState(false)
+    const [showTransferAdmin, setShowTransferAdmin] = useState(false)
+    const [newAdminId, setNewAdminId] = useState<string>("")
 
     const daysOfWeek = [
         { value: 0, label: 'Sunday' },
@@ -98,10 +100,14 @@ export function TeamList({ users }: TeamListProps) {
 
     const openDeleteDialog = (user: User) => {
         setDeleteDialogUser(user)
+        setShowTransferAdmin(false)
+        setNewAdminId("")
     }
 
     const closeDeleteDialog = () => {
         setDeleteDialogUser(null)
+        setShowTransferAdmin(false)
+        setNewAdminId("")
     }
 
     const deleteUser = async () => {
@@ -112,17 +118,27 @@ export function TeamList({ users }: TeamListProps) {
             const res = await fetch("/api/team/delete", {
                 method: "DELETE",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userId: deleteDialogUser.id }),
+                body: JSON.stringify({
+                    userId: deleteDialogUser.id,
+                    newAdminId: showTransferAdmin ? newAdminId : undefined
+                }),
             })
+
+            const data = await res.json()
+
             if (!res.ok) {
-                const data = await res.json()
+                // Check if we need to transfer admin
+                if (data.requiresAdminTransfer) {
+                    setShowTransferAdmin(true)
+                    setDeleting(false)
+                    return
+                }
                 throw new Error(data.message || "Failed to delete")
             }
             router.refresh()
             closeDeleteDialog()
         } catch (error) {
             alert(error instanceof Error ? error.message : "Error deleting user")
-        } finally {
             setDeleting(false)
         }
     }
