@@ -9,7 +9,9 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertCircle, Loader2, CheckCircle2 } from "lucide-react"
 
-export default function ResetPasswordPage() {
+import { Suspense } from "react"
+
+function ResetPasswordForm() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const token = searchParams.get("token")
@@ -140,5 +142,13 @@ export default function ResetPasswordPage() {
                 </CardFooter>
             </form>
         </Card>
+    )
+}
+
+export default function ResetPasswordPage() {
+    return (
+        <Suspense fallback={<div className="flex justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+            <ResetPasswordForm />
+        </Suspense>
     )
 }

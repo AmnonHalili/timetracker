@@ -11,7 +11,9 @@ import { AlertCircle, Loader2, CheckCircle2 } from "lucide-react"
 import { signIn } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 
-export default function RegisterPage() {
+import { Suspense } from "react"
+
+function RegisterForm() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const initialRole = searchParams.get("role") === "manager" ? "ADMIN" : "EMPLOYEE"
@@ -186,5 +188,13 @@ export default function RegisterPage() {
                 </CardFooter>
             </form>
         </Card>
+    )
+}
+
+export default function RegisterPage() {
+    return (
+        <Suspense fallback={<div className="flex justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+            <RegisterForm />
+        </Suspense>
     )
 }
