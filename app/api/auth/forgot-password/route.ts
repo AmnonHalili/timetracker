@@ -83,8 +83,9 @@ export async function POST(req: Request) {
         <body>
             <div class="container">
                 <div class="header">
-                    <!-- If logo image fails to load, the text 'Collabo' will show -->
-                    <div style="color: white; font-size: 24px; font-weight: bold;">Collabo</div>
+                    <img src="${logoUrl}" alt="Collabo" />
+                    <!-- Fallback title -->
+                    <div style="color: white; font-size: 24px; font-weight: bold; margin-top: 10px;">Collabo</div>
                 </div>
                 <div class="content">
                     <h2>Password Reset Request</h2>
