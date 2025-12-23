@@ -50,7 +50,7 @@ export default function ForgotPasswordPage() {
                     </div>
                     <CardTitle className="text-center">Email Sent</CardTitle>
                     <CardDescription className="text-center">
-                        If an account exists with that email, we've sent instructions to reset your password.
+                        If an account exists with that email, we&apos;ve sent instructions to reset your password.
                     </CardDescription>
                 </CardHeader>
                 <CardFooter>

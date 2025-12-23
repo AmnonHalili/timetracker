@@ -2,6 +2,9 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { ArrowRight, CheckCircle2, Clock, Users, BarChart3, ShieldCheck } from "lucide-react"
+import Link from "next/link"
+import Image from "next/image"
+
 export const dynamic = "force-dynamic"
 
 export default async function Home() {
@@ -21,15 +24,15 @@ export default async function Home() {
       <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 h-24 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="Collabo Logo" width={200} height={80} className="h-20 w-auto" />
+            <Image src="/logo.png" alt="Collabo Logo" width={200} height={80} className="h-20 w-auto" priority />
           </div>
           <div className="flex items-center gap-4">
-            <a href="/login" className="text-sm font-medium hover:text-primary transition-colors">
+            <Link href="/login" className="text-sm font-medium hover:text-primary transition-colors">
               Log In
-            </a>
-            <a href="/register" className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90 transition-colors">
+            </Link>
+            <Link href="/register" className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90 transition-colors">
               Get Started
-            </a>
+            </Link>
           </div>
         </div>
       </nav>
@@ -46,12 +49,12 @@ export default async function Home() {
             Simple enough for freelancers, powerful enough for high-growth teams.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <a href="/register" className="inline-flex items-center justify-center rounded-full bg-primary px-8 py-3 text-lg font-medium text-primary-foreground shadow-lg hover:bg-primary/90 transition-all hover:scale-105">
+            <Link href="/register" className="inline-flex items-center justify-center rounded-full bg-primary px-8 py-3 text-lg font-medium text-primary-foreground shadow-lg hover:bg-primary/90 transition-all hover:scale-105">
               Start Your Project <ArrowRight className="ml-2 h-5 w-5" />
-            </a>
-            <a href="/login" className="inline-flex items-center justify-center rounded-full border border-input bg-background px-8 py-3 text-lg font-medium shadow-sm hover:bg-accent hover:text-accent-foreground transition-all">
+            </Link>
+            <Link href="/login" className="inline-flex items-center justify-center rounded-full border border-input bg-background px-8 py-3 text-lg font-medium shadow-sm hover:bg-accent hover:text-accent-foreground transition-all">
               Log In
-            </a>
+            </Link>
           </div>
         </div>
       </section>
@@ -104,9 +107,9 @@ export default async function Home() {
                 <CheckItem text="Monitor team hours and productivity" />
               </ul>
               <div className="pt-6">
-                <a href="/register?role=manager" className="text-primary font-medium hover:underline inline-flex items-center">
+                <Link href="/register?role=manager" className="text-primary font-medium hover:underline inline-flex items-center">
                   Create a Manager Account <ArrowRight className="ml-1 h-4 w-4" />
-                </a>
+                </Link>
               </div>
             </div>
             <div className="relative h-[400px] w-full rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 border shadow-2xl overflow-hidden flex items-center justify-center p-8">
@@ -151,7 +154,7 @@ export default async function Home() {
       <footer className="border-t py-12 bg-muted/20">
         <div className="container mx-auto px-4 text-center">
           <div className="flex justify-center mb-4">
-            <img src="/logo.png" alt="Collabo Logo" width={300} height={128} className="h-32 w-auto opacity-80" />
+            <Image src="/logo.png" alt="Collabo Logo" width={300} height={128} className="h-32 w-auto opacity-80" />
           </div>
           <p className="text-muted-foreground text-sm mb-8 max-w-md mx-auto">
             The modern solution for time and project management.
