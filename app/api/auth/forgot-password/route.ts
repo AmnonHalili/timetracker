@@ -37,6 +37,9 @@ export async function POST(req: Request) {
             },
         })
 
+        console.log("Attempting to send email to:", email)
+        console.log("Using Gmail User:", process.env.GMAIL_USER)
+
         await transporter.sendMail({
             from: process.env.GMAIL_USER,
             to: email,
@@ -44,9 +47,11 @@ export async function POST(req: Request) {
             html: `<p>Click <a href="${resetUrl}">here</a> to reset your password.</p>`,
         })
 
+        console.log("Email sent successfully")
+
         return NextResponse.json({ message: "If an account exists, a reset email has been sent." })
     } catch (error) {
-        console.error(error)
+        console.error("Forgot Password Error:", error)
         return NextResponse.json({ message: "Something went wrong" }, { status: 500 })
     }
 }
