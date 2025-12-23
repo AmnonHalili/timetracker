@@ -69,9 +69,9 @@ export async function POST(req: Request) {
             <style>
                 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f5; margin: 0; padding: 0; }
                 .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; margin-top: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-                .header { background-color: #18181b; padding: 24px; text-align: center; }
-                .header img { height: 40px; width: auto; }
-                .header h1 { color: #ffffff; margin: 10px 0 0; font-size: 24px; font-weight: 600; }
+                .header { background-color: #ffffff; padding: 24px; text-align: center; border-bottom: 1px solid #e4e4e7; }
+                .header img { height: 60px; width: auto; }
+                .header h1 { color: #18181b; margin: 10px 0 0; font-size: 24px; font-weight: 600; }
                 .content { padding: 40px 32px; color: #3f3f46; line-height: 1.6; }
                 .content h2 { margin-top: 0; color: #18181b; font-size: 20px; }
                 .button { display: inline-block; background-color: #2563eb; color: #ffffff; padding: 12px 32px; text-decoration: none; border-radius: 6px; font-weight: 600; margin-top: 24px; margin-bottom: 24px; }
@@ -84,8 +84,6 @@ export async function POST(req: Request) {
             <div class="container">
                 <div class="header">
                     <img src="${logoUrl}" alt="Collabo" />
-                    <!-- Fallback title -->
-                    <div style="color: white; font-size: 24px; font-weight: bold; margin-top: 10px;">Collabo</div>
                 </div>
                 <div class="content">
                     <h2>Password Reset Request</h2>
