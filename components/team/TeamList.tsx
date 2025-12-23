@@ -30,7 +30,7 @@ import {
 import { format } from "date-fns"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2 } from "lucide-react"
+import { Loader2, Trash2 } from "lucide-react"
 
 interface User {
     id: string
@@ -58,6 +58,10 @@ export function TeamList({ users }: TeamListProps) {
     const [roleDialogUser, setRoleDialogUser] = useState<User | null>(null)
     const [selectedRole, setSelectedRole] = useState<string>("")
     const [savingRole, setSavingRole] = useState(false)
+
+    // Delete dialog state
+    const [deleteDialogUser, setDeleteDialogUser] = useState<User | null>(null)
+    const [deleting, setDeleting] = useState(false)
 
     const daysOfWeek = [
         { value: 0, label: 'Sunday' },
@@ -90,6 +94,37 @@ export function TeamList({ users }: TeamListProps) {
     const closeRoleDialog = () => {
         setRoleDialogUser(null)
         setSelectedRole("")
+    }
+
+    const openDeleteDialog = (user: User) => {
+        setDeleteDialogUser(user)
+    }
+
+    const closeDeleteDialog = () => {
+        setDeleteDialogUser(null)
+    }
+
+    const deleteUser = async () => {
+        if (!deleteDialogUser) return
+
+        setDeleting(true)
+        try {
+            const res = await fetch("/api/team/delete", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId: deleteDialogUser.id }),
+            })
+            if (!res.ok) {
+                const data = await res.json()
+                throw new Error(data.message || "Failed to delete")
+            }
+            router.refresh()
+            closeDeleteDialog()
+        } catch (error) {
+            alert(error instanceof Error ? error.message : "Error deleting user")
+        } finally {
+            setDeleting(false)
+        }
     }
 
     const saveRole = async () => {
@@ -164,7 +199,7 @@ export function TeamList({ users }: TeamListProps) {
                             <TableHead>Name</TableHead>
                             <TableHead>Email</TableHead>
                             <TableHead>Role</TableHead>
-                            <TableHead className="text-right">Joined</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -181,8 +216,15 @@ export function TeamList({ users }: TeamListProps) {
                                         {user.role}
                                     </Badge>
                                 </TableCell>
-                                <TableCell className="text-right">
-                                    {format(new Date(user.createdAt), 'MMM d, yyyy')}
+                                <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                        onClick={() => openDeleteDialog(user)}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -288,6 +330,34 @@ export function TeamList({ users }: TeamListProps) {
                         <Button onClick={saveRole} disabled={savingRole}>
                             {savingRole && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Update Role
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={!!deleteDialogUser} onOpenChange={(open) => !open && closeDeleteDialog()}>
+                <DialogContent className="sm:max-w-[400px]">
+                    <DialogHeader>
+                        <DialogTitle>Delete User</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete <strong>{deleteDialogUser?.name}</strong>? This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4 mt-4">
+                        <p className="text-sm text-destructive">
+                            ⚠️ All time entries and data associated with this user will be permanently deleted.
+                        </p>
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={closeDeleteDialog} disabled={deleting}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={deleteUser} disabled={deleting}>
+                            {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Delete User
                         </Button>
                     </DialogFooter>
                 </DialogContent>
