@@ -77,6 +77,11 @@ export default function LoginPage() {
                             required
                         />
                     </div>
+                    <div className="flex items-center justify-end">
+                        <Link href="/forgot-password" className="text-sm font-medium text-primary hover:underline">
+                            Forgot Password?
+                        </Link>
+                    </div>
                 </CardContent>
                 <CardFooter className="flex flex-col gap-4">
                     <Button type="submit" className="w-full" disabled={loading}>

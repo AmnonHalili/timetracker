@@ -151,7 +151,7 @@ export default async function Home() {
       <footer className="border-t py-12 bg-muted/20">
         <div className="container mx-auto px-4 text-center">
           <div className="flex justify-center mb-4">
-            <img src="/logo.png" alt="Collabo Logo" width={150} height={48} className="h-12 w-auto opacity-80" />
+            <img src="/logo.png" alt="Collabo Logo" width={300} height={128} className="h-32 w-auto opacity-80" />
           </div>
           <p className="text-muted-foreground text-sm mb-8 max-w-md mx-auto">
             The modern solution for time and project management.

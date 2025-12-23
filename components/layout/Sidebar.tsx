@@ -50,7 +50,7 @@ export function Sidebar() {
         <div className="flex flex-col h-screen w-64 border-r bg-background">
             <div className="p-6 border-b flex items-center justify-between">
                 <Link href="/dashboard" className="flex items-center gap-2">
-                    <Image src="/logo.png" alt="Collabo Logo" width={160} height={64} className="h-16 w-auto" priority />
+                    <Image src="/logo.png" alt="Collabo Logo" width={160} height={64} className="h-24 w-auto" priority />
                 </Link>
                 <NotificationBell />
             </div>

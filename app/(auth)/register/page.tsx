@@ -9,16 +9,17 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { AlertCircle, Loader2, CheckCircle2 } from "lucide-react"
 
 import { signIn } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 
 export default function RegisterPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const initialRole = searchParams.get("role") === "manager" ? "ADMIN" : "EMPLOYEE"
 
-    // ... (state variables remain the same)
     const [name, setName] = useState("")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
-    const [role, setRole] = useState<"EMPLOYEE" | "ADMIN">("EMPLOYEE")
+    const [role, setRole] = useState<"EMPLOYEE" | "ADMIN">(initialRole)
     const [projectName, setProjectName] = useState("")
     const [error, setError] = useState("")
     const [success, setSuccess] = useState(false)
