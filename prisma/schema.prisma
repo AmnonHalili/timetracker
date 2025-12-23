@@ -27,6 +27,16 @@ model User {
   tasks         Task[]
   notifications Notification[]
   
+  // Group membership
+  groupId       String?
+  group         Group?  @relation("GroupMembers", fields: [groupId], references: [id], onDelete: SetNull)
+  managedGroups Group[] @relation("GroupManager")
+
+  // Dynamic Hierarchy
+  managerId     String?
+  manager       User?   @relation("UserHierarchy", fields: [managerId], references: [id], onDelete: SetNull)
+  directReports User[]  @relation("UserHierarchy")
+  
   projectId     String?
   project       Project?    @relation(fields: [projectId], references: [id])
 }
@@ -37,6 +47,21 @@ model Project {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   users     User[]
+  groups    Group[]
+}
+
+model Group {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  color       String   @default("#3B82F6")
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  managerId   String?
+  manager     User?    @relation("GroupManager", fields: [managerId], references: [id], onDelete: SetNull)
+  members     User[]   @relation("GroupMembers")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model TimeEntry {

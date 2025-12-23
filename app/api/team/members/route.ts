@@ -1,63 +1,69 @@
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { hash } from "bcryptjs"
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
+import bcrypt from "bcryptjs"
 
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions)
 
-    if (!session || !session.user) {
+    if (!session || !["ADMIN", "MANAGER"].includes(session.user.role)) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
-    // Ensure user has a project (is a Manager/Admin)
-    const currentUser = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { projectId: true, role: true }
-    })
-
-    if (!currentUser?.projectId || currentUser.role !== "ADMIN") {
-        return NextResponse.json({ message: "Forbidden: You must be a Team Admin to add members" }, { status: 403 })
-    }
-
     try {
-        const { name, email, password, role } = await req.json()
+        const { name, email, password, role, managerId } = await req.json()
 
         if (!name || !email || !password) {
             return NextResponse.json({ message: "Missing required fields" }, { status: 400 })
         }
 
-        const newRole = role === "ADMIN" ? "ADMIN" : "EMPLOYEE"
+        const currentUser = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { projectId: true }
+        })
 
-        // Check if user exists
-        const exists = await prisma.user.findUnique({ where: { email } })
-        if (exists) {
-            return NextResponse.json({ message: "User with this email already exists" }, { status: 400 })
+        if (!currentUser?.projectId) {
+            return NextResponse.json({ message: "Project not found" }, { status: 404 })
         }
 
-        const hashedPassword = await hash(password, 10)
+        // Check if email exists
+        const existingUser = await prisma.user.findUnique({
+            where: { email }
+        })
+
+        if (existingUser) {
+            return NextResponse.json({ message: "Email already exists" }, { status: 400 })
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10)
+
+        // Validate managerId if provided
+        if (managerId) {
+            const manager = await prisma.user.findUnique({
+                where: { id: managerId, projectId: currentUser.projectId }
+            })
+            if (!manager) {
+                return NextResponse.json({ message: "Manager not found in this project" }, { status: 400 })
+            }
+        }
 
         const newUser = await prisma.user.create({
             data: {
                 name,
                 email,
                 password: hashedPassword,
-                role: newRole,
-                status: "ACTIVE", // Auto-activate team members added by admin
+                role: role || "EMPLOYEE",
                 projectId: currentUser.projectId,
-                workDays: [0, 1, 2, 3, 4], // Sunday to Thursday
-                dailyTarget: 8.5,
+                managerId: managerId || null,
+                status: "ACTIVE", // Auto-activate if added by admin/manager
+                dailyTarget: 9.0
             }
         })
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const userWithoutPassword = { ...newUser } as any
-        delete userWithoutPassword.password
-
-        return NextResponse.json({ user: userWithoutPassword }, { status: 201 })
+        return NextResponse.json({ user: newUser })
     } catch (error) {
-        console.error("Add Member Error:", error)
-        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 })
+        console.error("[CREATE_MEMBER_ERROR]", error)
+        return NextResponse.json({ message: "Failed to create member" }, { status: 500 })
     }
 }

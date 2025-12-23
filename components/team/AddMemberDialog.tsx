@@ -12,9 +12,23 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Loader2, UserPlus } from "lucide-react"
 import { useRouter } from "next/navigation"
+
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+
+interface SimpleUser {
+    id: string
+    name: string
+    role: string
+}
 
 export function AddMemberDialog() {
     const router = useRouter()
@@ -22,8 +36,34 @@ export function AddMemberDialog() {
     const [loading, setLoading] = useState(false)
     const [name, setName] = useState("")
     const [email, setEmail] = useState("")
-    const [password, setPassword] = useState("") // Suggest random default?
+    const [password, setPassword] = useState("")
     const [role, setRole] = useState("EMPLOYEE")
+    const [managerId, setManagerId] = useState<string>("")
+    const [managers, setManagers] = useState<SimpleUser[]>([])
+
+    // Fetch potential managers when dialog opens
+    useEffect(() => {
+        if (open) {
+            fetchManagers()
+        }
+    }, [open])
+
+    const fetchManagers = async () => {
+        try {
+            // Using logic similar to hierarchy fetching but flat list
+            const res = await fetch("/api/team/hierarchy")
+            if (res.ok) {
+                const data = await res.json()
+                // setManagers(data.users || [])
+                // We typically only assign to existing Admins or Managers, 
+                // but any user could theoretically be a manager in the new system.
+                // Let's filter slightly or show all.
+                setManagers(data.users || [])
+            }
+        } catch (error) {
+            console.error("Failed to fetch managers:", error)
+        }
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -33,7 +73,13 @@ export function AddMemberDialog() {
             const res = await fetch("/api/team/members", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, email, password, role }),
+                body: JSON.stringify({
+                    name,
+                    email,
+                    password,
+                    role,
+                    managerId: managerId === "unassigned" ? null : managerId
+                }),
             })
 
             if (!res.ok) {
@@ -47,6 +93,7 @@ export function AddMemberDialog() {
             setName("")
             setEmail("")
             setPassword("")
+            setManagerId("")
         } catch (error) {
             alert(error)
         } finally {
@@ -111,6 +158,26 @@ export function AddMemberDialog() {
                             />
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="manager" className="text-right">
+                                Reports To
+                            </Label>
+                            <div className="col-span-3">
+                                <Select onValueChange={setManagerId} value={managerId}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select Manager (Optional)" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="unassigned">No Manager (Top Level)</SelectItem>
+                                        {managers.map((user) => (
+                                            <SelectItem key={user.id} value={user.id}>
+                                                {user.name} ({user.role})
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="role" className="text-right">
                                 Role
                             </Label>
@@ -122,7 +189,8 @@ export function AddMemberDialog() {
                                     onChange={(e) => setRole(e.target.value)}
                                 >
                                     <option value="EMPLOYEE">Employee</option>
-                                    <option value="ADMIN">Manager (Admin)</option>
+                                    <option value="MANAGER">Manager</option>
+                                    <option value="ADMIN">Admin</option>
                                 </select>
                             </div>
                         </div>

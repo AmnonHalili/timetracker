@@ -4,6 +4,9 @@ import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { TeamList } from "@/components/team/TeamList"
 import { AddMemberDialog } from "@/components/team/AddMemberDialog"
+import { Button } from "@/components/ui/button"
+import { Network } from "lucide-react"
+import Link from "next/link"
 
 export default async function TeamPage() {
     const session = await getServerSession(authOptions)
@@ -42,7 +45,7 @@ export default async function TeamPage() {
         orderBy: { createdAt: "asc" }
     })
 
-    const isManager = currentUser.role === "ADMIN"
+    const isManager = ["ADMIN", "MANAGER"].includes(currentUser.role)
 
     return (
         <div className="container mx-auto space-y-8">
@@ -55,7 +58,15 @@ export default async function TeamPage() {
                         {teamMembers.length} Members
                     </p>
                 </div>
-                {isManager && <AddMemberDialog />}
+                <div className="flex gap-2">
+                    <Link href="/team/hierarchy">
+                        <Button variant="outline">
+                            <Network className="h-4 w-4 mr-2" />
+                            View Hierarchy
+                        </Button>
+                    </Link>
+                    {isManager && <AddMemberDialog />}
+                </div>
             </div>
 
             <TeamList users={teamMembers} />
