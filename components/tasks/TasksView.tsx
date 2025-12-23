@@ -2,7 +2,7 @@
 
 
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Trash2, Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -44,6 +44,11 @@ export function TasksView({ initialTasks, users, isAdmin }: TasksViewProps) {
     const [tasks, setTasks] = useState(initialTasks)
     const [filterUserId, setFilterUserId] = useState<string>("all")
     const [loadingId, setLoadingId] = useState<string | null>(null)
+
+    // Sync local state when server data changes (e.g., after task creation)
+    useEffect(() => {
+        setTasks(initialTasks)
+    }, [initialTasks])
 
     // Filter tasks
     const filteredTasks = tasks.filter(task => {
