@@ -20,6 +20,13 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import { format } from "date-fns"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -47,6 +54,11 @@ export function TeamList({ users }: TeamListProps) {
     const [editDays, setEditDays] = useState<number[]>([])
     const [saving, setSaving] = useState(false)
 
+    // Role change dialog state
+    const [roleDialogUser, setRoleDialogUser] = useState<User | null>(null)
+    const [selectedRole, setSelectedRole] = useState<string>("")
+    const [savingRole, setSavingRole] = useState(false)
+
     const daysOfWeek = [
         { value: 0, label: 'Sunday' },
         { value: 1, label: 'Monday' },
@@ -67,6 +79,40 @@ export function TeamList({ users }: TeamListProps) {
         setSelectedUser(null)
         setEditTarget("")
         setEditDays([])
+    }
+
+    const openRoleDialog = (user: User, e: React.MouseEvent) => {
+        e.stopPropagation()
+        setRoleDialogUser(user)
+        setSelectedRole(user.role)
+    }
+
+    const closeRoleDialog = () => {
+        setRoleDialogUser(null)
+        setSelectedRole("")
+    }
+
+    const saveRole = async () => {
+        if (!roleDialogUser) return
+
+        setSavingRole(true)
+        try {
+            const res = await fetch("/api/team/role", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    userId: roleDialogUser.id,
+                    role: selectedRole
+                }),
+            })
+            if (!res.ok) throw new Error("Failed to update")
+            router.refresh()
+            closeRoleDialog()
+        } catch {
+            alert("Error updating role")
+        } finally {
+            setSavingRole(false)
+        }
     }
 
     const saveEdit = async () => {
@@ -99,6 +145,12 @@ export function TeamList({ users }: TeamListProps) {
         )
     }
 
+    const getRoleBadgeVariant = (role: string) => {
+        if (role === "ADMIN") return "default"
+        if (role === "MANAGER") return "secondary"
+        return "outline"
+    }
+
     if (users.length === 0) {
         return <div className="text-center text-muted-foreground py-8">No team members yet.</div>
     }
@@ -112,7 +164,6 @@ export function TeamList({ users }: TeamListProps) {
                             <TableHead>Name</TableHead>
                             <TableHead>Email</TableHead>
                             <TableHead>Role</TableHead>
-                            <TableHead>Status</TableHead>
                             <TableHead className="text-right">Joined</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -121,17 +172,13 @@ export function TeamList({ users }: TeamListProps) {
                             <TableRow key={user.id} className="cursor-pointer hover:bg-muted/50" onClick={() => openDialog(user)}>
                                 <TableCell className="font-bold">{user.name}</TableCell>
                                 <TableCell>{user.email}</TableCell>
-                                <TableCell onClick={(e) => e.stopPropagation()}>
-                                    <Badge variant={user.role === "ADMIN" ? "default" : "secondary"}>
-                                        {user.role}
-                                    </Badge>
-                                </TableCell>
                                 <TableCell>
-                                    <Badge variant="outline" className={
-                                        user.status === "ACTIVE" ? "text-green-600 border-green-600" :
-                                            user.status === "PENDING" ? "text-yellow-600 border-yellow-600" : ""
-                                    }>
-                                        {user.status}
+                                    <Badge
+                                        variant={getRoleBadgeVariant(user.role)}
+                                        className="cursor-pointer hover:opacity-80"
+                                        onClick={(e) => openRoleDialog(user, e)}
+                                    >
+                                        {user.role}
                                     </Badge>
                                 </TableCell>
                                 <TableCell className="text-right">
@@ -143,6 +190,7 @@ export function TeamList({ users }: TeamListProps) {
                 </Table>
             </div>
 
+            {/* Work Settings Dialog */}
             <Dialog open={!!selectedUser} onOpenChange={(open) => !open && closeDialog()}>
                 <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
@@ -197,6 +245,49 @@ export function TeamList({ users }: TeamListProps) {
                         <Button onClick={saveEdit} disabled={saving}>
                             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Save Changes
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Role Change Dialog */}
+            <Dialog open={!!roleDialogUser} onOpenChange={(open) => !open && closeRoleDialog()}>
+                <DialogContent className="sm:max-w-[400px]">
+                    <DialogHeader>
+                        <DialogTitle>Change Role - {roleDialogUser?.name}</DialogTitle>
+                        <DialogDescription>
+                            Select a new role for this team member.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 pt-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="role">Role</Label>
+                            <Select value={selectedRole} onValueChange={setSelectedRole}>
+                                <SelectTrigger id="role">
+                                    <SelectValue placeholder="Select role" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="ADMIN">Admin</SelectItem>
+                                    <SelectItem value="MANAGER">Manager</SelectItem>
+                                    <SelectItem value="EMPLOYEE">Employee</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <p className="text-xs text-muted-foreground">
+                                <strong>Admin:</strong> Full access to all features<br />
+                                <strong>Manager:</strong> Can manage team members<br />
+                                <strong>Employee:</strong> Basic access
+                            </p>
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={closeRoleDialog} disabled={savingRole}>
+                            Cancel
+                        </Button>
+                        <Button onClick={saveRole} disabled={savingRole}>
+                            {savingRole && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Update Role
                         </Button>
                     </DialogFooter>
                 </DialogContent>

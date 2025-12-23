@@ -23,7 +23,6 @@ export function ReportTable({ days, showWarnings }: ReportTableProps) {
                         <TableHead>Start Time</TableHead>
                         <TableHead>End Time</TableHead>
                         <TableHead className="text-right">Total Hours</TableHead>
-                        <TableHead className="text-center">Status</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -54,9 +53,6 @@ export function ReportTable({ days, showWarnings }: ReportTableProps) {
                             <TableCell className="text-right font-mono">
                                 {day.totalDurationHours > 0 ? day.totalDurationHours.toFixed(2) + "h" : "-"}
                             </TableCell>
-                            <TableCell className="text-center">
-                                <StatusBadge status={day.status} />
-                            </TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
@@ -65,15 +61,3 @@ export function ReportTable({ days, showWarnings }: ReportTableProps) {
     )
 }
 
-function StatusBadge({ status }: { status: DailyReport['status'] }) {
-    switch (status) {
-        case 'MET':
-            return <Badge className="bg-green-500 hover:bg-green-600">Target Met</Badge>
-        case 'MISSED':
-            return <Badge variant="destructive">Missed</Badge>
-        case 'OFF':
-            return <Badge variant="secondary">Off Day</Badge>
-        case 'PENDING':
-            return <Badge variant="outline">Pending</Badge>
-    }
-}

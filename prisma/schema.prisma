@@ -98,6 +98,7 @@ enum TaskPriority {
 
 enum Role {
   ADMIN
+  MANAGER
   EMPLOYEE
 }
 
