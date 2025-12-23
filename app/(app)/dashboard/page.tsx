@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { calculateBalance } from "@/lib/time-calculations"
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
-import { StatsWidget } from "@/components/dashboard/StatsWidget"
+
 import { ControlBar } from "@/components/dashboard/ControlBar"
 import { EntryForm } from "@/components/dashboard/EntryForm"
 import { EntryHistory } from "@/components/dashboard/EntryHistory"
@@ -95,14 +95,12 @@ export default async function DashboardPage() {
                 {/* Main Content Area */}
                 <div className="space-y-8 min-w-0">
                     {/* Stats */}
-                    <StatsWidget
-                        extraHours={stats.balance}
-                        remainingHours={remainingHours}
-                    />
-
-                    {/* Timer & Controls */}
                     <div className="space-y-4">
-                        <ControlBar activeEntry={activeEntry || null} />
+                        <ControlBar
+                            activeEntry={activeEntry || null}
+                            extraHours={stats.balance}
+                            remainingHours={remainingHours}
+                        />
                         <EntryForm />
                     </div>
 

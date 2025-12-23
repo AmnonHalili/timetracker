@@ -12,9 +12,11 @@ interface ControlBarProps {
             endTime: Date | string | null
         }>
     } | null
+    extraHours: number
+    remainingHours: number
 }
 
-export function ControlBar({ activeEntry }: ControlBarProps) {
+export function ControlBar({ activeEntry, extraHours, remainingHours }: ControlBarProps) {
     const router = useRouter()
     const [elapsed, setElapsed] = useState(0)
     const [loading, setLoading] = useState(false)
@@ -69,52 +71,80 @@ export function ControlBar({ activeEntry }: ControlBarProps) {
     }
 
     return (
-        <div className="flex items-center justify-between bg-muted/30 p-4 rounded-md">
-            <div className="text-xl font-mono font-medium text-muted-foreground ml-4">
-                {formatTime(elapsed)}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Left Side: Stats */}
+            <div className="flex items-center justify-between md:justify-start gap-6 bg-muted/30 p-4 rounded-xl">
+                <div className="flex flex-row w-full md:w-auto justify-between md:justify-start gap-6 text-sm">
+                    <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">Extra:</span>
+                        <span className={extraHours >= 0 ? "text-green-600 font-medium" : "text-red-500 font-medium"}>
+                            {extraHours > 0 ? '+' : ''}{extraHours.toFixed(2)}h
+                        </span>
+                    </div>
+                    <div className="hidden md:block text-muted-foreground/20">|</div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">Remaining:</span>
+                        <span className="font-medium">
+                            {remainingHours.toFixed(2)}h
+                        </span>
+                    </div>
+                </div>
             </div>
 
-            {!activeEntry ? (
-                <Button
-                    variant="ghost"
-                    className="hover:bg-transparent hover:text-primary font-medium"
-                    onClick={() => handleAction('start')}
-                    disabled={loading}
-                >
-                    Start Clock
-                </Button>
-            ) : (
+            {/* Right Side: Timer & Controls */}
+            <div className="flex items-center justify-between bg-muted/30 p-4 rounded-xl">
+                <div className="text-3xl font-mono font-bold text-primary tracking-wider tabular-nums">
+                    {formatTime(elapsed)}
+                </div>
+
                 <div className="flex items-center gap-4">
-                    {isPaused ? (
+                    <div className="h-8 w-[1px] bg-border hidden sm:block" />
+
+                    {!activeEntry ? (
                         <Button
-                            variant="ghost"
-                            className="hover:bg-transparent text-primary hover:text-primary font-medium"
-                            onClick={() => handleAction('resume')}
+                            size="sm"
+                            onClick={() => handleAction('start')}
                             disabled={loading}
+                            className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium min-w-[100px]"
                         >
-                            Resume
+                            Start
                         </Button>
                     ) : (
-                        <Button
-                            variant="ghost"
-                            className="hover:bg-transparent text-primary hover:text-primary font-medium"
-                            onClick={() => handleAction('pause')}
-                            disabled={loading}
-                        >
-                            Pause
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            {isPaused ? (
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="border-primary text-primary hover:bg-primary/5 font-medium px-4"
+                                    onClick={() => handleAction('resume')}
+                                    disabled={loading}
+                                >
+                                    Resume
+                                </Button>
+                            ) : (
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="border-input hover:bg-accent text-accent-foreground font-medium px-4"
+                                    onClick={() => handleAction('pause')}
+                                    disabled={loading}
+                                >
+                                    Pause
+                                </Button>
+                            )}
+                            <Button
+                                size="sm"
+                                variant="destructive"
+                                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-medium px-4"
+                                onClick={() => handleAction('stop')}
+                                disabled={loading}
+                            >
+                                Stop
+                            </Button>
+                        </div>
                     )}
-                    <div className="h-4 w-[1px] bg-muted-foreground/20" />
-                    <Button
-                        variant="ghost"
-                        className="hover:bg-transparent text-destructive hover:text-destructive font-medium"
-                        onClick={() => handleAction('stop')}
-                        disabled={loading}
-                    >
-                        Stop Clock
-                    </Button>
                 </div>
-            )}
+            </div>
         </div>
     )
 }
