@@ -5,10 +5,8 @@ import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 
 import { ControlBar } from "@/components/dashboard/ControlBar"
-import { EntryForm } from "@/components/dashboard/EntryForm"
 import { EntryHistory } from "@/components/dashboard/EntryHistory"
-
-
+import { StatsWidget } from "@/components/dashboard/StatsWidget"
 import { TeamStatusWidget } from "@/components/dashboard/TeamStatusWidget"
 
 export default async function DashboardPage() {
@@ -38,18 +36,20 @@ export default async function DashboardPage() {
         status: 'WORKING' | 'BREAK' | 'OFFLINE';
         lastActive?: Date;
     }> = []
+
+    // Only fetch team status if admin
     if (user.role === "ADMIN" && user.projectId) {
         const projectUsers = await prisma.user.findMany({
             where: {
                 projectId: user.projectId,
                 status: "ACTIVE",
-                NOT: { id: user.id } // Optional: Exclude self? Or include? Let's exclude for "Team View"
+                NOT: { id: user.id } // Exclude self from team view
             },
             select: {
                 id: true,
                 name: true,
                 email: true,
-                role: true, // Fetch role
+                role: true,
                 timeEntries: {
                     where: { endTime: null },
                     include: { breaks: { where: { endTime: null } } }
@@ -58,7 +58,7 @@ export default async function DashboardPage() {
         })
 
         teamStatus = projectUsers.map(u => {
-            const activeEntry = u.timeEntries[0] // There should be at most one active entry
+            const activeEntry = u.timeEntries[0]
             let status: 'WORKING' | 'BREAK' | 'OFFLINE' = 'OFFLINE'
             let lastActive: Date | undefined = undefined
 
@@ -72,7 +72,7 @@ export default async function DashboardPage() {
                 userId: u.id,
                 name: u.name,
                 email: u.email,
-                role: u.role, // Pass role
+                role: u.role,
                 status,
                 lastActive
             }
@@ -84,7 +84,6 @@ export default async function DashboardPage() {
 
     // For list, use completed entries, reverse chronology
     const historyEntries = user.timeEntries.filter(e => e.endTime !== null).reverse()
-    console.log("Dashboard: History Entries", historyEntries.length)
 
     // Calculate remaining hours for today
     const remainingHours = Math.max(0, user.dailyTarget - stats.todayWorked)
@@ -103,16 +102,11 @@ export default async function DashboardPage() {
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-8 items-start">
                 {/* Main Content Area */}
                 <div className="space-y-8 min-w-0">
-                    {/* Stats */}
-                    <div className="space-y-4">
-                        <ControlBar
-                            activeEntry={activeEntry || null}
-                            extraHours={stats.balance}
-                            remainingHours={remainingHours}
-                            tasks={tasks}
-                        />
-                        <EntryForm tasks={tasks} />
-                    </div>
+                    {/* Timer Control */}
+                    <ControlBar
+                        activeEntry={activeEntry || null}
+                        tasks={tasks}
+                    />
 
                     {/* History List */}
                     <div className="pt-4">
@@ -120,12 +114,18 @@ export default async function DashboardPage() {
                     </div>
                 </div>
 
-                {/* Right Sidebar - Team Status (Admin Only) */}
-                {user.role === "ADMIN" && (
-                    <div className="lg:sticky lg:top-8">
-                        <TeamStatusWidget teamStatus={teamStatus} />
-                    </div>
-                )}
+                {/* Right Sidebar */}
+                <div className="lg:sticky lg:top-8 space-y-8">
+                    {/* Stats Widget (Always visible) */}
+                    <StatsWidget extraHours={stats.balance} remainingHours={remainingHours} />
+
+                    {/* Team Status (Admin Only) */}
+                    {user.role === "ADMIN" && (
+                        <div className="pt-12">
+                            <TeamStatusWidget teamStatus={teamStatus} />
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     )

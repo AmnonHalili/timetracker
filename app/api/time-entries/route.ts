@@ -37,10 +37,11 @@ export async function POST(req: Request) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
-    const { action, manualData, taskIds }: {
+    const { action, manualData, taskIds, description }: {
         action: 'start' | 'stop' | 'pause' | 'resume' | 'manual',
         manualData?: Record<string, unknown>,
-        taskIds?: string[]
+        taskIds?: string[],
+        description?: string
     } = await req.json()
 
     try {
@@ -58,6 +59,7 @@ export async function POST(req: Request) {
                 data: {
                     userId: session.user.id,
                     startTime: new Date(),
+                    description,
                     isManual: false,
                     tasks: taskIds && taskIds.length > 0 ? {
                         connect: taskIds.map(id => ({ id }))
