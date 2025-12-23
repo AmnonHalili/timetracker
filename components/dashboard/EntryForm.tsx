@@ -2,17 +2,21 @@
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { MultiSelect } from "@/components/ui/multi-select"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 
-export function EntryForm() {
+interface EntryFormProps {
+    tasks?: Array<{ id: string; title: string }>
+}
+
+export function EntryForm({ tasks = [] }: EntryFormProps) {
     const router = useRouter()
 
-    // Default current time to next 15-min block or similar? 
-    // Or just empty strings
     const [description, setDescription] = useState("")
     const [startTime, setStartTime] = useState("")
     const [endTime, setEndTime] = useState("")
+    const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
     const [loading, setLoading] = useState(false)
 
     const date = new Date().toLocaleDateString('en-GB')
@@ -27,17 +31,10 @@ export function EntryForm() {
             const [startH, startM] = startTime.split(':')
             const [endH, endM] = endTime.split(':')
 
-            if (!startH || !startM || !endH || !endM) return // Basic format check
+            if (!startH || !startM || !endH || !endM) return
 
             start.setHours(parseInt(startH), parseInt(startM), 0, 0)
             end.setHours(parseInt(endH), parseInt(endM), 0, 0)
-
-            // Handle overnight case if needed (end < start) -> usually implies next day
-            // For simple "Today" log, we might assume user means same day. 
-            // If they type 23:00 - 01:00, user might expect 2 hours.
-            if (end < start) {
-                // Not standard logic yet, but let's leave as is for "Today"
-            }
 
             await fetch('/api/time-entries', {
                 method: 'POST',
@@ -47,13 +44,15 @@ export function EntryForm() {
                         start,
                         end,
                         description
-                    }
+                    },
+                    taskIds: selectedTaskIds.length > 0 ? selectedTaskIds : undefined
                 }),
             })
 
             setDescription("")
             setStartTime("")
             setEndTime("")
+            setSelectedTaskIds([])
             router.refresh()
         } catch (error) {
             console.error(error)
@@ -65,6 +64,18 @@ export function EntryForm() {
 
     return (
         <div className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-muted/30 rounded-xl border border-transparent hover:border-border/50 transition-colors">
+
+            {/* Task Selector */}
+            <div className="w-full sm:w-[200px]">
+                <MultiSelect
+                    options={tasks.map(t => ({ label: t.title, value: t.id }))}
+                    selected={selectedTaskIds}
+                    onChange={setSelectedTaskIds}
+                    placeholder="Tasks..."
+                    className="bg-background border-input shadow-sm"
+                />
+            </div>
+
             <div className="relative flex-1 w-full sm:w-auto">
                 <Input
                     className="pl-9 bg-background border-input shadow-sm"

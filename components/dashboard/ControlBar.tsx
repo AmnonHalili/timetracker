@@ -1,8 +1,10 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { MultiSelect } from "@/components/ui/multi-select"
 
 interface ControlBarProps {
     activeEntry: {
@@ -11,19 +13,35 @@ interface ControlBarProps {
             startTime: Date | string
             endTime: Date | string | null
         }>
+        taskId?: string | null
+        // Assuming activeEntry might now have a 'tasks' array based on the useEffect change
+        tasks?: Array<{ id: string; title: string }>
     } | null
     extraHours: number
     remainingHours: number
+    tasks: Array<{ id: string; title: string }>
 }
 
-export function ControlBar({ activeEntry, extraHours, remainingHours }: ControlBarProps) {
+export function ControlBar({ activeEntry, extraHours, remainingHours, tasks }: ControlBarProps) {
     const router = useRouter()
     const [elapsed, setElapsed] = useState(0)
     const [loading, setLoading] = useState(false)
+    const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
 
     console.log("ControlBar: activeEntry", activeEntry)
 
     const isPaused = activeEntry?.breaks?.some((b) => !b.endTime)
+
+    useEffect(() => {
+        if (activeEntry?.tasks) {
+            setSelectedTaskIds(activeEntry.tasks.map(t => t.id))
+        } else if (activeEntry && activeEntry.tasks === undefined) {
+            // Handle case where tasks might be missing or empty?
+            // Since we updated API, activeEntry should have tasks array.
+        } else if (!activeEntry) {
+            // Keep selection or clear?
+        }
+    }, [activeEntry])
 
     useEffect(() => {
         if (!activeEntry) {
@@ -54,7 +72,7 @@ export function ControlBar({ activeEntry, extraHours, remainingHours }: ControlB
         const h = Math.floor(seconds / 3600)
         const m = Math.floor((seconds % 3600) / 60)
         const s = seconds % 60
-        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')} `
     }
 
     const handleAction = async (action: 'start' | 'stop' | 'pause' | 'resume') => {
@@ -62,7 +80,10 @@ export function ControlBar({ activeEntry, extraHours, remainingHours }: ControlB
         try {
             await fetch('/api/time-entries', {
                 method: 'POST',
-                body: JSON.stringify({ action }),
+                body: JSON.stringify({
+                    action,
+                    taskIds: action === 'start' ? (selectedTaskIds.length > 0 ? selectedTaskIds : undefined) : undefined
+                }),
             })
             router.refresh()
         } finally {
@@ -71,7 +92,7 @@ export function ControlBar({ activeEntry, extraHours, remainingHours }: ControlB
     }
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-4">
             {/* Left Side: Stats */}
             <div className="flex items-center justify-between md:justify-start gap-6 bg-muted/30 p-4 rounded-xl">
                 <div className="flex flex-row w-full md:w-auto justify-between md:justify-start gap-6 text-sm">
@@ -92,13 +113,25 @@ export function ControlBar({ activeEntry, extraHours, remainingHours }: ControlB
             </div>
 
             {/* Right Side: Timer & Controls */}
-            <div className="flex items-center justify-between bg-muted/30 p-4 rounded-xl">
+            <div className="flex items-center justify-end gap-6 bg-muted/30 p-4 rounded-xl">
                 <div className="text-3xl font-mono font-bold text-primary tracking-wider tabular-nums">
                     {formatTime(elapsed)}
                 </div>
 
                 <div className="flex items-center gap-4">
                     <div className="h-8 w-[1px] bg-border hidden sm:block" />
+
+                    {/* Task Selector */}
+                    <div className="w-[180px]">
+                        <MultiSelect
+                            options={tasks.map(t => ({ label: t.title, value: t.id }))}
+                            selected={selectedTaskIds}
+                            onChange={setSelectedTaskIds}
+                            placeholder="Select task..."
+                            className="bg-background/50 border-transparent hover:bg-background"
+                            maxCount={1}
+                        />
+                    </div>
 
                     {!activeEntry ? (
                         <Button

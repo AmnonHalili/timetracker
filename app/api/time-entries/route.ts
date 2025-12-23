@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 
 // GET: Fetch currently running entry + recent history
-export async function GET() {
+export async function GET(req: Request) {
     const session = await getServerSession(authOptions)
 
     if (!session || !session.user) {
@@ -14,11 +14,13 @@ export async function GET() {
     try {
         const entries = await prisma.timeEntry.findMany({
             where: { userId: session.user.id },
-            include: { breaks: true },
-            orderBy: { startTime: "desc" },
+            include: { breaks: true, tasks: true }, // Updated relation
+            orderBy: { createdAt: 'desc' }, // Updated orderBy
             take: 50, // Limit to recent 50 for dashboard performance
         })
 
+        // The instruction implies returning only entries, but the original code also returned activeEntry.
+        // To maintain existing client-side expectations for activeEntry, we'll keep it.
         const activeEntry = entries.find(e => e.endTime === null)
 
         return NextResponse.json({ entries, activeEntry })
@@ -35,7 +37,11 @@ export async function POST(req: Request) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
-    const { action, manualData }: { action: 'start' | 'stop' | 'pause' | 'resume' | 'manual', manualData?: Record<string, unknown> } = await req.json() // action: 'start' | 'stop' | 'pause' | 'resume' | 'manual'
+    const { action, manualData, taskIds }: {
+        action: 'start' | 'stop' | 'pause' | 'resume' | 'manual',
+        manualData?: Record<string, unknown>,
+        taskIds?: string[]
+    } = await req.json()
 
     try {
         // 1. START TIMER
@@ -53,6 +59,9 @@ export async function POST(req: Request) {
                     userId: session.user.id,
                     startTime: new Date(),
                     isManual: false,
+                    tasks: taskIds && taskIds.length > 0 ? {
+                        connect: taskIds.map(id => ({ id }))
+                    } : undefined,
                 }
             })
 
@@ -148,7 +157,10 @@ export async function POST(req: Request) {
                     startTime: new Date(start),
                     endTime: new Date(end),
                     description,
-                    isManual: true
+                    isManual: true,
+                    tasks: taskIds && taskIds.length > 0 ? {
+                        connect: taskIds.map(id => ({ id }))
+                    } : undefined
                 }
             })
             console.log("API: Created entry", entry.id)
@@ -171,13 +183,19 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
-    const payload = await req.json() as { id: string; description?: string; startTime?: string; endTime?: string }
-    const { id, description, startTime, endTime } = payload
+    const payload = await req.json() as { id: string; description?: string; startTime?: string; endTime?: string; taskIds?: string[] }
+    const { id, description, startTime, endTime, taskIds } = payload
 
     try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const data: any = {}
         if (description !== undefined) data.description = description
+        if (taskIds !== undefined) {
+            data.tasks = {
+                set: taskIds.map(tid => ({ id: tid }))
+            }
+        }
+
         if (startTime) {
             data.startTime = new Date(startTime)
             data.isManual = true

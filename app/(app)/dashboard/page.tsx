@@ -22,7 +22,7 @@ export default async function DashboardPage() {
         where: { id: session.user.id },
         include: {
             timeEntries: {
-                include: { breaks: true }
+                include: { breaks: true, tasks: true }
             }
         },
     })
@@ -82,12 +82,21 @@ export default async function DashboardPage() {
     const stats = calculateBalance(user)
     const activeEntry = user.timeEntries.find(e => e.endTime === null)
 
-    // For list, use all entries, reverse chronology
-    const historyEntries = [...user.timeEntries].reverse()
+    // For list, use completed entries, reverse chronology
+    const historyEntries = user.timeEntries.filter(e => e.endTime !== null).reverse()
     console.log("Dashboard: History Entries", historyEntries.length)
 
     // Calculate remaining hours for today
     const remainingHours = Math.max(0, user.dailyTarget - stats.todayWorked)
+
+    // Fetch available tasks for the user
+    const tasks = await prisma.task.findMany({
+        where: {
+            assignees: { some: { id: user.id } },
+            status: { not: 'DONE' }
+        },
+        orderBy: { updatedAt: 'desc' }
+    })
 
     return (
         <div className="w-full">
@@ -100,13 +109,14 @@ export default async function DashboardPage() {
                             activeEntry={activeEntry || null}
                             extraHours={stats.balance}
                             remainingHours={remainingHours}
+                            tasks={tasks}
                         />
-                        <EntryForm />
+                        <EntryForm tasks={tasks} />
                     </div>
 
                     {/* History List */}
                     <div className="pt-4">
-                        <EntryHistory entries={historyEntries} />
+                        <EntryHistory entries={historyEntries} tasks={tasks} />
                     </div>
                 </div>
 

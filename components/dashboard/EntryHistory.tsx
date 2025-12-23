@@ -6,7 +6,13 @@ import { Input } from "@/components/ui/input"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { format, isToday, isYesterday } from "date-fns"
-import { Pencil } from "lucide-react"
+import { Pencil, MoreVertical, Trash2 } from "lucide-react"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { EditEntryDialog } from "./EditEntryDialog"
 
 interface TimeEntry {
@@ -16,13 +22,20 @@ interface TimeEntry {
     description?: string | null
     isManual?: boolean
     breaks?: { startTime: Date; endTime: Date | null }[]
+    tasks?: { id: string; title: string }[]
+}
+
+interface Task {
+    id: string
+    title: string
 }
 
 interface EntryHistoryProps {
     entries: TimeEntry[]
+    tasks: Task[]
 }
 
-export function EntryHistory({ entries }: EntryHistoryProps) {
+export function EntryHistory({ entries, tasks }: EntryHistoryProps) {
     const router = useRouter()
     const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null)
     const [editDialogOpen, setEditDialogOpen] = useState(false)
@@ -39,7 +52,7 @@ export function EntryHistory({ entries }: EntryHistoryProps) {
         setEditDialogOpen(true)
     }
 
-    const handleDialogSave = async (id: string, updates: { startTime?: Date; endTime?: Date; description?: string }) => {
+    const handleDialogSave = async (id: string, updates: { startTime?: Date; endTime?: Date; description?: string; taskIds?: string[] }) => {
         setLocalEntries(current => current.map(e =>
             e.id === id ? { ...e, ...updates } : e
         ))
@@ -169,24 +182,42 @@ export function EntryHistory({ entries }: EntryHistoryProps) {
 
                                         </div>
 
-                                        {inlineEditingId === entry.id ? (
-                                            <Input
-                                                value={tempDescription}
-                                                onChange={(e) => setTempDescription(e.target.value)}
-                                                onBlur={saveInlineEdit}
-                                                onKeyDown={handleInlineKeyDown}
-                                                autoFocus
-                                                className="h-7 text-sm px-1 -ml-1 border-transparent hover:border-input focus:border-input bg-transparent focus:bg-background"
-                                            />
-                                        ) : (
-                                            <div
-                                                className="text-sm text-muted-foreground truncate font-medium cursor-text hover:text-foreground transition-colors py-0.5"
-                                                onClick={() => startInlineEdit(entry)}
-                                                title="Click to edit"
-                                            >
-                                                {entry.description || "No description"}
-                                            </div>
-                                        )}
+                                        <div className="flex flex-col gap-1">
+                                            {inlineEditingId === entry.id ? (
+                                                <Input
+                                                    value={tempDescription}
+                                                    onChange={(e) => setTempDescription(e.target.value)}
+                                                    onBlur={saveInlineEdit}
+                                                    onKeyDown={handleInlineKeyDown}
+                                                    autoFocus
+                                                    className="h-7 text-sm px-1 -ml-1 border-transparent hover:border-input focus:border-input bg-transparent focus:bg-background"
+                                                />
+                                            ) : (
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <div
+                                                        className="text-sm text-muted-foreground truncate font-medium cursor-text hover:text-foreground transition-colors py-0.5"
+                                                        onClick={() => startInlineEdit(entry)}
+                                                        title="Click to edit"
+                                                    >
+                                                        {entry.description || "No description"}
+                                                    </div>
+                                                    {entry.tasks && entry.tasks.length > 0 && (
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {entry.tasks.slice(0, 1).map((t, i) => (
+                                                                <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/20 truncate max-w-[150px]" title={t.title}>
+                                                                    {t.title}
+                                                                </span>
+                                                            ))}
+                                                            {entry.tasks.length > 1 && (
+                                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground border border-border" title={entry.tasks.slice(1).map(t => t.title).join(', ')}>
+                                                                    +{entry.tasks.length - 1} more
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <div className="flex items-center gap-6 shrink-0">
@@ -197,23 +228,24 @@ export function EntryHistory({ entries }: EntryHistoryProps) {
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-muted-foreground hover:text-primary"
-                                                onClick={() => handleEditStart(entry)}
-                                            >
-                                                <Pencil className="h-3.5 w-3.5" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                                onClick={() => handleDelete(entry.id)}
-                                            >
-                                                <span className="text-lg leading-none mb-1">×</span>
-                                            </Button>
+                                        <div className="flex items-center gap-1">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                                                        <MoreVertical className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => handleEditStart(entry)}>
+                                                        <Pencil className="mr-2 h-4 w-4" />
+                                                        Edit
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleDelete(entry.id)} className="text-destructive focus:text-destructive">
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        Delete
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </div>
                                     </div>
                                 </div>
@@ -234,6 +266,7 @@ export function EntryHistory({ entries }: EntryHistoryProps) {
                 open={editDialogOpen}
                 onOpenChange={setEditDialogOpen}
                 onSave={handleDialogSave}
+                tasks={tasks}
             />
         </div>
     )

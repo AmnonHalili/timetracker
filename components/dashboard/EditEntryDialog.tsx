@@ -15,32 +15,43 @@ import { useState, useEffect } from "react"
 import { Loader2, Keyboard } from "lucide-react"
 import { format } from "date-fns"
 
+import { MultiSelect } from "@/components/ui/multi-select"
+
 interface TimeEntry {
     id: string
     startTime: Date
     endTime: Date | null
     description?: string | null
     isManual?: boolean
+    tasks?: { id: string; title: string }[]
+}
+
+interface Task {
+    id: string
+    title: string
 }
 
 interface EditEntryDialogProps {
     entry: TimeEntry | null
     open: boolean
     onOpenChange: (open: boolean) => void
-    onSave: (id: string, updates: { startTime?: Date; endTime?: Date; description?: string }) => Promise<void>
+    onSave: (id: string, updates: { startTime?: Date; endTime?: Date; description?: string; taskIds?: string[] }) => Promise<void>
+    tasks?: Task[]
 }
 
-export function EditEntryDialog({ entry, open, onOpenChange, onSave }: EditEntryDialogProps) {
+export function EditEntryDialog({ entry, open, onOpenChange, onSave, tasks = [] }: EditEntryDialogProps) {
     const [loading, setLoading] = useState(false)
     const [description, setDescription] = useState("")
     const [start, setStart] = useState("")
     const [end, setEnd] = useState("")
+    const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
 
     useEffect(() => {
         if (entry) {
             setDescription(entry.description || "")
             setStart(format(new Date(entry.startTime), "yyyy-MM-dd'T'HH:mm"))
             setEnd(entry.endTime ? format(new Date(entry.endTime), "yyyy-MM-dd'T'HH:mm") : "")
+            setSelectedTaskIds(entry.tasks?.map(t => t.id) || [])
         }
     }, [entry])
 
@@ -50,7 +61,10 @@ export function EditEntryDialog({ entry, open, onOpenChange, onSave }: EditEntry
         setLoading(true)
 
         try {
-            const updates: { startTime?: Date; endTime?: Date; description: string } = { description }
+            const updates: { startTime?: Date; endTime?: Date; description: string; taskIds: string[] } = {
+                description,
+                taskIds: selectedTaskIds
+            }
 
             // Only update times if changed
             const originalStart = new Date(entry.startTime).getTime()
@@ -73,10 +87,6 @@ export function EditEntryDialog({ entry, open, onOpenChange, onSave }: EditEntry
                     setLoading(false)
                     return
                 }
-            } else if (entry.endTime) {
-                // If end time was cleared (not supported for completed entries for now, usually editing implies modifying existing range)
-                // Let's assume user cannot clear end time for a completed entry via this dialog
-                // Or maybe they can? For now, ignore empty end if it was running.
             }
 
             await onSave(entry.id, updates)
@@ -88,6 +98,8 @@ export function EditEntryDialog({ entry, open, onOpenChange, onSave }: EditEntry
             setLoading(false)
         }
     }
+
+    const taskOptions = tasks.map(t => ({ label: t.title, value: t.id }))
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -111,6 +123,19 @@ export function EditEntryDialog({ entry, open, onOpenChange, onSave }: EditEntry
                                 className="col-span-3"
                             />
                         </div>
+
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right">Tasks</Label>
+                            <div className="col-span-3">
+                                <MultiSelect
+                                    options={taskOptions}
+                                    selected={selectedTaskIds}
+                                    onChange={setSelectedTaskIds}
+                                    placeholder="Select tasks..."
+                                />
+                            </div>
+                        </div>
+
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="start" className="text-right">
                                 Start
@@ -134,8 +159,7 @@ export function EditEntryDialog({ entry, open, onOpenChange, onSave }: EditEntry
                                 value={end}
                                 onChange={(e) => setEnd(e.target.value)}
                                 className="col-span-3"
-                                disabled={!entry?.endTime} // Disable end time edit if it's currently running (or allow closing it?)
-                            // Let's allow editing end time only if it exists. If running, use the 'Stop' button in dashboard.
+                                disabled={!entry?.endTime}
                             />
                             {!entry?.endTime && <p className="col-start-2 col-span-3 text-[10px] text-muted-foreground mt-1">Use Stop button to end timer</p>}
                         </div>
