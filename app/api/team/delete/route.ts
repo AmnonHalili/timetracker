@@ -13,7 +13,7 @@ export async function DELETE(req: Request) {
     // Verify admin or manager role
     const currentUser = await prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { role: true, projectId: true }
+        select: { role: true, projectId: true, id: true }
     })
 
     if (!currentUser || !["ADMIN", "MANAGER"].includes(currentUser.role)) {
@@ -21,7 +21,7 @@ export async function DELETE(req: Request) {
     }
 
     try {
-        const { userId } = await req.json()
+        const { userId, newAdminId } = await req.json()
 
         if (!userId) {
             return NextResponse.json({ message: "User ID is required" }, { status: 400 })
@@ -30,14 +30,14 @@ export async function DELETE(req: Request) {
         // Verify the user belongs to the same project
         const targetUser = await prisma.user.findUnique({
             where: { id: userId },
-            select: { projectId: true, role: true }
+            select: { projectId: true, role: true, id: true }
         })
 
         if (targetUser?.projectId !== currentUser.projectId) {
             return NextResponse.json({ message: "Forbidden: User not in your project" }, { status: 403 })
         }
 
-        // Prevent deleting the last admin
+        // Check if deleting the last admin
         if (targetUser?.role === "ADMIN") {
             const adminCount = await prisma.user.count({
                 where: {
@@ -47,13 +47,48 @@ export async function DELETE(req: Request) {
             })
 
             if (adminCount <= 1) {
+                // If deleting self and no new admin provided, require admin transfer
+                if (userId === session.user.id && !newAdminId) {
+                    return NextResponse.json({
+                        requiresAdminTransfer: true,
+                        message: "Please select a new admin before deleting your account."
+                    }, { status: 400 })
+                }
+
+                // If new admin provided, transfer and delete in transaction
+                if (newAdminId) {
+                    // Verify new admin is in same project
+                    const newAdmin = await prisma.user.findUnique({
+                        where: { id: newAdminId },
+                        select: { projectId: true }
+                    })
+
+                    if (newAdmin?.projectId !== currentUser.projectId) {
+                        return NextResponse.json({ message: "Invalid new admin selection" }, { status: 400 })
+                    }
+
+                    // Perform transfer and delete in transaction
+                    await prisma.$transaction([
+                        prisma.user.update({
+                            where: { id: newAdminId },
+                            data: { role: "ADMIN" }
+                        }),
+                        prisma.user.delete({
+                            where: { id: userId }
+                        })
+                    ])
+
+                    return NextResponse.json({ message: "Admin transferred and user deleted successfully" })
+                }
+
+                // Prevent deletion without transfer
                 return NextResponse.json({
-                    message: "Cannot delete: This is the only admin in the project. At least one admin must exist."
+                    message: "Cannot delete: This is the only admin in the project."
                 }, { status: 400 })
             }
         }
 
-        // Delete the user (cascade will delete related data)
+        // Delete the user (normal flow)
         await prisma.user.delete({
             where: { id: userId }
         })

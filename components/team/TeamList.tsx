@@ -341,23 +341,58 @@ export function TeamList({ users }: TeamListProps) {
                     <DialogHeader>
                         <DialogTitle>Delete User</DialogTitle>
                         <DialogDescription>
-                            Are you sure you want to delete <strong>{deleteDialogUser?.name}</strong>? This action cannot be undone.
+                            {showTransferAdmin ? (
+                                <>Select a new admin before deleting <strong>{deleteDialogUser?.name}</strong></>
+                            ) : (
+                                <>Are you sure you want to delete <strong>{deleteDialogUser?.name}</strong>? This action cannot be undone.</>
+                            )}
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4 mt-4">
-                        <p className="text-sm text-destructive">
-                            ⚠️ All time entries and data associated with this user will be permanently deleted.
-                        </p>
-                    </div>
+                    {showTransferAdmin ? (
+                        <div className="space-y-4 pt-4">
+                            <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
+                                <p className="text-sm text-amber-800">
+                                    ⚠️ You are the only admin. Please select a new admin before proceeding.
+                                </p>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="newAdmin">Transfer Admin To</Label>
+                                <Select value={newAdminId} onValueChange={setNewAdminId}>
+                                    <SelectTrigger id="newAdmin">
+                                        <SelectValue placeholder="Select user" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {users
+                                            .filter(u => u.id !== deleteDialogUser?.id)
+                                            .map(u => (
+                                                <SelectItem key={u.id} value={u.id}>
+                                                    {u.name} ({u.email})
+                                                </SelectItem>
+                                            ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4 mt-4">
+                            <p className="text-sm text-destructive">
+                                ⚠️ All time entries and data associated with this user will be permanently deleted.
+                            </p>
+                        </div>
+                    )}
 
                     <DialogFooter>
                         <Button variant="outline" onClick={closeDeleteDialog} disabled={deleting}>
                             Cancel
                         </Button>
-                        <Button variant="destructive" onClick={deleteUser} disabled={deleting}>
+                        <Button
+                            variant="destructive"
+                            onClick={deleteUser}
+                            disabled={deleting || (showTransferAdmin && !newAdminId)}
+                        >
                             {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Delete User
+                            {showTransferAdmin ? "Transfer & Delete" : "Delete User"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
