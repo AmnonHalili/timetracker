@@ -64,7 +64,9 @@ function RegisterForm() {
                 setSuccess(true)
             }
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : "An error occurred during registration")
+            const errorMessage = err instanceof Error ? err.message : "An error occurred"
+            console.error("Client Error:", errorMessage)
+            setError(errorMessage)
         } finally {
             setLoading(false)
         }

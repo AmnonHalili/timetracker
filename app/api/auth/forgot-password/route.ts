@@ -31,14 +31,30 @@ export async function POST(req: Request) {
 
         const transporter = nodemailer.createTransport({
             service: "gmail",
+            // explicit host/port settings for clarity
+            host: "smtp.gmail.com",
+            port: 465,
+            secure: true, // true for 465, false for other ports
             auth: {
                 user: process.env.GMAIL_USER,
                 pass: process.env.GMAIL_PASS,
             },
         })
 
-        console.log("Attempting to send email to:", email)
-        console.log("Using Gmail User:", process.env.GMAIL_USER)
+        console.log("----------------------------------------")
+        console.log("Forgot Password Request Received")
+        console.log("Email:", email)
+        console.log("SMTP Config - User:", process.env.GMAIL_USER ? "Defined" : "Undefined")
+        console.log("SMTP Config - Pass:", process.env.GMAIL_PASS ? "Defined" : "Undefined")
+        console.log("----------------------------------------")
+
+        try {
+            await transporter.verify()
+            console.log("SMTP Connection Verified")
+        } catch (verifyError) {
+            console.error("SMTP Verify Error:", verifyError)
+            return NextResponse.json({ message: "Failed to connect to email server" }, { status: 500 })
+        }
 
         await transporter.sendMail({
             from: process.env.GMAIL_USER,
