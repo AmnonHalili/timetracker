@@ -174,10 +174,27 @@ function SecurityForm() {
     )
 }
 
-function PreferencesForm({ user }: { user: { dailyTarget: number } }) {
+function PreferencesForm({ user }: { user: { dailyTarget: number; workDays: number[] } }) {
     const [loading, setLoading] = useState(false)
     const [target, setTarget] = useState(user.dailyTarget.toString())
+    const [selectedDays, setSelectedDays] = useState<number[]>(user.workDays || [])
     const router = useRouter()
+
+    const daysOfWeek = [
+        { value: 0, label: 'Sunday' },
+        { value: 1, label: 'Monday' },
+        { value: 2, label: 'Tuesday' },
+        { value: 3, label: 'Wednesday' },
+        { value: 4, label: 'Thursday' },
+        { value: 5, label: 'Friday' },
+        { value: 6, label: 'Saturday' },
+    ]
+
+    const toggleDay = (day: number) => {
+        setSelectedDays(prev =>
+            prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day].sort((a, b) => a - b)
+        )
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -186,7 +203,10 @@ function PreferencesForm({ user }: { user: { dailyTarget: number } }) {
             const res = await fetch("/api/user/preferences", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ dailyTarget: parseFloat(target) }),
+                body: JSON.stringify({
+                    dailyTarget: parseFloat(target),
+                    workDays: selectedDays
+                }),
             })
             if (!res.ok) throw new Error("Failed to update")
             router.refresh()
@@ -202,9 +222,31 @@ function PreferencesForm({ user }: { user: { dailyTarget: number } }) {
         <Card>
             <CardHeader>
                 <CardTitle>Work Preferences</CardTitle>
-                <CardDescription>Set your daily work goals.</CardDescription>
+                <CardDescription>Set your daily work goals and schedule.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
+                <div className="space-y-3">
+                    <Label>Work Days</Label>
+                    <p className="text-xs text-muted-foreground">
+                        Select the days you typically work.
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {daysOfWeek.map(day => (
+                            <button
+                                key={day.value}
+                                type="button"
+                                onClick={() => toggleDay(day.value)}
+                                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${selectedDays.includes(day.value)
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-muted hover:bg-muted/80 text-muted-foreground'
+                                    }`}
+                            >
+                                {day.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
                 <div className="space-y-1">
                     <Label htmlFor="target">Daily Target (Hours)</Label>
                     <Input

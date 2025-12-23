@@ -28,6 +28,17 @@ export default async function TeamPage() {
 
     const teamMembers = await prisma.user.findMany({
         where: { projectId: currentUser.projectId },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            status: true,
+            image: true,
+            dailyTarget: true,
+            workDays: true,
+            createdAt: true,
+        },
         orderBy: { createdAt: "asc" }
     })
 

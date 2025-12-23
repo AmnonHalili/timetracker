@@ -45,7 +45,9 @@ export async function POST(req: Request) {
                 password: hashedPassword,
                 role: newRole,
                 status: "ACTIVE", // Auto-activate team members added by admin
-                projectId: currentUser.projectId
+                projectId: currentUser.projectId,
+                workDays: [0, 1, 2, 3, 4], // Sunday to Thursday
+                dailyTarget: 8.5,
             }
         })
 

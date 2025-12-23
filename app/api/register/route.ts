@@ -53,6 +53,8 @@ export async function POST(req: Request) {
                 role: userRole as Role,
                 status: userStatus as Status,
                 projectId,
+                workDays: [0, 1, 2, 3, 4], // Sunday to Thursday
+                dailyTarget: 8.5,
             },
         })
 
