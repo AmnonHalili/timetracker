@@ -19,14 +19,14 @@ export function Sidebar() {
             active: pathname === "/dashboard",
         },
         {
-            href: "/calendar",
-            label: "Calendar",
-            active: pathname === "/calendar",
-        },
-        {
             href: "/tasks",
             label: "Tasks",
             active: pathname === "/tasks",
+        },
+        {
+            href: "/calendar",
+            label: "Calendar",
+            active: pathname === "/calendar",
         },
         {
             href: "/reports",

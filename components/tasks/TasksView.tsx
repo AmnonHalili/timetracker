@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import { format, isPast, isToday } from "date-fns"
 
 // Ensure interface matches Schema
@@ -40,11 +41,12 @@ interface TasksViewProps {
 
 export function TasksView({ initialTasks, users, isAdmin }: TasksViewProps) {
     const router = useRouter()
+    const [tasks, setTasks] = useState(initialTasks)
     const [filterUserId, setFilterUserId] = useState<string>("all")
     const [loadingId, setLoadingId] = useState<string | null>(null)
 
     // Filter tasks
-    const filteredTasks = initialTasks.filter(task => {
+    const filteredTasks = tasks.filter(task => {
         if (filterUserId === "all") return true
         if (task.assignees && task.assignees.length > 0) {
             return task.assignees.some((a) => a.id === filterUserId)
@@ -53,13 +55,40 @@ export function TasksView({ initialTasks, users, isAdmin }: TasksViewProps) {
     })
 
     const handleStatusChange = async (id: string, newStatus: string) => {
-        setLoadingId(id)
-        await fetch("/api/tasks", {
-            method: "PATCH",
-            body: JSON.stringify({ id, status: newStatus }),
-        })
-        router.refresh()
-        setLoadingId(null)
+        // Optimistic update
+        const previousTasks = tasks
+        setTasks(tasks.map(t => t.id === id ? { ...t, status: newStatus } : t))
+
+        try {
+            await fetch("/api/tasks", {
+                method: "PATCH",
+                body: JSON.stringify({ id, status: newStatus }),
+            })
+            router.refresh()
+        } catch (error) {
+            // Revert on error
+            setTasks(previousTasks)
+            console.error("Failed to update task:", error)
+        }
+    }
+
+    const handleCheckboxChange = async (id: string, currentStatus: string, checked: boolean) => {
+        // Optimistic update
+        const newStatus = checked ? 'DONE' : (currentStatus === 'DONE' ? 'TODO' : currentStatus)
+        const previousTasks = tasks
+        setTasks(tasks.map(t => t.id === id ? { ...t, status: newStatus } : t))
+
+        try {
+            await fetch("/api/tasks", {
+                method: "PATCH",
+                body: JSON.stringify({ id, status: newStatus }),
+            })
+            router.refresh()
+        } catch (error) {
+            // Revert on error
+            setTasks(previousTasks)
+            console.error("Failed to update task:", error)
+        }
     }
 
     const handleDelete = async (id: string) => {
@@ -107,53 +136,61 @@ export function TasksView({ initialTasks, users, isAdmin }: TasksViewProps) {
                     ) : (
                         filteredTasks.map((task) => (
                             <div key={task.id} className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-4 last:border-0 last:pb-0 gap-4">
-                                <div className="space-y-1 flex-1">
-                                    <div className="flex items-center gap-2">
-                                        <Badge className={`text-[10px] h-5 ${getPriorityColor(task.priority)}`}>
-                                            {task.priority}
-                                        </Badge>
-                                        <div className="flex -space-x-2 overflow-hidden ml-2">
-                                            {task.assignees?.map((assignee) => (
-                                                <div
-                                                    key={assignee.id}
-                                                    className="inline-block h-6 w-6 rounded-full ring-2 ring-background bg-muted flex items-center justify-center text-[10px] font-medium"
-                                                    title={assignee.name || undefined}
-                                                >
-                                                    {assignee.name ? assignee.name.substring(0, 2).toUpperCase() : '??'}
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <span className={`text-sm font-medium ml-2 ${task.status === 'DONE' ? 'line-through text-muted-foreground' : ''}`}>
-                                            {task.title}
-                                        </span>
-                                    </div>
-
-                                    <div className="flex items-center gap-4 text-xs text-muted-foreground pl-1">
-                                        {task.deadline && (
-                                            <span className={`flex items-center gap-1 ${isPast(new Date(task.deadline)) && !isToday(new Date(task.deadline)) && task.status !== 'DONE' ? 'text-red-500 font-bold' : ''}`}>
-                                                <Calendar className="h-3 w-3" />
-                                                {format(new Date(task.deadline), 'dd/MM/yyyy')}
+                                <div className="flex items-start gap-3 flex-1">
+                                    <Checkbox
+                                        checked={task.status === 'DONE'}
+                                        onCheckedChange={(checked) => handleCheckboxChange(task.id, task.status, checked as boolean)}
+                                        disabled={loadingId === task.id}
+                                        className="mt-1"
+                                    />
+                                    <div className="space-y-1 flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <Badge className={`text-[10px] h-5 ${getPriorityColor(task.priority)}`}>
+                                                {task.priority}
+                                            </Badge>
+                                            <div className="flex -space-x-2 overflow-hidden ml-2">
+                                                {task.assignees?.map((assignee) => (
+                                                    <div
+                                                        key={assignee.id}
+                                                        className="inline-block h-6 w-6 rounded-full ring-2 ring-background bg-muted flex items-center justify-center text-[10px] font-medium"
+                                                        title={assignee.name || undefined}
+                                                    >
+                                                        {assignee.name ? assignee.name.substring(0, 2).toUpperCase() : '??'}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <span className={`text-sm font-medium ml-2 ${task.status === 'DONE' ? 'line-through text-muted-foreground' : ''}`}>
+                                                {task.title}
                                             </span>
-                                        )}
+                                        </div>
+
+                                        <div className="flex items-center gap-4 text-xs text-muted-foreground pl-1">
+                                            {task.deadline && (
+                                                <span className={`flex items-center gap-1 ${isPast(new Date(task.deadline)) && !isToday(new Date(task.deadline)) && task.status !== 'DONE' ? 'text-red-500 font-bold' : ''}`}>
+                                                    <Calendar className="h-3 w-3" />
+                                                    {format(new Date(task.deadline), 'dd/MM/yyyy')}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
 
                                 <div className="flex items-center gap-2">
-                                    <Select
-                                        value={task.status}
-                                        onValueChange={(val) => handleStatusChange(task.id, val)}
-                                        disabled={loadingId === task.id}
-                                    >
-                                        <SelectTrigger className="w-[130px] h-8 text-xs">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="TODO">To Do</SelectItem>
-                                            <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                                            <SelectItem value="BLOCKED">Blocked</SelectItem>
-                                            <SelectItem value="DONE">Done</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                    {task.status !== 'DONE' && (
+                                        <Select
+                                            value={task.status}
+                                            onValueChange={(val) => handleStatusChange(task.id, val)}
+                                            disabled={loadingId === task.id}
+                                        >
+                                            <SelectTrigger className="w-[130px] h-8 text-xs">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="TODO">To Do</SelectItem>
+                                                <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    )}
 
                                     {isAdmin && (
                                         <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDelete(task.id)}>
