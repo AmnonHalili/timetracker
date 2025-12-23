@@ -62,7 +62,10 @@ export function MonthGrid({ date, data }: MonthGridProps) {
                     const dailyData = data.dailyReports.find(r => isSameDay(new Date(r.date), day))
 
                     // Find tasks due this day
-                    const daysTasks = data.tasks.filter(t => t.deadline && isSameDay(new Date(t.deadline), day))
+                    const priorityOrder = { 'URGENT': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3 };
+                    const daysTasks = data.tasks
+                        .filter(t => t.deadline && isSameDay(new Date(t.deadline), day))
+                        .sort((a, b) => (priorityOrder[a.priority as keyof typeof priorityOrder] ?? 2) - (priorityOrder[b.priority as keyof typeof priorityOrder] ?? 2))
 
                     const hoursWorked = dailyData?.totalDurationHours || 0
                     const isTargetMet = dailyData?.status === 'MET'

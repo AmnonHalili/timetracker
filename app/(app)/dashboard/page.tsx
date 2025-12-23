@@ -121,7 +121,7 @@ export default async function DashboardPage() {
 
                     {/* Team Status (Admin Only) */}
                     {user.role === "ADMIN" && (
-                        <div className="pt-11">
+                        <div className="pt-12">
                             <TeamStatusWidget teamStatus={teamStatus} />
                         </div>
                     )}

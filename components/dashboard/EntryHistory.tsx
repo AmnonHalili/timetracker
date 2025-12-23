@@ -165,7 +165,7 @@ export function EntryHistory({ entries, tasks }: EntryHistoryProps) {
         <div className="space-y-8">
             {groupsList.map(([groupName, groupEntries]) => (
                 <div key={groupName} className="space-y-4">
-                    <h3 className="text-sm font-semibold text-muted-foreground px-1 sticky top-0 bg-background/95 backdrop-blur z-10 py-2 border-b w-fit">
+                    <h3 className="text-lg font-bold text-black px-1 sticky top-0 bg-background/95 backdrop-blur z-10 py-2 w-fit">
                         {groupName}
                     </h3>
 
@@ -222,7 +222,7 @@ export function EntryHistory({ entries, tasks }: EntryHistoryProps) {
 
                                     <div className="flex items-center gap-6 shrink-0">
                                         <div className="text-right">
-                                            <div className="text-[10px] uppercase text-muted-foreground font-semibold tracking-wider">Duration</div>
+                                            <div className="text-[10px] uppercase text-muted-foreground font-semibold tracking-wider">Net Work</div>
                                             <div className="font-mono font-bold text-primary">
                                                 {getDuration(entry.startTime, entry.endTime, entry.breaks)}
                                             </div>
