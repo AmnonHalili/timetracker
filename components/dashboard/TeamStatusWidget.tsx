@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 interface TeamMemberStatus {
@@ -16,8 +16,6 @@ interface TeamStatusWidgetProps {
 }
 
 export function TeamStatusWidget({ teamStatus }: TeamStatusWidgetProps) {
-    const workingCount = teamStatus.filter(m => m.status === 'WORKING').length
-    const breakCount = teamStatus.filter(m => m.status === 'BREAK').length
 
 
     return (
