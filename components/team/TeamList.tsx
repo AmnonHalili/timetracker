@@ -139,6 +139,7 @@ export function TeamList({ users }: TeamListProps) {
             closeDeleteDialog()
         } catch (error) {
             alert(error instanceof Error ? error.message : "Error deleting user")
+        } finally {
             setDeleting(false)
         }
     }
