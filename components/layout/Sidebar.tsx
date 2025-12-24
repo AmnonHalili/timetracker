@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
 import { signOut } from "next-auth/react"
-import { NotificationBell } from "./NotificationBell"
 
 export function Sidebar() {
     const pathname = usePathname()
@@ -48,11 +47,10 @@ export function Sidebar() {
 
     return (
         <div className="flex flex-col h-screen w-64 border-r bg-background">
-            <div className="p-6 border-b flex items-center justify-between">
+            <div className="p-6 border-b flex items-center justify-center">
                 <Link href="/dashboard" className="flex items-center gap-2">
                     <Image src="/logo.png?v=4" alt="Collabo Logo" width={200} height={80} className="h-36 w-auto" priority />
                 </Link>
-                <NotificationBell />
             </div>
 
             <div className="flex-1 overflow-y-auto py-6">
