@@ -53,7 +53,7 @@ export default async function TeamPage() {
                 {privateUser && (
                     <div className="space-y-4">
                         <h2 className="text-xl font-semibold">Your Profile</h2>
-                        <TeamList users={[privateUser]} currentUserId={session.user.id} />
+                        <TeamList users={[privateUser]} currentUserId={session.user.id} currentUserRole={privateUser.role} />
                     </div>
                 )}
             </div>
@@ -78,7 +78,13 @@ export default async function TeamPage() {
         orderBy: { createdAt: "asc" }
     })
 
-    const teamMembers = filterVisibleUsers(allTeamMembers, currentUser) // Filter access based on hierarchy
+    const teamMembers = filterVisibleUsers(allTeamMembers, currentUser).sort((a, b) => {
+        const roleOrder: Record<string, number> = { 'ADMIN': 0, 'MANAGER': 1, 'EMPLOYEE': 2 }
+        const roleDiff = (roleOrder[a.role] ?? 99) - (roleOrder[b.role] ?? 99)
+
+        if (roleDiff !== 0) return roleDiff
+        return a.name.localeCompare(b.name)
+    })
 
 
     const isManager = ["ADMIN", "MANAGER"].includes(currentUser.role)
@@ -105,7 +111,7 @@ export default async function TeamPage() {
                 </div>
             </div>
 
-            <TeamList users={teamMembers} currentUserId={session.user.id} />
+            <TeamList users={teamMembers} currentUserId={session.user.id} currentUserRole={currentUser.role} />
         </div>
     )
 }

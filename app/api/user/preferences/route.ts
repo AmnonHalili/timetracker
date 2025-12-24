@@ -11,6 +11,19 @@ export async function PATCH(req: Request) {
     }
 
     try {
+        // Fetch current user details for permission check
+        const currentUser = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { role: true, projectId: true }
+        })
+
+        if (!currentUser) return NextResponse.json({ message: "User not found" }, { status: 404 })
+
+        // Employees in a project cannot update their own work settings
+        if (currentUser.role === 'EMPLOYEE' && currentUser.projectId) {
+            return NextResponse.json({ message: "Permission denied. Contact your admin." }, { status: 403 })
+        }
+
         const { dailyTarget, workDays, workMode } = await req.json()
 
         if (dailyTarget !== null && (typeof dailyTarget !== 'number' || dailyTarget < 0)) {

@@ -23,6 +23,8 @@ export default async function SettingsPage() {
             dailyTarget: true,
             workDays: true,
             workMode: true,
+            role: true,
+            projectId: true,
         }
     })
 
@@ -51,7 +53,9 @@ export default async function SettingsPage() {
                     <PreferencesForm user={{
                         dailyTarget: user.dailyTarget,
                         workDays: user.workDays,
-                        workMode: user.workMode
+                        workMode: user.workMode,
+                        role: user.role,
+                        projectId: user.projectId
                     }} />
                 </TabsContent>
 

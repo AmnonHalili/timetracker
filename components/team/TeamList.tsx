@@ -38,7 +38,7 @@ interface User {
     email: string
     role: string
     status: string
-    dailyTarget: number
+    dailyTarget: number | null
     workDays: number[]
     createdAt: Date
     jobTitle: string | null
@@ -47,9 +47,10 @@ interface User {
 interface TeamListProps {
     users: User[]
     currentUserId: string
+    currentUserRole: string
 }
 
-export function TeamList({ users, currentUserId }: TeamListProps) {
+export function TeamList({ users, currentUserId, currentUserRole }: TeamListProps) {
     const router = useRouter()
     const [selectedUser, setSelectedUser] = useState<User | null>(null)
     const [editTarget, setEditTarget] = useState<string>("")
@@ -78,8 +79,11 @@ export function TeamList({ users, currentUserId }: TeamListProps) {
     ]
 
     const openDialog = (user: User) => {
+        // Employees cannot edit settings
+        if (currentUserRole === 'EMPLOYEE') return
+
         setSelectedUser(user)
-        setEditTarget(user.dailyTarget.toString())
+        setEditTarget(user.dailyTarget?.toString() || "")
         setEditDays(user.workDays || [])
     }
 
@@ -179,7 +183,7 @@ export function TeamList({ users, currentUserId }: TeamListProps) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     userId: selectedUser.id,
-                    dailyTarget: parseFloat(editTarget),
+                    dailyTarget: editTarget === "" ? null : parseFloat(editTarget),
                     workDays: editDays
                 }),
             })
@@ -223,7 +227,11 @@ export function TeamList({ users, currentUserId }: TeamListProps) {
                     </TableHeader>
                     <TableBody>
                         {users.map((user) => (
-                            <TableRow key={user.id} className="cursor-pointer hover:bg-muted/50" onClick={() => openDialog(user)}>
+                            <TableRow
+                                key={user.id}
+                                className={`${currentUserRole !== 'EMPLOYEE' ? 'cursor-pointer hover:bg-muted/50' : ''}`}
+                                onClick={() => openDialog(user)}
+                            >
                                 <TableCell className="font-bold">
                                     {user.name} {user.id === currentUserId && <span className="text-muted-foreground font-normal">(you)</span>}
                                 </TableCell>

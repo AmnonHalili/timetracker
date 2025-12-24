@@ -174,12 +174,14 @@ function SecurityForm() {
     )
 }
 
-function PreferencesForm({ user }: { user: { dailyTarget: number | null; workDays: number[]; workMode: 'OUTPUT_BASED' | 'TIME_BASED' } }) {
+function PreferencesForm({ user }: { user: { dailyTarget: number | null; workDays: number[]; workMode: 'OUTPUT_BASED' | 'TIME_BASED'; role: string; projectId: string | null } }) {
     const [loading, setLoading] = useState(false)
     const [target, setTarget] = useState(user.dailyTarget?.toString() || "")
     const [selectedDays, setSelectedDays] = useState<number[]>(user.workDays || [])
     const [workMode, setWorkMode] = useState<'OUTPUT_BASED' | 'TIME_BASED'>(user.workMode || 'TIME_BASED')
     const router = useRouter()
+
+    const canEdit = !(user.role === 'EMPLOYEE' && user.projectId !== null)
 
     const daysOfWeek = [
         { value: 0, label: 'Sunday' },
@@ -192,6 +194,7 @@ function PreferencesForm({ user }: { user: { dailyTarget: number | null; workDay
     ]
 
     const toggleDay = (day: number) => {
+        if (!canEdit) return
         setSelectedDays(prev =>
             prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day].sort((a, b) => a - b)
         )
@@ -224,76 +227,90 @@ function PreferencesForm({ user }: { user: { dailyTarget: number | null; workDay
         <Card>
             <CardHeader>
                 <CardTitle>Work Preferences</CardTitle>
-                <CardDescription>Set your daily work goals and schedule.</CardDescription>
+                <CardDescription>
+                    {canEdit
+                        ? "Set your daily work goals and schedule."
+                        : "These settings are managed by your team admin."}
+                </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                <div className="space-y-3">
-                    <Label>Work Days</Label>
-                    <p className="text-xs text-muted-foreground">
-                        Select the days you typically work.
-                    </p>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {daysOfWeek.map(day => (
-                            <button
-                                key={day.value}
-                                type="button"
-                                onClick={() => toggleDay(day.value)}
-                                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${selectedDays.includes(day.value)
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-muted hover:bg-muted/80 text-muted-foreground'
-                                    }`}
-                            >
-                                {day.label}
-                            </button>
-                        ))}
+                {!canEdit && (
+                    <div className="bg-muted/50 p-4 rounded-lg border text-sm text-muted-foreground">
+                        Your work schedule and targets are determined by your organization. Please contact your manager to request changes.
                     </div>
-                </div>
-
-                <div className="space-y-1">
-                    <Label htmlFor="target">Daily Target (Hours)</Label>
-                    <Input
-                        id="target"
-                        type="number"
-                        step="0.5"
-                        value={target}
-                        onChange={e => setTarget(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                        This is used to calculate your &quot;Remaining Hours&quot; for the day. Leave empty if you don't have a specific target.
-                    </p>
-                </div>
-
-                <div className="space-y-3 pt-4 border-t">
-                    <Label>Work Calculation Mode</Label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div
-                            onClick={() => setWorkMode('TIME_BASED')}
-                            className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${workMode === 'TIME_BASED' ? 'border-primary bg-primary/5' : 'border-muted hover:border-muted-foreground/50'}`}
-                        >
-                            <div className="font-semibold mb-1">Time Based (Attendance)</div>
-                            <div className="text-xs text-muted-foreground">
-                                Counts total time at work. Breaks are included in the total duration.
-                            </div>
+                )}
+                <div className={!canEdit ? "opacity-60 pointer-events-none" : ""}>
+                    <div className="space-y-3">
+                        <Label>Work Days</Label>
+                        <p className="text-xs text-muted-foreground">
+                            Select the days you typically work.
+                        </p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            {daysOfWeek.map(day => (
+                                <button
+                                    key={day.value}
+                                    type="button"
+                                    onClick={() => toggleDay(day.value)}
+                                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${selectedDays.includes(day.value)
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-muted hover:bg-muted/80 text-muted-foreground'
+                                        }`}
+                                >
+                                    {day.label}
+                                </button>
+                            ))}
                         </div>
+                    </div>
 
-                        <div
-                            onClick={() => setWorkMode('OUTPUT_BASED')}
-                            className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${workMode === 'OUTPUT_BASED' ? 'border-primary bg-primary/5' : 'border-muted hover:border-muted-foreground/50'}`}
-                        >
-                            <div className="font-semibold mb-1">Output Based (Net)</div>
-                            <div className="text-xs text-muted-foreground">
-                                Only counts actual working time. Breaks are subtracted from the total duration.
+                    <div className="space-y-1 mt-6">
+                        <Label htmlFor="target">Daily Target (Hours)</Label>
+                        <Input
+                            id="target"
+                            type="number"
+                            step="0.5"
+                            value={target}
+                            onChange={e => setTarget(e.target.value)}
+                            disabled={!canEdit}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            This is used to calculate your &quot;Remaining Hours&quot; for the day. Leave empty if you don't have a specific target.
+                        </p>
+                    </div>
+
+                    <div className="space-y-3 pt-4 border-t mt-6">
+                        <Label>Work Calculation Mode</Label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div
+                                onClick={() => canEdit && setWorkMode('TIME_BASED')}
+                                className={`p-4 rounded-lg border-2 transition-all ${workMode === 'TIME_BASED' ? 'border-primary bg-primary/5' : 'border-muted'} ${canEdit ? 'cursor-pointer hover:border-muted-foreground/50' : ''}`}
+                            >
+                                <div className="font-semibold mb-1">Time Based (Attendance)</div>
+                                <div className="text-xs text-muted-foreground">
+                                    Counts total time at work. Breaks are included in the total duration.
+                                </div>
+                            </div>
+
+                            <div
+                                onClick={() => canEdit && setWorkMode('OUTPUT_BASED')}
+                                className={`p-4 rounded-lg border-2 transition-all ${workMode === 'OUTPUT_BASED' ? 'border-primary bg-primary/5' : 'border-muted'} ${canEdit ? 'cursor-pointer hover:border-muted-foreground/50' : ''}`}
+                            >
+                                <div className="font-semibold mb-1">Output Based (Net)</div>
+                                <div className="text-xs text-muted-foreground">
+                                    Only counts actual working time. Breaks are subtracted from the total duration.
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </CardContent>
-            <CardFooter>
-                <Button onClick={handleSubmit} disabled={loading}>
-                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Save Preferences
-                </Button>
-            </CardFooter>
+            {canEdit && (
+                <CardFooter>
+                    <Button onClick={handleSubmit} disabled={loading}>
+                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save Preferences
+                    </Button>
+                </CardFooter>
+            )}
         </Card>
     )
 }
