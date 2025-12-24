@@ -33,6 +33,7 @@ export default async function DashboardPage() {
         name: string | null;
         email: string;
         role: "ADMIN" | "EMPLOYEE";
+        jobTitle: string | null;
         status: 'WORKING' | 'BREAK' | 'OFFLINE';
         lastActive?: Date;
     }> = []
@@ -50,6 +51,7 @@ export default async function DashboardPage() {
                 name: true,
                 email: true,
                 role: true,
+                jobTitle: true,
                 timeEntries: {
                     where: { endTime: null },
                     include: { breaks: { where: { endTime: null } } }
@@ -73,6 +75,7 @@ export default async function DashboardPage() {
                 name: u.name,
                 email: u.email,
                 role: u.role,
+                jobTitle: u.jobTitle,
                 status,
                 lastActive
             }
