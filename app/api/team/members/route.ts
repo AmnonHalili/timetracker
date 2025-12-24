@@ -18,6 +18,11 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: "Missing required fields" }, { status: 400 })
         }
 
+        // Only ADMIN can create ADMINs
+        if (role === "ADMIN" && session.user.role !== "ADMIN") {
+            return NextResponse.json({ message: "Only Admins can create other Admins" }, { status: 403 })
+        }
+
         const currentUser = await prisma.user.findUnique({
             where: { id: session.user.id },
             select: { projectId: true }
@@ -68,7 +73,7 @@ export async function POST(req: Request) {
             if (manager && manager.role === "EMPLOYEE") {
                 await prisma.user.update({
                     where: { id: managerId },
-                    data: { role: "MANAGER" }
+                    data: { role: "MANAGER" as any }
                 })
             }
         }

@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { UserSelector } from "@/components/reports/UserSelector"
 import { getReportData } from "@/lib/report-service"
 import { ExportButton } from "@/components/reports/ExportButton"
+import { filterVisibleUsers } from "@/lib/hierarchy-utils"
 
 export default async function ReportsPage({
     searchParams,
@@ -33,19 +34,22 @@ export default async function ReportsPage({
 
     if (!currentUser) redirect("/login")
 
-    // If Admin, fetch project users and handle targetUserId
-    if (currentUser.role === "ADMIN" && currentUser.projectId) {
-        // Fetch all active users in the project
-        projectUsers = await prisma.user.findMany({
+    // If Admin or Manager, fetch project users and handle targetUserId
+    if (["ADMIN", "MANAGER"].includes(currentUser.role) && currentUser.projectId) {
+        // Fetch all active users in the project (needed for hierarchy calculation)
+        const allProjectUsers = await prisma.user.findMany({
             where: {
                 projectId: currentUser.projectId,
                 status: "ACTIVE"
             },
-            select: { id: true, name: true, email: true },
+            select: { id: true, name: true, email: true, managerId: true },
             orderBy: { name: "asc" }
         })
 
-        // If userId param is present, verify it belongs to the project
+        // Filter based on hierarchy
+        projectUsers = filterVisibleUsers(allProjectUsers, { id: currentUser.id, role: currentUser.role })
+
+        // If userId param is present, verify it belongs to the visible scope
         if (searchParams.userId) {
             const requestedUser = projectUsers.find(u => u.id === searchParams.userId)
             if (requestedUser) {
@@ -73,7 +77,7 @@ export default async function ReportsPage({
                 <div className="flex flex-col gap-6">
                     {/* Controls Row */}
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        {currentUser.role === "ADMIN" && (
+                        {projectUsers.length > 1 && (
                             <div className="flex flex-col gap-2">
                                 <label className="text-sm font-medium text-muted-foreground">User</label>
                                 <UserSelector currentUserId={targetUserId} users={projectUsers} />

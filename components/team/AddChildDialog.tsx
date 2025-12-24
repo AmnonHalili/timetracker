@@ -211,18 +211,7 @@ export function AddChildDialog({
                                 required
                             />
                         </div>
-                        <div className="space-y-1">
-                            <Label htmlFor="newRole">Role</Label>
-                            <Select value={newRole} onValueChange={setNewRole}>
-                                <SelectTrigger id="newRole">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="EMPLOYEE">Employee</SelectItem>
-                                    <SelectItem value="MANAGER">Manager</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+
                         <div className="space-y-1">
                             <Label htmlFor="newJobTitle">Job Title</Label>
                             <Input

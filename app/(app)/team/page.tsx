@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { TeamList } from "@/components/team/TeamList"
 import { AddMemberDialog } from "@/components/team/AddMemberDialog"
+import { filterVisibleUsers } from "@/lib/hierarchy-utils"
 import { Button } from "@/components/ui/button"
 import { Network } from "lucide-react"
 import Link from "next/link"
@@ -17,7 +18,7 @@ export default async function TeamPage() {
 
     const currentUser = await prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { projectId: true, role: true, project: true }
+        select: { projectId: true, role: true, project: true, id: true }
     })
 
     if (!currentUser?.projectId) {
@@ -29,7 +30,7 @@ export default async function TeamPage() {
         )
     }
 
-    const teamMembers = await prisma.user.findMany({
+    const allTeamMembers = await prisma.user.findMany({
         where: { projectId: currentUser.projectId },
         select: {
             id: true,
@@ -41,9 +42,14 @@ export default async function TeamPage() {
             dailyTarget: true,
             workDays: true,
             createdAt: true,
+            jobTitle: true,
+            managerId: true, // Needed for hierarchy
         },
         orderBy: { createdAt: "asc" }
     })
+
+    const teamMembers = filterVisibleUsers(allTeamMembers, currentUser) // Filter access based on hierarchy
+
 
     const isManager = ["ADMIN", "MANAGER"].includes(currentUser.role)
 

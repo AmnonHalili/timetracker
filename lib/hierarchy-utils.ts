@@ -109,7 +109,10 @@ export function canManageUser(currentUser: User, targetUser: User): boolean {
  * @param currentUser - User requesting data
  * @returns Filtered array of users
  */
-export function filterVisibleUsers(users: User[], currentUser: User): User[] {
+export function filterVisibleUsers<T extends { id: string, managerId: string | null }>(
+    users: T[],
+    currentUser: { id: string, role: string }
+): T[] {
     if (currentUser.role === "ADMIN") {
         // ADMIN sees everyone
         return users
@@ -117,8 +120,23 @@ export function filterVisibleUsers(users: User[], currentUser: User): User[] {
 
     if (currentUser.role === "MANAGER") {
         // MANAGER sees themselves + all descendants
+        // We need the full list to calculate descendants, but getAllDescendants expects User[]
+        // We need to cast or make getAllDescendants generic too.
+        // Let's make getAllDescendants generic as well locally or cast.
+        // Actually simplest is to just extract IDs and filter.
+
+        const directReports = users.filter(u => u.managerId === currentUser.id)
         const visibleIds = new Set([currentUser.id])
-        getAllDescendants(currentUser.id, users).forEach(id => visibleIds.add(id))
+
+        // Simple recursive finder locally to avoid changing everything
+        const addDescendants = (parentId: string) => {
+            users.filter(u => u.managerId === parentId).forEach(child => {
+                visibleIds.add(child.id)
+                addDescendants(child.id)
+            })
+        }
+
+        addDescendants(currentUser.id)
         return users.filter(u => visibleIds.has(u.id))
     }
 

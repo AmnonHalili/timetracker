@@ -12,13 +12,46 @@ export async function GET() {
     return NextResponse.json({ message: "Use Server Actions or Page Data" })
 }
 
+import { getAllDescendants } from "@/lib/hierarchy-utils"
+
+// ... imports remain the same
+
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions)
     if (!session) return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
-    if (session.user.role !== "ADMIN") return NextResponse.json({ message: "Forbidden" }, { status: 403 })
+
+    // Allow ADMIN and MANAGER to create tasks
+    if (!["ADMIN", "MANAGER"].includes(session.user.role)) {
+        return NextResponse.json({ message: "Forbidden" }, { status: 403 })
+    }
 
     try {
         const { title, assignedToIds, priority, deadline, description } = await req.json()
+
+        // Validate permissions for MANAGER
+        if (session.user.role === "MANAGER") {
+            const currentUser = await prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: { id: true, projectId: true }
+            })
+
+            if (!currentUser?.projectId) return NextResponse.json({ message: "No project" }, { status: 400 })
+
+            // Get all project users to check hierarchy
+            const allUsers = await prisma.user.findMany({
+                where: { projectId: currentUser.projectId },
+                select: { id: true, managerId: true }
+            })
+
+            const descendants = getAllDescendants(currentUser.id, allUsers)
+            const allowedIds = new Set([currentUser.id, ...descendants])
+
+            // Check if all assigned users are in the allowed scope
+            const isAllowed = (assignedToIds as string[]).every(id => allowedIds.has(id))
+            if (!isAllowed) {
+                return NextResponse.json({ message: "Cannot assign tasks to users outside your hierarchy" }, { status: 403 })
+            }
+        }
 
         const task = await prisma.task.create({
             data: {
@@ -36,11 +69,7 @@ export async function POST(req: Request) {
             }
         })
 
-        // Create notification for the assignees
-        // We do this in a loop or createMany if Notification supported it better, 
-        // but User relation makes createMany tricky for Notifications usually implies single user relation 
-        // actually Notification has userId.
-
+        // ... notification logic (kept simple or improved)
         const notificationsData = (assignedToIds as string[]).map(id => ({
             userId: id,
             title: "New Task Assigned",
@@ -48,10 +77,11 @@ export async function POST(req: Request) {
             type: "INFO" as const
         }))
 
-        // createMany is supported for simple models
-        await prisma.notification.createMany({
-            data: notificationsData
-        })
+        if (notificationsData.length > 0) {
+            await prisma.notification.createMany({
+                data: notificationsData
+            })
+        }
 
         return NextResponse.json(task)
     } catch {
@@ -66,64 +96,57 @@ export async function PATCH(req: Request) {
     try {
         const { id, status, isCompleted, priority, deadline } = await req.json()
 
-        // Handle legacy isCompleted toggle if sent
         let newStatus = status
         if (isCompleted !== undefined && !status) {
             newStatus = isCompleted ? "DONE" : "TODO"
         }
 
-        // The provided snippet for the where clause seems to be intended for a GET/find operation
-        // and is syntactically incorrect within the data object of an update.
-        // Assuming the intent was to add a condition to the `where` clause of the update,
-        // but without `currentUser` or `projectId` defined in this scope,
-        // and to maintain syntactic correctness, the provided snippet cannot be directly inserted
-        // as-is into the `data` object.
-        //
-        // If the intention was to restrict updates based on user roles/project,
-        // the `where` clause would need to be constructed dynamically before the update call,
-        // or additional checks would be needed.
-        //
-        // Given the instruction "Update where clause" and the provided snippet,
-        // and to avoid syntax errors, I will interpret this as an attempt to modify
-        // the `where` object. However, the provided code snippet itself is not a valid
-        // `where` clause for an update and contains conditional logic that doesn't fit
-        // directly into the `where` object.
-        //
-        // To make a faithful and syntactically correct change based on the provided snippet,
-        // which appears to be a misplaced `where` clause construction,
-        // I will place it as a comment to indicate where such logic might go,
-        // as directly inserting it would break the code.
-        //
-        // If the user intended to add a specific `where` condition to the `update` operation,
-        // please provide the exact `where` object structure.
+        // Get task to check permissions
+        const taskToCheck = await prisma.task.findUnique({
+            where: { id },
+            include: { assignees: { select: { id: true } } }
+        })
+
+        if (!taskToCheck) return NextResponse.json({ message: "Task not found" }, { status: 404 })
+
+        // Permission check
+        let hasPermission = false
+        if (session.user.role === "ADMIN") {
+            hasPermission = true
+        } else {
+            // Check if user is an assignee
+            if (taskToCheck.assignees.some(u => u.id === session.user.id)) {
+                hasPermission = true
+            }
+            // Check if user is a manager of any assignee
+            if (!hasPermission && session.user.role === "MANAGER") {
+                // Fetch hierarchy data
+                const currentUser = await prisma.user.findUnique({
+                    where: { id: session.user.id },
+                    select: { id: true, projectId: true }
+                })
+                if (currentUser?.projectId) {
+                    const allUsers = await prisma.user.findMany({
+                        where: { projectId: currentUser.projectId },
+                        select: { id: true, managerId: true }
+                    })
+                    const descendants = new Set(getAllDescendants(currentUser.id, allUsers))
+                    if (taskToCheck.assignees.some(u => descendants.has(u.id))) {
+                        hasPermission = true
+                    }
+                }
+            }
+        }
+
+        if (!hasPermission) {
+            return NextResponse.json({ message: "Forbidden" }, { status: 403 })
+        }
 
         const task = await prisma.task.update({
-            where: {
-                id,
-                // if (currentUser.role === "ADMIN" && currentUser.projectId) {
-                //     // Admin sees all tasks in the project
-                //     // We need tasks where at least one assignee is in the project
-                //     whereClause = {
-                //         assignees: {
-                //             some: {
-                //                 projectId: currentUser.projectId
-                //             }
-                //         }
-                //     }
-                // } else {
-                //     // Regular user sees only their tasks
-                //     whereClause = {
-                //         assignees: {
-                //             some: {
-                //                 id: session.user.id
-                //             }
-                //         }
-                //     }
-                // }
-            },
+            where: { id },
             data: {
                 status: newStatus,
-                isCompleted: newStatus === "DONE", // Keep synced for now
+                isCompleted: newStatus === "DONE",
                 priority,
                 deadline: deadline ? new Date(deadline) : undefined
             },
@@ -146,12 +169,47 @@ export async function PATCH(req: Request) {
 
 export async function DELETE(req: Request) {
     const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== "ADMIN") return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+    if (!session) return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+
+    // Admin can delete, Manager checks hierarchy
+    if (session.user.role !== "ADMIN" && session.user.role !== "MANAGER") {
+        return NextResponse.json({ message: "Forbidden" }, { status: 403 })
+    }
 
     const { searchParams } = new URL(req.url)
     const id = searchParams.get("id")
 
     if (!id) return NextResponse.json({ message: "Missing ID" }, { status: 400 })
+
+    if (session.user.role === "MANAGER") {
+        // Check if manager manages the task assignees
+        // Ideally, we should check if they manage ALL assignees or just one? 
+        // For now, if they manage at least one or created permissions... but simpler: 
+        // Only ADMIN delete for now to be safe, or check hierarchy completely. 
+        // User asked to "manage" permissions. 
+        // Let's implement full check: Manager can delete if ALL assignees are in their subtree (or task has no assignees but belongs to project?). 
+        // It's safer to leave DELETE to ADMIN for now or implement strict check. 
+        // Let's stick to ADMIN only for DELETE to avoid data loss accidents by managers, unless requested.
+        // Actually user said "missions and everything". 
+        // Let's allow MANAGER if permission check passes similar to PATCH but stricter (all assignees).
+
+        const task = await prisma.task.findUnique({ where: { id }, include: { assignees: true } })
+        if (!task) return NextResponse.json({ message: "Not found" }, { status: 404 })
+
+        const currentUser = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { id: true, projectId: true }
+        })
+        const allUsers = await prisma.user.findMany({
+            where: { projectId: currentUser?.projectId },
+            select: { id: true, managerId: true }
+        })
+
+        const descendants = new Set(getAllDescendants(currentUser!.id, allUsers))
+        const isManagerOfAll = task.assignees.every(u => descendants.has(u.id) || u.id === currentUser!.id)
+
+        if (!isManagerOfAll) return NextResponse.json({ message: "Forbidden: Task involves users outside your management" }, { status: 403 })
+    }
 
     await prisma.task.delete({ where: { id } })
     return NextResponse.json({ message: "Deleted" })

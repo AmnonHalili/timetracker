@@ -6,11 +6,12 @@ import { AddChildDialog } from "@/components/team/AddChildDialog"
 import { User } from "@prisma/client"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { useSession } from "next-auth/react"
 
 import { AddMemberDialog } from "@/components/team/AddMemberDialog"
 
 // Defined locally to match RecursiveNode props
-type TreeNode = User & { children: TreeNode[] }
+type TreeNode = User & { children: TreeNode[], managerId: string | null }
 
 export default function HierarchyPage() {
     const [users, setUsers] = useState<User[]>([])
@@ -59,16 +60,13 @@ export default function HierarchyPage() {
         })
 
         // Build relations
-        users.forEach(user => {
+        users.forEach((user: any) => {
             const node = userMap.get(user.id)!
             if (user.managerId && userMap.has(user.managerId)) {
                 userMap.get(user.managerId)!.children.push(node)
             } else {
-                // Determine root(s). Usually ADMIN is root.
-                // Or anyone without a manager is a root (top-level)
-                if (user.role === 'ADMIN' || !user.managerId) {
-                    rootNodes.push(node)
-                }
+                // If manager is not in the list (filtered out) or doesn't exist, this is a root node for the current view
+                rootNodes.push(node)
             }
         })
 

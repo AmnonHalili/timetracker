@@ -41,6 +41,7 @@ interface User {
     dailyTarget: number
     workDays: number[]
     createdAt: Date
+    jobTitle: string | null
 }
 
 interface TeamListProps {
@@ -215,7 +216,7 @@ export function TeamList({ users }: TeamListProps) {
                         <TableRow>
                             <TableHead>Name</TableHead>
                             <TableHead>Email</TableHead>
-                            <TableHead>Role</TableHead>
+                            <TableHead>Job Title</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -225,13 +226,9 @@ export function TeamList({ users }: TeamListProps) {
                                 <TableCell className="font-bold">{user.name}</TableCell>
                                 <TableCell>{user.email}</TableCell>
                                 <TableCell>
-                                    <Badge
-                                        variant={getRoleBadgeVariant(user.role)}
-                                        className="cursor-pointer hover:opacity-80"
-                                        onClick={(e) => openRoleDialog(user, e)}
-                                    >
-                                        {user.role}
-                                    </Badge>
+                                    <span className="capitalize">
+                                        {user.jobTitle || user.role.toLowerCase().replace('_', ' ')}
+                                    </span>
                                 </TableCell>
                                 <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                                     <Button

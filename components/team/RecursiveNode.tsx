@@ -4,6 +4,8 @@ import { User } from "@prisma/client"
 import { Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useSession } from "next-auth/react"
+import { getAllDescendants } from "@/lib/hierarchy-utils"
 
 interface RecursiveNodeProps {
     node: User & { children?: RecursiveNodeProps['node'][] }
@@ -14,6 +16,7 @@ interface RecursiveNodeProps {
 }
 
 export function RecursiveNode({ node, allUsers, onAddClick, depth = 0, isLast = false }: RecursiveNodeProps) {
+    const { data: session } = useSession()
     const hasChildren = node.children && node.children.length > 0
 
     return (
@@ -51,15 +54,62 @@ export function RecursiveNode({ node, allUsers, onAddClick, depth = 0, isLast = 
                 </div>
 
                 {/* Add Button - Bottom Right */}
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation()
-                        onAddClick(node.id, node.name)
-                    }}
-                    className="absolute bottom-1 right-1 p-1 hover:bg-muted rounded-full text-muted-foreground hover:text-primary transition-colors"
-                >
-                    <Plus className="h-4 w-4" />
-                </button>
+                {(() => {
+                    if (!session?.user) return null
+                    if (session.user.role === "ADMIN") return (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                onAddClick(node.id, node.name)
+                            }}
+                            className="absolute bottom-1 right-1 p-1 hover:bg-muted rounded-full text-muted-foreground hover:text-primary transition-colors"
+                        >
+                            <Plus className="h-4 w-4" />
+                        </button>
+                    )
+
+                    if (session.user.role === "MANAGER") {
+                        // Manager can add to themselves
+                        if (node.id === session.user.id) {
+                            return (
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        onAddClick(node.id, node.name)
+                                    }}
+                                    className="absolute bottom-1 right-1 p-1 hover:bg-muted rounded-full text-muted-foreground hover:text-primary transition-colors"
+                                >
+                                    <Plus className="h-4 w-4" />
+                                </button>
+                            )
+                        }
+
+                        // Manager can add to their descendants
+                        // We need access to all users to calculate descendants.
+                        // Assuming allUsers is passed and complete (which it is now).
+                        // Note: getAllDescendants might be expensive to run for every node in a large tree inside render.
+                        // But for typical team size it's fine.
+                        // To optimize, we could memoize or check logic simpler: 
+                        // If node is in my subtree. 
+
+                        const descendants = getAllDescendants(session.user.id, allUsers)
+                        if (descendants.includes(node.id)) {
+                            return (
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        onAddClick(node.id, node.name)
+                                    }}
+                                    className="absolute bottom-1 right-1 p-1 hover:bg-muted rounded-full text-muted-foreground hover:text-primary transition-colors"
+                                >
+                                    <Plus className="h-4 w-4" />
+                                </button>
+                            )
+                        }
+                    }
+
+                    return null
+                })()}
             </div>
 
             {/* Children Container */}
