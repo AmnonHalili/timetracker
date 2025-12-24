@@ -20,36 +20,49 @@ export async function POST(req: Request) {
     const session = await getServerSession(authOptions)
     if (!session) return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
 
-    // Allow ADMIN and MANAGER to create tasks
-    if (!["ADMIN", "MANAGER"].includes(session.user.role)) {
-        return NextResponse.json({ message: "Forbidden" }, { status: 403 })
-    }
+    // Allow all users to create tasks (but restricted assignment)
+    // if (!["ADMIN", "MANAGER"].includes(session.user.role)) {
+    //     return NextResponse.json({ message: "Forbidden" }, { status: 403 })
+    // }
 
     try {
-        const { title, assignedToIds, priority, deadline, description } = await req.json()
+        const body = await req.json()
+        const { title, assignedToIds, priority, deadline, description } = body
 
-        // Validate permissions for MANAGER
-        if (session.user.role === "MANAGER") {
+        // Validate permissions
+        // ADMIN: Can assign to anyone (in project? logic handled by frontend usually, but good to enforce project scope if strict)
+        // MANAGER: Can assign to descendants
+        // EMPLOYEE / NO ROLE: Can only assign to SELF
+
+        if (session.user.role !== "ADMIN") {
+            // If manager, check descendants. If neither, check self.
             const currentUser = await prisma.user.findUnique({
                 where: { id: session.user.id },
                 select: { id: true, projectId: true }
             })
 
-            if (!currentUser?.projectId) return NextResponse.json({ message: "No project" }, { status: 400 })
+            const targetIds = new Set(assignedToIds as string[])
 
-            // Get all project users to check hierarchy
-            const allUsers = await prisma.user.findMany({
-                where: { projectId: currentUser.projectId },
-                select: { id: true, managerId: true }
-            })
+            if (session.user.role === "MANAGER" && currentUser?.projectId) {
+                const allUsers = await prisma.user.findMany({
+                    where: { projectId: currentUser.projectId },
+                    select: { id: true, managerId: true }
+                })
+                // Cast to partial type allowed by utils if strictly typed, or fetch needed fields. 
+                // Assuming getAllDescendants just needs structure. It seems it expects full User type in signature but only uses id/managerId.
+                // Let's use 'as any' safely here or better, update the helper file if possible. 
+                // For now, let's just cast to 'any' to avoid the strict type check against the full User model if the helper creates issues.
+                const descendants = getAllDescendants(currentUser.id, allUsers as any)
+                const allowedIds = new Set([currentUser.id, ...descendants])
 
-            const descendants = getAllDescendants(currentUser.id, allUsers)
-            const allowedIds = new Set([currentUser.id, ...descendants])
-
-            // Check if all assigned users are in the allowed scope
-            const isAllowed = (assignedToIds as string[]).every(id => allowedIds.has(id))
-            if (!isAllowed) {
-                return NextResponse.json({ message: "Cannot assign tasks to users outside your hierarchy" }, { status: 403 })
+                if (!Array.from(targetIds).every(id => allowedIds.has(id))) {
+                    return NextResponse.json({ message: "Cannot assign tasks to users outside your hierarchy" }, { status: 403 })
+                }
+            } else {
+                // Regular user or Private Workspace: Can only assign to self
+                if (!Array.from(targetIds).every(id => id === session.user.id)) {
+                    return NextResponse.json({ message: "You can only assign tasks to yourself" }, { status: 403 })
+                }
             }
         }
 

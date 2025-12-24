@@ -63,16 +63,27 @@ export function NotificationBell() {
     }
 
     const markAllRead = async () => {
-        await fetch("/api/notifications", {
-            method: "PATCH",
-            body: JSON.stringify({ markAllRead: true }),
-        })
-        setNotifications(curr => curr.map(n => ({ ...n, isRead: true })))
+        // Optimistic update
         setUnreadCount(0)
+        setNotifications(curr => curr.map(n => ({ ...n, isRead: true })))
+
+        try {
+            await fetch("/api/notifications", {
+                method: "PATCH",
+                body: JSON.stringify({ markAllRead: true }),
+            })
+        } catch (error) {
+            console.error("Failed to sync read status")
+        }
     }
 
     return (
-        <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <Popover open={isOpen} onOpenChange={(open) => {
+            setIsOpen(open)
+            if (open && unreadCount > 0) {
+                markAllRead()
+            }
+        }}>
             <PopoverTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative h-14 w-14 [&_svg]:h-7 [&_svg]:w-7">
                     <Bell className="h-5 w-5 text-muted-foreground" />

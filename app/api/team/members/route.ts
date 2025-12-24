@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     try {
         const { name, email, password, role, managerId, jobTitle } = await req.json()
 
-        if (!name || !email || !password) {
+        if (!name || !email) {
             return NextResponse.json({ message: "Missing required fields" }, { status: 400 })
         }
 
@@ -41,7 +41,9 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: "Email already exists" }, { status: 400 })
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10)
+        // Generate random password if not provided (for invited members)
+        const passwordToHash = password || Math.random().toString(36).slice(-8)
+        const hashedPassword = await bcrypt.hash(passwordToHash, 10)
 
         // Validate managerId if provided
         if (managerId) {
@@ -62,7 +64,7 @@ export async function POST(req: Request) {
                 jobTitle: jobTitle || null,
                 projectId: currentUser.projectId,
                 managerId: managerId || null,
-                status: "ACTIVE", // Auto-activate if added by admin/manager
+                status: password ? "ACTIVE" : "PENDING", // PENDING if no password provided (invited)
                 dailyTarget: 9.0
             }
         })

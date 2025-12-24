@@ -14,15 +14,37 @@ export async function POST(req: Request) {
             )
         }
 
-        const exists = await prisma.user.findUnique({
+        // Check if email exists
+        const existingUser = await prisma.user.findUnique({
             where: { email },
         })
 
-        if (exists) {
-            return NextResponse.json(
-                { message: "User already exists" },
-                { status: 400 }
-            )
+        if (existingUser) {
+            // If user exists and is PENDING, allow them to claim the account (set password and activate)
+            if (existingUser.status === "PENDING") {
+                const hashedPassword = await hash(password, 10)
+
+                const updatedUser = await prisma.user.update({
+                    where: { id: existingUser.id },
+                    data: {
+                        name: name || existingUser.name, // Update name if provided, else keep existing
+                        password: hashedPassword,
+                        status: "ACTIVE",
+                        // Keep their role, manager, project, etc. as set by Admin
+                    }
+                })
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const userWithoutPassword = { ...updatedUser } as any
+                delete userWithoutPassword.password
+
+                return NextResponse.json(userWithoutPassword, { status: 200 }) // 200 OK for updates
+            } else {
+                return NextResponse.json(
+                    { message: "User already exists" },
+                    { status: 400 }
+                )
+            }
         }
 
         const hashedPassword = await hash(password, 10)
@@ -30,7 +52,8 @@ export async function POST(req: Request) {
         // If creating a team (ADMIN)
         let projectId = null
         let userRole = "EMPLOYEE"
-        let userStatus = "PENDING"
+        let userStatus = "ACTIVE" // Default to ACTIVE for both (admins auto-active, members independent active)
+        let pendingProjectId = null
 
         if (role === "ADMIN") {
             if (!projectName) {
@@ -42,7 +65,29 @@ export async function POST(req: Request) {
             })
             projectId = project.id
             userRole = "ADMIN"
-            userStatus = "ACTIVE" // Auto-approve creator
+        } else {
+            // Member Registration
+            // If they provided a project name to join
+            if (projectName) {
+                // Find project (case insensitive search would be better, but basic exact match for now)
+                const projectToJoin = await prisma.project.findFirst({
+                    where: {
+                        name: {
+                            equals: projectName,
+                            mode: 'insensitive'
+                        }
+                    }
+                })
+
+                if (projectToJoin) {
+                    pendingProjectId = projectToJoin.id
+
+                    // Create Notification for Project Admins
+                    // We'll do this AFTER creating the user so we have the userId for reference if needed
+                } else {
+                    return NextResponse.json({ message: "Project not found" }, { status: 400 })
+                }
+            }
         }
 
         const user = await prisma.user.create({
@@ -53,10 +98,33 @@ export async function POST(req: Request) {
                 role: userRole as Role,
                 status: userStatus as Status,
                 projectId,
-                workDays: [0, 1, 2, 3, 4], // Sunday to Thursday
-                dailyTarget: 8.5,
-            },
+                pendingProjectId: pendingProjectId ?? undefined,
+
+                // workDays and dailyTarget are now handled by DB defaults (or lack thereof)
+            } as any,
         })
+
+        // Send Notification to Admins if pendingProjectId is set
+        if (pendingProjectId) {
+            const admins = await prisma.user.findMany({
+                where: {
+                    projectId: pendingProjectId,
+                    role: "ADMIN"
+                }
+            })
+
+            if (admins.length > 0) {
+                await prisma.notification.createMany({
+                    data: admins.map(admin => ({
+                        userId: admin.id,
+                        title: "New Join Request",
+                        message: `${user.name} has requested to join your project.`,
+                        type: "INFO",
+                        link: "/team/requests" // We'll need a page or modal for this
+                    }))
+                })
+            }
+        }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const userWithoutPassword = { ...user } as any

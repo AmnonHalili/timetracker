@@ -13,7 +13,7 @@ export async function PATCH(req: Request) {
     try {
         const { dailyTarget, workDays, workMode } = await req.json()
 
-        if (typeof dailyTarget !== 'number' || dailyTarget < 0) {
+        if (dailyTarget !== null && (typeof dailyTarget !== 'number' || dailyTarget < 0)) {
             return NextResponse.json({ message: "Invalid daily target" }, { status: 400 })
         }
 

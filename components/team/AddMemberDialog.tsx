@@ -28,6 +28,7 @@ interface SimpleUser {
     id: string
     name: string
     role: string
+    jobTitle?: string | null
 }
 
 interface AddMemberDialogProps {
@@ -52,7 +53,6 @@ export function AddMemberDialog({
     const [loading, setLoading] = useState(false)
     const [name, setName] = useState("")
     const [email, setEmail] = useState("")
-    const [password, setPassword] = useState("")
     const [role, setRole] = useState(defaultRole)
     const [jobTitle, setJobTitle] = useState("")
     const [managerId, setManagerId] = useState<string>(hideManagerSelect ? "unassigned" : "")
@@ -93,7 +93,6 @@ export function AddMemberDialog({
                 body: JSON.stringify({
                     name,
                     email,
-                    password,
                     role,
                     jobTitle,
                     managerId: managerId === "unassigned" ? null : managerId
@@ -111,7 +110,6 @@ export function AddMemberDialog({
             // Reset form
             setName("")
             setEmail("")
-            setPassword("")
             setManagerId(hideManagerSelect ? "unassigned" : "")
         } catch (error) {
             alert(error)
@@ -166,20 +164,7 @@ export function AddMemberDialog({
                                 required
                             />
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="password" className="text-right">
-                                Initial Password
-                            </Label>
-                            <Input
-                                id="password"
-                                type="text"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="col-span-3"
-                                required
-                                placeholder="e.g. 123456"
-                            />
-                        </div>
+
                         {!hideManagerSelect && (
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="manager" className="text-right">
@@ -194,7 +179,7 @@ export function AddMemberDialog({
                                             <SelectItem value="unassigned">No Manager (Top Level)</SelectItem>
                                             {managers.map((user) => (
                                                 <SelectItem key={user.id} value={user.id}>
-                                                    {user.name} ({user.role})
+                                                    {user.name} {user.jobTitle ? `- ${user.jobTitle}` : ""}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
@@ -203,27 +188,7 @@ export function AddMemberDialog({
                             </div>
                         )}
 
-                        {!lockRole ? (
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="role" className="text-right">
-                                    Role
-                                </Label>
-                                <div className="col-span-3">
-                                    <select
-                                        id="role"
-                                        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                        value={role}
-                                        onChange={(e) => setRole(e.target.value)}
-                                    >
-                                        <option value="EMPLOYEE">Employee</option>
-                                        <option value="MANAGER">Manager</option>
-                                        <option value="ADMIN">Admin</option>
-                                    </select>
-                                </div>
-                            </div>
-                        ) : (
-                            <input type="hidden" value={role} />
-                        )}
+                        {/* Role selector removed as per user request, defaults to EMPLOYEE */}
 
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="jobTitle" className="text-right">
@@ -234,7 +199,6 @@ export function AddMemberDialog({
                                 value={jobTitle}
                                 onChange={(e) => setJobTitle(e.target.value)}
                                 className="col-span-3"
-                                placeholder="e.g. CEO, Product Manager"
                             />
                         </div>
                     </div>

@@ -10,6 +10,8 @@ import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 
 import { AddMemberDialog } from "@/components/team/AddMemberDialog"
+import { JoinRequestsWidget } from "@/components/team/JoinRequestsWidget"
+import { TeamOnboardingWidget } from "@/components/dashboard/TeamOnboardingWidget"
 
 // Defined locally to match RecursiveNode props
 type TreeNode = User & { children: TreeNode[], managerId: string | null }
@@ -19,6 +21,7 @@ export default function HierarchyPage() {
     const [users, setUsers] = useState<User[]>([])
     const [projectName, setProjectName] = useState("Organization")
     const [isLoading, setIsLoading] = useState(true)
+    const [hasProject, setHasProject] = useState(true)
 
     // Dialog State
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -30,9 +33,15 @@ export default function HierarchyPage() {
         try {
             const res = await fetch("/api/team/hierarchy")
             if (!res.ok) throw new Error("Failed to fetch hierarchy")
+
             const data = await res.json()
             setUsers(data.users || [])
             if (data.projectName) setProjectName(data.projectName)
+
+            // Check if it's a private workspace (project name check is a proxy, or check user count/role)
+            // But API now returns "Private Workspace" if no project
+            setHasProject(data.projectName !== "Private Workspace")
+
         } catch (error) {
             console.error(error)
             toast.error("Failed to load hierarchy")
@@ -86,8 +95,9 @@ export default function HierarchyPage() {
         <div className="p-8 overflow-auto min-h-[calc(100vh-4rem)] bg-background/50">
             <div className="flex justify-between items-center max-w-5xl mx-auto mb-8 relative">
                 <h1 className="text-2xl font-bold text-center w-full">Organization Hierarchy</h1>
-                <div className="absolute right-0 top-0">
-                    {session?.user?.role === "ADMIN" && (
+                <div className="absolute right-0 top-0 flex gap-2">
+                    {/* Add Admin Button (Only for actual Admins with Project) */}
+                    {hasProject && session?.user?.role === "ADMIN" && (
                         <AddMemberDialog
                             triggerLabel="Add Admin"
                             defaultRole="ADMIN"
@@ -105,12 +115,27 @@ export default function HierarchyPage() {
                 </div>
             </div>
 
+            {session?.user?.role === "ADMIN" && hasProject && (
+                <div className="max-w-2xl mx-auto">
+                    <JoinRequestsWidget />
+                </div>
+            )}
+
+            {/* Show Onboarding Widget for Private Workspace */}
+            {!hasProject && (
+                <div className="max-w-2xl mx-auto mb-12">
+                    <TeamOnboardingWidget />
+                </div>
+            )}
+
             {/* Project Root Node Section */}
             <div className="flex flex-col items-center mb-8 relative">
                 {/* Project Card */}
                 <div className="bg-primary text-primary-foreground px-8 py-4 rounded-xl shadow-lg border-2 border-primary-foreground/20 z-10 mb-8">
                     <h2 className="text-xl font-bold tracking-tight">{projectName}</h2>
-                    <div className="text-sm opacity-80 text-center uppercase tracking-wider font-medium">Company Overview</div>
+                    <div className="text-sm opacity-80 text-center uppercase tracking-wider font-medium">
+                        {hasProject ? "Company Overview" : "Private Session"}
+                    </div>
                 </div>
 
                 {/* Connector to Roots */}
@@ -169,7 +194,7 @@ export default function HierarchyPage() {
                                 <RecursiveNode
                                     node={rootNode}
                                     allUsers={users}
-                                    onAddClick={handleAddClick}
+                                    onAddClick={hasProject ? handleAddClick : undefined} // Disable add for private
                                 />
                             </div>
                         )

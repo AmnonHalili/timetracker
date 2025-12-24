@@ -1,0 +1,57 @@
+# Task: Refine Time Metrics & Work Mode
+
+- [x] UI Refinements
+    - [x] Reposition Notification Bell (Header, no border)
+    - [x] Primary Color Update (#004B7C)
+    - [x] Center Logo in Sidebar
+- [x] Time Metrics Refactoring
+    - [x] "Remaining" = Accumulated Deficit
+    - [x] "Extra" = Monthly Overtime
+    - [x] Update Dashboard Params
+- [x] Flexible Work Calculation Mode
+    - [x] Schema Update (WorkMode enum)
+    - [x] Update Logic in time-calculations.ts
+    - [x] Settings Page UI for WorkMode
+    - [x] API Endpoint for WorkMode
+    - [x] Update Documentation
+
+- [x] Performance Optimization: Timer Actions
+    - [x] Investigate current implementation
+    - [x] Implement Optimistic UI for Start/Stop/Pause/Resume
+    - [x] Optimize Backend Logic if necessary
+- [x] Clickable Notifications
+    - [x] Analyze Notification schema and types
+    - [x] Implement `handleNotificationClick` in NotificationBell
+    - [x] Add routing logic based on notification type
+- [x] Refine Registration Form
+    - [x] Remove default values for Name and Email
+- [ ] Refactor Team Invitation
+    - [x] Update `AddMemberDialog` (remove password)
+    - [x] Update `/api/team/members` (handle no password, PENDING status)
+    - [x] Update `/api/register` (handle account claiming)
+- [ ] Refine Add Member UI
+    - [x] Remove Role selector (default to Employee)
+    - [x] Show Job Title in Reports To dropdown
+    - [x] Remove default Job Title placeholder
+- [ ] Implement 'Join Request' Flow
+    - [x] Schema Update (pendingProjectId)
+    - [x] Update Register UI (Join as Member, Project Input)
+    - [x] Update Register API (Find Project, Notify Admin)
+    - [x] Update Team UI (Approve/Reject Requests)
+
+- [ ] Post-Registration Flows
+    - [x] Register API: Validate Project Name (Error if not found)
+    - [x] Dashboard: "Create Team" & "Join Team" for standalone users
+    - [x] Team Page: "Create Team" button
+    - [x] API: Endpoints for `team/create` and `team/join`
+
+- [ ] Private Workspace Mode (No Project)
+    - [x] Configure Dashboard for Private Mode
+    - [x] Remove blocking onboarding screen
+    - [x] Integrate "Join/Create Team" banner at the top of dashboard
+    - [x] Refactor "Live Team Status" to right sidebar (Admin Only)
+    - [x] Update Stats Widget styles (Black text for extra hours)
+- [x] Update Team Page / Hierarchy for Private Mode
+    - [x] Show "Private Session"
+    - [x] Fix RecursiveNode type errorsCreate Team" button
+    - [x] Hierarchy API: Handle user without project (return self only?)

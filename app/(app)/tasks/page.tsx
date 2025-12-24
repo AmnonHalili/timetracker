@@ -34,13 +34,14 @@ export default async function TasksPage() {
 
     // Fetch Users (Only if admin, for the dropdown)
     // MUST be scoped to the same project
+    // List of users available for assignment
     const users = isAdmin && currentUser?.projectId ? await prisma.user.findMany({
         where: {
             status: "ACTIVE",
             projectId: currentUser.projectId
         },
         select: { id: true, name: true, email: true }
-    }) : []
+    }) : [{ id: session.user.id, name: session.user.name || "Me", email: session.user.email }]
 
     return (
         <div className="container mx-auto space-y-8">
@@ -51,10 +52,10 @@ export default async function TasksPage() {
                         {isAdmin ? "Manage and assign tasks" : "Your assigned tasks"}
                     </p>
                 </div>
-                {isAdmin && <CreateTaskDialog users={users} />}
+                <CreateTaskDialog users={isAdmin && users.length > 0 ? users : [{ id: session.user.id, name: session.user.name || "Me", email: session.user.email || null } as { id: string, name: string | null, email: string | null }]} />
             </div>
 
-            <TasksView initialTasks={tasks} users={users} isAdmin={isAdmin} />
+            <TasksView initialTasks={tasks} users={users} isAdmin={isAdmin} currentUserId={session.user.id} />
         </div>
     )
 }

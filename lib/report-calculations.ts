@@ -22,15 +22,31 @@ export function getMonthlyReport(
     entries: TimeEntry[],
     currentDate: Date,
     dailyTarget: number,
-    workDays: number[]
+    workDays: number[],
+    limitStart?: Date,
+    limitEnd?: Date
 ): MonthlyReport {
     const monthStart = startOfMonth(currentDate)
     const monthEnd = endOfMonth(currentDate)
-    // Cap at today if showing current month to avoid "Missed" for future days? 
-    // For report usually we show whole month. Let's show whole month but handle future status.
-    const today = new Date()
 
-    const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd })
+    // Determine effective interval intersection
+    let start = monthStart
+    if (limitStart && limitStart > start) {
+        start = limitStart
+    }
+
+    let end = monthEnd
+    if (limitEnd && limitEnd < end) {
+        end = limitEnd
+    }
+
+    // If intersection is invalid (e.g. start > end), return empty
+    if (start > end) {
+        return { days: [], totalMonthlyHours: 0, totalTargetHours: 0 }
+    }
+
+    const daysInMonth = eachDayOfInterval({ start, end })
+    const today = new Date()
     let totalMonthlyHours = 0
     let totalTargetHours = 0
 

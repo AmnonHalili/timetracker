@@ -47,9 +47,9 @@ export function Sidebar() {
 
     return (
         <div className="flex flex-col h-screen w-64 border-r bg-background">
-            <div className="p-6 border-b flex items-center justify-center">
+            <div className="px-4 pt-4 pb-0 border-b flex items-center justify-center z-10 relative">
                 <Link href="/dashboard" className="flex items-center gap-2">
-                    <Image src="/logo.png?v=4" alt="Collabo Logo" width={200} height={80} className="h-36 w-auto" priority />
+                    <Image src="/logo.png?v=4" alt="Collabo Logo" width={200} height={80} className="h-36 w-auto -mb-10 -mt-8" priority />
                 </Link>
             </div>
 

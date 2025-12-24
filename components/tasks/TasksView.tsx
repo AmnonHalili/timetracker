@@ -37,9 +37,10 @@ interface TasksViewProps {
     }>
     users: User[]
     isAdmin: boolean
+    currentUserId?: string
 }
 
-export function TasksView({ initialTasks, users, isAdmin }: TasksViewProps) {
+export function TasksView({ initialTasks, users, isAdmin, currentUserId }: TasksViewProps) {
     const router = useRouter()
     const [tasks, setTasks] = useState(initialTasks)
     const [filterUserId, setFilterUserId] = useState<string>("all")
@@ -125,7 +126,7 @@ export function TasksView({ initialTasks, users, isAdmin }: TasksViewProps) {
                                 <SelectItem value="all">All Users</SelectItem>
                                 {users.map(user => (
                                     <SelectItem key={user.id} value={user.id}>
-                                        {user.name || user.email}
+                                        {user.name || user.email} {user.id === currentUserId && "(you)"}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
@@ -151,11 +152,14 @@ export function TasksView({ initialTasks, users, isAdmin }: TasksViewProps) {
                                             <span className={`text-sm font-medium ${task.status === 'DONE' ? 'line-through text-muted-foreground' : ''}`}>
                                                 {task.title}
                                             </span>
-                                            {task.assignees && task.assignees.length > 0 && (
+                                            {isAdmin && task.assignees && task.assignees.length > 0 && (
                                                 <span className="text-xs text-muted-foreground ml-2">
-                                                    ({task.assignees.map(a => a.name).join(', ')})
+                                                    ({task.assignees.map(a => a.id === currentUserId ? `${a.name} (you)` : a.name).join(', ')})
                                                 </span>
                                             )}
+                                            <Badge className={`text-[10px] h-5 px-2 flex items-center justify-center ml-2 ${getPriorityColor(task.priority)}`}>
+                                                {task.priority}
+                                            </Badge>
                                         </div>
 
                                         <div className="flex items-center gap-4 text-xs text-muted-foreground pl-1">
@@ -170,9 +174,7 @@ export function TasksView({ initialTasks, users, isAdmin }: TasksViewProps) {
                                 </div>
 
                                 <div className="flex items-center gap-2">
-                                    <Badge className={`text-[10px] h-5 w-16 flex items-center justify-center ${getPriorityColor(task.priority)}`}>
-                                        {task.priority}
-                                    </Badge>
+
 
                                     {task.status !== 'DONE' && (
                                         <Select
@@ -189,7 +191,7 @@ export function TasksView({ initialTasks, users, isAdmin }: TasksViewProps) {
                                         </Select>
                                     )}
 
-                                    {isAdmin && (
+                                    {(isAdmin || (currentUserId && task.assignees.some(a => a.id === currentUserId))) && (
                                         <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDelete(task.id)}>
                                             <Trash2 className="h-4 w-4" />
                                         </Button>

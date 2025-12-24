@@ -25,7 +25,24 @@ export async function GET() {
         })
 
         if (!currentUser?.projectId) {
-            return NextResponse.json({ message: "No project found" }, { status: 404 })
+            // Return just the current user for Private Workspace
+            const privateUser = await prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    role: true,
+                    image: true,
+                    managerId: true,
+                    jobTitle: true,
+                }
+            })
+
+            return NextResponse.json({
+                users: privateUser ? [privateUser] : [],
+                projectName: "Private Workspace"
+            })
         }
 
         // Fetch all users in the project

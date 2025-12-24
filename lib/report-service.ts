@@ -26,7 +26,26 @@ export async function getReportData(userId: string, year: number, month: number)
 
     if (!user) return null
 
-    const report = getMonthlyReport(user.timeEntries, reportDate, user.dailyTarget, user.workDays)
+    // Limit start by createdAt (normalize to start of day if needed, but strict is fine)
+    // Limit end by today (end of today)
+    const today = new Date()
+
+    // For "Project Start", we might want project creation date if user joined later but is visualizing project?
+    // Requirement: "from the day the project or user account was opened".
+    // Let's use user.createdAt as per requirement for "Simple User" or "Project".
+    // If project exists, we should maybe check project.createdAt? 
+    // "start from the day the project OR the simple user...". 
+    // If user has project, maybe project date? 
+    // Let's stick to user.createdAt as safe default, user usually created with project or after.
+
+    const report = getMonthlyReport(
+        user.timeEntries,
+        reportDate,
+        user.dailyTarget,
+        user.workDays,
+        user.createdAt,
+        today
+    )
 
     return {
         user,

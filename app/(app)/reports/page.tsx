@@ -94,26 +94,39 @@ export default async function ReportsPage({
                 </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Worked</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{report.totalMonthlyHours.toFixed(2)} hrs</div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Target Hours</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{report.totalTargetHours.toFixed(2)} hrs</div>
-                    </CardContent>
-                </Card>
-            </div>
+            {report.days.length === 0 ? (
+                <div className="text-center py-12 bg-muted/20 rounded-lg border border-dashed">
+                    <p className="text-muted-foreground">No reports available for this period yet.</p>
+                </div>
+            ) : (
+                <>
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Total Worked</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{report.totalMonthlyHours.toFixed(2)} hrs</div>
+                            </CardContent>
+                        </Card>
 
-            <ReportTable days={report.days} showWarnings={currentUser.role === "ADMIN"} />
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Target Hours</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">
+                                    {(data.user.dailyTarget && data.user.dailyTarget > 0)
+                                        ? `${report.totalTargetHours.toFixed(2)} hrs`
+                                        : 'None'}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <ReportTable days={report.days} showWarnings={currentUser.role === "ADMIN"} />
+                </>
+            )}
         </div>
     )
 }

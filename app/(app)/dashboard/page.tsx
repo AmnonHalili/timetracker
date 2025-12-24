@@ -9,6 +9,16 @@ import { EntryHistory } from "@/components/dashboard/EntryHistory"
 import { StatsWidget } from "@/components/dashboard/StatsWidget"
 import { TeamStatusWidget } from "@/components/dashboard/TeamStatusWidget"
 
+import { User, TimeEntry, Task, TimeBreak } from "@prisma/client"
+
+type DashboardUser = User & {
+    timeEntries: (TimeEntry & {
+        breaks: TimeBreak[]
+        tasks: Task[]
+    })[]
+    pendingProjectId?: string | null
+}
+
 export default async function DashboardPage() {
     const session = await getServerSession(authOptions)
 
@@ -16,18 +26,40 @@ export default async function DashboardPage() {
         redirect("/login")
     }
 
-    const user = await prisma.user.findUnique({
+    const user = (await prisma.user.findUnique({
         where: { id: session.user.id },
         include: {
             timeEntries: {
                 include: { breaks: true, tasks: true }
             }
         },
-    })
+    })) as unknown as DashboardUser
 
     if (!user) return <div>User not found</div>
 
-    // Team Status Logic (Admin Only)
+    const activeEntry = user.timeEntries.find(e => e.endTime === null)
+
+    // For list, use completed entries, reverse chronology
+    const historyEntries = user.timeEntries.filter(e => e.endTime !== null).reverse()
+
+
+    // Use accumulated deficit for remaining hours (per user definition)
+    const stats = calculateBalance(user)
+    const remainingHours = stats.accumulatedDeficit
+
+    // Fetch available tasks for the user
+    const tasks = await prisma.task.findMany({
+        where: {
+            assignees: { some: { id: user.id } },
+            status: { not: 'DONE' }
+        },
+        orderBy: { updatedAt: 'desc' }
+    })
+
+    // Check if user has no project (Private Workspace Mode)
+    const isPrivateWorkspace = !user.projectId
+
+    // Team Status Logic (Admin Only) - Define with default empty
     let teamStatus: Array<{
         userId: string;
         name: string | null;
@@ -59,7 +91,7 @@ export default async function DashboardPage() {
             }
         })
 
-        teamStatus = projectUsers.map(u => {
+        teamStatus = projectUsers.map((u: any) => {
             const activeEntry = u.timeEntries[0]
             let status: 'WORKING' | 'BREAK' | 'OFFLINE' = 'OFFLINE'
             let lastActive: Date | undefined = undefined
@@ -82,29 +114,30 @@ export default async function DashboardPage() {
         })
     }
 
-    const stats = calculateBalance(user)
-    const activeEntry = user.timeEntries.find(e => e.endTime === null)
-
-    // For list, use completed entries, reverse chronology
-    const historyEntries = user.timeEntries.filter(e => e.endTime !== null).reverse()
-
-    // Use accumulated deficit for remaining hours (per user definition)
-    const remainingHours = stats.accumulatedDeficit
-
-    // Fetch available tasks for the user
-    const tasks = await prisma.task.findMany({
-        where: {
-            assignees: { some: { id: user.id } },
-            status: { not: 'DONE' }
-        },
-        orderBy: { updatedAt: 'desc' }
-    })
+    // Determine if sidebar (Stats / Team Status) should be shown
+    const showStats = user.dailyTarget !== null
+    const showTeamStatus = user.role === "ADMIN" && user.projectId
+    const showSidebar = showStats || showTeamStatus
 
     return (
         <div className="w-full">
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-8 items-start">
+            {/* Pending Request Banner */}
+            {isPrivateWorkspace && user.pendingProjectId && (
+                <div className="mb-8 bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 flex items-center justify-between">
+                    <div>
+                        <h3 className="font-semibold text-yellow-600">Join Request Pending</h3>
+                        <p className="text-sm text-yellow-600/80">
+                            You have requested to join a team. You can continue using your private workspace while you wait.
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            <div className={`grid grid-cols-1 ${showSidebar ? "lg:grid-cols-[1fr_220px]" : ""} gap-8 items-start`}>
                 {/* Main Content Area */}
                 <div className="space-y-8 min-w-0">
+
+
                     {/* Timer Control */}
                     <ControlBar
                         activeEntry={activeEntry || null}
@@ -118,17 +151,24 @@ export default async function DashboardPage() {
                 </div>
 
                 {/* Right Sidebar */}
-                <div className="lg:sticky lg:top-8 space-y-8">
-                    {/* Stats Widget (Always visible) */}
-                    <StatsWidget extraHours={stats.monthlyOvertime} remainingHours={remainingHours} />
+                {showSidebar && (
+                    <div className="lg:sticky lg:top-8 space-y-8">
+                        {/* Spacer for Private Workspace Alignment */}
+                        {isPrivateWorkspace && <div className="hidden lg:block h-[40px]" />}
 
-                    {/* Team Status (Admin Only) */}
-                    {user.role === "ADMIN" && (
-                        <div className="pt-12">
-                            <TeamStatusWidget teamStatus={teamStatus} />
-                        </div>
-                    )}
-                </div>
+                        {/* Stats Widget (Conditionally visible) */}
+                        {showStats && (
+                            <StatsWidget extraHours={stats.monthlyOvertime} remainingHours={remainingHours} />
+                        )}
+
+                        {/* Team Status (Admin Only) */}
+                        {showTeamStatus && (
+                            <div className={showStats ? "pt-12" : ""}>
+                                <TeamStatusWidget teamStatus={teamStatus} />
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     )

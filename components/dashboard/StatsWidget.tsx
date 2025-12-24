@@ -11,7 +11,7 @@ export function StatsWidget({ extraHours, remainingHours }: StatsWidgetProps) {
             <CardContent className="p-4 flex flex-col gap-2">
                 <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground uppercase tracking-wider text-xs">Extra</span>
-                    <span className={extraHours >= 0 ? "text-green-600 font-bold" : "text-red-500 font-bold"}>
+                    <span className={extraHours >= 0 ? "font-bold" : "text-red-500 font-bold"}>
                         {extraHours > 0 ? '+' : ''}{extraHours.toFixed(2)}h
                     </span>
                 </div>

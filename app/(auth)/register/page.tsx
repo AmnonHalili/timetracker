@@ -45,24 +45,19 @@ function RegisterForm() {
                 throw new Error(data.message || "Something went wrong")
             }
 
-            if (role === "ADMIN") {
-                // Auto-login for Admins
-                const result = await signIn("credentials", {
-                    email,
-                    password,
-                    redirect: false,
-                })
+            // Auto-login for ALL users (Admin and Employee)
+            const result = await signIn("credentials", {
+                email,
+                password,
+                redirect: false,
+            })
 
-                if (result?.error) {
-                    throw new Error("Registration successful, but login failed. Please log in manually.")
-                }
-
-                router.push("/dashboard")
-                router.refresh()
-            } else {
-                // Show success message for Employees (Pending Approval)
-                setSuccess(true)
+            if (result?.error) {
+                throw new Error("Registration successful, but login failed. Please log in manually.")
             }
+
+            router.push("/dashboard")
+            router.refresh()
         } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : "An error occurred"
             console.error("Client Error:", errorMessage)
@@ -116,7 +111,7 @@ function RegisterForm() {
                             className="w-1/2"
                             onClick={() => setRole("EMPLOYEE")}
                         >
-                            Join a Team
+                            Join as Member
                         </Button>
                         <Button
                             type="button"
@@ -158,6 +153,21 @@ function RegisterForm() {
                         />
                     </div>
 
+                    {role === "EMPLOYEE" && (
+                        <div className="space-y-2">
+                            <Label htmlFor="joinProjectName">Join a Team? (Optional)</Label>
+                            <Input
+                                id="joinProjectName"
+                                placeholder="Enter Project / Company Name"
+                                value={projectName}
+                                onChange={(e) => setProjectName(e.target.value)}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                An admin will need to approve your request.
+                            </p>
+                        </div>
+                    )}
+
                     {role === "ADMIN" && (
                         <div className="space-y-2">
                             <Label htmlFor="projectName">Team / Project Name</Label>
@@ -177,7 +187,7 @@ function RegisterForm() {
                 <CardFooter className="flex flex-col gap-4">
                     <Button type="submit" className="w-full" disabled={loading}>
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Register
+                        Create
                     </Button>
                     <div className="text-center text-sm text-muted-foreground">
                         Already have an account?{" "}

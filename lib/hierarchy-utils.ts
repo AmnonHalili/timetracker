@@ -48,7 +48,10 @@ export function buildHierarchyTree(users: User[]): UserWithEmployees[] {
  * @param users - All users in the system
  * @returns Array of descendant user IDs
  */
-export function getAllDescendants(userId: string, users: User[]): string[] {
+export function getAllDescendants<T extends { id: string; managerId: string | null }>(
+    userId: string,
+    users: T[]
+): string[] {
     const descendants: string[] = []
     const directReports = users.filter(u => u.managerId === userId)
 

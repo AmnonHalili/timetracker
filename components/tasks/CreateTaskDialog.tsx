@@ -18,7 +18,7 @@ import { useRouter } from "next/navigation"
 import { Plus } from "lucide-react"
 
 interface CreateTaskDialogProps {
-    users: { id: string; name: string | null; email: string }[]
+    users: { id: string; name: string | null; email: string | null }[]
     onTaskCreated?: () => void
 }
 
@@ -31,21 +31,38 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated }: CreateT
     const [deadline, setDeadline] = useState("")
     const [deadlineTime, setDeadlineTime] = useState("")
     const [description, setDescription] = useState("")
-    const [users, setUsers] = useState<Array<{ id: string; name: string | null; email: string }>>([])
+    const [users, setUsers] = useState<Array<{ id: string; name: string | null; email: string | null }>>([])
     const [loading, setLoading] = useState(false)
 
 
     useEffect(() => {
         if (isOpen) {
-            // Fetch users for assignment
-            // If initialUsers is empty or we want fresh list
-            fetch("/api/team?all=true")
-                .then(res => res.json())
-                .then(data => setUsers(data))
-                .catch(() => {
-                    console.error("Failed to load users")
-                    setUsers(initialUsers) // Fallback
-                })
+            // Fetch users for assignment if we are admin or rely on props
+            // Actually, if we are passed "users" prop, use that initially.
+            // If we want to support dynamic fetching for admins, we can, but let's stick to props for simplicity + update.
+            // The prop is 'initialUsers' but we set 'users' state.
+
+            // Logic: if initialUsers has content, use it.
+            if (initialUsers && initialUsers.length > 0) {
+                setUsers(initialUsers)
+                if (initialUsers.length === 1) {
+                    setAssignedToIds([initialUsers[0].id])
+                }
+            } else {
+                // Fetch backup
+                fetch("/api/team?all=true")
+                    .then(res => res.json())
+                    .then(data => {
+                        setUsers(data)
+                        if (Array.isArray(data) && data.length === 1) {
+                            setAssignedToIds([data[0].id])
+                        }
+                    })
+                    .catch(() => {
+                        console.error("Failed to load users")
+                        setUsers([])
+                    })
+            }
         }
     }, [isOpen, initialUsers])
 
@@ -124,15 +141,13 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated }: CreateT
                                 required
                             />
                         </div>
-                        <div className="grid grid-cols-4 items-start gap-4">
-                            <Label className="text-right pt-2">
-                                Assign To
-                            </Label>
-                            <div className="col-span-3 border rounded-md max-h-40 overflow-y-auto p-2 space-y-2">
-                                {users.length === 0 ? (
-                                    <p className="text-xs text-muted-foreground">Loading users...</p>
-                                ) : (
-                                    users.map(user => (
+                        {users.length > 1 && (
+                            <div className="grid grid-cols-4 items-start gap-4">
+                                <Label className="text-right pt-2">
+                                    Assign To
+                                </Label>
+                                <div className="col-span-3 border rounded-md max-h-40 overflow-y-auto p-2 space-y-2">
+                                    {users.map(user => (
                                         <div key={user.id} className="flex items-center space-x-2">
                                             <input
                                                 type="checkbox"
@@ -145,10 +160,10 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated }: CreateT
                                                 {user.name || user.email}
                                             </Label>
                                         </div>
-                                    ))
-                                )}
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        )}
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="priority" className="text-right">
                                 Priority

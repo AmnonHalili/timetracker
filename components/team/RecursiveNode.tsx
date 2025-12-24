@@ -10,7 +10,7 @@ import { getAllDescendants } from "@/lib/hierarchy-utils"
 interface RecursiveNodeProps {
     node: User & { children?: RecursiveNodeProps['node'][] }
     allUsers: User[] // Passed down for the Add dialog context
-    onAddClick: (parentId: string, parentName: string) => void
+    onAddClick?: (parentId: string, parentName: string) => void
     depth?: number
     isLast?: boolean
 }
@@ -55,7 +55,7 @@ export function RecursiveNode({ node, allUsers, onAddClick, depth = 0, isLast = 
 
                 {/* Add Button - Bottom Right */}
                 {(() => {
-                    if (!session?.user) return null
+                    if (!session?.user || !onAddClick) return null
                     if (session.user.role === "ADMIN") return (
                         <button
                             onClick={(e) => {
@@ -186,6 +186,7 @@ export function RecursiveNode({ node, allUsers, onAddClick, depth = 0, isLast = 
                             <div className="h-8 w-px bg-border" />
 
                             <RecursiveNode
+                                key={child.id}
                                 node={child}
                                 allUsers={allUsers}
                                 onAddClick={onAddClick}

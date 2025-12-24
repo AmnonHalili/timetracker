@@ -174,11 +174,11 @@ function SecurityForm() {
     )
 }
 
-function PreferencesForm({ user }: { user: { dailyTarget: number; workDays: number[]; workMode: 'OUTPUT_BASED' | 'TIME_BASED' } }) {
+function PreferencesForm({ user }: { user: { dailyTarget: number | null; workDays: number[]; workMode: 'OUTPUT_BASED' | 'TIME_BASED' } }) {
     const [loading, setLoading] = useState(false)
-    const [target, setTarget] = useState(user.dailyTarget.toString())
+    const [target, setTarget] = useState(user.dailyTarget?.toString() || "")
     const [selectedDays, setSelectedDays] = useState<number[]>(user.workDays || [])
-    const [workMode, setWorkMode] = useState<'OUTPUT_BASED' | 'TIME_BASED'>(user.workMode || 'OUTPUT_BASED')
+    const [workMode, setWorkMode] = useState<'OUTPUT_BASED' | 'TIME_BASED'>(user.workMode || 'TIME_BASED')
     const router = useRouter()
 
     const daysOfWeek = [
@@ -205,7 +205,7 @@ function PreferencesForm({ user }: { user: { dailyTarget: number; workDays: numb
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    dailyTarget: parseFloat(target),
+                    dailyTarget: target === "" ? null : parseFloat(target),
                     workDays: selectedDays,
                     workMode
                 }),
@@ -259,7 +259,7 @@ function PreferencesForm({ user }: { user: { dailyTarget: number; workDays: numb
                         onChange={e => setTarget(e.target.value)}
                     />
                     <p className="text-xs text-muted-foreground">
-                        This is used to calculate your &quot;Remaining Hours&quot; for the day.
+                        This is used to calculate your &quot;Remaining Hours&quot; for the day. Leave empty if you don't have a specific target.
                     </p>
                 </div>
 
@@ -267,22 +267,22 @@ function PreferencesForm({ user }: { user: { dailyTarget: number; workDays: numb
                     <Label>Work Calculation Mode</Label>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div
-                            onClick={() => setWorkMode('OUTPUT_BASED')}
-                            className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${workMode === 'OUTPUT_BASED' ? 'border-primary bg-primary/5' : 'border-muted hover:border-muted-foreground/50'}`}
-                        >
-                            <div className="font-semibold mb-1">Output Based (Net)</div>
-                            <div className="text-xs text-muted-foreground">
-                                Only counts actual working time. Breaks are subtracted from the total duration.
-                            </div>
-                        </div>
-
-                        <div
                             onClick={() => setWorkMode('TIME_BASED')}
                             className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${workMode === 'TIME_BASED' ? 'border-primary bg-primary/5' : 'border-muted hover:border-muted-foreground/50'}`}
                         >
                             <div className="font-semibold mb-1">Time Based (Attendance)</div>
                             <div className="text-xs text-muted-foreground">
                                 Counts total time at work. Breaks are included in the total duration.
+                            </div>
+                        </div>
+
+                        <div
+                            onClick={() => setWorkMode('OUTPUT_BASED')}
+                            className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${workMode === 'OUTPUT_BASED' ? 'border-primary bg-primary/5' : 'border-muted hover:border-muted-foreground/50'}`}
+                        >
+                            <div className="font-semibold mb-1">Output Based (Net)</div>
+                            <div className="text-xs text-muted-foreground">
+                                Only counts actual working time. Breaks are subtracted from the total duration.
                             </div>
                         </div>
                     </div>

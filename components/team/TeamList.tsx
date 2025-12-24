@@ -46,9 +46,10 @@ interface User {
 
 interface TeamListProps {
     users: User[]
+    currentUserId: string
 }
 
-export function TeamList({ users }: TeamListProps) {
+export function TeamList({ users, currentUserId }: TeamListProps) {
     const router = useRouter()
     const [selectedUser, setSelectedUser] = useState<User | null>(null)
     const [editTarget, setEditTarget] = useState<string>("")
@@ -223,7 +224,9 @@ export function TeamList({ users }: TeamListProps) {
                     <TableBody>
                         {users.map((user) => (
                             <TableRow key={user.id} className="cursor-pointer hover:bg-muted/50" onClick={() => openDialog(user)}>
-                                <TableCell className="font-bold">{user.name}</TableCell>
+                                <TableCell className="font-bold">
+                                    {user.name} {user.id === currentUserId && <span className="text-muted-foreground font-normal">(you)</span>}
+                                </TableCell>
                                 <TableCell>{user.email}</TableCell>
                                 <TableCell>
                                     <span className="capitalize">

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { TeamList } from "@/components/team/TeamList"
+import { TeamOnboardingWidget } from "@/components/dashboard/TeamOnboardingWidget"
 import { AddMemberDialog } from "@/components/team/AddMemberDialog"
 import { filterVisibleUsers } from "@/lib/hierarchy-utils"
 import { Button } from "@/components/ui/button"
@@ -22,10 +23,39 @@ export default async function TeamPage() {
     })
 
     if (!currentUser?.projectId) {
+        // Fetch full user details for the private view
+        const privateUser = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                status: true,
+                image: true,
+                dailyTarget: true,
+                workDays: true,
+                createdAt: true,
+                jobTitle: true,
+                managerId: true,
+            }
+        })
+
         return (
-            <div className="container mx-auto py-10">
-                <h1 className="text-2xl font-bold mb-4">No Project Found</h1>
-                <p className="text-muted-foreground">You are not part of any project.</p>
+            <div className="container mx-auto space-y-8">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Private Session</h1>
+                    <p className="text-muted-foreground">You are currently working independently.</p>
+                </div>
+
+                <TeamOnboardingWidget />
+
+                {privateUser && (
+                    <div className="space-y-4">
+                        <h2 className="text-xl font-semibold">Your Profile</h2>
+                        <TeamList users={[privateUser]} currentUserId={session.user.id} />
+                    </div>
+                )}
             </div>
         )
     }
@@ -75,7 +105,7 @@ export default async function TeamPage() {
                 </div>
             </div>
 
-            <TeamList users={teamMembers} />
+            <TeamList users={teamMembers} currentUserId={session.user.id} />
         </div>
     )
 }
