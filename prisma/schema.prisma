@@ -110,6 +110,16 @@ model Task {
   updatedAt    DateTime     @updatedAt
   
   timeEntries  TimeEntry[]
+  checklist    ChecklistItem[]
+}
+
+model ChecklistItem {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  text      String
+  isDone    Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
 
 enum TaskStatus {

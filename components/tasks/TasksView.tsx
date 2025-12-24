@@ -16,9 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { format, isPast, isToday } from "date-fns"
-
-// Ensure interface matches Schema
-
+import { TaskDetailDialog } from "./TaskDetailDialog"
 
 interface User {
     id: string
@@ -33,7 +31,9 @@ interface TasksViewProps {
         status: string;
         priority: string;
         deadline: Date | string | null;
+        description: string | null;
         assignees: Array<{ id: string; name: string | null }>;
+        checklist: Array<{ id: string; text: string; isDone: boolean }>;
     }>
     users: User[]
     isAdmin: boolean
@@ -44,10 +44,17 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId }: Tasks
     const router = useRouter()
     const [tasks, setTasks] = useState(initialTasks)
     const [filterUserId, setFilterUserId] = useState<string>("all")
+    const [selectedTask, setSelectedTask] = useState<TasksViewProps['initialTasks'][0] | null>(null)
+    const [isDetailOpen, setIsDetailOpen] = useState(false)
 
     // Sync local state when server data changes (e.g., after task creation)
     useEffect(() => {
         setTasks(initialTasks)
+        // Update selected task if it's open, to reflect checklist changes
+        if (selectedTask) {
+            const updated = initialTasks.find(t => t.id === selectedTask.id)
+            if (updated) setSelectedTask(updated)
+        }
     }, [initialTasks])
 
     // Filter tasks
@@ -102,6 +109,11 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId }: Tasks
         router.refresh()
     }
 
+    const openTaskDetail = (task: TasksViewProps['initialTasks'][0]) => {
+        setSelectedTask(task)
+        setIsDetailOpen(true)
+    }
+
     const getPriorityColor = (p: string) => {
         switch (p) {
             case 'URGENT': return 'bg-red-600 hover:bg-red-600'
@@ -141,15 +153,15 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId }: Tasks
                     ) : (
                         filteredTasks.map((task) => (
                             <div key={task.id} className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-4 last:border-0 last:pb-0 gap-4">
-                                <div className="flex items-start gap-3 flex-1">
+                                <div className="flex items-start gap-3 flex-1 group">
                                     <Checkbox
                                         checked={task.status === 'DONE'}
                                         onCheckedChange={(checked) => handleCheckboxChange(task.id, task.status, checked as boolean)}
                                         className="mt-1"
                                     />
-                                    <div className="space-y-1 flex-1">
+                                    <div className="space-y-1 flex-1 cursor-pointer" onClick={() => openTaskDetail(task)}>
                                         <div className="flex items-center gap-2">
-                                            <span className={`text-sm font-medium ${task.status === 'DONE' ? 'line-through text-muted-foreground' : ''}`}>
+                                            <span className={`text-sm font-medium group-hover:text-primary transition-colors ${task.status === 'DONE' ? 'line-through text-muted-foreground' : ''}`}>
                                                 {task.title}
                                             </span>
                                             {isAdmin && task.assignees && task.assignees.length > 0 && (
@@ -160,6 +172,11 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId }: Tasks
                                             <Badge className={`text-[10px] h-5 px-2 flex items-center justify-center ml-2 ${getPriorityColor(task.priority)}`}>
                                                 {task.priority}
                                             </Badge>
+                                            {task.checklist && task.checklist.length > 0 && (
+                                                <Badge variant="outline" className="text-[10px] h-5 px-2 text-muted-foreground border-muted-foreground/30">
+                                                    {task.checklist.filter(i => i.isDone).length}/{task.checklist.length}
+                                                </Badge>
+                                            )}
                                         </div>
 
                                         <div className="flex items-center gap-4 text-xs text-muted-foreground pl-1">
@@ -174,8 +191,6 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId }: Tasks
                                 </div>
 
                                 <div className="flex items-center gap-2">
-
-
                                     {task.status !== 'DONE' && (
                                         <Select
                                             value={task.status}
@@ -202,6 +217,12 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId }: Tasks
                     )}
                 </div>
             </CardContent>
+
+            <TaskDetailDialog
+                task={selectedTask}
+                open={isDetailOpen}
+                onOpenChange={setIsDetailOpen}
+            />
         </Card>
     )
 }

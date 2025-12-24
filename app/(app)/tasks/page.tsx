@@ -28,7 +28,10 @@ export default async function TasksPage() {
 
     const tasks = await prisma.task.findMany({
         where,
-        include: { assignees: true },
+        include: {
+            assignees: true,
+            checklist: { orderBy: { createdAt: 'asc' } }
+        },
         orderBy: { createdAt: "desc" }
     })
 
