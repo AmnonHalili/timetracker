@@ -61,6 +61,17 @@ export async function POST(req: Request) {
             }
         })
 
+        // Auto-promote manager to MANAGER if they are currently EMPLOYEE
+        if (managerId) {
+            const manager = await prisma.user.findUnique({ where: { id: managerId } })
+            if (manager && manager.role === "EMPLOYEE") {
+                await prisma.user.update({
+                    where: { id: managerId },
+                    data: { role: "MANAGER" }
+                })
+            }
+        }
+
         return NextResponse.json({ user: newUser })
     } catch (error) {
         console.error("[CREATE_MEMBER_ERROR]", error)

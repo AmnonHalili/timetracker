@@ -3,7 +3,7 @@
 import { User } from "@prisma/client"
 import { Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
-// import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface RecursiveNodeProps {
     node: User & { children?: RecursiveNodeProps['node'][] }
@@ -25,7 +25,7 @@ export function RecursiveNode({ node, allUsers, onAddClick, depth = 0, isLast = 
 
             {/* User Card */}
             <div className={cn(
-                "relative group flex flex-col items-start p-4 rounded-lg border bg-card text-card-foreground shadow-sm w-[200px] hover:shadow-md transition-all",
+                "relative group flex flex-col items-start p-4 rounded-lg border bg-card text-card-foreground shadow-sm w-[220px] hover:shadow-md transition-all",
                 node.role === 'ADMIN' && "border-primary/50 bg-primary/5"
             )}>
                 {/* Header/Role Color Indicator */}
@@ -35,9 +35,20 @@ export function RecursiveNode({ node, allUsers, onAddClick, depth = 0, isLast = 
                         node.role === 'MANAGER' ? "bg-blue-500" : "bg-zinc-300"
                 )} />
 
-                <div className="pl-2">
-                    <div className="font-semibold truncate w-[160px]" title={node.name}>{node.name}</div>
-                    <div className="text-xs text-muted-foreground capitalize">{node.role.toLowerCase().replace('_', ' ')}</div>
+                <div className="pl-3 flex items-center gap-3 w-full">
+                    <Avatar className="h-10 w-10 border border-border/50">
+                        <AvatarImage src={node.image || undefined} alt={node.name} />
+                        <AvatarFallback className="bg-muted text-muted-foreground text-xs">
+                            {node.name.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                    </Avatar>
+
+                    <div className="flex flex-col overflow-hidden">
+                        <div className="font-semibold truncate text-sm" title={node.name}>{node.name}</div>
+                        <div className="text-[10px] text-muted-foreground capitalize leading-tight">
+                            {node.role.toLowerCase().replace('_', ' ')}
+                        </div>
+                    </div>
                 </div>
 
                 {/* Add Button - Bottom Right */}

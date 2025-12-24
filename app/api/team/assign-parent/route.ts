@@ -38,11 +38,19 @@ export async function POST(req: Request) {
             where: { id: userId },
             data: {
                 managerId: parentId,
-                // If they have children, they must be a manager
-                role: "MANAGER" // Auto-promote if needed, or handle in UI? 
-                // Let's keep role separate for now, but UI should enforce logic
             }
         })
+
+        // Auto-promote parent to MANAGER if they are currently EMPLOYEE
+        if (parentId) {
+            const parent = await prisma.user.findUnique({ where: { id: parentId } })
+            if (parent && parent.role === "EMPLOYEE") {
+                await prisma.user.update({
+                    where: { id: parentId },
+                    data: { role: "MANAGER" }
+                })
+            }
+        }
 
         return NextResponse.json({ user: updatedUser })
     } catch (error) {
