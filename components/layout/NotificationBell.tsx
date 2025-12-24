@@ -71,10 +71,10 @@ export function NotificationBell() {
     return (
         <Popover open={isOpen} onOpenChange={setIsOpen}>
             <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative">
-                    <Bell className="h-5 w-5 text-muted-foreground" />
+                <Button variant="ghost" size="icon" className="relative h-14 w-14 [&_svg]:h-7 [&_svg]:w-7">
+                    <Bell className="h-7 w-7 text-muted-foreground" />
                     {unreadCount > 0 && (
-                        <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-600 animate-pulse" />
+                        <span className="absolute top-3.5 right-3.5 h-3 w-3 rounded-full bg-red-600 animate-pulse border-2 border-background" />
                     )}
                 </Button>
             </PopoverTrigger>

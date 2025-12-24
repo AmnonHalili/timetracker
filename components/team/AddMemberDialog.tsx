@@ -36,6 +36,7 @@ interface AddMemberDialogProps {
     hideManagerSelect?: boolean
     triggerLabel?: string
     onSuccess?: () => void
+    customTrigger?: React.ReactNode
 }
 
 export function AddMemberDialog({
@@ -43,7 +44,8 @@ export function AddMemberDialog({
     lockRole = false,
     hideManagerSelect = false,
     triggerLabel = "Add Member",
-    onSuccess
+    onSuccess,
+    customTrigger
 }: AddMemberDialogProps) {
     const router = useRouter()
     const [open, setOpen] = useState(false)
@@ -121,10 +123,14 @@ export function AddMemberDialog({
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    {triggerLabel}
-                </Button>
+                {customTrigger ? (
+                    customTrigger
+                ) : (
+                    <Button>
+                        <UserPlus className="mr-2 h-4 w-4" />
+                        {triggerLabel}
+                    </Button>
+                )}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <form onSubmit={handleSubmit}>

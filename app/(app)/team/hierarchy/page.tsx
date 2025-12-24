@@ -4,9 +4,10 @@ import { useEffect, useState, useMemo } from "react"
 import { RecursiveNode } from "@/components/team/RecursiveNode"
 import { AddChildDialog } from "@/components/team/AddChildDialog"
 import { User } from "@prisma/client"
-import { Loader2 } from "lucide-react"
+import { Loader2, UserPlus } from "lucide-react"
 import { toast } from "sonner"
 import { useSession } from "next-auth/react"
+import { Button } from "@/components/ui/button"
 
 import { AddMemberDialog } from "@/components/team/AddMemberDialog"
 
@@ -93,6 +94,12 @@ export default function HierarchyPage() {
                             lockRole={true}
                             hideManagerSelect={true}
                             onSuccess={fetchHierarchy}
+                            customTrigger={
+                                <Button variant="outline" size="sm" className="gap-2 bg-background/50 backdrop-blur-sm">
+                                    <UserPlus className="h-4 w-4" />
+                                    <span className="hidden sm:inline">Add Admin</span>
+                                </Button>
+                            }
                         />
                     )}
                 </div>
