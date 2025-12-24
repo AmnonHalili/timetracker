@@ -141,6 +141,7 @@ model Notification {
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String
   message   String
+  link      String?          // URL to redirect to
   type      NotificationType @default(INFO)
   isRead    Boolean          @default(false)
   createdAt DateTime         @default(now())

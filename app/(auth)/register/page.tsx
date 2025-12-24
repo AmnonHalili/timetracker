@@ -132,7 +132,6 @@ function RegisterForm() {
                         <Label htmlFor="name">Full Name</Label>
                         <Input
                             id="name"
-                            placeholder="John Doe"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             required
@@ -143,7 +142,6 @@ function RegisterForm() {
                         <Input
                             id="email"
                             type="email"
-                            placeholder="name@example.com"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required

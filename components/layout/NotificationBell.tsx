@@ -10,11 +10,13 @@ import {
 import { useState, useEffect } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatDistanceToNow } from "date-fns"
+import { useRouter } from "next/navigation"
 
 interface Notification {
     id: string
     title: string
     message: string
+    link?: string | null
     type: 'INFO' | 'WARNING' | 'SUCCESS' | 'ERROR'
     isRead: boolean
     createdAt: string
@@ -24,6 +26,7 @@ export function NotificationBell() {
     const [notifications, setNotifications] = useState<Notification[]>([])
     const [unreadCount, setUnreadCount] = useState(0)
     const [isOpen, setIsOpen] = useState(false)
+    const router = useRouter()
 
     const fetchNotifications = async () => {
         try {
@@ -97,8 +100,14 @@ export function NotificationBell() {
                             {notifications.map((notification) => (
                                 <div
                                     key={notification.id}
-                                    className={`p-4 hover:bg-muted/50 transition-colors ${!notification.isRead ? 'bg-muted/20' : ''}`}
-                                    onClick={() => !notification.isRead && markAsRead(notification.id)}
+                                    className={`p-4 hover:bg-muted/50 transition-colors cursor-pointer ${!notification.isRead ? 'bg-muted/20' : ''}`}
+                                    onClick={() => {
+                                        if (!notification.isRead) markAsRead(notification.id)
+                                        if (notification.link) {
+                                            router.push(notification.link)
+                                            setIsOpen(false)
+                                        }
+                                    }}
                                 >
                                     <div className="flex justify-between items-start gap-2">
                                         <div className="space-y-1">

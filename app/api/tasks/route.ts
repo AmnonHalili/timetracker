@@ -74,6 +74,7 @@ export async function POST(req: Request) {
             userId: id,
             title: "New Task Assigned",
             message: `You have been assigned to task: "${title}"`,
+            link: '/tasks',
             type: "INFO" as const
         }))
 
