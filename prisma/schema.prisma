@@ -18,6 +18,7 @@ model User {
   status        Status      @default(PENDING)
   dailyTarget   Float       @default(9.0)
   workDays      Int[]       // [0,1,2,3,4] for Sun-Thu
+  workMode      WorkMode    @default(OUTPUT_BASED)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   image         String?     // Base64 or URL
@@ -150,4 +151,9 @@ enum NotificationType {
   WARNING
   SUCCESS
   ERROR
+}
+
+enum WorkMode {
+  OUTPUT_BASED // Net work (Total - Breaks)
+  TIME_BASED   // Time at work (Total including Breaks)
 }

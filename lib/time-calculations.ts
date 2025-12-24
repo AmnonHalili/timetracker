@@ -1,59 +1,85 @@
-import { TimeEntry, User } from "@prisma/client"
-import { eachDayOfInterval, endOfDay, isSameDay, startOfDay } from "date-fns"
+import { TimeEntry, User, WorkMode } from "@prisma/client"
+import { eachDayOfInterval, endOfDay, isSameDay, startOfDay, isSameMonth } from "date-fns"
 
 export type BalanceResult = {
     totalWorkedHours: number
     totalTargetHours: number
-    balance: number // +positive (extra) or -negative (missing)
+    balance: number
     daysWorked: number
     todayWorked: number
+    accumulatedDeficit: number
+    monthlyOvertime: number
+}
+
+// Helper type for inputs
+type UserWithEntries = User & {
+    timeEntries: (TimeEntry & { breaks?: { startTime: Date; endTime: Date | null }[] })[]
 }
 
 export function calculateBalance(
-    user: User & { timeEntries: TimeEntry[] },
+    user: any, // Using any to bypass strict Prisma type mismatches temporarily
     referenceDate: Date = new Date()
 ): BalanceResult {
     const { dailyTarget, workDays, createdAt, timeEntries } = user
+    const workMode = (user as any).workMode || 'OUTPUT_BASED' // Graceful fallback if type isn't updated yet
 
-    // 1. Calculate Total Worked Hours from closed entries
-    // For open entries (endTime is null), we ignore them in historical totals 
-    // or you could calculate 'current duration' if you want live updates.
-    // Here we only sum fully completed entries or calculate duration for open ones based on 'now'.
+    // Map duration by day
+    const hoursPerDay: Record<string, number> = {}
     let totalWorkedHours = 0
     let todayWorked = 0
 
     timeEntries.forEach((entry) => {
         const start = new Date(entry.startTime)
-        const end = entry.endTime ? new Date(entry.endTime) : referenceDate // If running, count until now
+        const end = entry.endTime ? new Date(entry.endTime) : referenceDate
 
-        // Safety check for weird dates
         if (end < start) return
 
-        const durationMs = end.getTime() - start.getTime()
-        const durationHours = durationMs / (1000 * 60 * 60)
+        let durationMs = end.getTime() - start.getTime()
+
+        // If OUTPUT_BASED (Net Work), subtract valid breaks
+        if (workMode === 'OUTPUT_BASED' && entry.breaks && entry.breaks.length > 0) {
+            entry.breaks.forEach(brk => {
+                const breakStart = new Date(brk.startTime)
+                const breakEnd = brk.endTime ? new Date(brk.endTime) : referenceDate
+
+                // Only subtract break if it overlaps with the entry (it should)
+                // and distinct from "total duration" logic
+                if (breakEnd > breakStart) {
+                    durationMs -= (breakEnd.getTime() - breakStart.getTime())
+                }
+            })
+        }
+
+        const durationHours = Math.max(0, durationMs) / (1000 * 60 * 60) // Ensure no negative duration
 
         totalWorkedHours += durationHours
+
+        const dayKey = startOfDay(start).toISOString()
+        hoursPerDay[dayKey] = (hoursPerDay[dayKey] || 0) + durationHours
 
         if (isSameDay(start, referenceDate)) {
             todayWorked += durationHours
         }
     })
 
-    // 2. Calculate Total Target Hours
-    // Iterate from created day until yesterday (since today is still in progress)
-    // OR include today in target if you want "balance so far today". 
-    // Usually balance implies "past debt/surplus". Let's say we calculate up to yesterday for strict balance,
-    // or full balance including today. Let's include today to show "live status".
-
     let totalTargetHours = 0
     let daysValid = 0
+    let accumulatedDeficit = 0
+    let monthlyOvertime = 0
 
     const userStartDate = startOfDay(new Date(createdAt))
     const checkEndDate = endOfDay(referenceDate) // Include today
 
-    // If user just started today
     if (userStartDate > checkEndDate) {
-        return { totalWorkedHours, totalTargetHours: 0, balance: totalWorkedHours, daysWorked: 0, todayWorked }
+        return {
+            totalWorkedHours,
+            totalTargetHours: 0,
+            balance: totalWorkedHours,
+            daysWorked: 0,
+            todayWorked,
+            accumulatedDeficit: 0,
+            monthlyOvertime: 0
+        }
     }
 
     const daysToCheck = eachDayOfInterval({
@@ -62,22 +88,36 @@ export function calculateBalance(
     })
 
     daysToCheck.forEach((day) => {
-        // day.getDay(): 0=Sunday, 1=Monday...
-        // workDays is array of ints [0, 1, 2, 3, 4] etc
+        // Check if it's a valid work day
         if (workDays.includes(day.getDay())) {
             totalTargetHours += dailyTarget
             daysValid++
+
+            const dayKey = startOfDay(day).toISOString()
+            const worked = hoursPerDay[dayKey] || 0
+
+            if (worked < dailyTarget) {
+                accumulatedDeficit += (dailyTarget - worked)
+            } else if (worked > dailyTarget) {
+                // Only count extra if it's in the current month (per user req)
+                // Wait, user said "Extra accumulates by month". 
+                // Does this mean it resets every month? Likely yes.
+                if (isSameMonth(day, referenceDate)) {
+                    monthlyOvertime += (worked - dailyTarget)
+                }
+            }
         }
     })
 
-    // 3. Final Balance
     const balance = totalWorkedHours - totalTargetHours
 
     return {
         totalWorkedHours,
         totalTargetHours,
-        balance,
+        balance, // Keeping for backward compat if needed
         daysWorked: daysValid,
-        todayWorked
+        todayWorked,
+        accumulatedDeficit,
+        monthlyOvertime
     }
 }

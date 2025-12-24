@@ -88,8 +88,8 @@ export default async function DashboardPage() {
     // For list, use completed entries, reverse chronology
     const historyEntries = user.timeEntries.filter(e => e.endTime !== null).reverse()
 
-    // Calculate remaining hours for today
-    const remainingHours = Math.max(0, user.dailyTarget - stats.todayWorked)
+    // Use accumulated deficit for remaining hours (per user definition)
+    const remainingHours = stats.accumulatedDeficit
 
     // Fetch available tasks for the user
     const tasks = await prisma.task.findMany({
@@ -120,7 +120,7 @@ export default async function DashboardPage() {
                 {/* Right Sidebar */}
                 <div className="lg:sticky lg:top-8 space-y-8">
                     {/* Stats Widget (Always visible) */}
-                    <StatsWidget extraHours={stats.balance} remainingHours={remainingHours} />
+                    <StatsWidget extraHours={stats.monthlyOvertime} remainingHours={remainingHours} />
 
                     {/* Team Status (Admin Only) */}
                     {user.role === "ADMIN" && (
