@@ -14,7 +14,9 @@ import { AddMemberDialog } from "@/components/team/AddMemberDialog"
 type TreeNode = User & { children: TreeNode[], managerId: string | null }
 
 export default function HierarchyPage() {
+    const { data: session } = useSession()
     const [users, setUsers] = useState<User[]>([])
+    const [projectName, setProjectName] = useState("Organization")
     const [isLoading, setIsLoading] = useState(true)
 
     // Dialog State
@@ -29,6 +31,7 @@ export default function HierarchyPage() {
             if (!res.ok) throw new Error("Failed to fetch hierarchy")
             const data = await res.json()
             setUsers(data.users || [])
+            if (data.projectName) setProjectName(data.projectName)
         } catch (error) {
             console.error(error)
             toast.error("Failed to load hierarchy")
@@ -55,7 +58,7 @@ export default function HierarchyPage() {
         const rootNodes: TreeNode[] = []
 
         // Initialize recursive nodes
-        users.forEach(user => {
+        users.forEach((user: any) => {
             userMap.set(user.id, { ...user, children: [] })
         })
 
@@ -83,27 +86,87 @@ export default function HierarchyPage() {
             <div className="flex justify-between items-center max-w-5xl mx-auto mb-8 relative">
                 <h1 className="text-2xl font-bold text-center w-full">Organization Hierarchy</h1>
                 <div className="absolute right-0 top-0">
-                    <AddMemberDialog
-                        triggerLabel="Add Admin"
-                        defaultRole="ADMIN"
-                        lockRole={true}
-                        hideManagerSelect={true}
-                        onSuccess={fetchHierarchy}
-                    />
+                    {session?.user?.role === "ADMIN" && (
+                        <AddMemberDialog
+                            triggerLabel="Add Admin"
+                            defaultRole="ADMIN"
+                            lockRole={true}
+                            hideManagerSelect={true}
+                            onSuccess={fetchHierarchy}
+                        />
+                    )}
                 </div>
             </div>
 
-            <div className="flex justify-center min-w-max pb-20">
-                <div className="flex gap-8">
-                    {tree?.map((rootNode) => (
-                        <div key={rootNode.id} className="relative">
-                            <RecursiveNode
-                                node={rootNode}
-                                allUsers={users}
-                                onAddClick={handleAddClick}
-                            />
+            {/* Project Root Node Section */}
+            <div className="flex flex-col items-center mb-8 relative">
+                {/* Project Card */}
+                <div className="bg-primary text-primary-foreground px-8 py-4 rounded-xl shadow-lg border-2 border-primary-foreground/20 z-10 mb-8">
+                    <h2 className="text-xl font-bold tracking-tight">{projectName}</h2>
+                    <div className="text-sm opacity-80 text-center uppercase tracking-wider font-medium">Company Overview</div>
+                </div>
+
+                {/* Connector to Roots */}
+                {tree && tree.length > 0 && (
+                    <>
+                        {/* Vertical line from Project Card down */}
+                        <div className="absolute top-[3.5rem] h-8 w-px bg-border" />
+
+                        {/* Horizontal Line spanning first to last root */}
+                        {tree.length > 1 && (
+                            <div className="absolute top-[5.5rem] h-px bg-border w-full max-w-[calc(100%-16rem)] hidden" />
+                            // Calculating exact width is tricky. 
+                            // Let's use the same trick as RecursiveNode: each child draws its own connector
+                        )}
+
+                        <div className="absolute top-[5.5rem] w-full flex justify-center">
+                            {/* This is the horizontal bus line from which roots hang */}
+                            {/* Ideally, we want a line traversing the tops of the root nodes. 
+                                 The root nodes are rendered below in a flex row.
+                             */}
                         </div>
-                    ))}
+                    </>
+                )}
+            </div>
+
+            <div className="flex justify-center min-w-max pb-20">
+                <div className="flex gap-8 relative items-start">
+                    {/* Horizontal Line Logic:
+                        We construct the horizontal bus line using segments from each child.
+                        Gap is 32px (2rem). Half gap is 16px (1rem).
+                     */}
+                    {tree?.map((rootNode, index) => {
+                        const isFirst = index === 0
+                        const isLast = index === (tree.length - 1)
+                        const isOnly = tree.length === 1
+
+                        return (
+                            <div key={rootNode.id} className="relative flex flex-col items-center">
+                                {/* Horizontal Segments */}
+                                {!isOnly && (
+                                    <>
+                                        {/* Connector to Right Sibling (for First and Middle) */}
+                                        {!isLast && (
+                                            <div className="absolute top-[-2rem] right-[-1rem] h-px bg-border w-[calc(50%+1rem)]" />
+                                        )}
+                                        {/* Connector to Left Sibling (for Last and Middle) */}
+                                        {!isFirst && (
+                                            <div className="absolute top-[-2rem] left-[-1rem] h-px bg-border w-[calc(50%+1rem)]" />
+                                        )}
+                                    </>
+                                )}
+
+                                {/* Vertical line up to the Project Bus */}
+                                <div className="h-8 w-px bg-border absolute -top-8" />
+
+                                <RecursiveNode
+                                    node={rootNode}
+                                    allUsers={users}
+                                    onAddClick={handleAddClick}
+                                />
+                            </div>
+                        )
+                    })}
                     {!tree?.length && <div className="text-muted-foreground">No users found.</div>}
                 </div>
             </div>

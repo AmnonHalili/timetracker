@@ -14,7 +14,14 @@ export async function GET() {
     try {
         const currentUser = await prisma.user.findUnique({
             where: { id: session.user.id },
-            select: { role: true, projectId: true, id: true }
+            select: {
+                role: true,
+                projectId: true,
+                id: true,
+                project: {
+                    select: { name: true }
+                }
+            }
         })
 
         if (!currentUser?.projectId) {
@@ -39,7 +46,10 @@ export async function GET() {
             orderBy: { createdAt: "asc" }
         })
 
-        return NextResponse.json({ users: allUsers })
+        return NextResponse.json({
+            users: allUsers,
+            projectName: currentUser.project?.name || "My Organization"
+        })
     } catch (error) {
         console.error("[HIERARCHY_FETCH_ERROR]", error)
         return NextResponse.json({ message: "Failed to fetch hierarchy" }, { status: 500 })
