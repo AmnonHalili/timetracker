@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     }
 
     try {
-        const { name, email, password, role, managerId } = await req.json()
+        const { name, email, password, role, managerId, jobTitle } = await req.json()
 
         if (!name || !email || !password) {
             return NextResponse.json({ message: "Missing required fields" }, { status: 400 })
@@ -54,6 +54,7 @@ export async function POST(req: Request) {
                 email,
                 password: hashedPassword,
                 role: role || "EMPLOYEE",
+                jobTitle: jobTitle || null,
                 projectId: currentUser.projectId,
                 managerId: managerId || null,
                 status: "ACTIVE", // Auto-activate if added by admin/manager

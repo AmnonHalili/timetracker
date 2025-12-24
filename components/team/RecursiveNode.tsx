@@ -25,14 +25,13 @@ export function RecursiveNode({ node, allUsers, onAddClick, depth = 0, isLast = 
 
             {/* User Card */}
             <div className={cn(
-                "relative group flex flex-col items-start p-4 rounded-lg border bg-card text-card-foreground shadow-sm w-[220px] hover:shadow-md transition-all",
-                node.role === 'ADMIN' && "border-primary/50 bg-primary/5"
+                "relative group flex flex-col items-start p-4 rounded-lg border bg-card text-card-foreground shadow-sm w-[220px] hover:shadow-md transition-all"
             )}>
                 {/* Header/Role Color Indicator */}
                 <div className={cn(
                     "absolute top-0 left-0 w-1 h-full rounded-l-lg",
-                    node.role === 'ADMIN' ? "bg-primary" :
-                        node.role === 'MANAGER' ? "bg-blue-500" : "bg-zinc-300"
+                    node.role === 'ADMIN' ? "bg-black dark:bg-white" :
+                        hasChildren ? "bg-amber-700" : "bg-green-500"
                 )} />
 
                 <div className="pl-3 flex items-center gap-3 w-full">
@@ -46,7 +45,7 @@ export function RecursiveNode({ node, allUsers, onAddClick, depth = 0, isLast = 
                     <div className="flex flex-col overflow-hidden">
                         <div className="font-semibold truncate text-sm" title={node.name}>{node.name}</div>
                         <div className="text-[10px] text-muted-foreground capitalize leading-tight">
-                            {node.role.toLowerCase().replace('_', ' ')}
+                            {(node as any).jobTitle ? (node as any).jobTitle : node.role.toLowerCase().replace('_', ' ')}
                         </div>
                     </div>
                 </div>

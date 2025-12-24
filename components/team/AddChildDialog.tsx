@@ -39,6 +39,7 @@ export function AddChildDialog({
     const [newEmail, setNewEmail] = useState("")
     const [newPassword, setNewPassword] = useState("")
     const [newRole, setNewRole] = useState("EMPLOYEE")
+    const [newJobTitle, setNewJobTitle] = useState("")
 
     const handleExistingSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -84,6 +85,7 @@ export function AddChildDialog({
                     email: newEmail,
                     password: newPassword,
                     role: newRole,
+                    jobTitle: newJobTitle,
                     managerId: parentId // Assign directly to this parent
                 })
             })
@@ -221,6 +223,15 @@ export function AddChildDialog({
                                 </SelectContent>
                             </Select>
                         </div>
+                        <div className="space-y-1">
+                            <Label htmlFor="newJobTitle">Job Title</Label>
+                            <Input
+                                id="newJobTitle"
+                                value={newJobTitle}
+                                onChange={(e) => setNewJobTitle(e.target.value)}
+                                placeholder="e.g. Junior Developer"
+                            />
+                        </div>
 
                         <div className="flex justify-end gap-2 pt-4">
                             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
@@ -234,6 +245,6 @@ export function AddChildDialog({
                     </form>
                 )}
             </DialogContent>
-        </Dialog>
+        </Dialog >
     )
 }

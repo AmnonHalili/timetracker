@@ -30,15 +30,30 @@ interface SimpleUser {
     role: string
 }
 
-export function AddMemberDialog() {
+interface AddMemberDialogProps {
+    defaultRole?: string
+    lockRole?: boolean
+    hideManagerSelect?: boolean
+    triggerLabel?: string
+    onSuccess?: () => void
+}
+
+export function AddMemberDialog({
+    defaultRole = "EMPLOYEE",
+    lockRole = false,
+    hideManagerSelect = false,
+    triggerLabel = "Add Member",
+    onSuccess
+}: AddMemberDialogProps) {
     const router = useRouter()
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
     const [name, setName] = useState("")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
-    const [role, setRole] = useState("EMPLOYEE")
-    const [managerId, setManagerId] = useState<string>("")
+    const [role, setRole] = useState(defaultRole)
+    const [jobTitle, setJobTitle] = useState("")
+    const [managerId, setManagerId] = useState<string>(hideManagerSelect ? "unassigned" : "")
     const [managers, setManagers] = useState<SimpleUser[]>([])
 
     // Fetch potential managers when dialog opens
@@ -78,6 +93,7 @@ export function AddMemberDialog() {
                     email,
                     password,
                     role,
+                    jobTitle,
                     managerId: managerId === "unassigned" ? null : managerId
                 }),
             })
@@ -89,11 +105,12 @@ export function AddMemberDialog() {
 
             setOpen(false)
             router.refresh()
+            if (onSuccess) onSuccess()
             // Reset form
             setName("")
             setEmail("")
             setPassword("")
-            setManagerId("")
+            setManagerId(hideManagerSelect ? "unassigned" : "")
         } catch (error) {
             alert(error)
         } finally {
@@ -106,7 +123,7 @@ export function AddMemberDialog() {
             <DialogTrigger asChild>
                 <Button>
                     <UserPlus className="mr-2 h-4 w-4" />
-                    Add Member
+                    {triggerLabel}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
@@ -157,42 +174,62 @@ export function AddMemberDialog() {
                                 placeholder="e.g. 123456"
                             />
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="manager" className="text-right">
-                                Reports To
-                            </Label>
-                            <div className="col-span-3">
-                                <Select onValueChange={setManagerId} value={managerId}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select Manager (Optional)" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="unassigned">No Manager (Top Level)</SelectItem>
-                                        {managers.map((user) => (
-                                            <SelectItem key={user.id} value={user.id}>
-                                                {user.name} ({user.role})
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                        {!hideManagerSelect && (
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="manager" className="text-right">
+                                    Reports To
+                                </Label>
+                                <div className="col-span-3">
+                                    <Select onValueChange={setManagerId} value={managerId}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select Manager (Optional)" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="unassigned">No Manager (Top Level)</SelectItem>
+                                            {managers.map((user) => (
+                                                <SelectItem key={user.id} value={user.id}>
+                                                    {user.name} ({user.role})
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="role" className="text-right">
-                                Role
-                            </Label>
-                            <div className="col-span-3">
-                                <select
-                                    id="role"
-                                    className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    value={role}
-                                    onChange={(e) => setRole(e.target.value)}
-                                >
-                                    <option value="EMPLOYEE">Employee</option>
-                                    <option value="MANAGER">Manager</option>
-                                    <option value="ADMIN">Admin</option>
-                                </select>
+                        )}
+
+                        {!lockRole ? (
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="role" className="text-right">
+                                    Role
+                                </Label>
+                                <div className="col-span-3">
+                                    <select
+                                        id="role"
+                                        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                        value={role}
+                                        onChange={(e) => setRole(e.target.value)}
+                                    >
+                                        <option value="EMPLOYEE">Employee</option>
+                                        <option value="MANAGER">Manager</option>
+                                        <option value="ADMIN">Admin</option>
+                                    </select>
+                                </div>
                             </div>
+                        ) : (
+                            <input type="hidden" value={role} />
+                        )}
+
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="jobTitle" className="text-right">
+                                Job Title
+                            </Label>
+                            <Input
+                                id="jobTitle"
+                                value={jobTitle}
+                                onChange={(e) => setJobTitle(e.target.value)}
+                                className="col-span-3"
+                                placeholder="e.g. CEO, Product Manager"
+                            />
                         </div>
                     </div>
                     <DialogFooter>

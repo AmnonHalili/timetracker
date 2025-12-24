@@ -7,6 +7,8 @@ import { User } from "@prisma/client"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
+import { AddMemberDialog } from "@/components/team/AddMemberDialog"
+
 // Defined locally to match RecursiveNode props
 type TreeNode = User & { children: TreeNode[] }
 
@@ -80,7 +82,18 @@ export default function HierarchyPage() {
 
     return (
         <div className="p-8 overflow-auto min-h-[calc(100vh-4rem)] bg-background/50">
-            <h1 className="text-2xl font-bold mb-8 text-center">Organization Hierarchy</h1>
+            <div className="flex justify-between items-center max-w-5xl mx-auto mb-8 relative">
+                <h1 className="text-2xl font-bold text-center w-full">Organization Hierarchy</h1>
+                <div className="absolute right-0 top-0">
+                    <AddMemberDialog
+                        triggerLabel="Add Admin"
+                        defaultRole="ADMIN"
+                        lockRole={true}
+                        hideManagerSelect={true}
+                        onSuccess={fetchHierarchy}
+                    />
+                </div>
+            </div>
 
             <div className="flex justify-center min-w-max pb-20">
                 <div className="flex gap-8">

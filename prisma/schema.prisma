@@ -14,6 +14,7 @@ model User {
   password      String
   name          String
   role          Role        @default(EMPLOYEE)
+  jobTitle      String?     // Custom role title e.g. CEO, HR Manager
   status        Status      @default(PENDING)
   dailyTarget   Float       @default(9.0)
   workDays      Int[]       // [0,1,2,3,4] for Sun-Thu

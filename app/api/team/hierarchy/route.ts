@@ -33,6 +33,7 @@ export async function GET() {
                 role: true,
                 image: true,
                 managerId: true,
+                jobTitle: true,
                 // We'll fetch flat and reconstruct for valid JSON tree
             },
             orderBy: { createdAt: "asc" }
