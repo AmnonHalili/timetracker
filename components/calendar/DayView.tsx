@@ -75,17 +75,8 @@ export function DayView({ date, events, projectId, onBack }: DayViewProps) {
     return (
         <div className="space-y-4">
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    {onBack && (
-                        <Button variant="ghost" size="icon" onClick={onBack} className="-ml-2">
-                            <ArrowLeft className="h-5 w-5" />
-                        </Button>
-                    )}
-                    <h3 className="text-lg font-bold">
-                        {format(date, 'EEEE, MMMM d, yyyy')}
-                    </h3>
-                </div>
+            {/* Header - Buttons only (Date title is in parent) */}
+            <div className="flex items-center justify-end">
                 <Button size="sm" onClick={() => { setSelectedHour(undefined); setCreateDialogOpen(true) }}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Event
