@@ -174,11 +174,14 @@ function SecurityForm() {
     )
 }
 
-function PreferencesForm({ user }: { user: { dailyTarget: number | null; workDays: number[]; workMode: 'OUTPUT_BASED' | 'TIME_BASED'; role: string; projectId: string | null } }) {
+function PreferencesForm({ user }: { user: { dailyTarget: number | null; workDays: number[]; workMode: 'OUTPUT_BASED' | 'TIME_BASED' | 'PROJECT_BASED'; role: string; projectId: string | null } }) {
     const [loading, setLoading] = useState(false)
     const [target, setTarget] = useState(user.dailyTarget?.toString() || "")
     const [selectedDays, setSelectedDays] = useState<number[]>(user.workDays || [])
-    const [workMode] = useState<'OUTPUT_BASED' | 'TIME_BASED'>(user.workMode || 'TIME_BASED')
+    // Filter out PROJECT_BASED since it's deprecated, default to TIME_BASED
+    const [workMode] = useState<'OUTPUT_BASED' | 'TIME_BASED'>(
+        user.workMode === 'PROJECT_BASED' ? 'TIME_BASED' : user.workMode
+    )
     const router = useRouter()
 
     const canEdit = !(user.role === 'EMPLOYEE' && user.projectId !== null)
