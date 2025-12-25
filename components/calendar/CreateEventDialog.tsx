@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Plus, Pencil } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { useSession } from "next-auth/react"
 
 interface CreateEventDialogProps {
     open: boolean
@@ -23,6 +24,7 @@ interface CreateEventDialogProps {
 
 export function CreateEventDialog({ open, onOpenChange, defaultDate, projectId, event, mode = 'create' }: CreateEventDialogProps) {
     const router = useRouter()
+    const { data: session } = useSession()
     const [loading, setLoading] = useState(false)
 
     // Form state
@@ -31,6 +33,8 @@ export function CreateEventDialog({ open, onOpenChange, defaultDate, projectId, 
     const [type, setType] = useState("MEETING")
     const [location, setLocation] = useState("")
     const [allDay, setAllDay] = useState(false)
+    const [users, setUsers] = useState<Array<{ id: string; name: string | null; email: string | null }>>([])
+    const [participantIds, setParticipantIds] = useState<string[]>([])
 
     // Date/Time state
     const formatDateLocal = (date: Date) => {
@@ -52,12 +56,29 @@ export function CreateEventDialog({ open, onOpenChange, defaultDate, projectId, 
     // Initialize/Reset form based on mode and open state
     useEffect(() => {
         if (open) {
+            // Fetch users list
+            fetch("/api/team?all=true")
+                .then(res => res.json())
+                .then(data => {
+                    setUsers(data)
+                })
+                .catch(() => {
+                    console.error("Failed to load users")
+                    setUsers([])
+                })
+
             if (mode === 'edit' && event) {
                 setTitle(event.title)
                 setDescription(event.description || "")
                 setType(event.type)
                 setLocation(event.location || "")
                 setAllDay(event.allDay)
+
+                // Populate participants
+                if (event.participants) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    setParticipantIds(event.participants.map((p: any) => p.user.id))
+                }
 
                 const start = new Date(event.startTime)
                 const end = new Date(event.endTime)
@@ -103,7 +124,7 @@ export function CreateEventDialog({ open, onOpenChange, defaultDate, projectId, 
                     type,
                     location: location || null,
                     projectId,
-                    participantIds: [],
+                    participantIds,
                     reminderMinutes: []
                 })
             })
@@ -133,6 +154,7 @@ export function CreateEventDialog({ open, onOpenChange, defaultDate, projectId, 
         setType("MEETING")
         setLocation("")
         setAllDay(false)
+        setParticipantIds([])
 
         const baseDate = defaultDate || new Date()
         const dateStr = formatDateLocal(baseDate)
@@ -149,6 +171,22 @@ export function CreateEventDialog({ open, onOpenChange, defaultDate, projectId, 
         setStartTime(startHourStr)
         setEndDate(dateStr)
         setEndTime(endHourStr)
+    }
+
+    const toggleUser = (userId: string) => {
+        setParticipantIds(prev =>
+            prev.includes(userId)
+                ? prev.filter(id => id !== userId)
+                : [...prev, userId]
+        )
+    }
+
+    const toggleSelectAll = () => {
+        if (participantIds.length === users.length) {
+            setParticipantIds([])
+        } else {
+            setParticipantIds(users.map(u => u.id))
+        }
     }
 
     return (
@@ -277,6 +315,44 @@ export function CreateEventDialog({ open, onOpenChange, defaultDate, projectId, 
                                 placeholder="Office, Zoom link, etc."
                             />
                         </div>
+
+                        {/* Participants */}
+                        {users.length > 0 && (
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <Label>Participants</Label>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-auto p-0 text-xs text-muted-foreground hover:text-primary"
+                                        onClick={toggleSelectAll}
+                                    >
+                                        {participantIds.length === users.length ? 'Deselect All' : 'Select All'}
+                                    </Button>
+                                </div>
+                                <div className="border rounded-md max-h-40 overflow-y-auto p-2 space-y-2">
+                                    {users.map(user => {
+                                        const isCurrentUser = user.id === session?.user?.id
+                                        return (
+                                            <div key={user.id} className="flex items-center space-x-2">
+                                                <input
+                                                    type="checkbox"
+                                                    id={`user-${user.id}`}
+                                                    checked={participantIds.includes(user.id)}
+                                                    onChange={() => toggleUser(user.id)}
+                                                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                                />
+                                                <Label htmlFor={`user-${user.id}`} className="cursor-pointer text-sm font-normal flex items-center gap-1">
+                                                    {user.name || user.email}
+                                                    {isCurrentUser && <span className="text-xs text-muted-foreground">(You)</span>}
+                                                </Label>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        )}
 
 
                     </div>
