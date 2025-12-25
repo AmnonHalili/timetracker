@@ -45,7 +45,7 @@ function ProfileForm({ user }: ProfileFormProps) {
     const [image, setImage] = useState(user.image || "")
     const fileInputRef = useRef<HTMLInputElement>(null)
     const router = useRouter()
-    
+
     // Calculate default job title based on user role and team status
     // Default to "Founder" for ADMIN users who created a team, "single" for members without a team
     const getDefaultJobTitle = () => {
@@ -58,7 +58,7 @@ function ProfileForm({ user }: ProfileFormProps) {
         // For other cases (members with a team), return empty string (no default)
         return ""
     }
-    
+
     const [jobTitle, setJobTitle] = useState(getDefaultJobTitle())
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -139,10 +139,10 @@ function ProfileForm({ user }: ProfileFormProps) {
                 </div>
                 <div className="space-y-1">
                     <Label htmlFor="jobTitle">Job Title</Label>
-                    <Input 
-                        id="jobTitle" 
-                        value={jobTitle} 
-                        onChange={e => setJobTitle(e.target.value)} 
+                    <Input
+                        id="jobTitle"
+                        value={jobTitle}
+                        onChange={e => setJobTitle(e.target.value)}
                         placeholder="Enter your job title"
                     />
                 </div>
@@ -166,12 +166,12 @@ interface SecurityFormProps {
 
 function SecurityForm({ user }: SecurityFormProps) {
     const { data: session } = useSession()
-    const router = useRouter()
+
     const [loading, setLoading] = useState(false)
     const [currentPassword, setCurrentPassword] = useState("")
     const [newPassword, setNewPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
-    
+
     // Delete account state
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
@@ -292,7 +292,7 @@ function SecurityForm({ user }: SecurityFormProps) {
                             </Button>
                         </div>
                     </div>
-                    
+
                     {/* Delete Account Section */}
                     <div className="pt-6 border-t">
                         <div className="space-y-4">
@@ -482,9 +482,7 @@ function PreferencesForm({ user }: { user: { dailyTarget: number | null; workDay
                             disabled={!canEdit}
                         />
                         <p className="text-xs text-muted-foreground">
-                            <p className="text-xs text-muted-foreground">
-                                This is used to calculate your &quot;Remaining Hours&quot; for the day. Leave empty if you don&apos;t have a specific target.
-                            </p>
+                            This is used to calculate your &quot;Remaining Hours&quot; for the day. Leave empty if you don&apos;t have a specific target.
                         </p>
                     </div>
                 </div>
