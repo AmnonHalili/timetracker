@@ -145,6 +145,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                         setView('day')
                         updateUrl(day)
                     }}
+                    projectId={projectId}
                 />
             ) : (
                 <DayView

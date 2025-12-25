@@ -13,6 +13,11 @@ import {
     isToday,
     isSameDay
 } from "date-fns"
+import { Button } from "@/components/ui/button"
+import { Plus } from "lucide-react"
+import { useState } from "react"
+import { CreateEventDialog } from "./CreateEventDialog"
+import { useSession } from "next-auth/react"
 
 
 interface MonthGridProps {
@@ -41,9 +46,10 @@ interface MonthGridProps {
         }>
     }
     onDayClick?: (day: Date) => void
+    projectId?: string | null
 }
 
-export function MonthGrid({ date, data, onDayClick }: MonthGridProps) {
+export function MonthGrid({ date, data, onDayClick, projectId }: MonthGridProps) {
     const monthStart = startOfMonth(date)
     const monthEnd = endOfMonth(date)
     const startDate = startOfWeek(monthStart)
@@ -56,8 +62,19 @@ export function MonthGrid({ date, data, onDayClick }: MonthGridProps) {
 
     const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
+    const { data: session } = useSession()
+    const [createDialogOpen, setCreateDialogOpen] = useState(false)
+    const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+
     return (
         <div className="space-y-4">
+            <div className="flex items-center justify-end">
+                <Button size="sm" onClick={() => { setSelectedDate(new Date()); setCreateDialogOpen(true) }}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Event
+                </Button>
+            </div>
+
             <div className="grid grid-cols-7 gap-1 text-center mb-2">
                 {weekDays.map((day) => (
                     <div key={day} className="text-sm font-medium text-muted-foreground uppercase py-2">
@@ -182,6 +199,13 @@ export function MonthGrid({ date, data, onDayClick }: MonthGridProps) {
                     )
                 })}
             </div>
+
+            <CreateEventDialog
+                open={createDialogOpen}
+                onOpenChange={setCreateDialogOpen}
+                defaultDate={selectedDate}
+                projectId={projectId}
+            />
         </div>
     )
 }
