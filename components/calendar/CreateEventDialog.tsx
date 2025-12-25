@@ -16,6 +16,7 @@ interface CreateEventDialogProps {
     onOpenChange: (open: boolean) => void
     defaultDate?: Date
     projectId?: string | null
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     event?: any // Simplified type for now, matching the flexibility needed
     mode?: 'create' | 'edit'
 }
@@ -63,6 +64,7 @@ export function CreateEventDialog({ open, onOpenChange, defaultDate, projectId, 
                 resetForm()
             }
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, mode, event, defaultDate])
 
     const handleSubmit = async (e: React.FormEvent) => {

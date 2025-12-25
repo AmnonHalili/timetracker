@@ -20,6 +20,7 @@ import { Plus, Pencil } from "lucide-react"
 interface CreateTaskDialogProps {
     users: { id: string; name: string | null; email: string | null }[]
     onTaskCreated?: () => void
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     task?: any // Making flexible to accept task object
     mode?: 'create' | 'edit'
     open?: boolean
@@ -90,8 +91,10 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mod
                 // task.assignees or task.participants depending on where it comes from
                 // From Calendar it is mapped to participants, from Task list it might be assignees
                 // Let's handle both
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const assignees = task.assignees || (task.participants ? task.participants.map((p: any) => p.user) : [])
                 if (assignees) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     setAssignedToIds(assignees.map((u: any) => u.id))
                 }
             } else if (mode === 'create') {

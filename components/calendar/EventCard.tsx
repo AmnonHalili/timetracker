@@ -79,8 +79,7 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
 
     const start = new Date(event.startTime)
     const end = new Date(event.endTime)
-    const typeColor = eventTypeColors[event.type as keyof typeof eventTypeColors] || eventTypeColors.OTHER
-    const badgeColor = eventTypeBadgeColors[event.type as keyof typeof eventTypeBadgeColors] || eventTypeBadgeColors.OTHER
+    const badgeColor = eventTypeBadgeColors[event.type as keyof typeof eventTypeBadgeColors] || "bg-gray-100 text-gray-700 border-gray-200"
 
     const sizeClasses = {
         sm: "p-1.5 text-xs",
@@ -88,7 +87,7 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
         lg: "p-3 text-base"
     }
 
-    const handleDelete = async (e: React.MouseEvent) => {
+    const handleDelete = async () => {
         // e.stopPropagation() is already handled in the dropdown handler if triggered from there
         setIsDeleting(true)
         try {
@@ -132,7 +131,7 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
             >
                 <div className="space-y-1">
                     {/* Title and Badge */}
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-start justify-between gap-2">
                         <span className={cn(
                             "font-semibold truncate flex-1",
                             size === 'sm' && "text-xs",
@@ -141,7 +140,7 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
                         )}>
                             {event.title}
                         </span>
-                        <div className="flex items-center gap-1 shrink-0">
+                        <div className="flex items-center gap-1 shrink-0 mr-8 self-center">
                             {size !== 'sm' && (
                                 <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 h-5", badgeColor)}>
                                     {event.type}

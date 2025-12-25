@@ -30,7 +30,7 @@ export async function GET(
         if (!task) return NextResponse.json({ message: "Task not found" }, { status: 404 })
 
         return NextResponse.json(task)
-    } catch (error) {
+    } catch {
         return NextResponse.json({ message: "Error fetching task" }, { status: 500 })
     }
 }
@@ -80,6 +80,7 @@ export async function PATCH(
                         where: { projectId: currentUser.projectId },
                         select: { id: true, managerId: true }
                     })
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const descendants = new Set(getAllDescendants(currentUser.id, allUsers as any))
                     if (taskToCheck.assignees.some(u => descendants.has(u.id))) {
                         hasPermission = true
@@ -93,6 +94,7 @@ export async function PATCH(
         }
 
         // Prepare update data
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const updateData: any = {}
         if (title !== undefined) updateData.title = title
         if (description !== undefined) updateData.description = description
@@ -157,6 +159,7 @@ export async function DELETE(
             select: { id: true, managerId: true }
         })
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const descendants = new Set(getAllDescendants(currentUser!.id, allUsers as any))
         // Manager can delete if he manages ALL assignees (or if there are no assignees and it's his project logic? - stick to strict for now)
         // If task has no assignees, we might want to check project? But for now stick to assignee check.
@@ -173,7 +176,7 @@ export async function DELETE(
     try {
         await prisma.task.delete({ where: { id } })
         return NextResponse.json({ message: "Deleted" })
-    } catch (error) {
+    } catch {
         return NextResponse.json({ message: "Error deleting task" }, { status: 500 })
     }
 }
