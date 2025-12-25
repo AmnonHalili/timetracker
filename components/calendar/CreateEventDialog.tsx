@@ -117,6 +117,12 @@ export function CreateEventDialog({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+
+        if (participantIds.length === 0) {
+            toast.error("Please select at least one participant")
+            return
+        }
+
         setLoading(true)
 
         // Create temp event for optimistic UI
@@ -203,7 +209,7 @@ export function CreateEventDialog({
         setType("MEETING")
         setLocation("")
         setAllDay(false)
-        setParticipantIds([])
+        setParticipantIds(session?.user?.id ? [session.user.id] : [])
 
         const baseDate = defaultDate || new Date()
         const dateStr = formatDateLocal(baseDate)
