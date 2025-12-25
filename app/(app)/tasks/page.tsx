@@ -44,7 +44,7 @@ export default async function TasksPage() {
             projectId: currentUser.projectId
         },
         select: { id: true, name: true, email: true }
-    }) : [{ id: session.user.id, name: session.user.name || "Me", email: session.user.email }]
+    }) : [{ id: session.user.id, name: session.user.name || "Me", email: session.user.email ?? null }]
 
     return (
         <div className="container mx-auto space-y-8">
@@ -55,7 +55,7 @@ export default async function TasksPage() {
                         {isAdmin ? "Manage and assign tasks" : "Your assigned tasks"}
                     </p>
                 </div>
-                <CreateTaskDialog users={isAdmin && users.length > 0 ? users : [{ id: session.user.id, name: session.user.name || "Me", email: session.user.email || null } as { id: string, name: string | null, email: string | null }]} />
+                <CreateTaskDialog users={isAdmin && users.length > 0 ? users : [{ id: session.user.id, name: session.user.name || "Me", email: session.user.email ?? null }]} />
             </div>
 
             <TasksView initialTasks={tasks} users={users} isAdmin={isAdmin} currentUserId={session.user.id} />
