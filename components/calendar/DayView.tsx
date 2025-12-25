@@ -90,7 +90,12 @@ export function DayView({ date, events, projectId }: DayViewProps) {
                     <h4 className="text-sm font-medium text-muted-foreground">All Day</h4>
                     <div className="space-y-1">
                         {allDayEvents.map(event => (
-                            <EventCard key={event.id} event={event} size="md" />
+                            <EventCard
+                                key={event.id}
+                                event={event}
+                                size="md"
+                                showDelete={true}
+                            />
                         ))}
                     </div>
                 </div>
@@ -127,9 +132,7 @@ export function DayView({ date, events, projectId }: DayViewProps) {
                                                 key={event.id}
                                                 event={event}
                                                 size="sm"
-                                                onClick={() => {
-                                                    // TODO: Open event detail dialog
-                                                }}
+                                                showDelete={true}
                                             />
                                         ))}
                                     </div>
