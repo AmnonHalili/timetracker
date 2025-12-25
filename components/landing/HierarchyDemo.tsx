@@ -146,7 +146,7 @@ function HierarchyLevel({ nodes, depth = 0 }: { nodes: HierarchyNode[]; depth?: 
           return (
             <div key={index} className="flex flex-col items-center relative">
               {/* Horizontal connector lines between siblings */}
-              {!isOnly && depth > 0 && (
+              {!isOnly && (
                 <>
                   {/* Line extending to the right (for first and middle nodes) */}
                   {!isLast && (
@@ -160,7 +160,7 @@ function HierarchyLevel({ nodes, depth = 0 }: { nodes: HierarchyNode[]; depth?: 
               )}
 
               {/* Vertical line from parent to this node */}
-              {depth > 0 && (
+              {depth >= 0 && (
                 <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 h-2.5 w-px bg-border" />
               )}
 
