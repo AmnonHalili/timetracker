@@ -28,7 +28,7 @@ export default async function SettingsPage() {
             role: true,
             projectId: true,
             project: {
-                select: { name: true, workMode: true }
+                select: { name: true, workMode: true, joinCode: true }
             }
         }
     })
@@ -89,6 +89,7 @@ export default async function SettingsPage() {
                             initialName={user.project?.name || ""}
                             initialWorkMode={user.project?.workMode}
                             projectId={user.projectId}
+                            joinCode={user.project?.joinCode || "No Code"}
                         />
                     </TabsContent>
                 )}

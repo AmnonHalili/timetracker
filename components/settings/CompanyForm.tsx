@@ -14,9 +14,10 @@ interface CompanyFormProps {
     initialName: string
     initialWorkMode?: 'OUTPUT_BASED' | 'TIME_BASED' | 'PROJECT_BASED'
     projectId: string
+    joinCode: string
 }
 
-export function CompanyForm({ initialName, initialWorkMode = 'TIME_BASED', projectId }: CompanyFormProps) {
+export function CompanyForm({ initialName, initialWorkMode = 'TIME_BASED', projectId, joinCode }: CompanyFormProps) {
     const router = useRouter()
     const [isLoading, setIsLoading] = useState(false)
     const [name, setName] = useState(initialName)
@@ -66,6 +67,35 @@ export function CompanyForm({ initialName, initialWorkMode = 'TIME_BASED', proje
                             onChange={(e) => setName(e.target.value)}
                             disabled={isLoading}
                         />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Team Code (Share this with members)</Label>
+                        <div className="flex items-center gap-2">
+                            <code className="flex-1 p-3 bg-muted rounded-md text-center text-lg font-mono tracking-wider select-all border">
+                                { /* We need to fetch/pass the code. For now assuming it is passed via props or we need to fetch it.
+                                     Actually, the CompanyForm only takes 'initialName' and 'projectId'.
+                                     I probably should check if I need to update the parent component to pass the code.
+                                     Let's assume I'll update the parent too, or fetch it here?
+                                     The parent is probably a server component.
+                                     Let's look at the parent first. */ }
+                                {/* For now, I'll assume we pass it as 'joinCode' prop */}
+                                {joinCode}
+                            </code>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                    navigator.clipboard.writeText(joinCode)
+                                    toast.success("Code copied to clipboard")
+                                }}
+                            >
+                                Copy
+                            </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                            Users can use this code to join your team during registration.
+                        </p>
                     </div>
 
                     <div className="space-y-4">

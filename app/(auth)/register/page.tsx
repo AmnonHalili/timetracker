@@ -141,10 +141,10 @@ function RegisterForm() {
 
                         {role === "EMPLOYEE" && (
                             <div className="space-y-2">
-                                <Label htmlFor="joinProjectName">Join a Team? (Optional)</Label>
+                                <Label htmlFor="joinProjectName">Enter Team Code (Optional)</Label>
                                 <Input
                                     id="joinProjectName"
-                                    placeholder="Enter Project / Company Name"
+                                    placeholder="Enter 6-character Team Code"
                                     value={projectName}
                                     onChange={(e) => setProjectName(e.target.value)}
                                 />

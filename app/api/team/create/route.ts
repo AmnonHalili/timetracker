@@ -27,8 +27,14 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: "You are already in a project" }, { status: 400 })
         }
 
+        // Generate a random 6-character code
+        const joinCode = Math.random().toString(36).substring(2, 8).toUpperCase()
+
         const project = await prisma.project.create({
-            data: { name: projectName }
+            data: {
+                name: projectName,
+                joinCode: joinCode
+            }
         })
 
         await prisma.user.update({

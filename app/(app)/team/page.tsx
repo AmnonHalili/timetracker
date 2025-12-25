@@ -9,6 +9,7 @@ import { filterVisibleUsers } from "@/lib/hierarchy-utils"
 import { Button } from "@/components/ui/button"
 import { Network } from "lucide-react"
 import Link from "next/link"
+import { TeamRequestsList } from "@/components/team/TeamRequestsList"
 
 export default async function TeamPage() {
     const session = await getServerSession(authOptions)
@@ -119,7 +120,7 @@ export default async function TeamPage() {
         const sorted = otherUsers.sort((a, b) => {
             const levelA = userLevelMap.get(a.id) ?? 0
             const levelB = userLevelMap.get(b.id) ?? 0
-            
+
             // First sort by level (0, 1, 2, ...)
             if (levelA !== levelB) {
                 return levelA - levelB
@@ -138,6 +139,26 @@ export default async function TeamPage() {
         return currentUserObj ? [currentUserObj, ...sorted] : sorted
     }
 
+    // Fetch pending join requests (only if currentUser is ADMIN)
+    // We can fetch this in parallel with other data, or just fetch it here.
+    // For simplicity, let's fetch it if the user is an admin.
+    let pendingRequests: any[] = []
+    if (currentUser.role === "ADMIN") {
+        pendingRequests = await prisma.user.findMany({
+            where: {
+                pendingProjectId: currentUser.projectId
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                image: true,
+                createdAt: true
+            },
+            orderBy: { createdAt: "desc" }
+        })
+    }
+
     const teamMembers = sortByHierarchy(
         filterVisibleUsers(allTeamMembers, currentUser),
         session.user.id
@@ -148,6 +169,10 @@ export default async function TeamPage() {
 
     return (
         <div className="container mx-auto space-y-8">
+            {pendingRequests.length > 0 && (
+                <TeamRequestsList initialRequests={pendingRequests} />
+            )}
+
             <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Team Management</h1>

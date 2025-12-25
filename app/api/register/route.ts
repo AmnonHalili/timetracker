@@ -60,22 +60,25 @@ export async function POST(req: Request) {
                 return NextResponse.json({ message: "Project Name is required" }, { status: 400 })
             }
 
+            // Generate a random 6-character code
+            const joinCode = Math.random().toString(36).substring(2, 8).toUpperCase()
+
             const project = await prisma.project.create({
-                data: { name: projectName }
+                data: {
+                    name: projectName,
+                    joinCode: joinCode
+                }
             })
             projectId = project.id
             userRole = "ADMIN"
         } else {
             // Member Registration
-            // If they provided a project name to join
+            // If they provided a project name (now interpreted as Join Code) to join
             if (projectName) {
-                // Find project (case insensitive search would be better, but basic exact match for now)
-                const projectToJoin = await prisma.project.findFirst({
+                // Find project by JOIN CODE
+                const projectToJoin = await prisma.project.findUnique({
                     where: {
-                        name: {
-                            equals: projectName,
-                            mode: 'insensitive'
-                        }
+                        joinCode: projectName.toUpperCase()
                     }
                 })
 
@@ -85,7 +88,7 @@ export async function POST(req: Request) {
                     // Create Notification for Project Admins
                     // We'll do this AFTER creating the user so we have the userId for reference if needed
                 } else {
-                    return NextResponse.json({ message: "Project not found" }, { status: 400 })
+                    return NextResponse.json({ message: "Invalid Team Code" }, { status: 400 })
                 }
             }
         }
@@ -100,7 +103,7 @@ export async function POST(req: Request) {
                 projectId,
                 pendingProjectId: pendingProjectId ?? undefined,
                 // Set default jobTitle: "Founder" for ADMIN users who create a team, "single" for members without a team
-                jobTitle: role === "ADMIN" ? "Founder" : (!projectName ? "single" : undefined),
+                jobTitle: role === "ADMIN" ? "Company Owner" : (!projectName ? "single" : undefined),
                 // workDays and dailyTarget are now handled by DB defaults (or lack thereof)
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } as any,
@@ -122,7 +125,7 @@ export async function POST(req: Request) {
                         title: "New Join Request",
                         message: `${user.name} has requested to join your project.`,
                         type: "INFO",
-                        link: "/team/requests" // We'll need a page or modal for this
+                        link: "/team" // Redirect to the main team page where requests are shown
                     }))
                 })
             }

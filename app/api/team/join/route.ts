@@ -10,9 +10,9 @@ export async function POST(req: Request) {
     }
 
     try {
-        const { projectName } = await req.json()
-        if (!projectName) {
-            return NextResponse.json({ message: "Project Name is required" }, { status: 400 })
+        const { joinCode } = await req.json()
+        if (!joinCode) {
+            return NextResponse.json({ message: "Team Code is required" }, { status: 400 })
         }
 
         const user = await prisma.user.findUnique({
@@ -23,17 +23,14 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: "You are already in a project" }, { status: 400 })
         }
 
-        const project = await prisma.project.findFirst({
+        const project = await prisma.project.findUnique({
             where: {
-                name: {
-                    equals: projectName,
-                    mode: 'insensitive'
-                }
+                joinCode: joinCode.toUpperCase()
             }
         })
 
         if (!project) {
-            return NextResponse.json({ message: "Project not found" }, { status: 404 })
+            return NextResponse.json({ message: "Invalid Team Code" }, { status: 404 })
         }
 
         await prisma.user.update({
@@ -58,7 +55,7 @@ export async function POST(req: Request) {
                     title: "New Join Request",
                     message: `${user?.name} has requested to join your project.`,
                     type: "INFO",
-                    link: "/team/hierarchy"
+                    link: "/team"
                 }))
             })
         }
