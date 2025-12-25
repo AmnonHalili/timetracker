@@ -89,23 +89,29 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col items-start gap-4">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
-                    {view === 'day' && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setView('month')}
-                            className="-ml-2"
-                        >
-                            <ArrowLeft className="h-5 w-5" />
-                        </Button>
-                    )}
+                    {/* Back Button / Placeholder-like container for stability */}
+                    <div className="w-10 flex justify-start">
+                        {view === 'day' && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setView('month')}
+                                className="-ml-2"
+                            >
+                                <ArrowLeft className="h-5 w-5" />
+                            </Button>
+                        )}
+                    </div>
+
                     <h2 className="text-3xl font-bold tracking-tight">
                         {view === 'month' ? format(currentDate, "MMMM yyyy") : format(currentDate, "EEEE, MMMM d, yyyy")}
                     </h2>
                 </div>
 
+                {/* Navigation Controls */}
                 <div className="flex items-center border rounded-md bg-background shadow-sm">
                     <Button
                         variant="ghost"
