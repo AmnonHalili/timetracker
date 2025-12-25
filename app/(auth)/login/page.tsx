@@ -57,7 +57,7 @@ export default function LoginPage() {
                     <CardTitle>Welcome Back</CardTitle>
                     <CardDescription>Sign in to your account</CardDescription>
                 </CardHeader>
-                <div className="mb-4 px-6 pt-2">
+                <div className="mb-4 px-6">
                     <GoogleLoginButton />
                 </div>
                 <div className="relative mb-4 px-6">

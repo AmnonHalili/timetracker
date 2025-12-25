@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 export function GoogleLoginButton() {
     return (
         <Button
-            className="w-full flex items-center justify-center gap-2 mt-4"
+            className="w-full flex items-center justify-center gap-2"
             variant="outline"
             type="button"
             onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
