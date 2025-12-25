@@ -140,6 +140,10 @@ export default function HierarchyPage() {
             toast.error("Failed to load hierarchy")
         } finally {
             setIsLoading(false)
+            // Reset initialization after a small delay to ensure DOM is updated
+            setTimeout(() => {
+                setIsInitialized(false)
+            }, 50)
         }
     }
 
@@ -300,12 +304,7 @@ export default function HierarchyPage() {
         }
     }, [tree, isInitialized, isLoading])
 
-    // Reset initialization when users change (e.g., when coming back to the page)
-    useEffect(() => {
-        if (users.length > 0) {
-            setIsInitialized(false)
-        }
-    }, [users.length])
+
 
     if (isLoading) {
         return <div className="flex justify-center p-8"><Loader2 className="animate-spin h-8 w-8" /></div>
@@ -322,6 +321,7 @@ export default function HierarchyPage() {
                 position: 'relative',
                 clipPath: 'inset(0)'
             }}
+            onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseLeave}
@@ -412,7 +412,6 @@ export default function HierarchyPage() {
                     cursor: isDragging ? 'grabbing' : 'grab',
                     userSelect: 'none'
                 }}
-                onMouseDown={handleMouseDown}
             >
                 {/* Project Root Node Section */}
                 <div className="flex flex-col items-center mb-8 relative">
