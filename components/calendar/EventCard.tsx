@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { format } from "date-fns"
-import { Clock, MapPin, Users, Trash2, CheckSquare, MoreVertical, Pencil, Check } from "lucide-react"
+import { MapPin, Users, Trash2, MoreVertical, Pencil, Check } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import {

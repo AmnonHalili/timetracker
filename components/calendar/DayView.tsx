@@ -192,7 +192,13 @@ export function DayView({ date, events, tasks, projectId }: DayViewProps) {
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="h-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                                    <div
+                                        className="h-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleHourClick(hour)
+                                        }}
+                                    >
                                         <span className="text-xs text-muted-foreground">Click to add event</span>
                                     </div>
                                 )}

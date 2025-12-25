@@ -33,14 +33,21 @@ export function CreateEventDialog({ open, onOpenChange, defaultDate, projectId, 
     const [allDay, setAllDay] = useState(false)
 
     // Date/Time state
+    const formatDateLocal = (date: Date) => {
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
+    }
+
     const [startDate, setStartDate] = useState(
-        defaultDate ? defaultDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+        defaultDate ? formatDateLocal(defaultDate) : formatDateLocal(new Date())
     )
-    const [startTime, setStartTime] = useState("09:00")
+    const [startTime, setStartTime] = useState("06:00")
     const [endDate, setEndDate] = useState(
-        defaultDate ? defaultDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+        defaultDate ? formatDateLocal(defaultDate) : formatDateLocal(new Date())
     )
-    const [endTime, setEndTime] = useState("10:00")
+    const [endTime, setEndTime] = useState("07:00")
 
     // Initialize/Reset form based on mode and open state
     useEffect(() => {
@@ -55,9 +62,9 @@ export function CreateEventDialog({ open, onOpenChange, defaultDate, projectId, 
                 const start = new Date(event.startTime)
                 const end = new Date(event.endTime)
 
-                setStartDate(start.toISOString().split('T')[0])
+                setStartDate(formatDateLocal(start))
                 setStartTime(start.toTimeString().slice(0, 5))
-                setEndDate(end.toISOString().split('T')[0])
+                setEndDate(formatDateLocal(end))
                 setEndTime(end.toTimeString().slice(0, 5))
             } else {
                 // Reset for create mode
@@ -128,12 +135,15 @@ export function CreateEventDialog({ open, onOpenChange, defaultDate, projectId, 
         setAllDay(false)
 
         const baseDate = defaultDate || new Date()
-        const dateStr = baseDate.toISOString().split('T')[0]
+        const dateStr = formatDateLocal(baseDate)
         const hour = baseDate.getHours()
-        // If defaultDate is provided (e.g. clicking on a specific time slot), use that time
-        // Otherwise default to next hour
-        const startHourStr = defaultDate ? String(hour).padStart(2, '0') + ":00" : "09:00"
-        const endHourStr = defaultDate ? String((hour + 1) % 24).padStart(2, '0') + ":00" : "10:00"
+        const minutes = baseDate.getMinutes()
+
+        // If defaultDate is provided AND has a specific time (not midnight), use that time
+        // Otherwise default to 6-7 AM
+        const hasSpecificTime = hour !== 0 || minutes !== 0
+        const startHourStr = (defaultDate && hasSpecificTime) ? String(hour).padStart(2, '0') + ":00" : "06:00"
+        const endHourStr = (defaultDate && hasSpecificTime) ? String((hour + 1) % 24).padStart(2, '0') + ":00" : "07:00"
 
         setStartDate(dateStr)
         setStartTime(startHourStr)
