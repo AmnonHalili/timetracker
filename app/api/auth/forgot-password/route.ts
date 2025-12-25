@@ -56,7 +56,7 @@ export async function POST(req: Request) {
         const resetUrl = `${process.env.NEXTAUTH_URL}/reset-password?token=${resetToken}`
 
         // Logo URL - assumes NEXTAUTH_URL points to the live site
-        const logoUrl = `${process.env.NEXTAUTH_URL}/logo.png`
+        const logoUrl = `${process.env.NEXTAUTH_URL}/icon.png`
 
         // Professional HTML Email Template
         const htmlContent = `
