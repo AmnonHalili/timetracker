@@ -17,7 +17,20 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "Collabo - Modern Team Collaboration",
   description: "A minimalist work hours and task tracker with real-time collaboration built with Next.js, Prisma, and Neon.",
-
+  icons: {
+    icon: [
+      { url: "/collabologocut.png", media: "(prefers-color-scheme: light)", type: "image/png", sizes: "32x32" },
+      { url: "/collabologocutwhite.png", media: "(prefers-color-scheme: dark)", type: "image/png", sizes: "32x32" },
+    ],
+    shortcut: [
+      { url: "/collabologocut.png", media: "(prefers-color-scheme: light)", type: "image/png" },
+      { url: "/collabologocutwhite.png", media: "(prefers-color-scheme: dark)", type: "image/png" },
+    ],
+    apple: [
+      { url: "/collabologocut.png", media: "(prefers-color-scheme: light)", type: "image/png", sizes: "180x180" },
+      { url: "/collabologocutwhite.png", media: "(prefers-color-scheme: dark)", type: "image/png", sizes: "180x180" },
+    ],
+  },
 };
 
 export default function RootLayout({

@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react"
 import { RecursiveNode } from "@/components/team/RecursiveNode"
 import { AddChildDialog } from "@/components/team/AddChildDialog"
 import { User } from "@prisma/client"
-import { Loader2, UserPlus, Pencil } from "lucide-react"
+import { Loader2, UserPlus, Pencil, ZoomIn, ZoomOut, RotateCcw } from "lucide-react"
 import { toast } from "sonner"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
@@ -35,6 +35,90 @@ export default function HierarchyPage() {
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
     const [targetParentId, setTargetParentId] = useState<string | null>(null)
     const [targetParentName, setTargetParentName] = useState("")
+    
+    // Zoom state
+    const [zoomLevel, setZoomLevel] = useState(1)
+    const [baseZoom, setBaseZoom] = useState(1) // The zoom level where the entire tree fits (will be calculated as 100%)
+    const minZoom = 0.5 // Will be updated to baseZoom
+    const maxZoom = 2
+    const zoomStep = 0.1
+    
+    // Pan state for dragging
+    const [panPosition, setPanPosition] = useState({ x: 0, y: 0 })
+    const [isDragging, setIsDragging] = useState(false)
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+    const [isInitialized, setIsInitialized] = useState(false)
+    
+    // Calculate relative zoom percentage (baseZoom = 100%)
+    const getRelativeZoomPercent = (zoom: number) => {
+        return Math.round((zoom / baseZoom) * 100)
+    }
+    
+    const handleZoomIn = () => {
+        setZoomLevel(prev => Math.min(prev + zoomStep, maxZoom))
+    }
+    
+    const handleZoomOut = () => {
+        setZoomLevel(prev => Math.max(prev - zoomStep, baseZoom)) // Don't zoom out below baseZoom
+    }
+    
+    const handleZoomReset = () => {
+        setZoomLevel(baseZoom) // Reset to base zoom (the 100% level)
+        setIsInitialized(false) // Trigger recentering
+    }
+    
+    // Handle mouse wheel for zoom
+    const handleWheel = (e: React.WheelEvent) => {
+        // Prevent default scrolling
+        e.preventDefault()
+        
+        // Zoom based on wheel direction
+        // deltaY > 0 means scrolling down (zoom out), deltaY < 0 means scrolling up (zoom in)
+        const delta = e.deltaY > 0 ? -zoomStep : zoomStep
+        setZoomLevel(prev => {
+            const newZoom = prev + delta
+            // Clamp between baseZoom and maxZoom
+            return Math.max(baseZoom, Math.min(newZoom, maxZoom))
+        })
+    }
+    
+    // Handle mouse down for dragging
+    const handleMouseDown = (e: React.MouseEvent) => {
+        // Only left mouse button
+        if (e.button !== 0) return
+        // Don't drag if clicking on interactive elements
+        const target = e.target as HTMLElement
+        if (target.closest('button') || target.closest('a') || target.closest('input') || target.closest('[role="button"]') || target.closest('[role="dialog"]')) {
+            return
+        }
+        setIsDragging(true)
+        setDragStart({
+            x: e.clientX - panPosition.x,
+            y: e.clientY - panPosition.y
+        })
+        e.preventDefault()
+        e.stopPropagation()
+    }
+    
+    // Handle mouse move for dragging
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!isDragging) return
+        setPanPosition({
+            x: e.clientX - dragStart.x,
+            y: e.clientY - dragStart.y
+        })
+        e.preventDefault()
+    }
+    
+    // Handle mouse up to stop dragging
+    const handleMouseUp = () => {
+        setIsDragging(false)
+    }
+    
+    // Handle mouse leave to stop dragging
+    const handleMouseLeave = () => {
+        setIsDragging(false)
+    }
 
     const fetchHierarchy = async () => {
         setIsLoading(true)
@@ -107,6 +191,29 @@ export default function HierarchyPage() {
         fetchHierarchy()
     }, [])
 
+    // Disable scrolling on the main container for this page
+    useEffect(() => {
+        const mainElement = document.getElementById('main-content')
+        if (mainElement) {
+            // Store original styles
+            const originalOverflow = mainElement.style.overflow
+            const originalOverflowY = mainElement.style.overflowY
+            const originalHeight = mainElement.style.height
+            
+            // Disable all scrolling
+            mainElement.style.overflow = 'hidden'
+            mainElement.style.overflowY = 'hidden'
+            mainElement.style.height = '100vh'
+            
+            return () => {
+                // Restore original styles
+                mainElement.style.overflow = originalOverflow || ''
+                mainElement.style.overflowY = originalOverflowY || ''
+                mainElement.style.height = originalHeight || ''
+            }
+        }
+    }, [])
+
     const handleAddClick = (parentId: string, parentName: string) => {
         setTargetParentId(parentId)
         setTargetParentName(parentName)
@@ -140,17 +247,128 @@ export default function HierarchyPage() {
         return rootNodes.sort((a, b) => (a.role === 'ADMIN' ? -1 : b.role === 'ADMIN' ? 1 : 0))
     }, [users])
 
+    // Calculate optimal zoom level and center the tree initially
+    useEffect(() => {
+        if (tree && !isInitialized && !isLoading) {
+            // Small delay to ensure DOM is rendered
+            const timeoutId = setTimeout(() => {
+                const container = document.querySelector('[data-hierarchy-container]') as HTMLElement
+                if (container) {
+                    // Get the parent container (the one with overflow hidden)
+                    const parentContainer = container.parentElement
+                    if (parentContainer) {
+                        const parentRect = parentContainer.getBoundingClientRect()
+                        const viewportWidth = parentRect.width
+                        const viewportHeight = parentRect.height
+                        const containerRect = container.getBoundingClientRect()
+                        
+                        // Calculate optimal zoom level so the entire tree fits in the viewport
+                        // Get header height to know available space
+                        const headerElement = parentContainer.querySelector('.p-8') as HTMLElement
+                        const headerHeight = headerElement ? headerElement.getBoundingClientRect().height : 200
+                        const availableHeight = viewportHeight - headerHeight - 80 // Leave margin for padding
+                        const availableWidth = viewportWidth - 80 // Leave margin for padding
+                        
+                        // Calculate required zoom to fit both width and height
+                        const widthZoom = availableWidth / containerRect.width
+                        const heightZoom = availableHeight / containerRect.height
+                        
+                        // Use the smaller zoom to ensure everything fits
+                        // Don't zoom in beyond 1.0 if tree is small, don't zoom out below 0.4 (minimum reasonable zoom)
+                        const optimalZoom = Math.max(0.4, Math.min(widthZoom, heightZoom, 1.0))
+                        
+                        // Set base zoom (this becomes our 100%)
+                        setBaseZoom(optimalZoom)
+                        setZoomLevel(optimalZoom)
+                        
+                        // Calculate the center position
+                        // Since transform origin is 'top center', scaling happens around the top-center point
+                        // So we calculate the center based on the natural (unscaled) position
+                        const containerCenterX = containerRect.left - parentRect.left + (containerRect.width / 2)
+                        const viewportCenterX = viewportWidth / 2
+                        const centerX = viewportCenterX - containerCenterX
+                        
+                        // Position vertically: start just below the header (closer to title)
+                        const centerY = headerHeight - 50 // Position project card closer to title by moving tree up
+                        
+                        setPanPosition({ x: centerX, y: centerY })
+                        setIsInitialized(true)
+                    }
+                }
+            }, 150)
+            
+            return () => clearTimeout(timeoutId)
+        }
+    }, [tree, isInitialized, isLoading])
+    
+    // Reset initialization when users change (e.g., when coming back to the page)
+    useEffect(() => {
+        if (users.length > 0) {
+            setIsInitialized(false)
+        }
+    }, [users.length])
+
     if (isLoading) {
         return <div className="flex justify-center p-8"><Loader2 className="animate-spin h-8 w-8" /></div>
     }
 
     return (
-        <div className="p-8 overflow-auto min-h-[calc(100vh-4rem)] bg-background/50">
-            <div className="flex justify-between items-center max-w-5xl mx-auto mb-8 relative">
+        <div 
+            className="w-full bg-background/50 relative"
+            style={{ 
+                overflow: 'hidden', 
+                width: '100%', 
+                height: 'calc(100vh - 4rem)',
+                maxHeight: 'calc(100vh - 4rem)',
+                position: 'relative',
+                clipPath: 'inset(0)'
+            }}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseLeave}
+            onWheel={handleWheel}
+        >
+            {/* Header and Controls - Fixed at top */}
+            <div className="p-8 pb-4 relative z-20 bg-background/95 backdrop-blur-sm border-b">
+                <div className="flex justify-between items-center max-w-5xl mx-auto mb-8 relative">
                 <h1 className="text-2xl font-bold text-center w-full">Organization Hierarchy</h1>
-                <div className="absolute right-0 top-0 flex gap-2">
-                    {/* Add Admin Button (Only for actual Admins with Project) */}
-                    {hasProject && session?.user?.role === "ADMIN" && (
+                {/* Zoom Controls - Left Side */}
+                <div className="absolute left-0 top-0">
+                    <div className="flex items-center gap-1 bg-background/50 backdrop-blur-sm border rounded-md p-1">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleZoomOut}
+                            disabled={zoomLevel <= baseZoom}
+                            className="h-8 w-8"
+                            aria-label="Zoom out"
+                        >
+                            <ZoomOut className="h-4 w-4" aria-hidden="true" />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleZoomReset}
+                            className="h-8 px-2 text-xs font-mono"
+                            aria-label={`Reset zoom (current: ${getRelativeZoomPercent(zoomLevel)}%)`}
+                        >
+                            {getRelativeZoomPercent(zoomLevel)}%
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleZoomIn}
+                            disabled={zoomLevel >= maxZoom}
+                            className="h-8 w-8"
+                            aria-label="Zoom in"
+                        >
+                            <ZoomIn className="h-4 w-4" aria-hidden="true" />
+                        </Button>
+                    </div>
+                </div>
+                {/* Add Admin Button - Right Side (Only for actual Admins with Project) */}
+                {hasProject && session?.user?.role === "ADMIN" && (
+                    <div className="absolute right-0 top-0">
                         <AddMemberDialog
                             triggerLabel="Add Executive"
                             defaultRole="ADMIN"
@@ -164,110 +382,120 @@ export default function HierarchyPage() {
                                 </Button>
                             }
                         />
-                    )}
-                </div>
-            </div>
-
-            {session?.user?.role === "ADMIN" && hasProject && (
-                <div className="max-w-2xl mx-auto">
-                    <JoinRequestsWidget />
-                </div>
-            )}
-
-            {/* Show Onboarding Widget for Private Workspace */}
-            {!hasProject && (
-                <div className="max-w-2xl mx-auto mb-12">
-                    <TeamOnboardingWidget />
-                </div>
-            )}
-
-            {/* Project Root Node Section */}
-            <div className="flex flex-col items-center mb-8 relative">
-                {/* Project Card */}
-                <div className="bg-primary text-primary-foreground px-16 py-4 rounded-xl shadow-lg border-2 border-primary-foreground/20 z-10 mb-8 flex flex-row items-center justify-center relative">
-                    {/* Logo Placeholder - Absolute Left */}
-                    <div
-                        className="absolute left-3 h-10 w-10 bg-white/95 rounded-lg flex items-center justify-center border-2 border-dashed border-primary/20 cursor-pointer hover:bg-white transition-colors overflow-hidden group/logo shadow-sm"
-                        onClick={() => hasProject && session?.user?.role === "ADMIN" && document.getElementById('logo-upload')?.click()}
-                    >
-                        {projectLogo ? (
-                            <>
-                                <Image
-                                    src={projectLogo}
-                                    alt="Logo"
-                                    fill
-                                    className="object-contain p-1"
-                                    unoptimized // Allow external/data URLs without config
-                                />
-                                {/* Overlay for Edit */}
-                                {hasProject && session?.user?.role === "ADMIN" && (
-                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity">
-                                        <Pencil className="h-4 w-4 text-white" />
-                                    </div>
-                                )}
-                            </>
-                        ) : (
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="16"
-                                height="16"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                className="text-primary/40"
-                            >
-                                <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-                                <circle cx="9" cy="9" r="2" />
-                                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                            </svg>
-                        )}
-                        <input
-                            type="file"
-                            id="logo-upload"
-                            className="hidden"
-                            accept="image/*"
-                            onChange={handleLogoUpload}
-                        />
                     </div>
-
-                    <h2 className="text-xl font-bold tracking-tight text-center">{projectName}</h2>
+                )}
                 </div>
 
-                <ImageCropperDialog
-                    open={isCropperOpen}
-                    imageSrc={tempImageSrc}
-                    onClose={() => setIsCropperOpen(false)}
-                    onCropComplete={handleCropSave}
-                />
+                {session?.user?.role === "ADMIN" && hasProject && (
+                    <div className="max-w-2xl mx-auto mb-4">
+                        <JoinRequestsWidget />
+                    </div>
+                )}
 
-                {/* Connector to Roots */}
-                {tree && tree.length > 0 && (
-                    <>
-                        {/* Vertical line from Project Card down */}
-                        <div className="absolute top-[3.5rem] h-8 w-px bg-border" />
-
-                        {/* Horizontal Line spanning first to last root */}
-                        {tree.length > 1 && (
-                            <div className="absolute top-[5.5rem] h-px bg-border w-full max-w-[calc(100%-16rem)] hidden" />
-                            // Calculating exact width is tricky. 
-                            // Let's use the same trick as RecursiveNode: each child draws its own connector
-                        )}
-
-                        <div className="absolute top-[5.5rem] w-full flex justify-center">
-                            {/* This is the horizontal bus line from which roots hang */}
-                            {/* Ideally, we want a line traversing the tops of the root nodes. 
-                                 The root nodes are rendered below in a flex row.
-                             */}
-                        </div>
-                    </>
+                {/* Show Onboarding Widget for Private Workspace */}
+                {!hasProject && (
+                    <div className="max-w-2xl mx-auto mb-4">
+                        <TeamOnboardingWidget />
+                    </div>
                 )}
             </div>
 
-            <div className="flex justify-center min-w-max pb-20">
-                <div className="flex gap-8 relative items-start">
+            {/* Zoom Container - wraps both project card and tree */}
+            <div 
+                data-hierarchy-container
+                className="flex flex-col items-center pb-20"
+                style={{ 
+                    marginTop: '1rem',
+                    width: 'fit-content',
+                    minWidth: '100%',
+                    transform: `translate(${panPosition.x}px, ${panPosition.y}px) scale(${zoomLevel})`, 
+                    transformOrigin: 'top center',
+                    cursor: isDragging ? 'grabbing' : 'grab',
+                    userSelect: 'none'
+                }}
+                onMouseDown={handleMouseDown}
+            >
+                {/* Project Root Node Section */}
+                <div className="flex flex-col items-center mb-8 relative">
+                    {/* Project Card */}
+                    <div className="bg-primary text-primary-foreground px-16 py-4 rounded-xl shadow-lg border-2 border-primary-foreground/20 z-10 mb-8 flex flex-row items-center justify-center relative">
+                        {/* Logo Placeholder - Absolute Left */}
+                        <div
+                            className="absolute left-3 h-10 w-10 bg-white/95 rounded-lg flex items-center justify-center border-2 border-dashed border-primary/20 cursor-pointer hover:bg-white transition-colors overflow-hidden group/logo shadow-sm"
+                            onClick={() => hasProject && session?.user?.role === "ADMIN" && document.getElementById('logo-upload')?.click()}
+                        >
+                            {projectLogo ? (
+                                <>
+                                    <Image
+                                        src={projectLogo}
+                                        alt="Logo"
+                                        fill
+                                        className="object-contain p-1"
+                                        unoptimized // Allow external/data URLs without config
+                                    />
+                                    {/* Overlay for Edit */}
+                                    {hasProject && session?.user?.role === "ADMIN" && (
+                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity">
+                                            <Pencil className="h-4 w-4 text-white" />
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    className="text-primary/40"
+                                >
+                                    <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                                    <circle cx="9" cy="9" r="2" />
+                                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                                </svg>
+                            )}
+                            <input
+                                type="file"
+                                id="logo-upload"
+                                className="hidden"
+                                accept="image/*"
+                                onChange={handleLogoUpload}
+                            />
+                        </div>
+
+                        <h2 className="text-xl font-bold tracking-tight text-center">{projectName}</h2>
+                    </div>
+
+                    {/* Connector to Roots */}
+                    {tree && tree.length > 0 && (
+                        <>
+                            {/* Vertical line from Project Card down */}
+                            <div className="absolute top-[3.5rem] h-8 w-px bg-border" />
+
+                            {/* Horizontal Line spanning first to last root */}
+                            {tree.length > 1 && (
+                                <div className="absolute top-[5.5rem] h-px bg-border w-full max-w-[calc(100%-16rem)] hidden" />
+                                // Calculating exact width is tricky. 
+                                // Let's use the same trick as RecursiveNode: each child draws its own connector
+                            )}
+
+                            <div className="absolute top-[5.5rem] w-full flex justify-center">
+                                {/* This is the horizontal bus line from which roots hang */}
+                                {/* Ideally, we want a line traversing the tops of the root nodes. 
+                                     The root nodes are rendered below in a flex row.
+                                 */}
+                            </div>
+                        </>
+                    )}
+                </div>
+
+                {/* Tree Container */}
+                <div className="flex justify-center">
+                    <div className="flex gap-8 relative items-start">
                     {/* Horizontal Line Logic:
                         We construct the horizontal bus line using segments from each child.
                         Gap is 32px (2rem). Half gap is 16px (1rem).
@@ -305,8 +533,16 @@ export default function HierarchyPage() {
                         )
                     })}
                     {!tree?.length && <div className="text-muted-foreground">No users found.</div>}
+                    </div>
                 </div>
             </div>
+
+            <ImageCropperDialog
+                open={isCropperOpen}
+                imageSrc={tempImageSrc}
+                onClose={() => setIsCropperOpen(false)}
+                onCropComplete={handleCropSave}
+            />
 
             <AddChildDialog
                 isOpen={isAddDialogOpen}
