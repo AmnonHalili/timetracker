@@ -17,7 +17,6 @@ import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { useState } from "react"
 import { CreateEventDialog } from "./CreateEventDialog"
-import { useSession } from "next-auth/react"
 
 
 interface MonthGridProps {
@@ -64,7 +63,6 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
 
     const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-    const { data: session } = useSession()
     const [createDialogOpen, setCreateDialogOpen] = useState(false)
     const [selectedDate, setSelectedDate] = useState<Date>(new Date())
 

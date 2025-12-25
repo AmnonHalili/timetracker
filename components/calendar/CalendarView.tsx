@@ -1,12 +1,30 @@
 "use client"
 
-import { useOptimistic, useState, startTransition, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { MonthGrid } from "./MonthGrid"
 import { DayView } from "./DayView"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react"
 import { format, addMonths, subMonths, addDays, subDays } from "date-fns"
 import { useRouter } from "next/navigation"
+
+type CalendarEvent = {
+    id: string;
+    title: string;
+    description?: string | null;
+    startTime: Date | string;
+    endTime: Date | string;
+    allDay: boolean;
+    type: string;
+    location?: string | null;
+    createdBy?: {
+        name: string;
+        email: string;
+    };
+    participants?: Array<{
+        user: { name: string; email: string };
+    }>;
+}
 
 interface CalendarViewProps {
     initialDate: Date
@@ -25,23 +43,7 @@ interface CalendarViewProps {
             description: string | null;
             assignees: Array<{ name: string; email: string }>;
         }>
-        events?: Array<{
-            id: string;
-            title: string;
-            description?: string | null;
-            startTime: Date | string;
-            endTime: Date | string;
-            allDay: boolean;
-            type: string;
-            location?: string | null;
-            createdBy?: {
-                name: string;
-                email: string;
-            };
-            participants?: Array<{
-                user: { name: string; email: string };
-            }>;
-        }>
+        events?: Array<CalendarEvent>
     }
     projectId?: string | null
 }
@@ -50,7 +52,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
     const router = useRouter()
     const [view, setView] = useState<'month' | 'day'>('month')
     const [currentDate, setCurrentDate] = useState(initialDate)
-    const [optimisticEvents, setOptimisticEvents] = useState<any[]>([])
+    const [optimisticEvents, setOptimisticEvents] = useState<CalendarEvent[]>([])
 
     // Sync optimistic events: merge server events with local optimistic ones
     // We filter out optimistic events that map to real events if IDs clash, 
@@ -66,7 +68,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
 
     const mergedEvents = [...(data.events || []), ...optimisticEvents]
 
-    const addOptimisticEvent = (newEvent: any) => {
+    const addOptimisticEvent = (newEvent: CalendarEvent) => {
         setOptimisticEvents(prev => [...prev, newEvent])
     }
 
