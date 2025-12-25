@@ -4,11 +4,29 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 
 import { useState, useRef } from "react"
-import { User, Upload, Loader2 } from "lucide-react"
+import { User, Upload, Loader2, Trash2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
+import { signOut, useSession } from "next-auth/react"
 
 interface ProfileFormProps {
     user: {
@@ -139,11 +157,27 @@ function ProfileForm({ user }: ProfileFormProps) {
     )
 }
 
-function SecurityForm() {
+interface SecurityFormProps {
+    user: {
+        role: string
+        projectId: string | null
+    }
+}
+
+function SecurityForm({ user }: SecurityFormProps) {
+    const { data: session } = useSession()
+    const router = useRouter()
     const [loading, setLoading] = useState(false)
     const [currentPassword, setCurrentPassword] = useState("")
     const [newPassword, setNewPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
+    
+    // Delete account state
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+    const [isDeleting, setIsDeleting] = useState(false)
+    const [requiresAdminTransfer, setRequiresAdminTransfer] = useState(false)
+    const [newAdminId, setNewAdminId] = useState("")
+    const [teamMembers, setTeamMembers] = useState<Array<{ id: string; name: string; email: string }>>([])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -172,33 +206,177 @@ function SecurityForm() {
         }
     }
 
+    // Fetch team members if user is admin and needs to transfer
+    const fetchTeamMembers = async () => {
+        if (user.role === "ADMIN" && user.projectId) {
+            try {
+                const res = await fetch("/api/team")
+                if (res.ok) {
+                    const members = await res.json()
+                    // Filter out current user
+                    if (session?.user?.id) {
+                        setTeamMembers(members.filter((m: { id: string }) => m.id !== session.user.id))
+                    } else {
+                        setTeamMembers(members)
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to fetch team members:", error)
+            }
+        }
+    }
+
+    const handleDeleteClick = () => {
+        setIsDeleteDialogOpen(true)
+        if (user.role === "ADMIN" && user.projectId) {
+            fetchTeamMembers()
+        }
+    }
+
+    const handleDelete = async () => {
+        setIsDeleting(true)
+        try {
+            const res = await fetch("/api/user/delete", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    newAdminId: requiresAdminTransfer ? newAdminId : undefined
+                }),
+            })
+
+            const data = await res.json()
+
+            if (!res.ok) {
+                // Check if we need to transfer admin
+                if (data.requiresAdminTransfer) {
+                    setRequiresAdminTransfer(true)
+                    setIsDeleting(false)
+                    return
+                }
+                throw new Error(data.message || "Failed to delete account")
+            }
+
+            // Sign out and redirect to login
+            await signOut({ callbackUrl: "/login" })
+        } catch (error) {
+            alert(error instanceof Error ? error.message : "Error deleting account")
+            setIsDeleting(false)
+        }
+    }
+
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Security</CardTitle>
-                <CardDescription>Manage your password.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="space-y-1">
-                    <Label htmlFor="current">Current Password</Label>
-                    <Input id="current" type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} />
-                </div>
-                <div className="space-y-1">
-                    <Label htmlFor="new">New Password</Label>
-                    <Input id="new" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} />
-                </div>
-                <div className="space-y-1">
-                    <Label htmlFor="confirm">Confirm New Password</Label>
-                    <Input id="confirm" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
-                </div>
-            </CardContent>
-            <CardFooter>
-                <Button onClick={handleSubmit} disabled={loading}>
-                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Update Password
-                </Button>
-            </CardFooter>
-        </Card>
+        <>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Security</CardTitle>
+                    <CardDescription>Manage your password and account security.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="space-y-4">
+                        <div className="space-y-1">
+                            <Label htmlFor="current">Current Password</Label>
+                            <Input id="current" type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} />
+                        </div>
+                        <div className="space-y-1">
+                            <Label htmlFor="new">New Password</Label>
+                            <Input id="new" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} />
+                        </div>
+                        <div className="space-y-1">
+                            <Label htmlFor="confirm">Confirm New Password</Label>
+                            <Input id="confirm" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
+                        </div>
+                        <div className="pt-2">
+                            <Button onClick={handleSubmit} disabled={loading}>
+                                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Update Password
+                            </Button>
+                        </div>
+                    </div>
+                    
+                    {/* Delete Account Section */}
+                    <div className="pt-6 border-t">
+                        <div className="space-y-4">
+                            <div>
+                                <h3 className="text-lg font-semibold text-destructive">Delete Account</h3>
+                                <p className="text-sm text-muted-foreground">
+                                    Permanently delete your account and all associated data. This action cannot be undone.
+                                </p>
+                            </div>
+                            <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4">
+                                <p className="text-sm text-destructive">
+                                    ⚠️ Warning: This will permanently delete your account, all your time entries, tasks, and other data.
+                                </p>
+                            </div>
+                            <Button
+                                variant="destructive"
+                                onClick={handleDeleteClick}
+                                className="gap-2"
+                            >
+                                <Trash2 className="h-4 w-4" aria-hidden="true" />
+                                Delete My Account
+                            </Button>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Delete Account Confirmation Dialog */}
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Account</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete your account? This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+
+                    {requiresAdminTransfer && (
+                        <div className="space-y-4 py-4">
+                            <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
+                                <p className="text-sm text-amber-800">
+                                    ⚠️ You are the only admin. Please select a new admin before proceeding.
+                                </p>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="newAdmin">Transfer Admin To</Label>
+                                <Select value={newAdminId} onValueChange={setNewAdminId}>
+                                    <SelectTrigger id="newAdmin">
+                                        <SelectValue placeholder="Select user" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {teamMembers.map(member => (
+                                            <SelectItem key={member.id} value={member.id}>
+                                                {member.name} ({member.email})
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                    )}
+
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDelete}
+                            disabled={isDeleting || (requiresAdminTransfer && !newAdminId)}
+                            className="bg-destructive hover:bg-destructive/90"
+                        >
+                            {isDeleting ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                                    Deleting...
+                                </>
+                            ) : (
+                                "Delete Account"
+                            )}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
     )
 }
 

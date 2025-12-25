@@ -75,7 +75,10 @@ export default async function SettingsPage() {
                 </TabsContent>
 
                 <TabsContent value="security" className="mt-6">
-                    <SecurityForm />
+                    <SecurityForm user={{
+                        role: user.role,
+                        projectId: user.projectId
+                    }} />
                 </TabsContent>
 
                 <TabsContent value="appearance" className="mt-6">
