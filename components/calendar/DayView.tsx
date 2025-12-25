@@ -25,11 +25,19 @@ interface DayViewProps {
             user: { name: string; email: string }
         }>
     }>
+    tasks: Array<{
+        id: string
+        title: string
+        deadline: Date | string | null
+        priority: string
+        status: string
+        assignees: Array<{ name: string; email: string }>
+    }>
     projectId?: string | null
     onBack?: () => void
 }
 
-export function DayView({ date, events, projectId }: DayViewProps) {
+export function DayView({ date, events, tasks, projectId }: DayViewProps) {
     const [createDialogOpen, setCreateDialogOpen] = useState(false)
     const [selectedHour, setSelectedHour] = useState<Date | undefined>()
 
@@ -41,8 +49,38 @@ export function DayView({ date, events, projectId }: DayViewProps) {
 
     const hours = eachHourOfInterval({ start: dayStart, end: dayEnd })
 
+    // Process tasks into event-like objects
+    const taskEvents = tasks
+        .filter(t => t.deadline && isSameDay(new Date(t.deadline), date))
+        .map(t => {
+            const deadline = new Date(t.deadline!)
+            // Detect "Date Only" (stored as UTC Midnight)
+            // If the time is exactly 00:00:00.000Z, we treat it as All Day (User likely picked just a date)
+            const isUtcMidnight = deadline.getUTCHours() === 0 && deadline.getUTCMinutes() === 0 && deadline.getUTCSeconds() === 0
+
+            // For timed tasks, assume 1 hour duration
+            const endTime = new Date(deadline)
+            endTime.setHours(endTime.getHours() + 1)
+
+            return {
+                id: t.id,
+                title: t.title,
+                description: `Status: ${t.status} | Priority: ${t.priority}`,
+                startTime: deadline,
+                endTime: endTime,
+                allDay: isUtcMidnight, // Use UTC check to catch date-only inputs
+                type: "TASK_TIME",
+                location: null,
+                createdBy: { name: "System", email: "" },
+                participants: t.assignees.map(a => ({ user: a }))
+            }
+        })
+
     // Filter events to only those on this specific day
-    const dayEvents = events.filter(e => isSameDay(new Date(e.startTime), date))
+    const dayEvents = [
+        ...events.filter(e => isSameDay(new Date(e.startTime), date)),
+        ...taskEvents
+    ]
 
     // Sort events by start time
     const sortedEvents = [...dayEvents].sort((a, b) =>
@@ -52,6 +90,9 @@ export function DayView({ date, events, projectId }: DayViewProps) {
     // Group events by hour for the timeline
     const eventsByHour = new Map<number, typeof sortedEvents>()
     sortedEvents.forEach(event => {
+        // Skip all-day events in timeline
+        if (event.allDay) return
+
         const eventStart = new Date(event.startTime)
         const hour = eventStart.getHours()
         if (!eventsByHour.has(hour)) {

@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { format } from "date-fns"
-import { Clock, MapPin, Users, Trash2 } from "lucide-react"
+import { Clock, MapPin, Users, Trash2, CheckSquare } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import {
@@ -46,21 +46,21 @@ interface EventCardProps {
 }
 
 const eventTypeColors = {
-    MEETING: "bg-blue-100 text-blue-700 border-blue-200",
-    APPOINTMENT: "bg-purple-100 text-purple-700 border-purple-200",
-    TASK_TIME: "bg-green-100 text-green-700 border-green-200",
-    BREAK: "bg-gray-100 text-gray-700 border-gray-200",
-    PERSONAL: "bg-pink-100 text-pink-700 border-pink-200",
-    OTHER: "bg-orange-100 text-orange-700 border-orange-200",
+    MEETING: "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20",
+    APPOINTMENT: "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20",
+    TASK_TIME: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
+    BREAK: "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20",
+    PERSONAL: "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20",
+    OTHER: "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20",
 }
 
 const eventTypeBadgeColors = {
-    MEETING: "bg-blue-500/10 text-blue-700 border-blue-500/20",
-    APPOINTMENT: "bg-purple-500/10 text-purple-700 border-purple-500/20",
-    TASK_TIME: "bg-green-500/10 text-green-700 border-green-500/20",
-    BREAK: "bg-gray-500/10 text-gray-700 border-gray-500/20",
-    PERSONAL: "bg-pink-500/10 text-pink-700 border-pink-500/20",
-    OTHER: "bg-orange-500/10 text-orange-700 border-orange-500/20",
+    MEETING: "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20",
+    APPOINTMENT: "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20",
+    TASK_TIME: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
+    BREAK: "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20",
+    PERSONAL: "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20",
+    OTHER: "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20",
 }
 
 export function EventCard({ event, onClick, size = 'md', showDelete = false }: EventCardProps) {
@@ -151,9 +151,9 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
 
                     {/* Time */}
                     <div className="flex items-center gap-1 text-xs opacity-90">
-                        <Clock className="h-3 w-3" />
+                        {event.type === 'TASK_TIME' ? <CheckSquare className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
                         {event.allDay ? (
-                            <span>All day</span>
+                            <span>{event.type === 'TASK_TIME' ? 'Deadline: Today' : 'All day'}</span>
                         ) : (
                             <span>
                                 {format(start, 'h:mm a')} - {format(end, 'h:mm a')}

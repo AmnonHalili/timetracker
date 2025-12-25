@@ -149,6 +149,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                 <DayView
                     date={currentDate}
                     events={data.events || []}
+                    tasks={data.tasks || []}
                     projectId={projectId}
                     onBack={() => setView('month')}
                 />
