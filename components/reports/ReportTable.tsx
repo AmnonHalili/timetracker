@@ -8,7 +8,7 @@ interface ReportTableProps {
     showWarnings?: boolean
 }
 
-export function ReportTable({ days, showWarnings }: ReportTableProps) {
+export function ReportTable({ days }: ReportTableProps) {
     return (
         <div className="rounded-md border">
             <Table>

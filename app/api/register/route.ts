@@ -101,6 +101,7 @@ export async function POST(req: Request) {
                 pendingProjectId: pendingProjectId ?? undefined,
 
                 // workDays and dailyTarget are now handled by DB defaults (or lack thereof)
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } as any,
         })
 

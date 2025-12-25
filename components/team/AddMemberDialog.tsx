@@ -53,7 +53,7 @@ export function AddMemberDialog({
     const [loading, setLoading] = useState(false)
     const [name, setName] = useState("")
     const [email, setEmail] = useState("")
-    const [role, setRole] = useState(defaultRole)
+    const [role] = useState(defaultRole) // Changed from [role, setRole] to [role]
     const [jobTitle, setJobTitle] = useState("")
     const [managerId, setManagerId] = useState<string>(hideManagerSelect ? "unassigned" : "")
     const [managers, setManagers] = useState<SimpleUser[]>([])

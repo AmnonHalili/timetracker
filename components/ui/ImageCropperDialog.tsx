@@ -18,6 +18,7 @@ interface ImageCropperDialogProps {
 export function ImageCropperDialog({ open, imageSrc, onClose, onCropComplete }: ImageCropperDialogProps) {
     const [crop, setCrop] = useState({ x: 0, y: 0 })
     const [zoom, setZoom] = useState(1)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(false)
 
@@ -29,6 +30,7 @@ export function ImageCropperDialog({ open, imageSrc, onClose, onCropComplete }: 
         setZoom(zoom)
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const onCropCompleteCallback = useCallback((croppedArea: any, croppedAreaPixels: any) => {
         setCroppedAreaPixels(croppedAreaPixels)
     }, [])
@@ -41,6 +43,7 @@ export function ImageCropperDialog({ open, imageSrc, onClose, onCropComplete }: 
             image.src = url
         })
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const getCroppedImg = async (imageSrc: string, pixelCrop: any): Promise<string> => {
         const image = await createImage(imageSrc)
         const canvas = document.createElement('canvas')

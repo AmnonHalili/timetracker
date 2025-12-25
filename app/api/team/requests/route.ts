@@ -23,6 +23,7 @@ export async function GET() {
         const requests = await prisma.user.findMany({
             where: {
                 pendingProjectId: currentUser.projectId
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } as any,
             select: {
                 id: true,
@@ -60,7 +61,9 @@ export async function POST(req: Request) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const targetUser = await prisma.user.findUnique({
             where: { id: userId },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             select: { pendingProjectId: true } as any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         }) as any
 
         if (!targetUser || targetUser.pendingProjectId !== currentUser.projectId) {
@@ -75,6 +78,7 @@ export async function POST(req: Request) {
                     projectId: currentUser.projectId,
                     status: "ACTIVE", // Ensure active
                     managerId: session.user.id // Assign to approving admin as default manager
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } as any
             })
         } else if (action === "REJECT") {
@@ -82,6 +86,7 @@ export async function POST(req: Request) {
                 where: { id: userId },
                 data: {
                     pendingProjectId: null
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } as any
             })
         } else {

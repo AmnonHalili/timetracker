@@ -50,7 +50,7 @@ export function JoinRequestsWidget() {
             toast.success(action === "APPROVE" ? "Member approved" : "Request rejected")
             // Refresh list
             setRequests(prev => prev.filter(r => r.id !== userId))
-        } catch (error) {
+        } catch {
             toast.error("Failed to process request")
         } finally {
             setProcessingId(null)

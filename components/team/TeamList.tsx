@@ -97,17 +97,6 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
         setSelectedRole(user.role)
     }
 
-    const closeRoleDialog = () => {
-        setRoleDialogUser(null)
-        setSelectedRole("")
-    }
-
-    const openDeleteDialog = (user: User) => {
-        setDeleteDialogUser(user)
-        setShowTransferAdmin(false)
-        setNewAdminId("")
-    }
-
     const closeDeleteDialog = () => {
         setDeleteDialogUser(null)
         setShowTransferAdmin(false)

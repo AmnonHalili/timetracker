@@ -128,7 +128,7 @@ export function filterVisibleUsers<T extends { id: string, managerId: string | n
         // Let's make getAllDescendants generic as well locally or cast.
         // Actually simplest is to just extract IDs and filter.
 
-        const directReports = users.filter(u => u.managerId === currentUser.id)
+        // const directReports = users.filter(u => u.managerId === currentUser.id)
         const visibleIds = new Set([currentUser.id])
 
         // Simple recursive finder locally to avoid changing everything

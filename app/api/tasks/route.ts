@@ -52,6 +52,7 @@ export async function POST(req: Request) {
                 // Assuming getAllDescendants just needs structure. It seems it expects full User type in signature but only uses id/managerId.
                 // Let's use 'as any' safely here or better, update the helper file if possible. 
                 // For now, let's just cast to 'any' to avoid the strict type check against the full User model if the helper creates issues.
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const descendants = getAllDescendants(currentUser.id, allUsers as any)
                 const allowedIds = new Set([currentUser.id, ...descendants])
 

@@ -37,7 +37,7 @@ export function TeamOnboardingWidget() {
             toast.success("Request sent to team admins")
             setProjectName("")
             setMode('none')
-        } catch (error) {
+        } catch {
             toast.error("An error occurred")
         } finally {
             setIsLoading(false)
@@ -66,7 +66,7 @@ export function TeamOnboardingWidget() {
             toast.success("Team created successfully!")
             router.refresh()
             setMode('none')
-        } catch (error) {
+        } catch {
             toast.error("An error occurred")
         } finally {
             setIsLoading(false)

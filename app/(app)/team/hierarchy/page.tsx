@@ -291,7 +291,6 @@ export default function HierarchyPage() {
 
                                 <RecursiveNode
                                     node={rootNode}
-                                    allUsers={users}
                                     onAddClick={hasProject ? handleAddClick : undefined} // Disable add for private
                                 />
                             </div>

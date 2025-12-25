@@ -72,7 +72,7 @@ export function NotificationBell() {
                 method: "PATCH",
                 body: JSON.stringify({ markAllRead: true }),
             })
-        } catch (error) {
+        } catch {
             console.error("Failed to sync read status")
         }
     }
