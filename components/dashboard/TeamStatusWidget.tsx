@@ -48,7 +48,7 @@ export function TeamStatusWidget({ teamStatus }: TeamStatusWidgetProps) {
                                         <div className="flex items-center gap-2">
                                             <p className="text-sm font-medium leading-none truncate">{member.name || member.email}</p>
                                             <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-secondary text-secondary-foreground">
-                                                {member.jobTitle || (member.role === 'ADMIN' ? 'Manager' : 'Employee')}
+                                                {member.jobTitle || (member.role === 'ADMIN' ? 'Founder' : 'Employee')}
                                             </span>
                                         </div>
                                         <p className="text-[10px] text-muted-foreground mt-1 truncate">

@@ -14,18 +14,19 @@ export async function PATCH(req: Request) {
         const payload: Record<string, unknown> = await req.json()
 
         // Basic validation
-        if (!payload.name && payload.image === undefined) {
+        if (!payload.name && payload.image === undefined && payload.jobTitle === undefined) {
             return NextResponse.json({ message: "Nothing to update" }, { status: 400 })
         }
 
         const data: Record<string, unknown> = {}
         if (payload.name) data.name = payload.name
         if (payload.image !== undefined) data.image = payload.image
+        if (payload.jobTitle !== undefined) data.jobTitle = payload.jobTitle || null
 
         const updatedUser = await prisma.user.update({
             where: { id: session.user.id },
             data,
-            select: { id: true, name: true, email: true, image: true }
+            select: { id: true, name: true, email: true, image: true, jobTitle: true }
         })
 
         return NextResponse.json({ user: updatedUser, message: "Profile updated successfully" })

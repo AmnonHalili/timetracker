@@ -232,7 +232,14 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
                                 <TableCell>{user.email}</TableCell>
                                 <TableCell>
                                     <span className="capitalize">
-                                        {user.jobTitle || user.role.toLowerCase().replace('_', ' ')}
+                                        {(() => {
+                                            // If user has a jobTitle, use it
+                                            if (user.jobTitle) return user.jobTitle
+                                            // Default to "Founder" for ADMIN users with a team
+                                            if (user.role === "ADMIN") return "Founder"
+                                            // Otherwise fall back to role
+                                            return user.role.toLowerCase().replace('_', ' ')
+                                        })()}
                                     </span>
                                 </TableCell>
                                 <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>

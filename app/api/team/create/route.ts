@@ -19,7 +19,11 @@ export async function POST(req: Request) {
             where: { id: session.user.id }
         })
 
-        if (user?.projectId) {
+        if (!user) {
+            return NextResponse.json({ message: "User not found" }, { status: 404 })
+        }
+
+        if (user.projectId) {
             return NextResponse.json({ message: "You are already in a project" }, { status: 400 })
         }
 
@@ -32,7 +36,9 @@ export async function POST(req: Request) {
             data: {
                 projectId: project.id,
                 role: "ADMIN",
-                status: "ACTIVE"
+                status: "ACTIVE",
+                // Set default jobTitle to "Founder" when user creates a team (if not already set)
+                jobTitle: user.jobTitle || "Founder"
             }
         })
 

@@ -99,7 +99,8 @@ export async function POST(req: Request) {
                 status: userStatus as Status,
                 projectId,
                 pendingProjectId: pendingProjectId ?? undefined,
-
+                // Set default jobTitle: "Founder" for ADMIN users who create a team, "single" for members without a team
+                jobTitle: role === "ADMIN" ? "Founder" : (!projectName ? "single" : undefined),
                 // workDays and dailyTarget are now handled by DB defaults (or lack thereof)
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } as any,

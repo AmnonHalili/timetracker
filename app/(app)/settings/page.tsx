@@ -21,6 +21,7 @@ export default async function SettingsPage() {
             name: true,
             email: true,
             image: true,
+            jobTitle: true,
             dailyTarget: true,
             workDays: true,
             workMode: true,
@@ -53,7 +54,14 @@ export default async function SettingsPage() {
                 </TabsList>
 
                 <TabsContent value="profile" className="mt-6">
-                    <ProfileForm user={user} />
+                    <ProfileForm user={{
+                        name: user.name,
+                        email: user.email,
+                        image: user.image,
+                        jobTitle: user.jobTitle,
+                        role: user.role,
+                        projectId: user.projectId
+                    }} />
                 </TabsContent>
 
                 <TabsContent value="preferences" className="mt-6">

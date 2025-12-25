@@ -47,7 +47,14 @@ export function RecursiveNode({ node, allUsers, onAddClick, depth = 0 }: Recursi
                     <div className="flex flex-col overflow-hidden">
                         <div className="font-semibold truncate text-sm" title={node.name}>{node.name}</div>
                         <div className="text-[10px] text-muted-foreground capitalize leading-tight">
-                            {node.jobTitle ? node.jobTitle : node.role.toLowerCase().replace('_', ' ')}
+                            {(() => {
+                                // If user has a jobTitle, use it
+                                if (node.jobTitle) return node.jobTitle
+                                // Default to "Founder" for ADMIN users
+                                if (node.role === "ADMIN") return "Founder"
+                                // Otherwise fall back to role
+                                return node.role.toLowerCase().replace('_', ' ')
+                            })()}
                         </div>
                     </div>
                 </div>

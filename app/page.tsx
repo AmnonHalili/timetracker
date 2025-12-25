@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import { ArrowRight, CheckCircle2, Clock, Users, BarChart3, ShieldCheck } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { HierarchyDemo } from "@/components/landing/HierarchyDemo"
 
 export const dynamic = "force-dynamic"
 
@@ -95,7 +96,7 @@ export default async function Home() {
               <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary font-semibold">
                 For Managers & Leaders
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold">Take Control of Your Projects</h2>
+              <h2 className="text-3xl md:text-4xl font-bold">Take Control of Your Team</h2>
               <p className="text-muted-foreground text-lg leading-relaxed">
                 Collabo isn&apos;t just for individuals. It&apos;s built for teams.
                 Open a new project and become the <strong>Project Manager</strong> instantly.
@@ -112,38 +113,9 @@ export default async function Home() {
                 </Link>
               </div>
             </div>
-            <div className="relative h-[400px] w-full rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 border shadow-2xl overflow-hidden flex items-center justify-center p-8">
-              {/* Abstract UI representation */}
-              <div className="absolute inset-0 bg-grid-slate-200 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] dark:bg-grid-slate-800/50"></div>
-              <div className="relative bg-background rounded-xl shadow-lg border p-6 w-full max-w-sm">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-                    <Users size={20} />
-                  </div>
-                  <div>
-                    <div className="font-bold">Team Alpha</div>
-                    <div className="text-xs text-muted-foreground">Managed by You</div>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm p-3 bg-muted rounded-md items-center">
-                    <span>Alice (Dev)</span>
-                    <span className="text-green-500 text-xs font-bold">Active</span>
-                  </div>
-                  <div className="flex justify-between text-sm p-3 bg-muted rounded-md items-center">
-                    <span>Bob (Design)</span>
-                    <span className="text-orange-500 text-xs font-bold">In Break</span>
-                  </div>
-                  <div className="flex justify-between text-sm p-3 bg-muted rounded-md items-center opacity-60">
-                    <span>Charlie (Marketing)</span>
-                    <span className="text-xs">Offline</span>
-                  </div>
-                  <div className="border-t pt-2 mt-2">
-                    <div className="w-full bg-primary/10 text-primary text-center py-2 rounded text-xs font-bold">
-                      + Add New Member
-                    </div>
-                  </div>
-                </div>
+            <div className="relative w-full rounded-2xl border shadow-2xl overflow-x-auto overflow-y-visible bg-background">
+              <div className="min-w-max px-4">
+                <HierarchyDemo />
               </div>
             </div>
           </div>

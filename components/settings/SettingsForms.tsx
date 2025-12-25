@@ -15,6 +15,9 @@ interface ProfileFormProps {
         name: string
         email: string
         image?: string | null
+        jobTitle?: string | null
+        role: string
+        projectId?: string | null
     }
 }
 
@@ -24,6 +27,21 @@ function ProfileForm({ user }: ProfileFormProps) {
     const [image, setImage] = useState(user.image || "")
     const fileInputRef = useRef<HTMLInputElement>(null)
     const router = useRouter()
+    
+    // Calculate default job title based on user role and team status
+    // Default to "Founder" for ADMIN users who created a team, "single" for members without a team
+    const getDefaultJobTitle = () => {
+        // If user already has a jobTitle, use it
+        if (user.jobTitle) return user.jobTitle
+        // Default to "Founder" for ADMIN users with a team (team creators)
+        if (user.role === "ADMIN" && user.projectId) return "Founder"
+        // Default to "single" for member users without a team
+        if (user.role !== "ADMIN" && !user.projectId) return "single"
+        // For other cases (members with a team), return empty string (no default)
+        return ""
+    }
+    
+    const [jobTitle, setJobTitle] = useState(getDefaultJobTitle())
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -47,7 +65,7 @@ function ProfileForm({ user }: ProfileFormProps) {
             const res = await fetch("/api/user/profile", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, image }),
+                body: JSON.stringify({ name, image, jobTitle: jobTitle || null }),
             })
             if (!res.ok) throw new Error("Failed to update")
             router.refresh()
@@ -99,6 +117,15 @@ function ProfileForm({ user }: ProfileFormProps) {
                 <div className="space-y-1">
                     <Label htmlFor="name">Display Name</Label>
                     <Input id="name" value={name} onChange={e => setName(e.target.value)} />
+                </div>
+                <div className="space-y-1">
+                    <Label htmlFor="jobTitle">Job Title</Label>
+                    <Input 
+                        id="jobTitle" 
+                        value={jobTitle} 
+                        onChange={e => setJobTitle(e.target.value)} 
+                        placeholder="Enter your job title"
+                    />
                 </div>
             </CardContent>
             <CardFooter>
