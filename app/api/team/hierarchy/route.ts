@@ -1,6 +1,6 @@
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { buildHierarchyTree, filterVisibleUsers } from "@/lib/hierarchy-utils"
+
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 
@@ -70,7 +70,7 @@ export async function GET() {
             const projectData = await prisma.project.findUnique({
                 where: { id: currentUser.projectId }
             })
-            // @ts-ignore - 'logo' might not exist in stale client types
+
             projectLogo = projectData?.logo
         } catch (e) {
             console.error("Failed to fetch project logo (schema mismatch?)", e)

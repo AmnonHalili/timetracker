@@ -94,7 +94,16 @@ export default async function DashboardPage() {
             }
         })
 
-        teamStatus = projectUsers.map((u: any) => {
+        type ProjectUser = {
+            id: string
+            name: string
+            email: string
+            role: "ADMIN" | "EMPLOYEE" | "MANAGER"
+            jobTitle: string | null
+            timeEntries: (TimeEntry & { breaks: TimeBreak[] })[]
+        }
+
+        teamStatus = (projectUsers as unknown as ProjectUser[]).map((u) => {
             const activeEntry = u.timeEntries[0]
             let status: 'WORKING' | 'BREAK' | 'OFFLINE' = 'OFFLINE'
             let lastActive: Date | undefined = undefined
@@ -109,7 +118,7 @@ export default async function DashboardPage() {
                 userId: u.id,
                 name: u.name,
                 email: u.email,
-                role: u.role,
+                role: u.role as "ADMIN" | "EMPLOYEE",
                 jobTitle: u.jobTitle,
                 status,
                 lastActive

@@ -51,7 +51,7 @@ export function CompanyForm({ initialName, initialWorkMode = 'TIME_BASED', proje
                 <CardHeader>
                     <CardTitle>Workspace Information</CardTitle>
                     <CardDescription>
-                        Update your workspace's display name and settings. These will apply to all members.
+                        Update your workspace&apos;s display name and settings. These will apply to all members.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">

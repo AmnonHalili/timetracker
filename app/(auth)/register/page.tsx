@@ -24,7 +24,6 @@ function RegisterForm() {
     const [role, setRole] = useState<"EMPLOYEE" | "ADMIN">(initialRole)
     const [projectName, setProjectName] = useState("")
     const [error, setError] = useState("")
-    const [success, setSuccess] = useState(false)
     const [loading, setLoading] = useState(false)
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -67,28 +66,7 @@ function RegisterForm() {
         }
     }
 
-    if (success) {
-        return (
-            <Card className="w-full max-w-md">
-                <CardHeader>
-                    <div className="mb-2 flex justify-center">
-                        <CheckCircle2 className="h-12 w-12 text-green-500" />
-                    </div>
-                    <CardTitle className="text-center">Registration Successful</CardTitle>
-                    <CardDescription className="text-center">
-                        Your account has been created and is pending approval.
-                        <br />
-                        You will be able to log in once an administrator approves your account.
-                    </CardDescription>
-                </CardHeader>
-                <CardFooter>
-                    <Button className="w-full" asChild>
-                        <Link href="/login">Return to Login</Link>
-                    </Button>
-                </CardFooter>
-            </Card>
-        )
-    }
+
 
     return (
         <Card className="w-full max-w-md">

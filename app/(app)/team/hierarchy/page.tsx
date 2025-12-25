@@ -120,12 +120,12 @@ export default function HierarchyPage() {
         const rootNodes: TreeNode[] = []
 
         // Initialize recursive nodes
-        users.forEach((user: any) => {
+        users.forEach((user) => {
             userMap.set(user.id, { ...user, children: [] })
         })
 
         // Build relations
-        users.forEach((user: any) => {
+        users.forEach((user) => {
             const node = userMap.get(user.id)!
             if (user.managerId && userMap.has(user.managerId)) {
                 userMap.get(user.managerId)!.children.push(node)

@@ -273,7 +273,9 @@ function PreferencesForm({ user }: { user: { dailyTarget: number | null; workDay
                             disabled={!canEdit}
                         />
                         <p className="text-xs text-muted-foreground">
-                            This is used to calculate your &quot;Remaining Hours&quot; for the day. Leave empty if you don't have a specific target.
+                            <p className="text-xs text-muted-foreground">
+                                This is used to calculate your &quot;Remaining Hours&quot; for the day. Leave empty if you don&apos;t have a specific target.
+                            </p>
                         </p>
                     </div>
                 </div>

@@ -52,7 +52,7 @@ export async function POST(req: Request) {
         // If creating a team (ADMIN)
         let projectId = null
         let userRole = "EMPLOYEE"
-        let userStatus = "ACTIVE" // Default to ACTIVE for both (admins auto-active, members independent active)
+        const userStatus = "ACTIVE" // Default to ACTIVE for both (admins auto-active, members independent active)
         let pendingProjectId = null
 
         if (role === "ADMIN") {
