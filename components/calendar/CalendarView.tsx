@@ -1,12 +1,12 @@
 "use client"
 
+import { useOptimistic, useState, startTransition, useEffect } from "react"
 import { MonthGrid } from "./MonthGrid"
 import { DayView } from "./DayView"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react"
 import { format, addMonths, subMonths, addDays, subDays } from "date-fns"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
 
 interface CalendarViewProps {
     initialDate: Date
@@ -50,6 +50,26 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
     const router = useRouter()
     const [view, setView] = useState<'month' | 'day'>('month')
     const [currentDate, setCurrentDate] = useState(initialDate)
+    const [optimisticEvents, setOptimisticEvents] = useState<any[]>([])
+
+    // Sync optimistic events: merge server events with local optimistic ones
+    // We filter out optimistic events that map to real events if IDs clash, 
+    // but here we just append. When data.events updates, we clear optimistic events 
+    // to avoid duplicates (assuming the new data includes the created event).
+    // Actually, to be safe, we should only clear if the new count is higher, 
+    // or just rely on the fact that router.refresh() triggers a prop update.
+
+    // Reset optimistic state when server data changes (confirmation that fetch succeeded and revalidated)
+    useEffect(() => {
+        setOptimisticEvents([])
+    }, [data.events])
+
+    const mergedEvents = [...(data.events || []), ...optimisticEvents]
+
+    const addOptimisticEvent = (newEvent: any) => {
+        setOptimisticEvents(prev => [...prev, newEvent])
+    }
+
 
     const handlePrevMonth = () => {
         const newDate = subMonths(currentDate, 1)
@@ -139,21 +159,29 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
             {view === 'month' ? (
                 <MonthGrid
                     date={currentDate}
-                    data={data}
+                    data={{ ...data, events: mergedEvents }}
                     onDayClick={(day) => {
                         setCurrentDate(day)
                         setView('day')
                         updateUrl(day)
                     }}
                     projectId={projectId}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    onOptimisticEventCreate={(event: any) => {
+                        addOptimisticEvent(event)
+                    }}
                 />
             ) : (
                 <DayView
                     date={currentDate}
-                    events={data.events || []}
+                    events={mergedEvents}
                     tasks={data.tasks || []}
                     projectId={projectId}
                     onBack={() => setView('month')}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    onOptimisticEventCreate={(event: any) => {
+                        addOptimisticEvent(event)
+                    }}
                 />
             )}
         </div>

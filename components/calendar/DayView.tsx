@@ -36,9 +36,11 @@ interface DayViewProps {
     }>
     projectId?: string | null
     onBack?: () => void
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onOptimisticEventCreate?: (event: any) => void
 }
 
-export function DayView({ date, events, tasks, projectId }: DayViewProps) {
+export function DayView({ date, events, tasks, projectId, onOptimisticEventCreate }: DayViewProps) {
     const [createDialogOpen, setCreateDialogOpen] = useState(false)
     const [selectedHour, setSelectedHour] = useState<Date | undefined>()
 
@@ -214,6 +216,7 @@ export function DayView({ date, events, tasks, projectId }: DayViewProps) {
                 onOpenChange={setCreateDialogOpen}
                 defaultDate={selectedHour || date}
                 projectId={projectId}
+                onOptimisticEventCreate={onOptimisticEventCreate}
             />
         </div>
     )

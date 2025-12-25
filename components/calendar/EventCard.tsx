@@ -77,6 +77,7 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
     const [editDialogOpen, setEditDialogOpen] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
     const [isMarkingDone, setIsMarkingDone] = useState(false)
+    const [isDeleted, setIsDeleted] = useState(false)
 
     const start = new Date(event.startTime)
     const end = new Date(event.endTime)
@@ -91,6 +92,11 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
     const handleDelete = async () => {
         // e.stopPropagation() is already handled in the dropdown handler if triggered from there
         setIsDeleting(true)
+
+        // Optimistic update: Hide event immediately and close dialog
+        setDeleteDialogOpen(false)
+        setIsDeleted(true)
+
         try {
             const endpoint = event.type === 'TASK_TIME'
                 ? `/api/tasks/${event.id}`
@@ -101,16 +107,18 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
             })
 
             if (!res.ok) {
+                // If failed, revert the optimistic update
+                setIsDeleted(false)
                 const data = await res.json()
                 throw new Error(data.error || "Failed to delete item")
             }
 
             toast.success(`${event.type === 'TASK_TIME' ? 'Task' : 'Event'} deleted successfully`)
             router.refresh()
-            setDeleteDialogOpen(false)
         } catch (error) {
             console.error(error)
             toast.error(error instanceof Error ? error.message : "Failed to delete item")
+            setIsDeleted(false) // Show it again if failed
         } finally {
             setIsDeleting(false)
         }
@@ -142,6 +150,8 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
             setIsMarkingDone(false)
         }
     }
+
+    if (isDeleted) return null
 
     return (
         <>

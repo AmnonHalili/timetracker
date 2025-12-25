@@ -20,9 +20,19 @@ interface CreateEventDialogProps {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     event?: any // Simplified type for now, matching the flexibility needed
     mode?: 'create' | 'edit'
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onOptimisticEventCreate?: (event: any) => void
 }
 
-export function CreateEventDialog({ open, onOpenChange, defaultDate, projectId, event, mode = 'create' }: CreateEventDialogProps) {
+export function CreateEventDialog({
+    open,
+    onOpenChange,
+    defaultDate,
+    projectId,
+    event,
+    mode = 'create',
+    onOptimisticEventCreate
+}: CreateEventDialogProps) {
     const router = useRouter()
     const { data: session } = useSession()
     const [loading, setLoading] = useState(false)
@@ -56,16 +66,26 @@ export function CreateEventDialog({ open, onOpenChange, defaultDate, projectId, 
     // Initialize/Reset form based on mode and open state
     useEffect(() => {
         if (open) {
-            // Fetch users list
-            fetch("/api/team?all=true")
-                .then(res => res.json())
-                .then(data => {
-                    setUsers(data)
-                })
-                .catch(() => {
-                    console.error("Failed to load users")
-                    setUsers([])
-                })
+            // Fetch users list only if not already loaded
+            if (users.length === 0) {
+                fetch("/api/team?all=true")
+                    .then(res => res.json())
+                    .then(data => {
+                        if (Array.isArray(data)) {
+                            const sortedUser = [...data].sort((a, b) => {
+                                if (a.id === session?.user?.id) return -1
+                                if (b.id === session?.user?.id) return 1
+                                return (a.name || "").localeCompare(b.name || "")
+                            })
+                            setUsers(sortedUser)
+                        }
+                    })
+                    .catch(() => {
+                        console.error("Failed to load users")
+                        setUsers([])
+                    })
+
+            }
 
             if (mode === 'edit' && event) {
                 setTitle(event.title)
@@ -98,6 +118,35 @@ export function CreateEventDialog({ open, onOpenChange, defaultDate, projectId, 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
+
+        // Create temp event for optimistic UI
+        if (mode === 'create' && onOptimisticEventCreate) {
+            const tempEvent = {
+                id: Math.random().toString(), // Temp ID
+                title,
+                description,
+                startTime: allDay ? new Date(startDate) : new Date(`${startDate}T${startTime}`),
+                endTime: allDay ? new Date(endDate) : new Date(`${endDate}T${endTime}`),
+                allDay,
+                type,
+                location,
+                createdBy: {
+                    name: session?.user?.name || "You",
+                    email: session?.user?.email || ""
+                },
+                participants: participantIds.map(id => {
+                    const user = users.find(u => u.id === id)
+                    return {
+                        user: {
+                            name: user?.name || "Unknown",
+                            email: user?.email || ""
+                        }
+                    }
+                })
+            }
+            onOptimisticEventCreate(tempEvent)
+            onOpenChange(false) // Close immediately
+        }
 
         try {
             // Combine date and time

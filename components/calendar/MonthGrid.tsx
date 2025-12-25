@@ -47,9 +47,11 @@ interface MonthGridProps {
     }
     onDayClick?: (day: Date) => void
     projectId?: string | null
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onOptimisticEventCreate?: (event: any) => void
 }
 
-export function MonthGrid({ date, data, onDayClick, projectId }: MonthGridProps) {
+export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEventCreate }: MonthGridProps) {
     const monthStart = startOfMonth(date)
     const monthEnd = endOfMonth(date)
     const startDate = startOfWeek(monthStart)
@@ -205,6 +207,7 @@ export function MonthGrid({ date, data, onDayClick, projectId }: MonthGridProps)
                 onOpenChange={setCreateDialogOpen}
                 defaultDate={selectedDate}
                 projectId={projectId}
+                onOptimisticEventCreate={onOptimisticEventCreate}
             />
         </div>
     )
