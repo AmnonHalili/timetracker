@@ -73,8 +73,7 @@ const ceoNode: HierarchyNode = {
 }
 
 function HierarchyNodeCard({ node, isRoot = false }: { node: HierarchyNode; isRoot?: boolean }) {
-  const hasChildren = node.children && node.children.length > 0
-  
+
   const getBarColor = () => {
     if (isRoot) return "bg-primary"
     if (node.role === "CEO") return "bg-black dark:bg-white"
@@ -186,9 +185,9 @@ export function HierarchyDemo() {
       <div className="flex flex-col items-center relative mx-auto">
         {/* Company Header */}
         <div className="mb-2 md:mb-3">
-          <HierarchyNodeCard 
-            node={{ name: "Collabo", title: "Organization", role: "CEO" }} 
-            isRoot 
+          <HierarchyNodeCard
+            node={{ name: "Collabo", title: "Organization", role: "CEO" }}
+            isRoot
           />
         </div>
 
