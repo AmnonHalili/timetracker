@@ -1,13 +1,10 @@
-"use client"
-
-import { useState } from "react"
-import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { format, eachHourOfInterval, startOfDay, endOfDay, isSameHour, isSameDay, parseISO } from "date-fns"
+import { format, eachHourOfInterval, isSameHour, isSameDay } from "date-fns"
 import { EventCard } from "./EventCard"
 import { CreateEventDialog } from "./CreateEventDialog"
 import { cn } from "@/lib/utils"
-import { Plus, ArrowLeft } from "lucide-react"
+import { Plus } from "lucide-react"
+import { useState } from "react"
 
 interface DayViewProps {
     date: Date
@@ -32,7 +29,7 @@ interface DayViewProps {
     onBack?: () => void
 }
 
-export function DayView({ date, events, projectId, onBack }: DayViewProps) {
+export function DayView({ date, events, projectId }: DayViewProps) {
     const [createDialogOpen, setCreateDialogOpen] = useState(false)
     const [selectedHour, setSelectedHour] = useState<Date | undefined>()
 
@@ -65,7 +62,6 @@ export function DayView({ date, events, projectId, onBack }: DayViewProps) {
 
     // All-day events (filtered for this day)
     const allDayEvents = dayEvents.filter(e => e.allDay)
-    const timedEvents = dayEvents.filter(e => !e.allDay)
 
     const handleHourClick = (hour: Date) => {
         setSelectedHour(hour)
@@ -74,7 +70,6 @@ export function DayView({ date, events, projectId, onBack }: DayViewProps) {
 
     return (
         <div className="space-y-4">
-            {/* Header */}
             {/* Header - Buttons only (Date title is in parent) */}
             <div className="flex items-center justify-end">
                 <Button size="sm" onClick={() => { setSelectedHour(undefined); setCreateDialogOpen(true) }}>
@@ -102,7 +97,7 @@ export function DayView({ date, events, projectId, onBack }: DayViewProps) {
 
             {/* Timeline */}
             <div className="border rounded-lg bg-background overflow-hidden">
-                {hours.map((hour, index) => {
+                {hours.map((hour) => {
                     const hourEvents = eventsByHour.get(hour.getHours()) || []
                     const isCurrentHour = isSameHour(hour, new Date())
 

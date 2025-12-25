@@ -9,6 +9,7 @@ import { toast } from "sonner"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { ImageCropperDialog } from "@/components/ui/ImageCropperDialog"
+import Image from "next/image"
 
 import { AddMemberDialog } from "@/components/team/AddMemberDialog"
 import { JoinRequestsWidget } from "@/components/team/JoinRequestsWidget"
@@ -191,7 +192,13 @@ export default function HierarchyPage() {
                     >
                         {projectLogo ? (
                             <>
-                                <img src={projectLogo} alt="Logo" className="h-full w-full object-contain p-1" />
+                                <Image
+                                    src={projectLogo}
+                                    alt="Logo"
+                                    fill
+                                    className="object-contain p-1"
+                                    unoptimized // Allow external/data URLs without config
+                                />
                                 {/* Overlay for Edit */}
                                 {hasProject && session?.user?.role === "ADMIN" && (
                                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity">

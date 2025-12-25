@@ -55,7 +55,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId }: Tasks
             const updated = initialTasks.find(t => t.id === selectedTask.id)
             if (updated) setSelectedTask(updated)
         }
-    }, [initialTasks])
+    }, [initialTasks, selectedTask])
 
     // Filter tasks
     const filteredTasks = tasks.filter(task => {

@@ -2,7 +2,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { NextRequest, NextResponse } from "next/server"
-import { EventType, RecurrenceType } from "@prisma/client"
+import { EventType, RecurrenceType, Prisma } from "@prisma/client"
 
 // POST - Create new event
 export async function POST(req: NextRequest) {
@@ -109,7 +109,7 @@ export async function GET(req: NextRequest) {
         }
 
         // Build where clause
-        const where: any = {
+        const where: Prisma.EventWhereInput = {
             startTime: {
                 gte: new Date(startDate)
             },

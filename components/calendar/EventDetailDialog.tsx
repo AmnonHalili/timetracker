@@ -186,7 +186,7 @@ export function EventDetailDialog({ event, open, onOpenChange }: EventDetailDial
                     <AlertDialogHeader>
                         <AlertDialogTitle>Delete Event</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to delete "{event.title}"? This action cannot be undone.
+                            Are you sure you want to delete &quot;{event.title}&quot;? This action cannot be undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
