@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
-import { Calendar, Clock, MapPin, Trash2, Users } from "lucide-react"
+import { Calendar, MapPin, Trash2, Users } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import {
