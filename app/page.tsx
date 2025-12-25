@@ -22,9 +22,9 @@ export default async function Home() {
     <div className="min-h-screen bg-background text-foreground">
       {/* Navbar / Header */}
       <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="container mx-auto px-4 h-24 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Image src="/logo.png?v=2" alt="Collabo Logo" width={200} height={80} className="h-20 w-auto" priority />
+        <div className="w-full px-6 md:px-8 h-24 flex items-center justify-between">
+          <div className="flex items-center">
+            <Image src="/logo.png?v=2" alt="Collabo Logo" width={360} height={144} className="h-36 w-auto" priority />
           </div>
           <div className="flex items-center gap-4">
             <Link href="/login" className="text-sm font-medium hover:text-primary transition-colors">
