@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertCircle, Loader2 } from "lucide-react"
+import { GoogleLoginButton } from "@/components/auth/GoogleLoginButton"
 
 export default function LoginPage() {
     const router = useRouter()
@@ -48,6 +49,20 @@ export default function LoginPage() {
                 <CardTitle>Welcome Back</CardTitle>
                 <CardDescription>Sign in to your account</CardDescription>
             </CardHeader>
+            <div className="mb-4 px-6 pt-2">
+                <GoogleLoginButton />
+            </div>
+            <div className="relative mb-4 px-6">
+                <div className="absolute inset-0 flex items-center px-6">
+                    <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                        Or continue with
+                    </span>
+                </div>
+            </div>
+
             <form onSubmit={handleSubmit}>
                 <CardContent className="space-y-4">
                     {error && (

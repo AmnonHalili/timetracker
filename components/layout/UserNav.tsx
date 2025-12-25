@@ -29,7 +29,7 @@ export function UserNav() {
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full" aria-label={`User menu for ${session.user.name || session.user.email}`}>
                     <Avatar className="h-8 w-8">
-                        <AvatarImage src="/avatars/01.png" alt={session.user.name || ""} />
+                        <AvatarImage src={session.user.image || "/avatars/01.png"} alt={session.user.name || ""} />
                         <AvatarFallback aria-hidden="true">{initials}</AvatarFallback>
                     </Avatar>
                 </Button>
