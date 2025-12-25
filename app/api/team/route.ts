@@ -11,21 +11,47 @@ export async function GET(req: Request) {
             return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
         }
 
+        // Fetch user with role and direct reports count to determine permissions
         const currentUser = await prisma.user.findUnique({
             where: { id: session.user.id },
-            select: { projectId: true, role: true }
+            select: {
+                projectId: true,
+                role: true,
+                _count: {
+                    select: { directReports: true }
+                }
+            }
         })
 
         if (!currentUser?.projectId) {
             return NextResponse.json({ message: "Project not found" }, { status: 404 })
         }
 
-        // Fetch all users in the project
+        // Determine if user can see others
+        // Admin/Manager or anyone with direct reports (subordinates)
+        const canManageOthers =
+            currentUser.role === 'ADMIN' ||
+            currentUser.role === 'MANAGER' ||
+            (currentUser._count?.directReports ?? 0) > 0
+
+        // Build query
+        const whereClause: any = {
+            projectId: currentUser.projectId,
+            // If they can't manage others, they can only see themselves
+            ...(canManageOthers ? {} : { id: session.user.id })
+            // Note: we removed status: "ACTIVE" constraint or implied it. 
+            // The previous code had `status: "ACTIVE"`. Let's keep it if they are managing, 
+            // but for themselves, they are presumably active.
+            // Actually, let's keep status active for consistency.
+        }
+
+        if (canManageOthers) {
+            whereClause.status = "ACTIVE"
+        }
+
+        // Fetch users
         const users = await prisma.user.findMany({
-            where: {
-                projectId: currentUser.projectId,
-                status: "ACTIVE" // Only active users? Or all? Let's say all for now or PENDING too.
-            },
+            where: whereClause,
             select: {
                 id: true,
                 name: true,

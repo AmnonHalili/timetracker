@@ -37,6 +37,28 @@ export async function POST(req: NextRequest) {
         }
 
         // Create event
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: {
+                role: true,
+                _count: { select: { directReports: true } }
+            }
+        })
+
+        const canManageOthers =
+            user?.role === 'ADMIN' ||
+            user?.role === 'MANAGER' ||
+            (user?._count?.directReports ?? 0) > 0
+
+        const hasOtherParticipants = participantIds.some((id: string) => id !== session.user.id)
+
+        if (!canManageOthers && hasOtherParticipants) {
+            return NextResponse.json(
+                { error: "You do not have permission to invite other participants." },
+                { status: 403 }
+            )
+        }
+
         const event = await prisma.event.create({
             data: {
                 title,
@@ -116,10 +138,7 @@ export async function GET(req: NextRequest) {
             endTime: {
                 lte: new Date(endDate)
             },
-            OR: [
-                { createdById: session.user.id },
-                { participants: { some: { userId: session.user.id } } }
-            ]
+            participants: { some: { userId: session.user.id } }
         }
 
         if (projectId) {
