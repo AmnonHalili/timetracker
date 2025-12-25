@@ -178,7 +178,7 @@ function PreferencesForm({ user }: { user: { dailyTarget: number | null; workDay
     const [loading, setLoading] = useState(false)
     const [target, setTarget] = useState(user.dailyTarget?.toString() || "")
     const [selectedDays, setSelectedDays] = useState<number[]>(user.workDays || [])
-    const [workMode, setWorkMode] = useState<'OUTPUT_BASED' | 'TIME_BASED'>(user.workMode || 'TIME_BASED')
+    const [workMode] = useState<'OUTPUT_BASED' | 'TIME_BASED'>(user.workMode || 'TIME_BASED')
     const router = useRouter()
 
     const canEdit = !(user.role === 'EMPLOYEE' && user.projectId !== null)

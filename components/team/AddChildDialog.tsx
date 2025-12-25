@@ -1,15 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { User } from "@prisma/client"
-import { UserPlus, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
-import { useRouter } from "next/navigation"
 
 interface AddChildDialogProps {
     isOpen: boolean
@@ -30,7 +29,6 @@ export function AddChildDialog({
 }: AddChildDialogProps) {
     const [selectedUserId, setSelectedUserId] = useState<string>("")
     const [isLoading, setIsLoading] = useState(false)
-    const router = useRouter()
 
     const [activeTab, setActiveTab] = useState<"existing" | "new">("existing")
 
@@ -38,7 +36,7 @@ export function AddChildDialog({
     const [newName, setNewName] = useState("")
     const [newEmail, setNewEmail] = useState("")
     const [newPassword, setNewPassword] = useState("")
-    const [newRole, setNewRole] = useState("EMPLOYEE")
+    const [newRole] = useState("EMPLOYEE")
     const [newJobTitle, setNewJobTitle] = useState("")
 
     const handleExistingSubmit = async (e: React.FormEvent) => {
@@ -63,8 +61,8 @@ export function AddChildDialog({
             onSuccess()
             onOpenChange(false)
             setSelectedUserId("")
-        } catch (error: any) {
-            toast.error(error.message || "Failed to add team member")
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : "Failed to add team member")
         } finally {
             setIsLoading(false)
         }
@@ -100,9 +98,9 @@ export function AddChildDialog({
             setNewName("")
             setNewEmail("")
             setNewPassword("")
-            setNewRole("EMPLOYEE")
-        } catch (error: any) {
-            toast.error(error.message || "Failed to create user")
+            // Role reset not needed as it's state constant
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : "Failed to create user")
         } finally {
             setIsLoading(false)
         }
@@ -115,7 +113,7 @@ export function AddChildDialog({
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Add to {parentName}'s Team</DialogTitle>
+                    <DialogTitle>Add to {parentName}&apos;s Team</DialogTitle>
                 </DialogHeader>
 
                 <div className="flex gap-2 p-1 bg-muted rounded-lg mb-4">

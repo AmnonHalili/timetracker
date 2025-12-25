@@ -136,7 +136,7 @@ export default function HierarchyPage() {
         })
 
         // Sort roots: Admin first, then others
-        return rootNodes.sort((a, b) => (a.role === 'ADMIN' ? -1 : 1))
+        return rootNodes.sort((a, _) => (a.role === 'ADMIN' ? -1 : 1))
     }, [users])
 
     if (isLoading) {

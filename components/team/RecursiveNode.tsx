@@ -12,10 +12,9 @@ interface RecursiveNodeProps {
     allUsers: User[] // Passed down for the Add dialog context
     onAddClick?: (parentId: string, parentName: string) => void
     depth?: number
-    isLast?: boolean
 }
 
-export function RecursiveNode({ node, allUsers, onAddClick, depth = 0, isLast = false }: RecursiveNodeProps) {
+export function RecursiveNode({ node, allUsers, onAddClick, depth = 0 }: RecursiveNodeProps) {
     const { data: session } = useSession()
     const hasChildren = node.children && node.children.length > 0
 
@@ -48,7 +47,7 @@ export function RecursiveNode({ node, allUsers, onAddClick, depth = 0, isLast = 
                     <div className="flex flex-col overflow-hidden">
                         <div className="font-semibold truncate text-sm" title={node.name}>{node.name}</div>
                         <div className="text-[10px] text-muted-foreground capitalize leading-tight">
-                            {(node as any).jobTitle ? (node as any).jobTitle : node.role.toLowerCase().replace('_', ' ')}
+                            {node.jobTitle ? node.jobTitle : node.role.toLowerCase().replace('_', ' ')}
                         </div>
                     </div>
                 </div>
@@ -191,7 +190,6 @@ export function RecursiveNode({ node, allUsers, onAddClick, depth = 0, isLast = 
                                 allUsers={allUsers}
                                 onAddClick={onAddClick}
                                 depth={depth + 1}
-                                isLast={index === node.children!.length - 1}
                             />
                         </div>
                     ))}

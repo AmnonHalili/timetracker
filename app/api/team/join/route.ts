@@ -40,7 +40,7 @@ export async function POST(req: Request) {
             where: { id: session.user.id },
             data: {
                 pendingProjectId: project.id
-            } as any
+            }
         })
 
         // Notify Admins
