@@ -2,6 +2,7 @@
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
+import Image from "next/image"
 
 interface HierarchyNode {
   name: string
@@ -93,20 +94,24 @@ function HierarchyNodeCard({ node, isRoot = false }: { node: HierarchyNode; isRo
 
   if (isRoot) {
     return (
-      <div className="bg-primary text-primary-foreground px-3 md:px-4 lg:px-5 py-1 md:py-1.5 rounded-md shadow-lg border-2 border-primary-foreground/20 z-10 flex flex-row items-center justify-center relative">
-        <div className="absolute left-1 h-4 w-4 md:h-5 md:w-5 bg-white/95 rounded-md flex items-center justify-center border-2 border-dashed border-primary/20 overflow-hidden shadow-sm">
-          <svg className="h-2.5 w-2.5 md:h-3 md:w-3 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-          </svg>
+      <div className="bg-primary text-primary-foreground px-4 md:px-6 lg:px-8 py-1.5 md:py-2 rounded-lg shadow-lg border-2 border-primary-foreground/20 z-10 flex flex-row items-center justify-center relative">
+        <div className="absolute left-2 h-5 w-5 md:h-6 md:w-6 bg-white/95 rounded-md flex items-center justify-center border-2 border-dashed border-primary/20 overflow-hidden shadow-sm">
+          <Image 
+            src="/collabologocut.png" 
+            alt="Collabo Logo" 
+            width={24} 
+            height={24} 
+            className="h-full w-full object-contain"
+          />
         </div>
-        <span className="font-bold text-[10px] md:text-xs lg:text-sm">{node.name}</span>
+        <span className="font-bold text-xs md:text-sm lg:text-base ml-2 md:ml-2.5">{node.name}</span>
       </div>
     )
   }
 
   return (
-    <div className="relative group flex flex-col items-start p-1 md:p-1.5 rounded-md border bg-card text-card-foreground shadow-sm w-[90px] md:w-[110px] lg:w-[130px] hover:shadow-md transition-all">
-      <div className={cn("absolute top-0 left-0 w-0.5 h-full rounded-l-md", getBarColor())} />
+    <div className="relative group flex flex-col items-start p-1 md:p-1.5 rounded border bg-card text-card-foreground shadow-sm w-[80px] md:w-[95px] lg:w-[110px] hover:shadow-md transition-all">
+      <div className={cn("absolute top-0 left-0 w-0.5 h-full rounded-l", getBarColor())} />
       <div className="pl-1 md:pl-1.5 flex items-center gap-0.5 md:gap-1 w-full">
         <Avatar className="h-4 w-4 md:h-5 md:w-5 border border-border/50 shrink-0">
           <AvatarFallback className="bg-muted text-muted-foreground text-[6px] md:text-[7px]">
@@ -146,18 +151,18 @@ function HierarchyLevel({ nodes, depth = 0 }: { nodes: HierarchyNode[]; depth?: 
                 <>
                   {/* Line extending to the right (for first and middle nodes) */}
                   {!isLast && (
-                    <div className="absolute -top-3 left-1/2 h-px bg-border w-[calc(50%+0.25rem)] md:w-[calc(50%+0.5rem)] lg:w-[calc(50%+0.75rem)]" />
+                    <div className="absolute -top-2.5 left-1/2 h-px bg-border w-[calc(50%+0.5rem)] md:w-[calc(50%+0.75rem)] lg:w-[calc(50%+1rem)]" />
                   )}
                   {/* Line extending to the left (for last and middle nodes) */}
                   {!isFirst && (
-                    <div className="absolute -top-3 right-1/2 h-px bg-border w-[calc(50%+0.25rem)] md:w-[calc(50%+0.5rem)] lg:w-[calc(50%+0.75rem)]" />
+                    <div className="absolute -top-2.5 right-1/2 h-px bg-border w-[calc(50%+0.5rem)] md:w-[calc(50%+0.75rem)] lg:w-[calc(50%+1rem)]" />
                   )}
                 </>
               )}
 
               {/* Vertical line from parent to this node */}
               {depth > 0 && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 h-3 w-px bg-border" />
+                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 h-2.5 w-px bg-border" />
               )}
 
               {/* Node Card */}
@@ -165,7 +170,7 @@ function HierarchyLevel({ nodes, depth = 0 }: { nodes: HierarchyNode[]; depth?: 
 
               {/* Vertical connector line from node to children */}
               {hasChildren && (
-                <div className="h-2.5 md:h-3 w-px bg-border my-0.5 md:my-1" />
+                <div className="h-2 md:h-2.5 w-px bg-border my-1 md:my-1.5" />
               )}
 
               {/* Recursive children rendered horizontally */}
@@ -193,16 +198,16 @@ export function HierarchyDemo() {
         </div>
 
         {/* Vertical connector from company to CEO */}
-        <div className="h-2.5 md:h-3 w-px bg-border mb-1 md:mb-1.5" />
+        <div className="h-2.5 md:h-3 w-px bg-border mb-1.5 md:mb-2" />
 
         {/* CEO Node */}
-        <div className="mb-1 md:mb-1.5">
+        <div className="mb-1.5 md:mb-2">
           <HierarchyNodeCard node={ceoNode} />
         </div>
 
         {/* Vertical connector from CEO to executives */}
         {ceoNode.children && ceoNode.children.length > 0 && (
-          <div className="h-2.5 md:h-3 w-px bg-border mb-1 md:mb-1.5" />
+          <div className="h-2 md:h-2.5 w-px bg-border mb-1.5 md:mb-2" />
         )}
 
         {/* Hierarchy Tree - Executives and below */}

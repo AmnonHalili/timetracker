@@ -130,7 +130,6 @@ export default async function Home() {
           </div>
           <p className="text-muted-foreground text-sm mb-8 max-w-md mx-auto">
             The modern solution for time and project management.
-            Built with Next.js, TypeScript, and Prisma.
           </p>
           <div className="text-muted-foreground text-xs">
             © {new Date().getFullYear()} Collabo. All rights reserved.
