@@ -1,11 +1,9 @@
 "use client"
 
-
 import { MonthGrid } from "./MonthGrid"
 import { DayView } from "./DayView"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ChevronLeft, ChevronRight, Calendar, List } from "lucide-react"
+import { ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react"
 import { format, addMonths, subMonths, addDays, subDays } from "date-fns"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
@@ -118,20 +116,6 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                         </Button>
                     </div>
                 </div>
-
-                {/* View Toggle */}
-                <Tabs value={view} onValueChange={(v) => setView(v as 'month' | 'day')}>
-                    <TabsList>
-                        <TabsTrigger value="month" className="gap-2">
-                            <Calendar className="h-4 w-4" />
-                            Month
-                        </TabsTrigger>
-                        <TabsTrigger value="day" className="gap-2">
-                            <List className="h-4 w-4" />
-                            Day
-                        </TabsTrigger>
-                    </TabsList>
-                </Tabs>
             </div>
 
             {view === 'month' ? (
@@ -149,6 +133,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                     date={currentDate}
                     events={data.events || []}
                     projectId={projectId}
+                    onBack={() => setView('month')}
                 />
             )}
         </div>

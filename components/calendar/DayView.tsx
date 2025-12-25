@@ -7,7 +7,7 @@ import { format, eachHourOfInterval, startOfDay, endOfDay, isSameHour, isSameDay
 import { EventCard } from "./EventCard"
 import { CreateEventDialog } from "./CreateEventDialog"
 import { cn } from "@/lib/utils"
-import { Plus } from "lucide-react"
+import { Plus, ArrowLeft } from "lucide-react"
 
 interface DayViewProps {
     date: Date
@@ -29,9 +29,10 @@ interface DayViewProps {
         }>
     }>
     projectId?: string | null
+    onBack?: () => void
 }
 
-export function DayView({ date, events, projectId }: DayViewProps) {
+export function DayView({ date, events, projectId, onBack }: DayViewProps) {
     const [createDialogOpen, setCreateDialogOpen] = useState(false)
     const [selectedHour, setSelectedHour] = useState<Date | undefined>()
 
@@ -75,9 +76,16 @@ export function DayView({ date, events, projectId }: DayViewProps) {
         <div className="space-y-4">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold">
-                    {format(date, 'EEEE, MMMM d, yyyy')}
-                </h3>
+                <div className="flex items-center gap-2">
+                    {onBack && (
+                        <Button variant="ghost" size="icon" onClick={onBack} className="-ml-2">
+                            <ArrowLeft className="h-5 w-5" />
+                        </Button>
+                    )}
+                    <h3 className="text-lg font-bold">
+                        {format(date, 'EEEE, MMMM d, yyyy')}
+                    </h3>
+                </div>
                 <Button size="sm" onClick={() => { setSelectedHour(undefined); setCreateDialogOpen(true) }}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Event

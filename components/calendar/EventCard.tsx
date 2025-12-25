@@ -131,21 +131,23 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
                                     {event.type}
                                 </Badge>
                             )}
-                            {showDelete && (
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 hover:text-red-600"
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        setDeleteDialogOpen(true)
-                                    }}
-                                >
-                                    <Trash2 className="h-3 w-3" />
-                                </Button>
-                            )}
                         </div>
                     </div>
+
+                    {/* Delete button - absolutely positioned */}
+                    {showDelete && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-2 top-1/2 -translate-y-[52%] h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 hover:text-red-600 z-10"
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                setDeleteDialogOpen(true)
+                            }}
+                        >
+                            <Trash2 className="h-3 w-3" />
+                        </Button>
+                    )}
 
                     {/* Time */}
                     <div className="flex items-center gap-1 text-xs opacity-90">
