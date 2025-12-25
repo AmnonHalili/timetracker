@@ -31,6 +31,9 @@ export default async function DashboardPage() {
         include: {
             timeEntries: {
                 include: { breaks: true, tasks: true }
+            },
+            project: {
+                select: { workMode: true }
             }
         },
     })) as unknown as DashboardUser

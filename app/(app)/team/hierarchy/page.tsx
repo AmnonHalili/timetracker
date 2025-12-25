@@ -4,10 +4,11 @@ import { useEffect, useState, useMemo } from "react"
 import { RecursiveNode } from "@/components/team/RecursiveNode"
 import { AddChildDialog } from "@/components/team/AddChildDialog"
 import { User } from "@prisma/client"
-import { Loader2, UserPlus } from "lucide-react"
+import { Loader2, UserPlus, Pencil } from "lucide-react"
 import { toast } from "sonner"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
+import { ImageCropperDialog } from "@/components/ui/ImageCropperDialog"
 
 import { AddMemberDialog } from "@/components/team/AddMemberDialog"
 import { JoinRequestsWidget } from "@/components/team/JoinRequestsWidget"
@@ -20,8 +21,14 @@ export default function HierarchyPage() {
     const { data: session } = useSession()
     const [users, setUsers] = useState<User[]>([])
     const [projectName, setProjectName] = useState("Organization")
+    const [projectId, setProjectId] = useState<string | null>(null)
+    const [projectLogo, setProjectLogo] = useState<string | null>(null) // Displayed logo
     const [isLoading, setIsLoading] = useState(true)
     const [hasProject, setHasProject] = useState(true)
+
+    // Cropper State
+    const [tempImageSrc, setTempImageSrc] = useState<string | null>(null)
+    const [isCropperOpen, setIsCropperOpen] = useState(false)
 
     // Dialog State
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -37,6 +44,8 @@ export default function HierarchyPage() {
             const data = await res.json()
             setUsers(data.users || [])
             if (data.projectName) setProjectName(data.projectName)
+            if (data.projectLogo) setProjectLogo(data.projectLogo)
+            if (data.projectId) setProjectId(data.projectId)
 
             // Check if it's a private workspace (project name check is a proxy, or check user count/role)
             // But API now returns "Private Workspace" if no project
@@ -47,6 +56,49 @@ export default function HierarchyPage() {
             toast.error("Failed to load hierarchy")
         } finally {
             setIsLoading(false)
+        }
+    }
+
+    const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        if (!projectId) {
+            toast.error("Project ID not found. Please refresh.")
+            return
+        }
+
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit for raw file
+            toast.error("Image too large. Max 5MB.")
+            return
+        }
+
+        const reader = new FileReader()
+        reader.onloadend = () => {
+            setTempImageSrc(reader.result as string)
+            setIsCropperOpen(true)
+        }
+        reader.readAsDataURL(file)
+
+        // Reset input
+        e.target.value = ''
+    }
+
+    const handleCropSave = async (croppedBase64: string) => {
+        setProjectLogo(croppedBase64) // Optimistic update
+
+        try {
+            const res = await fetch(`/api/projects/${projectId}`, {
+                method: "PATCH",
+                body: JSON.stringify({ logo: croppedBase64 }),
+                headers: { "Content-Type": "application/json" }
+            })
+            if (!res.ok) throw new Error("Failed to upload logo")
+            toast.success("Logo updated")
+        } catch (error) {
+            console.error(error)
+            toast.error("Failed to update logo")
+            fetchHierarchy() // Revert
         }
     }
 
@@ -99,7 +151,7 @@ export default function HierarchyPage() {
                     {/* Add Admin Button (Only for actual Admins with Project) */}
                     {hasProject && session?.user?.role === "ADMIN" && (
                         <AddMemberDialog
-                            triggerLabel="Add Admin"
+                            triggerLabel="Add Executive"
                             defaultRole="ADMIN"
                             lockRole={true}
                             hideManagerSelect={true}
@@ -107,7 +159,7 @@ export default function HierarchyPage() {
                             customTrigger={
                                 <Button variant="outline" size="sm" className="gap-2 bg-background/50 backdrop-blur-sm">
                                     <UserPlus className="h-4 w-4" />
-                                    <span className="hidden sm:inline">Add Admin</span>
+                                    <span className="hidden sm:inline">Add Executive</span>
                                 </Button>
                             }
                         />
@@ -131,12 +183,58 @@ export default function HierarchyPage() {
             {/* Project Root Node Section */}
             <div className="flex flex-col items-center mb-8 relative">
                 {/* Project Card */}
-                <div className="bg-primary text-primary-foreground px-8 py-4 rounded-xl shadow-lg border-2 border-primary-foreground/20 z-10 mb-8">
-                    <h2 className="text-xl font-bold tracking-tight">{projectName}</h2>
-                    <div className="text-sm opacity-80 text-center uppercase tracking-wider font-medium">
-                        {hasProject ? "Company Overview" : "Private Session"}
+                <div className="bg-primary text-primary-foreground px-16 py-4 rounded-xl shadow-lg border-2 border-primary-foreground/20 z-10 mb-8 flex flex-row items-center justify-center relative">
+                    {/* Logo Placeholder - Absolute Left */}
+                    <div
+                        className="absolute left-3 h-10 w-10 bg-white/95 rounded-lg flex items-center justify-center border-2 border-dashed border-primary/20 cursor-pointer hover:bg-white transition-colors overflow-hidden group/logo shadow-sm"
+                        onClick={() => hasProject && session?.user?.role === "ADMIN" && document.getElementById('logo-upload')?.click()}
+                    >
+                        {projectLogo ? (
+                            <>
+                                <img src={projectLogo} alt="Logo" className="h-full w-full object-contain p-1" />
+                                {/* Overlay for Edit */}
+                                {hasProject && session?.user?.role === "ADMIN" && (
+                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity">
+                                        <Pencil className="h-4 w-4 text-white" />
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="text-primary/40"
+                            >
+                                <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                                <circle cx="9" cy="9" r="2" />
+                                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                            </svg>
+                        )}
+                        <input
+                            type="file"
+                            id="logo-upload"
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleLogoUpload}
+                        />
                     </div>
+
+                    <h2 className="text-xl font-bold tracking-tight text-center">{projectName}</h2>
                 </div>
+
+                <ImageCropperDialog
+                    open={isCropperOpen}
+                    imageSrc={tempImageSrc}
+                    onClose={() => setIsCropperOpen(false)}
+                    onCropComplete={handleCropSave}
+                />
 
                 {/* Connector to Roots */}
                 {tree && tree.length > 0 && (

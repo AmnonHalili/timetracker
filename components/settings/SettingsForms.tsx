@@ -276,31 +276,6 @@ function PreferencesForm({ user }: { user: { dailyTarget: number | null; workDay
                             This is used to calculate your &quot;Remaining Hours&quot; for the day. Leave empty if you don't have a specific target.
                         </p>
                     </div>
-
-                    <div className="space-y-3 pt-4 border-t mt-6">
-                        <Label>Work Calculation Mode</Label>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div
-                                onClick={() => canEdit && setWorkMode('TIME_BASED')}
-                                className={`p-4 rounded-lg border-2 transition-all ${workMode === 'TIME_BASED' ? 'border-primary bg-primary/5' : 'border-muted'} ${canEdit ? 'cursor-pointer hover:border-muted-foreground/50' : ''}`}
-                            >
-                                <div className="font-semibold mb-1">Time Based (Attendance)</div>
-                                <div className="text-xs text-muted-foreground">
-                                    Counts total time at work. Breaks are included in the total duration.
-                                </div>
-                            </div>
-
-                            <div
-                                onClick={() => canEdit && setWorkMode('OUTPUT_BASED')}
-                                className={`p-4 rounded-lg border-2 transition-all ${workMode === 'OUTPUT_BASED' ? 'border-primary bg-primary/5' : 'border-muted'} ${canEdit ? 'cursor-pointer hover:border-muted-foreground/50' : ''}`}
-                            >
-                                <div className="font-semibold mb-1">Output Based (Net)</div>
-                                <div className="text-xs text-muted-foreground">
-                                    Only counts actual working time. Breaks are subtracted from the total duration.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </CardContent>
             {canEdit && (

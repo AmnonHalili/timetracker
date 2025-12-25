@@ -5,6 +5,7 @@ import { redirect } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ProfileForm, SecurityForm, PreferencesForm } from "@/components/settings/SettingsForms"
 import { AppearanceForm } from "@/components/settings/AppearanceForm"
+import { CompanyForm } from "@/components/settings/CompanyForm"
 
 export default async function SettingsPage() {
     const session = await getServerSession(authOptions)
@@ -25,6 +26,9 @@ export default async function SettingsPage() {
             workMode: true,
             role: true,
             projectId: true,
+            project: {
+                select: { name: true, workMode: true }
+            }
         }
     })
 
@@ -38,11 +42,14 @@ export default async function SettingsPage() {
             </div>
 
             <Tabs defaultValue="profile" className="w-full">
-                <TabsList className="w-full justify-start h-auto p-1 bg-muted/50 rounded-lg">
-                    <TabsTrigger value="profile" className="flex-1 max-w-[200px]">Profile</TabsTrigger>
-                    <TabsTrigger value="preferences" className="flex-1 max-w-[200px]">Preferences</TabsTrigger>
-                    <TabsTrigger value="security" className="flex-1 max-w-[200px]">Security</TabsTrigger>
-                    <TabsTrigger value="appearance" className="flex-1 max-w-[200px]">Appearance</TabsTrigger>
+                <TabsList className="w-full justify-start h-auto p-1 bg-muted/50 rounded-lg overflow-x-auto">
+                    <TabsTrigger value="profile" className="flex-1 min-w-[100px]">Profile</TabsTrigger>
+                    <TabsTrigger value="preferences" className="flex-1 min-w-[100px]">Preferences</TabsTrigger>
+                    <TabsTrigger value="security" className="flex-1 min-w-[100px]">Security</TabsTrigger>
+                    <TabsTrigger value="appearance" className="flex-1 min-w-[100px]">Appearance</TabsTrigger>
+                    {user.role === "ADMIN" && user.projectId && (
+                        <TabsTrigger value="workspace" className="flex-1 min-w-[100px]">Workspace</TabsTrigger>
+                    )}
                 </TabsList>
 
                 <TabsContent value="profile" className="mt-6">
@@ -66,6 +73,17 @@ export default async function SettingsPage() {
                 <TabsContent value="appearance" className="mt-6">
                     <AppearanceForm />
                 </TabsContent>
+
+
+                {user.role === "ADMIN" && user.projectId && (
+                    <TabsContent value="workspace" className="mt-6">
+                        <CompanyForm
+                            initialName={user.project?.name || ""}
+                            initialWorkMode={user.project?.workMode}
+                            projectId={user.projectId}
+                        />
+                    </TabsContent>
+                )}
             </Tabs>
         </div>
     )

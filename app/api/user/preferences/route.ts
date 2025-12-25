@@ -24,7 +24,7 @@ export async function PATCH(req: Request) {
             return NextResponse.json({ message: "Permission denied. Contact your admin." }, { status: 403 })
         }
 
-        const { dailyTarget, workDays, workMode } = await req.json()
+        const { dailyTarget, workDays } = await req.json()
 
         if (dailyTarget !== null && (typeof dailyTarget !== 'number' || dailyTarget < 0)) {
             return NextResponse.json({ message: "Invalid daily target" }, { status: 400 })
@@ -34,18 +34,13 @@ export async function PATCH(req: Request) {
             return NextResponse.json({ message: "Invalid work days" }, { status: 400 })
         }
 
-        if (workMode && !['OUTPUT_BASED', 'TIME_BASED'].includes(workMode)) {
-            return NextResponse.json({ message: "Invalid work mode" }, { status: 400 })
-        }
-
         const updatedUser = await prisma.user.update({
             where: { id: session.user.id },
             data: {
                 dailyTarget,
                 ...(workDays && { workDays }),
-                ...(workMode && { workMode })
             },
-            select: { id: true, dailyTarget: true, workDays: true, workMode: true }
+            select: { id: true, dailyTarget: true, workDays: true }
         })
 
         return NextResponse.json({ user: updatedUser, message: "Preferences updated successfully" })

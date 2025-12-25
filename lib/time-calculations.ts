@@ -21,7 +21,8 @@ export function calculateBalance(
     referenceDate: Date = new Date()
 ): BalanceResult {
     const { dailyTarget, workDays, createdAt, timeEntries } = user
-    const workMode = (user as any).workMode || 'OUTPUT_BASED' // Graceful fallback if type isn't updated yet
+    // Prefer Project setting, fall back to User setting (legacy), default to TIME_BASED
+    const workMode = (user as any).project?.workMode || (user as any).workMode || 'TIME_BASED'
 
     // Map duration by day
     const hoursPerDay: Record<string, number> = {}

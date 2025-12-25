@@ -19,7 +19,7 @@ export async function GET() {
                 projectId: true,
                 id: true,
                 project: {
-                    select: { name: true }
+                    select: { name: true, id: true }
                 }
             }
         })
@@ -63,9 +63,24 @@ export async function GET() {
             orderBy: { createdAt: "asc" }
         })
 
+        // Robustly fetch project logo
+        let projectLogo = null
+        try {
+            // Use findUnique with implicit selection to avoid crashing if 'logo' field is unknown to stale client
+            const projectData = await prisma.project.findUnique({
+                where: { id: currentUser.projectId }
+            })
+            // @ts-ignore - 'logo' might not exist in stale client types
+            projectLogo = projectData?.logo
+        } catch (e) {
+            console.error("Failed to fetch project logo (schema mismatch?)", e)
+        }
+
         return NextResponse.json({
             users: allUsers,
-            projectName: currentUser.project?.name || "My Organization"
+            projectName: currentUser.project?.name || "My Organization",
+            projectId: currentUser.project?.id,
+            projectLogo
         })
     } catch (error) {
         console.error("[HIERARCHY_FETCH_ERROR]", error)
