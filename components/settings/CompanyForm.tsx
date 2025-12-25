@@ -12,7 +12,7 @@ import { useRouter } from "next/navigation"
 
 interface CompanyFormProps {
     initialName: string
-    initialWorkMode?: 'OUTPUT_BASED' | 'TIME_BASED'
+    initialWorkMode?: 'OUTPUT_BASED' | 'TIME_BASED' | 'PROJECT_BASED'
     projectId: string
 }
 
@@ -20,7 +20,10 @@ export function CompanyForm({ initialName, initialWorkMode = 'TIME_BASED', proje
     const router = useRouter()
     const [isLoading, setIsLoading] = useState(false)
     const [name, setName] = useState(initialName)
-    const [workMode, setWorkMode] = useState<'OUTPUT_BASED' | 'TIME_BASED'>(initialWorkMode)
+    // Filter out PROJECT_BASED since it's deprecated, default to TIME_BASED
+    const [workMode, setWorkMode] = useState<'OUTPUT_BASED' | 'TIME_BASED'>(
+        initialWorkMode === 'PROJECT_BASED' ? 'TIME_BASED' : initialWorkMode
+    )
 
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
