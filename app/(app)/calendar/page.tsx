@@ -81,12 +81,8 @@ export default async function CalendarPage({
     })
 
     // Fetch events for this month
-    const eventWhereClause: {
-        startTime: { gte: Date };
-        endTime: { lte: Date };
-        OR?: Array<{ createdById: string } | { participants: { some: { userId: string } } }>;
-        projectId?: string;
-    } = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const eventWhereClause: any = {
         startTime: { gte: monthStart },
         endTime: { lte: monthEnd },
         participants: { some: { userId: session.user.id } }
@@ -97,7 +93,8 @@ export default async function CalendarPage({
         eventWhereClause.projectId = currentUser.projectId
     }
 
-    const events = await prisma.event.findMany({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const events = await (prisma as any).event.findMany({
         where: eventWhereClause,
         select: {
             id: true,
