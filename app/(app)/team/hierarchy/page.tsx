@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react"
 import { RecursiveNode } from "@/components/team/RecursiveNode"
 import { AddChildDialog } from "@/components/team/AddChildDialog"
 import { User } from "@prisma/client"
-import { Loader2, UserPlus, Pencil, ZoomIn, ZoomOut, RotateCcw } from "lucide-react"
+import { Loader2, UserPlus, Pencil, ZoomIn, ZoomOut } from "lucide-react"
 import { toast } from "sonner"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
@@ -35,43 +35,42 @@ export default function HierarchyPage() {
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
     const [targetParentId, setTargetParentId] = useState<string | null>(null)
     const [targetParentName, setTargetParentName] = useState("")
-    
+
     // Zoom state
     const [zoomLevel, setZoomLevel] = useState(1)
     const [baseZoom, setBaseZoom] = useState(1) // The zoom level where the entire tree fits (will be calculated as 100%)
-    const minZoom = 0.5 // Will be updated to baseZoom
     const maxZoom = 2
     const zoomStep = 0.1
-    
+
     // Pan state for dragging
     const [panPosition, setPanPosition] = useState({ x: 0, y: 0 })
     const [isDragging, setIsDragging] = useState(false)
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
     const [isInitialized, setIsInitialized] = useState(false)
-    
+
     // Calculate relative zoom percentage (baseZoom = 100%)
     const getRelativeZoomPercent = (zoom: number) => {
         return Math.round((zoom / baseZoom) * 100)
     }
-    
+
     const handleZoomIn = () => {
         setZoomLevel(prev => Math.min(prev + zoomStep, maxZoom))
     }
-    
+
     const handleZoomOut = () => {
         setZoomLevel(prev => Math.max(prev - zoomStep, baseZoom)) // Don't zoom out below baseZoom
     }
-    
+
     const handleZoomReset = () => {
         setZoomLevel(baseZoom) // Reset to base zoom (the 100% level)
         setIsInitialized(false) // Trigger recentering
     }
-    
+
     // Handle mouse wheel for zoom
     const handleWheel = (e: React.WheelEvent) => {
         // Prevent default scrolling
         e.preventDefault()
-        
+
         // Zoom based on wheel direction
         // deltaY > 0 means scrolling down (zoom out), deltaY < 0 means scrolling up (zoom in)
         const delta = e.deltaY > 0 ? -zoomStep : zoomStep
@@ -81,7 +80,7 @@ export default function HierarchyPage() {
             return Math.max(baseZoom, Math.min(newZoom, maxZoom))
         })
     }
-    
+
     // Handle mouse down for dragging
     const handleMouseDown = (e: React.MouseEvent) => {
         // Only left mouse button
@@ -99,7 +98,7 @@ export default function HierarchyPage() {
         e.preventDefault()
         e.stopPropagation()
     }
-    
+
     // Handle mouse move for dragging
     const handleMouseMove = (e: React.MouseEvent) => {
         if (!isDragging) return
@@ -109,12 +108,12 @@ export default function HierarchyPage() {
         })
         e.preventDefault()
     }
-    
+
     // Handle mouse up to stop dragging
     const handleMouseUp = () => {
         setIsDragging(false)
     }
-    
+
     // Handle mouse leave to stop dragging
     const handleMouseLeave = () => {
         setIsDragging(false)
@@ -199,12 +198,12 @@ export default function HierarchyPage() {
             const originalOverflow = mainElement.style.overflow
             const originalOverflowY = mainElement.style.overflowY
             const originalHeight = mainElement.style.height
-            
+
             // Disable all scrolling
             mainElement.style.overflow = 'hidden'
             mainElement.style.overflowY = 'hidden'
             mainElement.style.height = '100vh'
-            
+
             return () => {
                 // Restore original styles
                 mainElement.style.overflow = originalOverflow || ''
@@ -261,46 +260,46 @@ export default function HierarchyPage() {
                         const viewportWidth = parentRect.width
                         const viewportHeight = parentRect.height
                         const containerRect = container.getBoundingClientRect()
-                        
+
                         // Calculate optimal zoom level so the entire tree fits in the viewport
                         // Get header height to know available space
                         const headerElement = parentContainer.querySelector('.p-8') as HTMLElement
                         const headerHeight = headerElement ? headerElement.getBoundingClientRect().height : 200
                         const availableHeight = viewportHeight - headerHeight - 80 // Leave margin for padding
                         const availableWidth = viewportWidth - 80 // Leave margin for padding
-                        
+
                         // Calculate required zoom to fit both width and height
                         const widthZoom = availableWidth / containerRect.width
                         const heightZoom = availableHeight / containerRect.height
-                        
+
                         // Use the smaller zoom to ensure everything fits
                         // Don't zoom in beyond 1.0 if tree is small, don't zoom out below 0.4 (minimum reasonable zoom)
                         const optimalZoom = Math.max(0.4, Math.min(widthZoom, heightZoom, 1.0))
-                        
+
                         // Set base zoom (this becomes our 100%)
                         setBaseZoom(optimalZoom)
                         setZoomLevel(optimalZoom)
-                        
+
                         // Calculate the center position
                         // Since transform origin is 'top center', scaling happens around the top-center point
                         // So we calculate the center based on the natural (unscaled) position
                         const containerCenterX = containerRect.left - parentRect.left + (containerRect.width / 2)
                         const viewportCenterX = viewportWidth / 2
                         const centerX = viewportCenterX - containerCenterX
-                        
+
                         // Position vertically: start just below the header (closer to title)
                         const centerY = headerHeight - 50 // Position project card closer to title by moving tree up
-                        
+
                         setPanPosition({ x: centerX, y: centerY })
                         setIsInitialized(true)
                     }
                 }
             }, 150)
-            
+
             return () => clearTimeout(timeoutId)
         }
     }, [tree, isInitialized, isLoading])
-    
+
     // Reset initialization when users change (e.g., when coming back to the page)
     useEffect(() => {
         if (users.length > 0) {
@@ -313,11 +312,11 @@ export default function HierarchyPage() {
     }
 
     return (
-        <div 
+        <div
             className="w-full bg-background/50 relative"
-            style={{ 
-                overflow: 'hidden', 
-                width: '100%', 
+            style={{
+                overflow: 'hidden',
+                width: '100%',
                 height: 'calc(100vh - 4rem)',
                 maxHeight: 'calc(100vh - 4rem)',
                 position: 'relative',
@@ -331,59 +330,59 @@ export default function HierarchyPage() {
             {/* Header and Controls - Fixed at top */}
             <div className="p-8 pb-4 relative z-20 bg-background/95 backdrop-blur-sm border-b">
                 <div className="flex justify-between items-center max-w-5xl mx-auto mb-8 relative">
-                <h1 className="text-2xl font-bold text-center w-full">Organization Hierarchy</h1>
-                {/* Zoom Controls - Left Side */}
-                <div className="absolute left-0 top-0">
-                    <div className="flex items-center gap-1 bg-background/50 backdrop-blur-sm border rounded-md p-1">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={handleZoomOut}
-                            disabled={zoomLevel <= baseZoom}
-                            className="h-8 w-8"
-                            aria-label="Zoom out"
-                        >
-                            <ZoomOut className="h-4 w-4" aria-hidden="true" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleZoomReset}
-                            className="h-8 px-2 text-xs font-mono"
-                            aria-label={`Reset zoom (current: ${getRelativeZoomPercent(zoomLevel)}%)`}
-                        >
-                            {getRelativeZoomPercent(zoomLevel)}%
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={handleZoomIn}
-                            disabled={zoomLevel >= maxZoom}
-                            className="h-8 w-8"
-                            aria-label="Zoom in"
-                        >
-                            <ZoomIn className="h-4 w-4" aria-hidden="true" />
-                        </Button>
+                    <h1 className="text-2xl font-bold text-center w-full">Organization Hierarchy</h1>
+                    {/* Zoom Controls - Left Side */}
+                    <div className="absolute left-0 top-0">
+                        <div className="flex items-center gap-1 bg-background/50 backdrop-blur-sm border rounded-md p-1">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={handleZoomOut}
+                                disabled={zoomLevel <= baseZoom}
+                                className="h-8 w-8"
+                                aria-label="Zoom out"
+                            >
+                                <ZoomOut className="h-4 w-4" aria-hidden="true" />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleZoomReset}
+                                className="h-8 px-2 text-xs font-mono"
+                                aria-label={`Reset zoom (current: ${getRelativeZoomPercent(zoomLevel)}%)`}
+                            >
+                                {getRelativeZoomPercent(zoomLevel)}%
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={handleZoomIn}
+                                disabled={zoomLevel >= maxZoom}
+                                className="h-8 w-8"
+                                aria-label="Zoom in"
+                            >
+                                <ZoomIn className="h-4 w-4" aria-hidden="true" />
+                            </Button>
+                        </div>
                     </div>
-                </div>
-                {/* Add Admin Button - Right Side (Only for actual Admins with Project) */}
-                {hasProject && session?.user?.role === "ADMIN" && (
-                    <div className="absolute right-0 top-0">
-                        <AddMemberDialog
-                            triggerLabel="Add Executive"
-                            defaultRole="ADMIN"
-                            lockRole={true}
-                            hideManagerSelect={true}
-                            onSuccess={fetchHierarchy}
-                            customTrigger={
-                                <Button variant="outline" size="sm" className="gap-2 bg-background/50 backdrop-blur-sm">
-                                    <UserPlus className="h-4 w-4" />
-                                    <span className="hidden sm:inline">Add Executive</span>
-                                </Button>
-                            }
-                        />
-                    </div>
-                )}
+                    {/* Add Admin Button - Right Side (Only for actual Admins with Project) */}
+                    {hasProject && session?.user?.role === "ADMIN" && (
+                        <div className="absolute right-0 top-0">
+                            <AddMemberDialog
+                                triggerLabel="Add Executive"
+                                defaultRole="ADMIN"
+                                lockRole={true}
+                                hideManagerSelect={true}
+                                onSuccess={fetchHierarchy}
+                                customTrigger={
+                                    <Button variant="outline" size="sm" className="gap-2 bg-background/50 backdrop-blur-sm">
+                                        <UserPlus className="h-4 w-4" />
+                                        <span className="hidden sm:inline">Add Executive</span>
+                                    </Button>
+                                }
+                            />
+                        </div>
+                    )}
                 </div>
 
                 {session?.user?.role === "ADMIN" && hasProject && (
@@ -401,14 +400,14 @@ export default function HierarchyPage() {
             </div>
 
             {/* Zoom Container - wraps both project card and tree */}
-            <div 
+            <div
                 data-hierarchy-container
                 className="flex flex-col items-center pb-20"
-                style={{ 
+                style={{
                     marginTop: '1rem',
                     width: 'fit-content',
                     minWidth: '100%',
-                    transform: `translate(${panPosition.x}px, ${panPosition.y}px) scale(${zoomLevel})`, 
+                    transform: `translate(${panPosition.x}px, ${panPosition.y}px) scale(${zoomLevel})`,
                     transformOrigin: 'top center',
                     cursor: isDragging ? 'grabbing' : 'grab',
                     userSelect: 'none'
@@ -496,43 +495,43 @@ export default function HierarchyPage() {
                 {/* Tree Container */}
                 <div className="flex justify-center">
                     <div className="flex gap-8 relative items-start">
-                    {/* Horizontal Line Logic:
+                        {/* Horizontal Line Logic:
                         We construct the horizontal bus line using segments from each child.
                         Gap is 32px (2rem). Half gap is 16px (1rem).
                      */}
-                    {tree?.map((rootNode, index) => {
-                        const isFirst = index === 0
-                        const isLast = index === (tree.length - 1)
-                        const isOnly = tree.length === 1
+                        {tree?.map((rootNode, index) => {
+                            const isFirst = index === 0
+                            const isLast = index === (tree.length - 1)
+                            const isOnly = tree.length === 1
 
-                        return (
-                            <div key={rootNode.id} className="relative flex flex-col items-center">
-                                {/* Horizontal Segments */}
-                                {!isOnly && (
-                                    <>
-                                        {/* Connector to Right Sibling (for First and Middle) */}
-                                        {!isLast && (
-                                            <div className="absolute top-[-2rem] right-[-1rem] h-px bg-border w-[calc(50%+1rem)]" />
-                                        )}
-                                        {/* Connector to Left Sibling (for Last and Middle) */}
-                                        {!isFirst && (
-                                            <div className="absolute top-[-2rem] left-[-1rem] h-px bg-border w-[calc(50%+1rem)]" />
-                                        )}
-                                    </>
-                                )}
+                            return (
+                                <div key={rootNode.id} className="relative flex flex-col items-center">
+                                    {/* Horizontal Segments */}
+                                    {!isOnly && (
+                                        <>
+                                            {/* Connector to Right Sibling (for First and Middle) */}
+                                            {!isLast && (
+                                                <div className="absolute top-[-2rem] right-[-1rem] h-px bg-border w-[calc(50%+1rem)]" />
+                                            )}
+                                            {/* Connector to Left Sibling (for Last and Middle) */}
+                                            {!isFirst && (
+                                                <div className="absolute top-[-2rem] left-[-1rem] h-px bg-border w-[calc(50%+1rem)]" />
+                                            )}
+                                        </>
+                                    )}
 
-                                {/* Vertical line up to the Project Bus */}
-                                <div className="h-8 w-px bg-border absolute -top-8" />
+                                    {/* Vertical line up to the Project Bus */}
+                                    <div className="h-8 w-px bg-border absolute -top-8" />
 
-                                <RecursiveNode
-                                    node={rootNode}
-                                    allUsers={users}
-                                    onAddClick={hasProject ? handleAddClick : undefined} // Disable add for private
-                                />
-                            </div>
-                        )
-                    })}
-                    {!tree?.length && <div className="text-muted-foreground">No users found.</div>}
+                                    <RecursiveNode
+                                        node={rootNode}
+                                        allUsers={users}
+                                        onAddClick={hasProject ? handleAddClick : undefined} // Disable add for private
+                                    />
+                                </div>
+                            )
+                        })}
+                        {!tree?.length && <div className="text-muted-foreground">No users found.</div>}
                     </div>
                 </div>
             </div>
