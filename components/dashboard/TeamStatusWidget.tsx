@@ -44,14 +44,12 @@ export function TeamStatusWidget({ teamStatus }: TeamStatusWidgetProps) {
                                             <StatusIndicator status={member.status} />
                                         </div>
                                     </div>
-                                    <div className="min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            <p className="text-sm font-medium leading-none truncate">{member.name || member.email}</p>
-                                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-secondary text-secondary-foreground">
-                                                {member.jobTitle || (member.role === 'ADMIN' ? 'Founder' : 'Employee')}
-                                            </span>
-                                        </div>
-                                        <p className="text-[10px] text-muted-foreground mt-1 truncate">
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-sm font-medium leading-none truncate">{member.name || member.email}</p>
+                                        <p className="text-[10px] text-muted-foreground mt-0.5 truncate" title={member.jobTitle || (member.role === 'ADMIN' ? 'Founder' : 'Employee')}>
+                                            {member.jobTitle || (member.role === 'ADMIN' ? 'Founder' : 'Employee')}
+                                        </p>
+                                        <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
                                             {member.status === 'OFFLINE' ? 'Offline' : (
                                                 member.status === 'WORKING' ? 'Working since ' + member.lastActive?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
                                                     'On Break'
