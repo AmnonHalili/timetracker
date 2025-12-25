@@ -17,10 +17,7 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "Collabo - Modern Team Collaboration",
   description: "A minimalist work hours and task tracker with real-time collaboration built with Next.js, Prisma, and Neon.",
-  icons: {
-    icon: "/icon.png",
-    apple: "/icon.png",
-  },
+
 };
 
 export default function RootLayout({
