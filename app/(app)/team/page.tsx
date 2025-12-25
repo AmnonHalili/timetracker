@@ -142,7 +142,13 @@ export default async function TeamPage() {
     // Fetch pending join requests (only if currentUser is ADMIN)
     // We can fetch this in parallel with other data, or just fetch it here.
     // For simplicity, let's fetch it if the user is an admin.
-    let pendingRequests: any[] = []
+    let pendingRequests: {
+        id: string
+        name: string
+        email: string
+        image: string | null
+        createdAt: Date
+    }[] = []
     if (currentUser.role === "ADMIN") {
         pendingRequests = await prisma.user.findMany({
             where: {
