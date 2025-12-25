@@ -369,7 +369,7 @@ export default function HierarchyPage() {
                     {hasProject && session?.user?.role === "ADMIN" && (
                         <div className="absolute right-0 top-0">
                             <AddMemberDialog
-                                triggerLabel="Add Executive"
+                                triggerLabel="Add Chief"
                                 defaultRole="ADMIN"
                                 lockRole={true}
                                 hideManagerSelect={true}
@@ -377,7 +377,7 @@ export default function HierarchyPage() {
                                 customTrigger={
                                     <Button variant="outline" size="sm" className="gap-2 bg-background/50 backdrop-blur-sm">
                                         <UserPlus className="h-4 w-4" />
-                                        <span className="hidden sm:inline">Add Executive</span>
+                                        <span className="hidden sm:inline">Add Chief</span>
                                     </Button>
                                 }
                             />
