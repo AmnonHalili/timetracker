@@ -41,7 +41,7 @@ export async function getReportData(userId: string, year: number, month: number)
     const report = getMonthlyReport(
         user.timeEntries,
         reportDate,
-        user.dailyTarget,
+        user.dailyTarget ?? 0,
         user.workDays,
         user.createdAt,
         today

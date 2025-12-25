@@ -23,8 +23,10 @@ export function calculateBalance(
 ): BalanceResult {
     const { dailyTarget, workDays, createdAt, timeEntries } = user
     // Prefer Project setting, fall back to User setting (legacy), default to TIME_BASED
-    // @ts-expect-error - project property might be missing in older prisma client types but exists in schema
     const workMode = user.project?.workMode || user.workMode || 'TIME_BASED'
+
+    // If no daily target, we can't calculate meaningful targets
+    const effectiveDailyTarget = dailyTarget ?? 0
 
     // Map duration by day
     const hoursPerDay: Record<string, number> = {}
@@ -93,20 +95,20 @@ export function calculateBalance(
     daysToCheck.forEach((day) => {
         // Check if it's a valid work day
         if (workDays.includes(day.getDay())) {
-            totalTargetHours += dailyTarget
+            totalTargetHours += effectiveDailyTarget
             daysValid++
 
             const dayKey = startOfDay(day).toISOString()
             const worked = hoursPerDay[dayKey] || 0
 
-            if (worked < dailyTarget) {
-                accumulatedDeficit += (dailyTarget - worked)
-            } else if (worked > dailyTarget) {
+            if (worked < effectiveDailyTarget) {
+                accumulatedDeficit += (effectiveDailyTarget - worked)
+            } else if (worked > effectiveDailyTarget) {
                 // Only count extra if it's in the current month (per user req)
                 // Wait, user said "Extra accumulates by month". 
                 // Does this mean it resets every month? Likely yes.
                 if (isSameMonth(day, referenceDate)) {
-                    monthlyOvertime += (worked - dailyTarget)
+                    monthlyOvertime += (worked - effectiveDailyTarget)
                 }
             }
         }
