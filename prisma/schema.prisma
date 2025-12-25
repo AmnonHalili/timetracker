@@ -172,4 +172,5 @@ enum NotificationType {
 enum WorkMode {
   OUTPUT_BASED // Net work (Total - Breaks)
   TIME_BASED   // Time at work (Total including Breaks)
+  PROJECT_BASED // Deprecated: Kept for build backward compatibility
 }
