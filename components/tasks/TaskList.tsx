@@ -67,8 +67,8 @@ export function TaskList({ tasks, isAdmin }: TaskListProps) {
                         </div>
                     </div>
                     {isAdmin && (
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => handleDelete(task.id)}>
-                            <Trash2 className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => handleDelete(task.id)} aria-label={`Delete task: ${task.title}`}>
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
                         </Button>
                     )}
                 </div>

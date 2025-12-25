@@ -5,6 +5,7 @@ import { ArrowRight, CheckCircle2, Clock, Users, BarChart3, ShieldCheck } from "
 import Link from "next/link"
 import Image from "next/image"
 import { HierarchyDemo } from "@/components/landing/HierarchyDemo"
+import { AccessibilityButton } from "@/components/accessibility/AccessibilityButton"
 
 export const dynamic = "force-dynamic"
 
@@ -22,21 +23,27 @@ export default async function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Navbar / Header */}
-      <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="w-full px-6 md:px-8 h-24 flex items-center justify-between">
-          <div className="flex items-center">
-            <Image src="/logo.png?v=2" alt="Collabo Logo" width={360} height={144} className="h-36 w-auto" priority />
+      <header>
+        <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50" role="navigation" aria-label="Main navigation">
+          <div className="w-full px-6 md:px-8 h-24 flex items-center justify-between">
+            <div className="flex items-center">
+              <Link href="/" aria-label="Collabo Home">
+                <Image src="/logo.png?v=2" alt="Collabo Logo" width={360} height={144} className="h-36 w-auto" priority />
+              </Link>
+            </div>
+            <div className="flex items-center gap-4">
+              <Link href="/login" className="text-sm font-medium hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md px-2 py-1">
+                Log In
+              </Link>
+              <Link href="/register" className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                Get Started
+              </Link>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm font-medium hover:text-primary transition-colors">
-              Log In
-            </Link>
-            <Link href="/register" className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90 transition-colors">
-              Get Started
-            </Link>
-          </div>
-        </div>
-      </nav>
+        </nav>
+      </header>
+
+      <main>
 
       {/* Hero Section */}
       <section className="py-20 md:py-32 overflow-hidden">
@@ -50,10 +57,10 @@ export default async function Home() {
             Simple enough for freelancers, powerful enough for high-growth teams.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link href="/register" className="inline-flex items-center justify-center rounded-full bg-primary px-8 py-3 text-lg font-medium text-primary-foreground shadow-lg hover:bg-primary/90 transition-all hover:scale-105">
-              Start Your Project <ArrowRight className="ml-2 h-5 w-5" />
+            <Link href="/register" className="inline-flex items-center justify-center rounded-full bg-primary px-8 py-3 text-lg font-medium text-primary-foreground shadow-lg hover:bg-primary/90 transition-all hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+              Start Your Project <ArrowRight className="ml-2 h-5 w-5" aria-hidden="true" />
             </Link>
-            <Link href="/login" className="inline-flex items-center justify-center rounded-full border border-input bg-background px-8 py-3 text-lg font-medium shadow-sm hover:bg-accent hover:text-accent-foreground transition-all">
+            <Link href="/login" className="inline-flex items-center justify-center rounded-full border border-input bg-background px-8 py-3 text-lg font-medium shadow-sm hover:bg-accent hover:text-accent-foreground transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
               Log In
             </Link>
           </div>
@@ -108,8 +115,8 @@ export default async function Home() {
                 <CheckItem text="Monitor team hours and productivity" />
               </ul>
               <div className="pt-6">
-                <Link href="/register?role=manager" className="text-primary font-medium hover:underline inline-flex items-center">
-                  Create a Manager Account <ArrowRight className="ml-1 h-4 w-4" />
+                <Link href="/register?role=manager" className="text-primary font-medium hover:underline inline-flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md px-2 py-1">
+                  Create a Manager Account <ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" />
                 </Link>
               </div>
             </div>
@@ -122,8 +129,12 @@ export default async function Home() {
         </div>
       </section>
 
+      </main>
+
+      <AccessibilityButton />
+
       {/* Footer */}
-      <footer className="border-t py-12 bg-muted/20">
+      <footer className="border-t py-12 bg-muted/20" role="contentinfo">
         <div className="container mx-auto px-4 text-center">
           <div className="flex justify-center mb-4">
             <Image src="/logo.png?v=2" alt="Collabo Logo" width={300} height={128} className="h-32 w-auto opacity-80" />
@@ -142,18 +153,18 @@ export default async function Home() {
 
 function FeatureCard({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
   return (
-    <div className="bg-card border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
-      <div className="mb-4">{icon}</div>
+    <article className="bg-card border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+      <div className="mb-4" aria-hidden="true">{icon}</div>
       <h3 className="text-xl font-bold mb-2">{title}</h3>
       <p className="text-muted-foreground text-sm leading-relaxed">{description}</p>
-    </div>
+    </article>
   )
 }
 
 function CheckItem({ text }: { text: string }) {
   return (
     <div className="flex items-center gap-3">
-      <div className="rounded-full bg-green-100 dark:bg-green-900/30 p-1 text-green-600 dark:text-green-400">
+      <div className="rounded-full bg-green-100 dark:bg-green-900/30 p-1 text-green-600 dark:text-green-400" aria-hidden="true">
         <CheckCircle2 className="h-4 w-4" />
       </div>
       <span className="text-foreground/90">{text}</span>

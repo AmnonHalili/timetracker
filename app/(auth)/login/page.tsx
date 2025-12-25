@@ -51,8 +51,8 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit}>
                 <CardContent className="space-y-4">
                     {error && (
-                        <div className="flex items-center gap-2 rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-                            <AlertCircle className="h-4 w-4" />
+                        <div className="flex items-center gap-2 rounded-md bg-destructive/15 p-3 text-sm text-destructive" role="alert" aria-live="assertive">
+                            <AlertCircle className="h-4 w-4" aria-hidden="true" />
                             <p>{error}</p>
                         </div>
                     )}
@@ -77,19 +77,19 @@ export default function LoginPage() {
                         />
                     </div>
                     <div className="flex items-center justify-end">
-                        <Link href="/forgot-password" className="text-sm font-medium text-primary hover:underline">
+                        <Link href="/forgot-password" className="text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md px-2 py-1">
                             Forgot Password?
                         </Link>
                     </div>
                 </CardContent>
                 <CardFooter className="flex flex-col gap-4">
                     <Button type="submit" className="w-full" disabled={loading}>
-                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
                         Sign In
                     </Button>
                     <div className="text-center text-sm text-muted-foreground">
                         Don&apos;t have an account?{" "}
-                        <Link href="/register" className="text-primary hover:underline">
+                        <Link href="/register" className="text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md px-1">
                             Sign up
                         </Link>
                     </div>

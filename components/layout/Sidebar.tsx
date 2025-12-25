@@ -46,39 +46,41 @@ export function Sidebar() {
     ]
 
     return (
-        <div className="flex flex-col h-screen w-64 border-r bg-background">
+        <aside className="flex flex-col h-screen w-64 border-r bg-background" aria-label="Main navigation">
             <div className="px-4 pt-4 pb-0 border-b flex items-center justify-center z-10 relative">
-                <Link href="/dashboard" className="flex items-center gap-2">
+                <Link href="/dashboard" className="flex items-center gap-2" aria-label="Collabo Home">
                     <Image src="/logo.png?v=4" alt="Collabo Logo" width={200} height={80} className="h-36 w-auto -mb-6 -mt-10" priority />
                 </Link>
             </div>
 
-            <div className="flex-1 overflow-y-auto py-6">
-                <nav className="space-y-1 px-4">
+            <nav className="flex-1 overflow-y-auto py-6" aria-label="Primary navigation">
+                <div className="space-y-1 px-4">
                     {routes.map((route) => (
                         <Link
                             key={route.href}
                             href={route.href}
                             className={cn(
-                                "flex items-center px-4 py-3 text-sm font-medium rounded-md transition-colors",
+                                "flex items-center px-4 py-3 text-sm font-medium rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                                 route.active
                                     ? "bg-muted text-primary"
                                     : "text-muted-foreground hover:bg-muted/50 hover:text-primary"
                             )}
+                            aria-current={route.active ? "page" : undefined}
                         >
                             {route.label}
                         </Link>
                     ))}
-                </nav>
-            </div>
+                </div>
+            </nav>
 
             <Button
                 variant="ghost"
                 className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
                 onClick={() => signOut({ callbackUrl: "/login" })}
+                aria-label="Log out"
             >
                 Log out
             </Button>
-        </div>
+        </aside>
     )
 }

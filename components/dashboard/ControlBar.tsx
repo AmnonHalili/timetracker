@@ -152,12 +152,17 @@ export function ControlBar({ activeEntry, tasks }: ControlBarProps) {
 
                 {/* Inputs Area */}
                 <div className="flex flex-1 items-center gap-3 w-full">
+                    <label htmlFor="work-description" className="sr-only">
+                        What are you working on?
+                    </label>
                     <Input
+                        id="work-description"
                         placeholder="What are you working on?"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         className="bg-background border-input hover:bg-accent/50 focus:bg-background shadow-sm h-9 text-sm max-w-sm"
                         disabled={!!activeEntry}
+                        aria-label="What are you working on?"
                     />
 
                     {/* Task Selector */}
@@ -179,18 +184,28 @@ export function ControlBar({ activeEntry, tasks }: ControlBarProps) {
                     {/* Timer / Manual Inputs */}
                     {!activeEntry && isManualMode ? (
                         <div className="flex items-center gap-2">
+                            <label htmlFor="manual-start-time" className="sr-only">
+                                Start time
+                            </label>
                             <Input
+                                id="manual-start-time"
                                 type="time"
                                 value={manualStart}
                                 onChange={(e) => setManualStart(e.target.value)}
                                 className="w-[95px] h-9 text-sm bg-background border-input shadow-sm"
+                                aria-label="Start time"
                             />
-                            <span className="text-muted-foreground">-</span>
+                            <span className="text-muted-foreground" aria-hidden="true">-</span>
+                            <label htmlFor="manual-end-time" className="sr-only">
+                                End time
+                            </label>
                             <Input
+                                id="manual-end-time"
                                 type="time"
                                 value={manualEnd}
                                 onChange={(e) => setManualEnd(e.target.value)}
                                 className="w-[95px] h-9 text-sm bg-background border-input shadow-sm"
+                                aria-label="End time"
                             />
                         </div>
                     ) : (

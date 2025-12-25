@@ -104,8 +104,9 @@ function ProfileForm({ user }: ProfileFormProps) {
                         className="hidden"
                         accept="image/*"
                         onChange={handleImageUpload}
+                        aria-label="Upload profile picture"
                     />
-                    <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                    <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} aria-label="Change profile picture">
                         Change Picture
                     </Button>
                 </div>

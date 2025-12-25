@@ -207,8 +207,8 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId }: Tasks
                                     )}
 
                                     {(isAdmin || (currentUserId && task.assignees.some(a => a.id === currentUserId))) && (
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDelete(task.id)}>
-                                            <Trash2 className="h-4 w-4" />
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDelete(task.id)} aria-label={`Delete task: ${task.title}`}>
+                                            <Trash2 className="h-4 w-4" aria-hidden="true" />
                                         </Button>
                                     )}
                                 </div>
