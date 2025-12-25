@@ -32,6 +32,10 @@ export async function POST(req: Request) {
         }
 
         // Verify current password
+        if (!user.password) {
+            return NextResponse.json({ message: "This account uses Google Sign-In. You cannot change password." }, { status: 400 })
+        }
+
         const isValid = await compare(currentPassword, user.password)
 
         if (!isValid) {
