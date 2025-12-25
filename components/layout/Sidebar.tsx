@@ -50,7 +50,7 @@ export function Sidebar() {
             <div className="px-4 py-6 border-b flex items-center justify-center z-10 relative">
                 <Link href="/dashboard" className="flex flex-col items-center gap-2" aria-label="Collabo Home">
                     <Image 
-                        src="/icon.png" 
+                        src="/collabologo.png" 
                         alt="Collabo Logo" 
                         width={80} 
                         height={80} 
