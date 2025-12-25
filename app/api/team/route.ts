@@ -2,6 +2,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
+import { Prisma } from "@prisma/client"
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(req: Request) {
@@ -35,7 +36,7 @@ export async function GET(req: Request) {
             (currentUser._count?.directReports ?? 0) > 0
 
         // Build query
-        const whereClause: any = {
+        const whereClause: Prisma.UserWhereInput = {
             projectId: currentUser.projectId,
             // If they can't manage others, they can only see themselves
             ...(canManageOthers ? {} : { id: session.user.id })
