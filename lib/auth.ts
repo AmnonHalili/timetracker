@@ -39,6 +39,10 @@ export const authOptions: NextAuthOptions = {
                     throw new Error("Invalid credentials")
                 }
 
+                if (!user.password) {
+                    throw new Error("Please log in with Google")
+                }
+
                 const isPasswordValid = await compare(credentials.password, user.password)
 
                 if (!isPasswordValid) {
