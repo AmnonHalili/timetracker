@@ -42,7 +42,7 @@ interface AddMemberDialogProps {
 
 export function AddMemberDialog({
     defaultRole = "EMPLOYEE",
-    lockRole = false,
+    // lockRole = false, // Unused
     hideManagerSelect = false,
     triggerLabel = "Add Member",
     onSuccess,

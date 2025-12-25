@@ -91,10 +91,21 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
         setEditDays([])
     }
 
-    const openRoleDialog = (user: User, e: React.MouseEvent) => {
-        e.stopPropagation()
-        setRoleDialogUser(user)
-        setSelectedRole(user.role)
+    // const openRoleDialog = (user: User, e: React.MouseEvent) => {
+    //     e.stopPropagation()
+    //     setRoleDialogUser(user)
+    //     setSelectedRole(user.role)
+    // }
+
+    const closeRoleDialog = () => {
+        setRoleDialogUser(null)
+        setSelectedRole("")
+    }
+
+    const openDeleteDialog = (user: User) => {
+        setDeleteDialogUser(user)
+        setShowTransferAdmin(false)
+        setNewAdminId("")
     }
 
     const closeDeleteDialog = () => {

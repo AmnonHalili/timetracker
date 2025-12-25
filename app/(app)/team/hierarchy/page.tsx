@@ -136,7 +136,7 @@ export default function HierarchyPage() {
         })
 
         // Sort roots: Admin first, then others
-        return rootNodes.sort((a, _) => (a.role === 'ADMIN' ? -1 : 1))
+        return rootNodes.sort((a, b) => (a.role === 'ADMIN' ? -1 : b.role === 'ADMIN' ? 1 : 0))
     }, [users])
 
     if (isLoading) {
@@ -291,6 +291,7 @@ export default function HierarchyPage() {
 
                                 <RecursiveNode
                                     node={rootNode}
+                                    allUsers={users}
                                     onAddClick={hasProject ? handleAddClick : undefined} // Disable add for private
                                 />
                             </div>
