@@ -52,7 +52,7 @@ export function DayView({ date, events, tasks, projectId }: DayViewProps) {
 
     // Process tasks into event-like objects
     const taskEvents = tasks
-        .filter(t => t.deadline && isSameDay(new Date(t.deadline), date))
+        .filter(t => t.deadline && isSameDay(new Date(t.deadline), date) && t.status !== 'DONE')
         .map(t => {
             const deadline = new Date(t.deadline!)
             // Detect "Date Only" (stored as UTC Midnight)

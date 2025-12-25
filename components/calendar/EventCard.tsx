@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { format } from "date-fns"
-import { Clock, MapPin, Users, Trash2, CheckSquare, MoreVertical, Pencil } from "lucide-react"
+import { Clock, MapPin, Users, Trash2, CheckSquare, MoreVertical, Pencil, Check } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import {
@@ -76,6 +76,7 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [editDialogOpen, setEditDialogOpen] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
+    const [isMarkingDone, setIsMarkingDone] = useState(false)
 
     const start = new Date(event.startTime)
     const end = new Date(event.endTime)
@@ -112,6 +113,33 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
             toast.error(error instanceof Error ? error.message : "Failed to delete item")
         } finally {
             setIsDeleting(false)
+        }
+    }
+
+    const handleMarkDone = async () => {
+        setIsMarkingDone(true)
+        try {
+            const res = await fetch(`/api/tasks/${event.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    status: "DONE",
+                    isCompleted: true
+                })
+            })
+
+            if (!res.ok) {
+                const data = await res.json()
+                throw new Error(data.error || "Failed to mark task as done")
+            }
+
+            toast.success("Task marked as done")
+            router.refresh()
+        } catch (error) {
+            console.error(error)
+            toast.error(error instanceof Error ? error.message : "Failed to mark task as done")
+        } finally {
+            setIsMarkingDone(false)
         }
     }
 
@@ -164,6 +192,19 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-32">
+                                    {event.type === 'TASK_TIME' && (
+                                        <DropdownMenuItem
+                                            className="flex items-center gap-2 text-green-600 focus:text-green-700 focus:bg-green-50 cursor-pointer"
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                handleMarkDone()
+                                            }}
+                                            disabled={isMarkingDone}
+                                        >
+                                            <Check className="h-4 w-4" />
+                                            <span>{isMarkingDone ? 'Marking...' : 'Done'}</span>
+                                        </DropdownMenuItem>
+                                    )}
                                     <DropdownMenuItem
                                         className="flex items-center gap-2 cursor-pointer"
                                         onClick={(e) => {
@@ -191,7 +232,6 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
 
                     {/* Time */}
                     <div className="flex items-center gap-1 text-xs opacity-90">
-                        {event.type === 'TASK_TIME' ? <CheckSquare className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
                         {event.allDay ? (
                             <span>{event.type === 'TASK_TIME' ? 'Deadline: Today' : 'All day'}</span>
                         ) : (
