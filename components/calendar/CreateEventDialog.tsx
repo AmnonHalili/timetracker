@@ -127,31 +127,35 @@ export function CreateEventDialog({
 
         // Create temp event for optimistic UI
         if (mode === 'create' && onOptimisticEventCreate) {
-            const tempEvent = {
-                id: Math.random().toString(), // Temp ID
-                title,
-                description,
-                startTime: allDay ? new Date(startDate) : new Date(`${startDate}T${startTime}`),
-                endTime: allDay ? new Date(endDate) : new Date(`${endDate}T${endTime}`),
-                allDay,
-                type,
-                location,
-                createdBy: {
-                    name: session?.user?.name || "You",
-                    email: session?.user?.email || ""
-                },
-                participants: participantIds.map(id => {
-                    const user = users.find(u => u.id === id)
-                    return {
-                        user: {
-                            name: user?.name || "Unknown",
-                            email: user?.email || ""
+            const isCurrentUserParticipant = session?.user?.id && participantIds.includes(session.user.id)
+
+            if (isCurrentUserParticipant) {
+                const tempEvent = {
+                    id: Math.random().toString(), // Temp ID
+                    title,
+                    description,
+                    startTime: allDay ? new Date(startDate) : new Date(`${startDate}T${startTime}`),
+                    endTime: allDay ? new Date(endDate) : new Date(`${endDate}T${endTime}`),
+                    allDay,
+                    type,
+                    location,
+                    createdBy: {
+                        name: session?.user?.name || "You",
+                        email: session?.user?.email || ""
+                    },
+                    participants: participantIds.map(id => {
+                        const user = users.find(u => u.id === id)
+                        return {
+                            user: {
+                                name: user?.name || "Unknown",
+                                email: user?.email || ""
+                            }
                         }
-                    }
-                })
+                    })
+                }
+                onOptimisticEventCreate(tempEvent)
             }
-            onOptimisticEventCreate(tempEvent)
-            onOpenChange(false) // Close immediately
+            onOpenChange(false) // Close immediately regardless of visibility
         }
 
         try {

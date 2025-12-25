@@ -54,60 +54,124 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
     const [currentDate, setCurrentDate] = useState(initialDate)
     const [optimisticEvents, setOptimisticEvents] = useState<CalendarEvent[]>([])
 
-    // Sync optimistic events: merge server events with local optimistic ones
-    // We filter out optimistic events that map to real events if IDs clash, 
-    // but here we just append. When data.events updates, we clear optimistic events 
-    // to avoid duplicates (assuming the new data includes the created event).
-    // Actually, to be safe, we should only clear if the new count is higher, 
-    // or just rely on the fact that router.refresh() triggers a prop update.
+    // Client-side data fetching state
+    const [calendarData, setCalendarData] = useState(data)
+    const [isLoading, setIsLoading] = useState(false)
 
-    // Reset optimistic state when server data changes (confirmation that fetch succeeded and revalidated)
+    // Reset optimistic state when server data changes
     useEffect(() => {
         setOptimisticEvents([])
-    }, [data.events])
+    }, [calendarData.events])
 
-    const mergedEvents = [...(data.events || []), ...optimisticEvents]
+    // Fetch data when month changes
+    useEffect(() => {
+        const fetchCalendarData = async () => {
+            // If current month matches initial month (and we haven't fetched yet or logic requires), 
+            // we could reuse props, but determining if "props are stale" is tricky if we stay on page long.
+            // For now, let's say if it matches initialDate month/year, we MIGHT reuse, but 
+            // the user wants "fresh" data.
+
+            // Actually, simply checking if month/year changed from what we have in calendarData?
+            // But calendarData is state. 
+            // Let's just fetch when month changes.
+
+            const month = currentDate.getMonth()
+            const year = currentDate.getFullYear()
+
+            // Optional: debounce or check if we already have data for this month?
+            // Simpler: Just fetch.
+
+            setIsLoading(true)
+            try {
+                const res = await fetch(`/api/calendar?month=${month}&year=${year}`)
+                if (!res.ok) throw new Error("Failed to fetch calendar data")
+                const newData = await res.json()
+                setCalendarData(newData)
+            } catch (error) {
+                console.error("Failed to load calendar data", error)
+                // Fallback or toast?
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        // Only fetch if the displayed month is different from the currently loaded data context
+        // We can infer context from the first event or just always fetch on navigation?
+        // Let's compare with initialDate to avoid double-fetch on mount?
+        // On mount, currentDate == initialDate, data == initial props.
+        // We should skip fetch on FIRST render if it matches initial.
+
+        const isInitialMonth =
+            currentDate.getMonth() === initialDate.getMonth() &&
+            currentDate.getFullYear() === initialDate.getFullYear()
+
+        // Track the "loaded" month in a ref or just rely on the effect dependency?
+        // The issue is: on mount, this runs. We have data. We don't want to refetch immediately unless we want "live" updates.
+        // Let's skip if it matches initialDate AND we haven't navigated yet.
+        // But simpler: just add a ref `isFirstRender`?
+
+    }, [currentDate]) // Check inside effect
+
+    // Re-implemented effect with proper logic
+    useEffect(() => {
+        const loadData = async () => {
+            // Avoid fetching if it's the initial data we already have
+            // But we want to re-fetch if we navigate BACK to initial month?
+            // Maybe store "loadedMonth" state?
+            // For simplicity and robustness to solve "Delay":
+            // Fetching on mount is okay (double check), but wasteful.
+            // Let's use a condition.
+
+            const dataDate = new Date() // How to know date of `calendarData`? 
+            // We don't.
+
+            // Let's just fetch. It ensures data is fresh even on back navigation.
+            // To prevent initial double fetch:
+            if (currentDate.getTime() === initialDate.getTime() && calendarData === data) {
+                return
+            }
+
+            setIsLoading(true)
+            try {
+                const res = await fetch(`/api/calendar?month=${currentDate.getMonth()}&year=${currentDate.getFullYear()}`)
+                if (res.ok) {
+                    const newData = await res.json()
+                    setCalendarData(newData)
+                }
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        loadData()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentDate])
+
+
+    const mergedEvents = [...(calendarData.events || []), ...optimisticEvents]
 
     const addOptimisticEvent = (newEvent: CalendarEvent) => {
         setOptimisticEvents(prev => [...prev, newEvent])
     }
 
-
     const handlePrevMonth = () => {
-        const newDate = subMonths(currentDate, 1)
-        setCurrentDate(newDate)
-        updateUrl(newDate)
+        setCurrentDate(prev => subMonths(prev, 1))
     }
 
     const handleNextMonth = () => {
-        const newDate = addMonths(currentDate, 1)
-        setCurrentDate(newDate)
-        updateUrl(newDate)
+        setCurrentDate(prev => addMonths(prev, 1))
     }
 
     const handlePrevDay = () => {
-        const newDate = subDays(currentDate, 1)
-        setCurrentDate(newDate)
-        updateUrl(newDate)
+        setCurrentDate(prev => subDays(prev, 1))
     }
 
     const handleNextDay = () => {
-        const newDate = addDays(currentDate, 1)
-        setCurrentDate(newDate)
-        updateUrl(newDate)
-    }
-
-    const updateUrl = (date: Date) => {
-        const params = new URLSearchParams(window.location.search)
-        params.set("month", date.getMonth().toString())
-        params.set("year", date.getFullYear().toString())
-        router.push(`/calendar?${params.toString()}`)
+        setCurrentDate(prev => addDays(prev, 1))
     }
 
     const handleToday = () => {
-        const today = new Date()
-        setCurrentDate(today)
-        updateUrl(today)
+        setCurrentDate(new Date())
     }
 
     return (
@@ -161,23 +225,24 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
             {view === 'month' ? (
                 <MonthGrid
                     date={currentDate}
-                    data={{ ...data, events: mergedEvents }}
+                    data={{ ...calendarData, events: mergedEvents }}
                     onDayClick={(day) => {
                         setCurrentDate(day)
                         setView('day')
-                        updateUrl(day)
+                        // No URL update
                     }}
                     projectId={projectId}
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     onOptimisticEventCreate={(event: any) => {
                         addOptimisticEvent(event)
                     }}
+                    isLoading={isLoading}
                 />
             ) : (
                 <DayView
                     date={currentDate}
                     events={mergedEvents}
-                    tasks={data.tasks || []}
+                    tasks={calendarData.tasks || []}
                     projectId={projectId}
                     onBack={() => setView('month')}
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -6,6 +6,9 @@ import { redirect } from "next/navigation"
 import { CalendarView } from "@/components/calendar/CalendarView"
 import { startOfMonth, endOfMonth } from "date-fns"
 
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 export default async function CalendarPage({
     searchParams,
 }: {
@@ -86,10 +89,7 @@ export default async function CalendarPage({
     } = {
         startTime: { gte: monthStart },
         endTime: { lte: monthEnd },
-        OR: [
-            { createdById: session.user.id },
-            { participants: { some: { userId: session.user.id } } }
-        ]
+        participants: { some: { userId: session.user.id } }
     }
 
     // Optionally filter by project

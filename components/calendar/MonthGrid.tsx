@@ -48,9 +48,10 @@ interface MonthGridProps {
     projectId?: string | null
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onOptimisticEventCreate?: (event: any) => void
+    isLoading?: boolean
 }
 
-export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEventCreate }: MonthGridProps) {
+export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEventCreate, isLoading }: MonthGridProps) {
     const monthStart = startOfMonth(date)
     const monthEnd = endOfMonth(date)
     const startDate = startOfWeek(monthStart)
@@ -83,7 +84,12 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                 ))}
             </div>
 
-            <div className="grid grid-cols-7 gap-1 lg:gap-2 auto-rows-fr">
+            <div className={cn("grid grid-cols-7 gap-1 lg:gap-2 auto-rows-fr relative min-h-[500px]", isLoading && "opacity-50 pointer-events-none")}>
+                {isLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center z-50">
+                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                    </div>
+                )}
                 {calendarDays.map((day) => {
                     // Find daily report for this day
                     const dailyData = data.dailyReports.find(r => isSameDay(new Date(r.date), day))
