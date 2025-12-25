@@ -15,16 +15,25 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Plus } from "lucide-react"
+import { Plus, Pencil } from "lucide-react"
 
 interface CreateTaskDialogProps {
     users: { id: string; name: string | null; email: string | null }[]
     onTaskCreated?: () => void
+    task?: any // Making flexible to accept task object
+    mode?: 'create' | 'edit'
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
 }
 
-export function CreateTaskDialog({ users: initialUsers, onTaskCreated }: CreateTaskDialogProps) {
+export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mode = 'create', open: controlledOpen, onOpenChange: setControlledOpen }: CreateTaskDialogProps) {
     const router = useRouter()
-    const [isOpen, setIsOpen] = useState(false) // Standardized to isOpen
+    const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
+
+    // Use controlled state if provided, otherwise internal state
+    const isOpen = controlledOpen !== undefined ? controlledOpen : uncontrolledOpen
+    const setIsOpen = setControlledOpen || setUncontrolledOpen
+
     const [title, setTitle] = useState("")
     const [assignedToIds, setAssignedToIds] = useState<string[]>([])
     const [priority, setPriority] = useState("MEDIUM")
@@ -37,24 +46,18 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated }: CreateT
 
     useEffect(() => {
         if (isOpen) {
-            // Fetch users for assignment if we are admin or rely on props
-            // Actually, if we are passed "users" prop, use that initially.
-            // If we want to support dynamic fetching for admins, we can, but let's stick to props for simplicity + update.
-            // The prop is 'initialUsers' but we set 'users' state.
-
-            // Logic: if initialUsers has content, use it.
+            // Initialize users list
             if (initialUsers && initialUsers.length > 0) {
                 setUsers(initialUsers)
-                if (initialUsers.length === 1) {
+                if (mode === 'create' && initialUsers.length === 1) {
                     setAssignedToIds([initialUsers[0].id])
                 }
             } else {
-                // Fetch backup
                 fetch("/api/team?all=true")
                     .then(res => res.json())
                     .then(data => {
                         setUsers(data)
-                        if (Array.isArray(data) && data.length === 1) {
+                        if (mode === 'create' && Array.isArray(data) && data.length === 1) {
                             setAssignedToIds([data[0].id])
                         }
                     })
@@ -63,24 +66,66 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated }: CreateT
                         setUsers([])
                     })
             }
+
+            // If in edit mode, populate fields
+            if (mode === 'edit' && task) {
+                setTitle(task.title || "")
+                setDescription(task.description || "")
+                setPriority(task.priority || "MEDIUM")
+
+                if (task.deadline) {
+                    const d = new Date(task.deadline)
+                    setDeadline(d.toISOString().split('T')[0])
+                    // Only set time if it's not midnight (or if we have a way to know it was set, but for now assumption is if time part exists)
+                    // Check if it's not midnight (UTC) which we treat as "date only"
+                    if (!(d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && d.getUTCSeconds() === 0)) {
+                        // Format local time
+                        const hours = String(d.getHours()).padStart(2, '0')
+                        const minutes = String(d.getMinutes()).padStart(2, '0')
+                        setDeadlineTime(`${hours}:${minutes}`)
+                    }
+                }
+
+                // Handle participants/assignees mapping
+                // task.assignees or task.participants depending on where it comes from
+                // From Calendar it is mapped to participants, from Task list it might be assignees
+                // Let's handle both
+                const assignees = task.assignees || (task.participants ? task.participants.map((p: any) => p.user) : [])
+                if (assignees) {
+                    setAssignedToIds(assignees.map((u: any) => u.id))
+                }
+            } else if (mode === 'create') {
+                // Reset fields
+                setTitle("")
+                //  setAssignedToIds([]) // Don't reset if just loaded single user
+                setPriority("MEDIUM")
+                setDeadline("")
+                setDeadlineTime("")
+                setDescription("")
+            }
         }
-    }, [isOpen, initialUsers])
+    }, [isOpen, initialUsers, mode, task])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
 
         try {
-            let finalDeadline = deadline;
-            if (deadline && deadlineTime) {
-                finalDeadline = `${deadline}T${deadlineTime}:00`
-            } else if (deadline) {
-                // If only date is selected, maybe default to end of day? Or just date object (00:00 local).
-                // Let's keep it simple as just the date string for now, backend parses generic date.
+            let finalDeadline = null;
+            if (deadline) {
+                if (deadlineTime) {
+                    finalDeadline = new Date(`${deadline}T${deadlineTime}:00`).toISOString()
+                } else {
+                    // Start of day UTC for date-only
+                    finalDeadline = new Date(deadline).toISOString()
+                }
             }
 
-            await fetch("/api/tasks", {
-                method: "POST",
+            const url = mode === 'edit' ? `/api/tasks/${task.id}` : "/api/tasks"
+            const method = mode === 'edit' ? "PATCH" : "POST"
+
+            await fetch(url, {
+                method: method,
                 body: JSON.stringify({
                     title,
                     assignedToIds,
@@ -90,16 +135,18 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated }: CreateT
                 }),
             })
             setIsOpen(false)
-            setTitle("")
-            setAssignedToIds([])
-            setPriority("MEDIUM")
-            setDeadline("")
-            setDeadlineTime("")
-            setDescription("")
+            if (mode === 'create') {
+                setTitle("")
+                setAssignedToIds([])
+                setPriority("MEDIUM")
+                setDeadline("")
+                setDeadlineTime("")
+                setDescription("")
+            }
             onTaskCreated?.()
             router.refresh()
         } catch {
-            console.error("Failed to create task")
+            console.error(`Failed to ${mode} task`)
         } finally {
             setLoading(false)
         }
@@ -115,17 +162,19 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated }: CreateT
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-                <Button>
-                    <Plus className="mr-2 h-4 w-4" /> Add Task
-                </Button>
-            </DialogTrigger>
+            {mode === 'create' && (
+                <DialogTrigger asChild>
+                    <Button>
+                        <Plus className="mr-2 h-4 w-4" /> Add Task
+                    </Button>
+                </DialogTrigger>
+            )}
             <DialogContent className="sm:max-w-[425px]">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
-                        <DialogTitle>Create New Task</DialogTitle>
+                        <DialogTitle>{mode === 'edit' ? 'Edit Task' : 'Create New Task'}</DialogTitle>
                         <DialogDescription>
-                            Assign a new task to one or more employees.
+                            {mode === 'edit' ? 'Update task details and assignments.' : 'Assign a new task to one or more employees.'}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
@@ -141,7 +190,8 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated }: CreateT
                                 required
                             />
                         </div>
-                        {users.length > 1 && (
+                        {/* Only show assignment if there are users loaded */}
+                        {(users.length > 0) && (
                             <div className="grid grid-cols-4 items-start gap-4">
                                 <Label className="text-right pt-2">
                                     Assign To
@@ -164,6 +214,7 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated }: CreateT
                                 </div>
                             </div>
                         )}
+
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="priority" className="text-right">
                                 Priority
@@ -203,9 +254,25 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated }: CreateT
                                 />
                             </div>
                         </div>
+
+                        <div className="grid grid-cols-4 items-start gap-4">
+                            <Label htmlFor="description" className="text-right pt-2">
+                                Description
+                            </Label>
+                            <textarea
+                                id="description"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                className="col-span-3 flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                placeholder="Add task description..."
+                            />
+                        </div>
                     </div>
                     <DialogFooter>
-                        <Button type="submit" disabled={loading}>Create Task</Button>
+                        <Button type="submit" disabled={loading}>
+                            {mode === 'edit' ? <Pencil className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
+                            {mode === 'edit' ? 'Update Task' : 'Create Task'}
+                        </Button>
                     </DialogFooter>
                 </form>
             </DialogContent>

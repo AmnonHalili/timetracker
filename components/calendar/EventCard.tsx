@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { format } from "date-fns"
-import { Clock, MapPin, Users, Trash2, CheckSquare } from "lucide-react"
+import { Clock, MapPin, Users, Trash2, CheckSquare, MoreVertical, Pencil } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import {
@@ -18,6 +18,14 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { CreateEventDialog } from "./CreateEventDialog"
+import { CreateTaskDialog } from "../tasks/CreateTaskDialog"
 
 interface EventCardProps {
     event: {
@@ -46,26 +54,27 @@ interface EventCardProps {
 }
 
 const eventTypeColors = {
-    MEETING: "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20",
-    APPOINTMENT: "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20",
-    TASK_TIME: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
-    BREAK: "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20",
-    PERSONAL: "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20",
-    OTHER: "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20",
+    MEETING: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
+    APPOINTMENT: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
+    TASK_TIME: "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20",
+    BREAK: "bg-gray-500/10 text-gray-700 border-gray-500/20",
+    PERSONAL: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
+    OTHER: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
 }
 
 const eventTypeBadgeColors = {
-    MEETING: "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20",
-    APPOINTMENT: "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20",
-    TASK_TIME: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
-    BREAK: "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20",
-    PERSONAL: "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20",
-    OTHER: "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20",
+    MEETING: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
+    APPOINTMENT: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
+    TASK_TIME: "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20",
+    BREAK: "bg-gray-500/10 text-gray-700 border-gray-500/20",
+    PERSONAL: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
+    OTHER: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
 }
 
 export function EventCard({ event, onClick, size = 'md', showDelete = false }: EventCardProps) {
     const router = useRouter()
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+    const [editDialogOpen, setEditDialogOpen] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
 
     const start = new Date(event.startTime)
@@ -80,24 +89,28 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
     }
 
     const handleDelete = async (e: React.MouseEvent) => {
-        e.stopPropagation()
+        // e.stopPropagation() is already handled in the dropdown handler if triggered from there
         setIsDeleting(true)
         try {
-            const res = await fetch(`/api/events/${event.id}`, {
+            const endpoint = event.type === 'TASK_TIME'
+                ? `/api/tasks/${event.id}`
+                : `/api/events/${event.id}`
+
+            const res = await fetch(endpoint, {
                 method: "DELETE",
             })
 
             if (!res.ok) {
                 const data = await res.json()
-                throw new Error(data.error || "Failed to delete event")
+                throw new Error(data.error || "Failed to delete item")
             }
 
-            toast.success("Event deleted successfully")
+            toast.success(`${event.type === 'TASK_TIME' ? 'Task' : 'Event'} deleted successfully`)
             router.refresh()
             setDeleteDialogOpen(false)
         } catch (error) {
             console.error(error)
-            toast.error(error instanceof Error ? error.message : "Failed to delete event")
+            toast.error(error instanceof Error ? error.message : "Failed to delete item")
         } finally {
             setIsDeleting(false)
         }
@@ -106,13 +119,16 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
     return (
         <>
             <div
-                onClick={onClick}
                 className={cn(
-                    "rounded-md border cursor-pointer transition-all hover:shadow-md relative group",
-                    typeColor,
-                    sizeClasses[size],
-                    onClick && "hover:scale-[1.02]"
+                    "relative rounded-md border transition-all group p-2 space-y-1",
+                    eventTypeColors[event.type as keyof typeof eventTypeColors] || "bg-gray-100 text-gray-700",
+                    onClick && "cursor-pointer hover:shadow-md",
+                    sizeClasses[size]
                 )}
+                onClick={(e) => {
+                    e.stopPropagation() // Prevent triggering hour click in DayView
+                    onClick?.()
+                }}
             >
                 <div className="space-y-1">
                     {/* Title and Badge */}
@@ -134,19 +150,44 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
                         </div>
                     </div>
 
-                    {/* Delete button - absolutely positioned */}
+                    {/* Actions Menu (Edit/Delete) - absolutely positioned */}
                     {showDelete && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="absolute right-2 top-1/2 -translate-y-[52%] h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 hover:text-red-600 z-10"
-                            onClick={(e) => {
-                                e.stopPropagation()
-                                setDeleteDialogOpen(true)
-                            }}
-                        >
-                            <Trash2 className="h-3 w-3" />
-                        </Button>
+                        <div className="absolute right-2 top-1/2 -translate-y-[52%] z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6 hover:bg-slate-200/50"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <MoreVertical className="h-3 w-3" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-32">
+                                    <DropdownMenuItem
+                                        className="flex items-center gap-2 cursor-pointer"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            setEditDialogOpen(true)
+                                        }}
+                                    >
+                                        <Pencil className="h-4 w-4" />
+                                        <span>Edit</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        className="flex items-center gap-2 text-red-600 focus:text-red-700 focus:bg-red-50 cursor-pointer"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            setDeleteDialogOpen(true)
+                                        }}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                        <span>Delete</span>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
                     )}
 
                     {/* Time */}
@@ -188,6 +229,24 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
                     )}
                 </div>
             </div>
+
+            {/* Edit Dialog - Conditionally render Task or Event dialog */}
+            {event.type === 'TASK_TIME' ? (
+                <CreateTaskDialog
+                    open={editDialogOpen}
+                    onOpenChange={setEditDialogOpen}
+                    task={event}
+                    mode="edit"
+                    users={[]} // It will fetch users internally
+                />
+            ) : (
+                <CreateEventDialog
+                    open={editDialogOpen}
+                    onOpenChange={setEditDialogOpen}
+                    event={event}
+                    mode="edit"
+                />
+            )}
 
             {/* Delete Confirmation Dialog */}
             <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

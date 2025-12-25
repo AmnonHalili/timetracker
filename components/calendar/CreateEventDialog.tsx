@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Loader2, Plus } from "lucide-react"
+import { Loader2, Plus, Pencil } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
@@ -16,9 +16,11 @@ interface CreateEventDialogProps {
     onOpenChange: (open: boolean) => void
     defaultDate?: Date
     projectId?: string | null
+    event?: any // Simplified type for now, matching the flexibility needed
+    mode?: 'create' | 'edit'
 }
 
-export function CreateEventDialog({ open, onOpenChange, defaultDate, projectId }: CreateEventDialogProps) {
+export function CreateEventDialog({ open, onOpenChange, defaultDate, projectId, event, mode = 'create' }: CreateEventDialogProps) {
     const router = useRouter()
     const [loading, setLoading] = useState(false)
 
@@ -39,6 +41,30 @@ export function CreateEventDialog({ open, onOpenChange, defaultDate, projectId }
     )
     const [endTime, setEndTime] = useState("10:00")
 
+    // Initialize/Reset form based on mode and open state
+    useEffect(() => {
+        if (open) {
+            if (mode === 'edit' && event) {
+                setTitle(event.title)
+                setDescription(event.description || "")
+                setType(event.type)
+                setLocation(event.location || "")
+                setAllDay(event.allDay)
+
+                const start = new Date(event.startTime)
+                const end = new Date(event.endTime)
+
+                setStartDate(start.toISOString().split('T')[0])
+                setStartTime(start.toTimeString().slice(0, 5))
+                setEndDate(end.toISOString().split('T')[0])
+                setEndTime(end.toTimeString().slice(0, 5))
+            } else {
+                // Reset for create mode
+                resetForm()
+            }
+        }
+    }, [open, mode, event, defaultDate])
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
@@ -53,8 +79,11 @@ export function CreateEventDialog({ open, onOpenChange, defaultDate, projectId }
                 ? new Date(endDate).toISOString()
                 : new Date(`${endDate}T${endTime}`).toISOString()
 
-            const res = await fetch("/api/events", {
-                method: "POST",
+            const url = mode === 'edit' ? `/api/events/${event.id}` : "/api/events"
+            const method = mode === 'edit' ? "PATCH" : "POST"
+
+            const res = await fetch(url, {
+                method: method,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     title,
@@ -65,65 +94,59 @@ export function CreateEventDialog({ open, onOpenChange, defaultDate, projectId }
                     type,
                     location: location || null,
                     projectId,
-                    participantIds: [], // Can be extended later
-                    reminderMinutes: [] // Can be extended later
+                    participantIds: [],
+                    reminderMinutes: []
                 })
             })
 
             if (!res.ok) {
                 const data = await res.json()
-                throw new Error(data.error || "Failed to create event")
+                throw new Error(data.error || `Failed to ${mode} event`)
             }
 
-            toast.success("Event created successfully")
+            toast.success(`Event ${mode === 'edit' ? 'updated' : 'created'} successfully`)
             router.refresh()
             onOpenChange(false)
-
-            // Reset form
             resetForm()
         } catch (error) {
             console.error(error)
-            toast.error(error instanceof Error ? error.message : "Failed to create event")
+            toast.error(error instanceof Error ? error.message : `Failed to ${mode} event`)
         } finally {
             setLoading(false)
         }
     }
 
     const resetForm = () => {
+        if (mode === 'edit') return // Don't reset if we are just switching back to edit mode logic handled in effect
+
         setTitle("")
         setDescription("")
         setType("MEETING")
         setLocation("")
         setAllDay(false)
-        const today = new Date().toISOString().split('T')[0]
-        setStartDate(today)
-        setStartTime("09:00")
-        setEndDate(today)
-        setEndTime("10:00")
+
+        const baseDate = defaultDate || new Date()
+        const dateStr = baseDate.toISOString().split('T')[0]
+        const hour = baseDate.getHours()
+        // If defaultDate is provided (e.g. clicking on a specific time slot), use that time
+        // Otherwise default to next hour
+        const startHourStr = defaultDate ? String(hour).padStart(2, '0') + ":00" : "09:00"
+        const endHourStr = defaultDate ? String((hour + 1) % 24).padStart(2, '0') + ":00" : "10:00"
+
+        setStartDate(dateStr)
+        setStartTime(startHourStr)
+        setEndDate(dateStr)
+        setEndTime(endHourStr)
     }
-
-    // Update date/time when defaultDate changes
-    useEffect(() => {
-        if (defaultDate) {
-            const dateStr = defaultDate.toISOString().split('T')[0]
-            const hour = defaultDate.getHours()
-            const nextHour = (hour + 1) % 24
-
-            setStartDate(dateStr)
-            setStartTime(`${String(hour).padStart(2, '0')}:00`)
-            setEndDate(dateStr)
-            setEndTime(`${String(nextHour).padStart(2, '0')}:00`)
-        }
-    }, [defaultDate])
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
-                        <DialogTitle>Create New Event</DialogTitle>
+                        <DialogTitle>{mode === 'edit' ? 'Edit Event' : 'Create New Event'}</DialogTitle>
                         <DialogDescription>
-                            Add an event to your calendar
+                            {mode === 'edit' ? 'Update event details' : 'Add an event to your calendar'}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -137,6 +160,18 @@ export function CreateEventDialog({ open, onOpenChange, defaultDate, projectId }
                                 onChange={(e) => setTitle(e.target.value)}
                                 placeholder="Meeting with team"
                                 required
+                            />
+                        </div>
+
+                        {/* Description */}
+                        <div className="space-y-2">
+                            <Label htmlFor="description">Description</Label>
+                            <Textarea
+                                id="description"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder="Add details about the event..."
+                                rows={3}
                             />
                         </div>
 
@@ -231,17 +266,7 @@ export function CreateEventDialog({ open, onOpenChange, defaultDate, projectId }
                             />
                         </div>
 
-                        {/* Description */}
-                        <div className="space-y-2">
-                            <Label htmlFor="description">Description</Label>
-                            <Textarea
-                                id="description"
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                placeholder="Add details about the event..."
-                                rows={3}
-                            />
-                        </div>
+
                     </div>
 
                     <DialogFooter>
@@ -255,8 +280,8 @@ export function CreateEventDialog({ open, onOpenChange, defaultDate, projectId }
                         </Button>
                         <Button type="submit" disabled={loading}>
                             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            <Plus className="mr-2 h-4 w-4" />
-                            Create Event
+                            {mode === 'edit' ? <Pencil className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
+                            {mode === 'edit' ? 'Update Event' : 'Create Event'}
                         </Button>
                     </DialogFooter>
                 </form>

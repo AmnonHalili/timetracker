@@ -31,6 +31,7 @@ interface DayViewProps {
         deadline: Date | string | null
         priority: string
         status: string
+        description: string | null
         assignees: Array<{ name: string; email: string }>
     }>
     projectId?: string | null
@@ -65,7 +66,7 @@ export function DayView({ date, events, tasks, projectId }: DayViewProps) {
             return {
                 id: t.id,
                 title: t.title,
-                description: `Status: ${t.status} | Priority: ${t.priority}`,
+                description: t.description || `Status: ${t.status} | Priority: ${t.priority}`,
                 startTime: deadline,
                 endTime: endTime,
                 allDay: isUtcMidnight, // Use UTC check to catch date-only inputs
@@ -102,7 +103,13 @@ export function DayView({ date, events, tasks, projectId }: DayViewProps) {
     })
 
     // All-day events (filtered for this day)
-    const allDayEvents = dayEvents.filter(e => e.allDay)
+    const allDayEvents = dayEvents
+        .filter(e => e.allDay)
+        .sort((a, b) => {
+            if (a.type === 'TASK_TIME' && b.type !== 'TASK_TIME') return -1
+            if (a.type !== 'TASK_TIME' && b.type === 'TASK_TIME') return 1
+            return 0
+        })
 
     const handleHourClick = (hour: Date) => {
         setSelectedHour(hour)
@@ -158,10 +165,23 @@ export function DayView({ date, events, tasks, projectId }: DayViewProps) {
                             {/* Events for this hour */}
                             <div
                                 className="p-2 cursor-pointer hover:bg-muted/30 transition-colors relative"
-                                onClick={() => handleHourClick(hour)}
+                                onClick={(e) => {
+                                    // Only trigger if clicking directly on this div (empty space), not on EventCards
+                                    if (e.target === e.currentTarget) {
+                                        handleHourClick(hour)
+                                    }
+                                }}
                             >
                                 {hourEvents.length > 0 ? (
-                                    <div className="space-y-1">
+                                    <div
+                                        className="space-y-1"
+                                        onClick={(e) => {
+                                            // Also allow clicking on the wrapper div (between cards)
+                                            if (e.target === e.currentTarget) {
+                                                handleHourClick(hour)
+                                            }
+                                        }}
+                                    >
                                         {hourEvents.map(event => (
                                             <EventCard
                                                 key={event.id}

@@ -67,6 +67,7 @@ export default async function CalendarPage({
             deadline: true,
             priority: true,
             status: true,
+            description: true,
             assignees: {
                 select: {
                     name: true,
