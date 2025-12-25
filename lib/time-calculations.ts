@@ -14,15 +14,17 @@ export type BalanceResult = {
 // Helper type for inputs
 type UserWithEntries = User & {
     timeEntries: (TimeEntry & { breaks?: { startTime: Date; endTime: Date | null }[] })[]
+    project?: { workMode: WorkMode } | null
 }
 
 export function calculateBalance(
-    user: any, // Using any to bypass strict Prisma type mismatches temporarily
+    user: UserWithEntries,
     referenceDate: Date = new Date()
 ): BalanceResult {
     const { dailyTarget, workDays, createdAt, timeEntries } = user
     // Prefer Project setting, fall back to User setting (legacy), default to TIME_BASED
-    const workMode = (user as any).project?.workMode || (user as any).workMode || 'TIME_BASED'
+    // @ts-expect-error - project property might be missing in older prisma client types but exists in schema
+    const workMode = user.project?.workMode || user.workMode || 'TIME_BASED'
 
     // Map duration by day
     const hoursPerDay: Record<string, number> = {}

@@ -8,7 +8,6 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -27,7 +26,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { format } from "date-fns"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2, Trash2 } from "lucide-react"
@@ -203,11 +201,7 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
         )
     }
 
-    const getRoleBadgeVariant = (role: string) => {
-        if (role === "ADMIN") return "default"
-        if (role === "MANAGER") return "secondary"
-        return "outline"
-    }
+
 
     if (users.length === 0) {
         return <div className="text-center text-muted-foreground py-8">No team members yet.</div>

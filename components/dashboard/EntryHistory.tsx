@@ -257,7 +257,7 @@ export function EntryHistory({ entries, tasks }: EntryHistoryProps) {
 
             {localEntries.length === 0 && (
                 <div className="p-8 text-center text-muted-foreground">
-                    You haven't added any time entries yet.
+                    You haven&apos;t added any time entries yet.
                 </div>
             )}
 
