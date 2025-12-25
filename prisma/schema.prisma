@@ -42,8 +42,13 @@ model User {
   projectId     String?
   project       Project?    @relation(fields: [projectId], references: [id])
 
+  
   // Join Requests
   pendingProjectId String?
+  
+  // Events
+  createdEvents     Event[] @relation("CreatedEvents")
+  eventParticipants EventParticipant[]
 }
 
 model Project {
@@ -55,6 +60,7 @@ model Project {
   updatedAt DateTime @updatedAt
   users     User[]
   groups    Group[]
+  events    Event[]
 }
 
 model Group {
@@ -173,4 +179,86 @@ enum WorkMode {
   OUTPUT_BASED // Net work (Total - Breaks)
   TIME_BASED   // Time at work (Total including Breaks)
   PROJECT_BASED // Deprecated: Kept for build backward compatibility
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  startTime   DateTime
+  endTime     DateTime
+  allDay      Boolean  @default(false)
+  location    String?
+  
+  // Type of event
+  type        EventType @default(MEETING)
+  
+  // Optional recurrence
+  recurrence     RecurrenceType? 
+  recurrenceEnd  DateTime?
+  
+  // Relations
+  createdBy   User     @relation("CreatedEvents", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById String
+  
+  // Optional project relation
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId   String?
+  
+  // Participant tracking
+  participants EventParticipant[]
+  
+  // Reminders
+  reminders   EventReminder[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([createdById])
+  @@index([projectId])
+  @@index([startTime])
+}
+
+enum EventType {
+  MEETING      // פגישה
+  APPOINTMENT  // תור
+  TASK_TIME    // זמן מוקצב למשימה
+  BREAK        // הפסקה
+  PERSONAL     // אישי
+  OTHER        // אחר
+}
+
+enum RecurrenceType {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+model EventParticipant {
+  id        String   @id @default(cuid())
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId   String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  status    ParticipantStatus @default(PENDING)
+  
+  @@unique([eventId, userId])
+  @@index([userId])
+}
+
+enum ParticipantStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  TENTATIVE
+}
+
+model EventReminder {
+  id             String   @id @default(cuid())
+  event          Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId        String
+  minutesBefore  Int      // כמה דקות לפני להזכיר
+  sent           Boolean  @default(false)
+  
+  @@index([eventId])
 }

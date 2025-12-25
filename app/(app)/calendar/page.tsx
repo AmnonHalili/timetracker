@@ -76,15 +76,71 @@ export default async function CalendarPage({
         }
     })
 
+    // Fetch events for this month
+    const eventWhereClause: {
+        startTime: { gte: Date };
+        endTime: { lte: Date };
+        OR?: Array<{ createdById: string } | { participants: { some: { userId: string } } }>;
+        projectId?: string;
+    } = {
+        startTime: { gte: monthStart },
+        endTime: { lte: monthEnd },
+        OR: [
+            { createdById: session.user.id },
+            { participants: { some: { userId: session.user.id } } }
+        ]
+    }
+
+    // Optionally filter by project
+    if (currentUser?.projectId) {
+        eventWhereClause.projectId = currentUser.projectId
+    }
+
+    const events = await prisma.event.findMany({
+        where: eventWhereClause,
+        select: {
+            id: true,
+            title: true,
+            description: true,
+            startTime: true,
+            endTime: true,
+            allDay: true,
+            type: true,
+            location: true,
+            createdBy: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true
+                }
+            },
+            participants: {
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true
+                        }
+                    }
+                }
+            }
+        },
+        orderBy: {
+            startTime: 'asc'
+        }
+    })
+
     const data = {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         dailyReports: (reportData as any)?.report?.days || [],
-        tasks: tasks
+        tasks: tasks,
+        events: events
     }
 
     return (
         <div className="container mx-auto p-4 md:p-8 h-screen-minus-header overflow-hidden flex flex-col">
-            <CalendarView initialDate={currentDate} data={data} />
+            <CalendarView initialDate={currentDate} data={data} projectId={currentUser?.projectId || null} />
         </div>
     )
 }
