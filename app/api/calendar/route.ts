@@ -4,7 +4,6 @@ import { getReportData } from "@/lib/report-service"
 import { getServerSession } from "next-auth"
 import { NextRequest, NextResponse } from "next/server"
 import { startOfMonth, endOfMonth } from "date-fns"
-import { Prisma } from "@prisma/client"
 
 export const dynamic = "force-dynamic"
 
@@ -37,6 +36,7 @@ export async function GET(req: NextRequest) {
         })
 
         // 3. Tasks
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const taskWhereClause: any = {
             deadline: {
                 gte: monthStart,
@@ -58,6 +58,7 @@ export async function GET(req: NextRequest) {
             }
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const tasks = await (prisma as any).task.findMany({
             where: taskWhereClause,
             select: {
@@ -77,6 +78,7 @@ export async function GET(req: NextRequest) {
         })
 
         // 4. Events
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const eventWhereClause: any = {
             startTime: { gte: monthStart },
             endTime: { lte: monthEnd },
@@ -87,6 +89,7 @@ export async function GET(req: NextRequest) {
             eventWhereClause.projectId = currentUser.projectId
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const events = await (prisma as any).event.findMany({
             where: eventWhereClause,
             select: {

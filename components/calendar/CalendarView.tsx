@@ -6,7 +6,6 @@ import { DayView } from "./DayView"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react"
 import { format, addMonths, subMonths, addDays, subDays } from "date-fns"
-import { useRouter } from "next/navigation"
 
 type CalendarEvent = {
     id: string;
@@ -49,7 +48,6 @@ interface CalendarViewProps {
 }
 
 export function CalendarView({ initialDate, data, projectId }: CalendarViewProps) {
-    const router = useRouter()
     const [view, setView] = useState<'month' | 'day'>('month')
     const [currentDate, setCurrentDate] = useState(initialDate)
     const [optimisticEvents, setOptimisticEvents] = useState<CalendarEvent[]>([])
@@ -65,68 +63,11 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
 
     // Fetch data when month changes
     useEffect(() => {
-        const fetchCalendarData = async () => {
-            // If current month matches initial month (and we haven't fetched yet or logic requires), 
-            // we could reuse props, but determining if "props are stale" is tricky if we stay on page long.
-            // For now, let's say if it matches initialDate month/year, we MIGHT reuse, but 
-            // the user wants "fresh" data.
-
-            // Actually, simply checking if month/year changed from what we have in calendarData?
-            // But calendarData is state. 
-            // Let's just fetch when month changes.
-
-            const month = currentDate.getMonth()
-            const year = currentDate.getFullYear()
-
-            // Optional: debounce or check if we already have data for this month?
-            // Simpler: Just fetch.
-
-            setIsLoading(true)
-            try {
-                const res = await fetch(`/api/calendar?month=${month}&year=${year}`)
-                if (!res.ok) throw new Error("Failed to fetch calendar data")
-                const newData = await res.json()
-                setCalendarData(newData)
-            } catch (error) {
-                console.error("Failed to load calendar data", error)
-                // Fallback or toast?
-            } finally {
-                setIsLoading(false)
-            }
-        }
-
-        // Only fetch if the displayed month is different from the currently loaded data context
-        // We can infer context from the first event or just always fetch on navigation?
-        // Let's compare with initialDate to avoid double-fetch on mount?
-        // On mount, currentDate == initialDate, data == initial props.
-        // We should skip fetch on FIRST render if it matches initial.
-
-        const isInitialMonth =
-            currentDate.getMonth() === initialDate.getMonth() &&
-            currentDate.getFullYear() === initialDate.getFullYear()
-
-        // Track the "loaded" month in a ref or just rely on the effect dependency?
-        // The issue is: on mount, this runs. We have data. We don't want to refetch immediately unless we want "live" updates.
-        // Let's skip if it matches initialDate AND we haven't navigated yet.
-        // But simpler: just add a ref `isFirstRender`?
-
-    }, [currentDate]) // Check inside effect
-
-    // Re-implemented effect with proper logic
-    useEffect(() => {
         const loadData = async () => {
-            // Avoid fetching if it's the initial data we already have
-            // But we want to re-fetch if we navigate BACK to initial month?
-            // Maybe store "loadedMonth" state?
-            // For simplicity and robustness to solve "Delay":
-            // Fetching on mount is okay (double check), but wasteful.
-            // Let's use a condition.
-
-            const dataDate = new Date() // How to know date of `calendarData`? 
-            // We don't.
-
-            // Let's just fetch. It ensures data is fresh even on back navigation.
             // To prevent initial double fetch:
+            // This condition checks if the current date is the same as the initial date
+            // AND if the calendarData state is still the initial data prop.
+            // This prevents refetching on the very first render if the initial data is already provided.
             if (currentDate.getTime() === initialDate.getTime() && calendarData === data) {
                 return
             }
@@ -144,8 +85,10 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
         }
 
         loadData()
+        // The effect should re-run when currentDate changes.
+        // initialDate and data are stable props, calendarData is state updated by this effect.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentDate])
+    }, [currentDate, initialDate, data])
 
 
     const mergedEvents = [...(calendarData.events || []), ...optimisticEvents]
