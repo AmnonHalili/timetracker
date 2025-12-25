@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { AlertCircle, Loader2 } from "lucide-react"
+import { AlertCircle, Loader2, ChevronLeft } from "lucide-react"
 
 import { signIn } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -69,113 +69,122 @@ function RegisterForm() {
 
 
     return (
-        <Card className="w-full max-w-md">
-            <CardHeader>
-                <CardTitle>Create an Account</CardTitle>
-                <CardDescription>Enter your details to register</CardDescription>
-            </CardHeader>
-            <form onSubmit={handleSubmit}>
-                <CardContent className="space-y-4">
-                    {error && (
-                        <div className="flex items-center gap-2 rounded-md bg-destructive/15 p-3 text-sm text-destructive" role="alert" aria-live="assertive">
-                            <AlertCircle className="h-4 w-4" aria-hidden="true" />
-                            <p>{error}</p>
+        <div className="w-full max-w-md space-y-4">
+            <Link
+                href="/"
+                className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+                <ChevronLeft className="mr-1 h-4 w-4" />
+                Back to Home
+            </Link>
+            <Card className="w-full">
+                <CardHeader>
+                    <CardTitle>Create an Account</CardTitle>
+                    <CardDescription>Enter your details to register</CardDescription>
+                </CardHeader>
+                <form onSubmit={handleSubmit}>
+                    <CardContent className="space-y-4">
+                        {error && (
+                            <div className="flex items-center gap-2 rounded-md bg-destructive/15 p-3 text-sm text-destructive" role="alert" aria-live="assertive">
+                                <AlertCircle className="h-4 w-4" aria-hidden="true" />
+                                <p>{error}</p>
+                            </div>
+                        )}
+                        <div className="flex gap-4 mb-4">
+                            <Button
+                                type="button"
+                                variant={role === "EMPLOYEE" ? "default" : "outline"}
+                                className="w-1/2"
+                                onClick={() => setRole("EMPLOYEE")}
+                            >
+                                Join as Member
+                            </Button>
+                            <Button
+                                type="button"
+                                variant={role === "ADMIN" ? "default" : "outline"}
+                                className="w-1/2"
+                                onClick={() => setRole("ADMIN")}
+                            >
+                                Create Team
+                            </Button>
                         </div>
-                    )}
-                    <div className="flex gap-4 mb-4">
-                        <Button
-                            type="button"
-                            variant={role === "EMPLOYEE" ? "default" : "outline"}
-                            className="w-1/2"
-                            onClick={() => setRole("EMPLOYEE")}
-                        >
-                            Join as Member
-                        </Button>
-                        <Button
-                            type="button"
-                            variant={role === "ADMIN" ? "default" : "outline"}
-                            className="w-1/2"
-                            onClick={() => setRole("ADMIN")}
-                        >
-                            Create Team
-                        </Button>
-                    </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="name">Full Name</Label>
-                        <Input
-                            id="name"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input
-                            id="email"
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="password">Password</Label>
-                        <Input
-                            id="password"
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                        />
-                    </div>
-
-                    {role === "EMPLOYEE" && (
                         <div className="space-y-2">
-                            <Label htmlFor="joinProjectName">Join a Team? (Optional)</Label>
+                            <Label htmlFor="name">Full Name</Label>
                             <Input
-                                id="joinProjectName"
-                                placeholder="Enter Project / Company Name"
-                                value={projectName}
-                                onChange={(e) => setProjectName(e.target.value)}
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                An admin will need to approve your request.
-                            </p>
-                        </div>
-                    )}
-
-                    {role === "ADMIN" && (
-                        <div className="space-y-2">
-                            <Label htmlFor="projectName">Team / Project Name</Label>
-                            <Input
-                                id="projectName"
-                                placeholder="Acme Inc."
-                                value={projectName}
-                                onChange={(e) => setProjectName(e.target.value)}
+                                id="name"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
                                 required
                             />
-                            <p className="text-xs text-muted-foreground">
-                                You will be the admin of this project.
-                            </p>
                         </div>
-                    )}
-                </CardContent>
-                <CardFooter className="flex flex-col gap-4">
-                    <Button type="submit" className="w-full" disabled={loading}>
-                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
-                        Create
-                    </Button>
-                    <div className="text-center text-sm text-muted-foreground">
-                        Already have an account?{" "}
-                        <Link href="/login" className="text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md px-1">
-                            Sign in
-                        </Link>
-                    </div>
-                </CardFooter>
-            </form>
-        </Card>
+                        <div className="space-y-2">
+                            <Label htmlFor="email">Email</Label>
+                            <Input
+                                id="email"
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="password">Password</Label>
+                            <Input
+                                id="password"
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                            />
+                        </div>
+
+                        {role === "EMPLOYEE" && (
+                            <div className="space-y-2">
+                                <Label htmlFor="joinProjectName">Join a Team? (Optional)</Label>
+                                <Input
+                                    id="joinProjectName"
+                                    placeholder="Enter Project / Company Name"
+                                    value={projectName}
+                                    onChange={(e) => setProjectName(e.target.value)}
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    An admin will need to approve your request.
+                                </p>
+                            </div>
+                        )}
+
+                        {role === "ADMIN" && (
+                            <div className="space-y-2">
+                                <Label htmlFor="projectName">Team / Project Name</Label>
+                                <Input
+                                    id="projectName"
+                                    placeholder="Acme Inc."
+                                    value={projectName}
+                                    onChange={(e) => setProjectName(e.target.value)}
+                                    required
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    You will be the admin of this project.
+                                </p>
+                            </div>
+                        )}
+                    </CardContent>
+                    <CardFooter className="flex flex-col gap-4">
+                        <Button type="submit" className="w-full" disabled={loading}>
+                            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
+                            Create
+                        </Button>
+                        <div className="text-center text-sm text-muted-foreground">
+                            Already have an account?{" "}
+                            <Link href="/login" className="text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md px-1">
+                                Sign in
+                            </Link>
+                        </div>
+                    </CardFooter>
+                </form>
+            </Card>
+        </div>
     )
 }
 
