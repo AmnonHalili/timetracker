@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { AlertCircle, Loader2 } from "lucide-react"
+import { AlertCircle, Loader2, ArrowLeft } from "lucide-react"
 
 export default function LoginPage() {
     const router = useRouter()
@@ -45,8 +45,21 @@ export default function LoginPage() {
     return (
         <Card className="w-full max-w-md">
             <CardHeader>
-                <CardTitle>Welcome Back</CardTitle>
-                <CardDescription>Sign in to your account</CardDescription>
+                <div className="flex items-center gap-3 mb-2">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => router.back()}
+                        className="h-8 w-8 -ml-2"
+                        aria-label="Go back"
+                    >
+                        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                    </Button>
+                    <div className="flex-1">
+                        <CardTitle>Welcome Back</CardTitle>
+                        <CardDescription>Sign in to your account</CardDescription>
+                    </div>
+                </div>
             </CardHeader>
             <form onSubmit={handleSubmit}>
                 <CardContent className="space-y-4">

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { AlertCircle, Loader2 } from "lucide-react"
+import { AlertCircle, Loader2, ArrowLeft } from "lucide-react"
 
 import { signIn } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -71,8 +71,21 @@ function RegisterForm() {
     return (
         <Card className="w-full max-w-md">
             <CardHeader>
-                <CardTitle>Create an Account</CardTitle>
-                <CardDescription>Enter your details to register</CardDescription>
+                <div className="flex items-center gap-3 mb-2">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => router.back()}
+                        className="h-8 w-8 -ml-2"
+                        aria-label="Go back"
+                    >
+                        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                    </Button>
+                    <div className="flex-1">
+                        <CardTitle>Create an Account</CardTitle>
+                        <CardDescription>Enter your details to register</CardDescription>
+                    </div>
+                </div>
             </CardHeader>
             <form onSubmit={handleSubmit}>
                 <CardContent className="space-y-4">
