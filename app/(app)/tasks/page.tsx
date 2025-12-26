@@ -33,7 +33,7 @@ export default async function TasksPage() {
             include: {
                 assignees: true,
                 checklist: { orderBy: { createdAt: 'asc' } },
-                // @ts-expect-error - subtasks might not be in generated types yet
+                // @ts-ignore
                 subtasks: {
                     orderBy: { createdAt: 'asc' }
                 }
@@ -110,10 +110,10 @@ export default async function TasksPage() {
                 <CreateTaskDialog users={isAdmin && users.length > 0 ? users : [{ id: session.user.id, name: session.user.name || "Me", email: session.user.email ?? null }]} />
             </div>
 
-            <TasksView 
-                initialTasks={tasks} 
-                users={users} 
-                isAdmin={isAdmin} 
+            <TasksView
+                initialTasks={tasks}
+                users={users}
+                isAdmin={isAdmin}
                 currentUserId={session.user.id}
                 tasksWithActiveTimers={Array.from(tasksWithActiveTimers)}
             />
