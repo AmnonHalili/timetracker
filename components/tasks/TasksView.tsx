@@ -22,9 +22,11 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { format, isPast, isToday } from "date-fns"
+import { format, isPast, isToday, endOfWeek, isWithinInterval } from "date-fns"
 import { TaskDetailDialog } from "./TaskDetailDialog"
 import { CreateTaskDialog } from "./CreateTaskDialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Filter, X, ArrowUpDown } from "lucide-react"
 
 interface User {
     id: string
@@ -43,6 +45,7 @@ interface TasksViewProps {
         assignees: Array<{ id: string; name: string | null }>;
         checklist: Array<{ id: string; text: string; isDone: boolean }>;
         subtasks?: Array<{ id: string; title: string; isDone: boolean }>;
+        createdAt?: Date | string;
     }>
     users: User[]
     isAdmin: boolean
@@ -53,7 +56,6 @@ interface TasksViewProps {
 export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWithActiveTimers = {} }: TasksViewProps) {
     const router = useRouter()
     const [tasks, setTasks] = useState(initialTasks)
-    const [filterUserId, setFilterUserId] = useState<string>("all")
     const [addingSubtaskTo, setAddingSubtaskTo] = useState<string | null>(null)
     const [newSubtaskTitle, setNewSubtaskTitle] = useState("")
     const [localSubtasks, setLocalSubtasks] = useState<Record<string, Array<{ id: string; title: string; isDone: boolean }>>>({})
@@ -70,6 +72,23 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
     }>>([])
     const [editingTask, setEditingTask] = useState<TasksViewProps['initialTasks'][0] | null>(null)
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+    
+    // Filters and Sort state
+    const [isFiltersOpen, setIsFiltersOpen] = useState(false)
+    const [filters, setFilters] = useState<{
+        status: string[];
+        deadline: string[];
+        priority: string[];
+        createdByMe: boolean;
+        assignedToMe: boolean;
+    }>({
+        status: [],
+        deadline: [],
+        priority: [],
+        createdByMe: false,
+        assignedToMe: false,
+    })
+    const [sortBy, setSortBy] = useState<string>("smart")
 
     // Sync local state when server data changes (e.g., after task creation)
     useEffect(() => {
@@ -84,14 +103,188 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
         setLocalSubtasks(subtasksMap)
     }, [initialTasks])
 
-    // Filter tasks
-    const filteredTasks = tasks.filter(task => {
-        if (filterUserId === "all") return true
-        if (task.assignees && task.assignees.length > 0) {
-            return task.assignees.some((a) => a.id === filterUserId)
+    // Apply filters
+    const applyFilters = (task: TasksViewProps['initialTasks'][0]) => {
+        // Status filter
+        if (filters.status.length > 0) {
+            const taskStatus = task.status === 'DONE' ? 'DONE' : 
+                             (tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0 ? 'IN_PROGRESS' : 'TODO')
+            const isOverdue = task.deadline && isPast(new Date(task.deadline)) && !isToday(new Date(task.deadline)) && task.status !== 'DONE'
+            const statusToCheck = isOverdue ? 'OVERDUE' : taskStatus
+            
+            if (!filters.status.includes(statusToCheck) && !filters.status.includes(taskStatus)) {
+                return false
+            }
         }
-        return false
-    })
+        
+        // Deadline filter
+        if (filters.deadline.length > 0 && task.deadline) {
+            const deadline = new Date(task.deadline)
+            const today = new Date()
+            today.setHours(0, 0, 0, 0)
+            const weekEnd = endOfWeek(today, { weekStartsOn: 0 })
+            
+            let matchesDeadline = false
+            if (filters.deadline.includes('today') && isToday(deadline)) {
+                matchesDeadline = true
+            }
+            if (filters.deadline.includes('overdue') && isPast(deadline) && !isToday(deadline)) {
+                matchesDeadline = true
+            }
+            if (filters.deadline.includes('thisWeek') && isWithinInterval(deadline, { start: today, end: weekEnd })) {
+                matchesDeadline = true
+            }
+            if (!matchesDeadline) {
+                return false
+            }
+        } else if (filters.deadline.length > 0 && !task.deadline) {
+            // If filtering by deadline but task has no deadline, exclude it
+            return false
+        }
+        
+        // Priority filter
+        if (filters.priority.length > 0) {
+            const priorityMap: Record<string, string[]> = {
+                'high': ['URGENT', 'HIGH'],
+                'medium': ['MEDIUM'],
+                'low': ['LOW']
+            }
+            const matchesPriority = filters.priority.some(filterPriority => {
+                const priorities = priorityMap[filterPriority] || []
+                return priorities.includes(task.priority)
+            })
+            if (!matchesPriority) {
+                return false
+            }
+        }
+        
+        // Assigned to me filter
+        if (filters.assignedToMe && currentUserId) {
+            if (!task.assignees || !task.assignees.some(a => a.id === currentUserId)) {
+                return false
+            }
+        }
+        
+        // Created by me filter (we'll skip this for now as we don't have creatorId)
+        
+        return true
+    }
+    
+    // Apply sorting
+    const applySort = (a: TasksViewProps['initialTasks'][0], b: TasksViewProps['initialTasks'][0]) => {
+        switch (sortBy) {
+            case 'smart': {
+                // Smart sort: deadline today + high priority first
+                const aDeadline = a.deadline ? new Date(a.deadline) : null
+                const bDeadline = b.deadline ? new Date(b.deadline) : null
+                const aIsToday = aDeadline && isToday(aDeadline)
+                const bIsToday = bDeadline && isToday(bDeadline)
+                const aIsHigh = a.priority === 'HIGH' || a.priority === 'URGENT'
+                const bIsHigh = b.priority === 'HIGH' || b.priority === 'URGENT'
+                
+                // Priority: today + high > today > high > others
+                if (aIsToday && aIsHigh && !(bIsToday && bIsHigh)) return -1
+                if (bIsToday && bIsHigh && !(aIsToday && aIsHigh)) return 1
+                if (aIsToday && !bIsToday) return -1
+                if (bIsToday && !aIsToday) return 1
+                if (aIsHigh && !bIsHigh) return -1
+                if (bIsHigh && !aIsHigh) return 1
+                // Then by deadline proximity
+                if (aDeadline && bDeadline) {
+                    return aDeadline.getTime() - bDeadline.getTime()
+                }
+                if (aDeadline) return -1
+                if (bDeadline) return 1
+                return 0
+            }
+            case 'deadline-near': {
+                const aDeadline = a.deadline ? new Date(a.deadline).getTime() : Infinity
+                const bDeadline = b.deadline ? new Date(b.deadline).getTime() : Infinity
+                return aDeadline - bDeadline
+            }
+            case 'deadline-far': {
+                const aDeadline = a.deadline ? new Date(a.deadline).getTime() : -Infinity
+                const bDeadline = b.deadline ? new Date(b.deadline).getTime() : -Infinity
+                return bDeadline - aDeadline
+            }
+            case 'priority-high': {
+                const priorityOrder = { 'URGENT': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3 }
+                const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] ?? 4
+                const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] ?? 4
+                return aPriority - bPriority
+            }
+            case 'priority-low': {
+                const priorityOrder = { 'URGENT': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3 }
+                const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] ?? 4
+                const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] ?? 4
+                return bPriority - aPriority
+            }
+            case 'created-new': {
+                const aCreated = a.createdAt ? new Date(a.createdAt).getTime() : 0
+                const bCreated = b.createdAt ? new Date(b.createdAt).getTime() : 0
+                return bCreated - aCreated
+            }
+            case 'created-old': {
+                const aCreated = a.createdAt ? new Date(a.createdAt).getTime() : 0
+                const bCreated = b.createdAt ? new Date(b.createdAt).getTime() : 0
+                return aCreated - bCreated
+            }
+            default:
+                return 0
+        }
+    }
+    
+    // Filter and sort tasks
+    const filteredTasks = tasks
+        .filter(applyFilters)
+        .sort(applySort)
+    
+    // Count active filters
+    const activeFiltersCount = 
+        filters.status.length +
+        filters.deadline.length +
+        filters.priority.length +
+        (filters.createdByMe ? 1 : 0) +
+        (filters.assignedToMe ? 1 : 0)
+    
+    const clearAllFilters = () => {
+        setFilters({
+            status: [],
+            deadline: [],
+            priority: [],
+            createdByMe: false,
+            assignedToMe: false,
+        })
+    }
+    
+    const getFilterLabel = (type: string, value: string) => {
+        if (type === 'status') {
+            const labels: Record<string, string> = {
+                'TODO': 'Open',
+                'IN_PROGRESS': 'In Progress',
+                'DONE': 'Completed',
+                'OVERDUE': 'Overdue'
+            }
+            return labels[value] || value
+        }
+        if (type === 'deadline') {
+            const labels: Record<string, string> = {
+                'today': 'Today',
+                'thisWeek': 'This week',
+                'overdue': 'Overdue'
+            }
+            return labels[value] || value
+        }
+        if (type === 'priority') {
+            const labels: Record<string, string> = {
+                'high': 'High',
+                'medium': 'Medium',
+                'low': 'Low'
+            }
+            return labels[value] || value
+        }
+        return value
+    }
 
 
     const handleCheckboxChange = async (id: string, currentStatus: string, checked: boolean) => {
@@ -99,6 +292,70 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
         const newStatus = checked ? 'DONE' : (currentStatus === 'DONE' ? 'TODO' : currentStatus)
         const previousTasks = tasks
         setTasks(tasks.map(t => t.id === id ? { ...t, status: newStatus } : t))
+
+        // If marking task as done, mark all subtasks as done
+        // If unmarking task, unmark all subtasks
+        if (checked) {
+            // Mark all subtasks as done
+            const taskSubtasks = localSubtasks[id] || []
+            if (taskSubtasks.length > 0) {
+                // Optimistic update for all subtasks
+                setLocalSubtasks(prev => ({
+                    ...prev,
+                    [id]: taskSubtasks.map(s => ({ ...s, isDone: true }))
+                }))
+
+                // Update all subtasks in background
+                Promise.all(
+                    taskSubtasks.map(subtask =>
+                        fetch("/api/tasks/subtasks", {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ id: subtask.id, isDone: true })
+                        }).catch(err => {
+                            console.error(`Failed to update subtask ${subtask.id}:`, err)
+                            // Revert this specific subtask on error
+                            setLocalSubtasks(prev => ({
+                                ...prev,
+                                [id]: (prev[id] || []).map(s =>
+                                    s.id === subtask.id ? { ...s, isDone: subtask.isDone } : s
+                                )
+                            }))
+                        })
+                    )
+                )
+            }
+        } else {
+            // Unmark all subtasks
+            const taskSubtasks = localSubtasks[id] || []
+            if (taskSubtasks.length > 0) {
+                // Optimistic update for all subtasks
+                setLocalSubtasks(prev => ({
+                    ...prev,
+                    [id]: taskSubtasks.map(s => ({ ...s, isDone: false }))
+                }))
+
+                // Update all subtasks in background
+                Promise.all(
+                    taskSubtasks.map(subtask =>
+                        fetch("/api/tasks/subtasks", {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ id: subtask.id, isDone: false })
+                        }).catch(err => {
+                            console.error(`Failed to update subtask ${subtask.id}:`, err)
+                            // Revert this specific subtask on error
+                            setLocalSubtasks(prev => ({
+                                ...prev,
+                                [id]: (prev[id] || []).map(s =>
+                                    s.id === subtask.id ? { ...s, isDone: subtask.isDone } : s
+                                )
+                            }))
+                        })
+                    )
+                )
+            }
+        }
 
         try {
             await fetch("/api/tasks", {
@@ -247,11 +504,41 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                 pendingOperations.current.delete(subtaskId)
                 return prev
             }
+            const updatedSubtasks = taskSubtasks.map(s => 
+                s.id === subtaskId ? { ...s, isDone: newDoneState } : s
+            )
+            
+            // Check if all subtasks are now done
+            const allDone = updatedSubtasks.length > 0 && updatedSubtasks.every(s => s.isDone)
+            // Check if any subtask is not done
+            const anyNotDone = updatedSubtasks.some(s => !s.isDone)
+            
+            // Update main task status based on subtasks
+            if (allDone) {
+                // All subtasks are done - mark main task as DONE
+                setTasks(prev => prev.map(t => 
+                    t.id === taskId && t.status !== 'DONE' ? { ...t, status: 'DONE' } : t
+                ))
+                // Update task status in background
+                fetch("/api/tasks", {
+                    method: "PATCH",
+                    body: JSON.stringify({ id: taskId, status: 'DONE' }),
+                }).catch(err => console.error("Failed to update task status:", err))
+            } else if (anyNotDone) {
+                // At least one subtask is not done - unmark main task if it was DONE
+                setTasks(prev => prev.map(t => 
+                    t.id === taskId && t.status === 'DONE' ? { ...t, status: 'TODO' } : t
+                ))
+                // Update task status in background
+                fetch("/api/tasks", {
+                    method: "PATCH",
+                    body: JSON.stringify({ id: taskId, status: 'TODO' }),
+                }).catch(err => console.error("Failed to update task status:", err))
+            }
+            
             return {
                 ...prev,
-                [taskId]: taskSubtasks.map(s => 
-                    s.id === subtaskId ? { ...s, isDone: newDoneState } : s
-                )
+                [taskId]: updatedSubtasks
             }
         })
 
@@ -345,23 +632,124 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
 
     return (
         <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                <CardTitle>All Tasks ({filteredTasks.length})</CardTitle>
-                {isAdmin && users.length > 0 && (
-                    <div className="w-[200px]">
-                        <Select value={filterUserId} onValueChange={setFilterUserId}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Filter by user" />
+            <CardHeader className="flex flex-col space-y-4 pb-4">
+                <div className="flex flex-row items-center justify-between">
+                    <CardTitle>All Tasks ({filteredTasks.length})</CardTitle>
+                    <div className="flex items-center gap-2">
+                        {/* Filters Button */}
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsFiltersOpen(true)}
+                            className="h-9 text-sm font-medium"
+                        >
+                            <Filter className="h-4 w-4 mr-2" />
+                            Filters
+                            {activeFiltersCount > 0 && (
+                                <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-xs">
+                                    {activeFiltersCount}
+                                </Badge>
+                            )}
+                        </Button>
+                        
+                        {/* Sort Dropdown */}
+                        <Select value={sortBy} onValueChange={setSortBy}>
+                            <SelectTrigger className="h-9 text-sm font-medium px-3">
+                                <div className="flex items-center gap-2">
+                                    <ArrowUpDown className="h-4 w-4" />
+                                    <SelectValue placeholder="Sort" />
+                                </div>
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Users</SelectItem>
-                                {users.map(user => (
-                                    <SelectItem key={user.id} value={user.id}>
-                                        {user.name || user.email} {user.id === currentUserId && "(you)"}
-                                    </SelectItem>
-                                ))}
+                                <SelectItem value="smart">Sort</SelectItem>
+                                <SelectItem value="deadline-near">By deadline: Closest → Farthest</SelectItem>
+                                <SelectItem value="deadline-far">By deadline: Farthest → Closest</SelectItem>
+                                <SelectItem value="priority-high">By priority: High → Low</SelectItem>
+                                <SelectItem value="priority-low">By priority: Low → High</SelectItem>
+                                <SelectItem value="created-new">By time: Newest → Oldest</SelectItem>
+                                <SelectItem value="created-old">By time: Oldest → Newest</SelectItem>
                             </SelectContent>
                         </Select>
+                    </div>
+                </div>
+                
+                {/* Active Filter Chips */}
+                {activeFiltersCount > 0 && (
+                    <div className="flex flex-wrap gap-1.5 items-center">
+                        {filters.status.map(status => (
+                            <Badge key={status} variant="secondary" className="h-6 text-xs px-2">
+                                {getFilterLabel('status', status)}
+                                <button
+                                    onClick={() => setFilters(prev => ({
+                                        ...prev,
+                                        status: prev.status.filter(s => s !== status)
+                                    }))}
+                                    className="ml-1.5 hover:bg-muted-foreground/20 rounded-full p-0.5"
+                                >
+                                    <X className="h-3 w-3" />
+                                </button>
+                            </Badge>
+                        ))}
+                        {filters.deadline.map(deadline => (
+                            <Badge key={deadline} variant="secondary" className="h-6 text-xs px-2">
+                                {getFilterLabel('deadline', deadline)}
+                                <button
+                                    onClick={() => setFilters(prev => ({
+                                        ...prev,
+                                        deadline: prev.deadline.filter(d => d !== deadline)
+                                    }))}
+                                    className="ml-1.5 hover:bg-muted-foreground/20 rounded-full p-0.5"
+                                >
+                                    <X className="h-3 w-3" />
+                                </button>
+                            </Badge>
+                        ))}
+                        {filters.priority.map(priority => (
+                            <Badge key={priority} variant="secondary" className="h-6 text-xs px-2">
+                                {getFilterLabel('priority', priority)}
+                                <button
+                                    onClick={() => setFilters(prev => ({
+                                        ...prev,
+                                        priority: prev.priority.filter(p => p !== priority)
+                                    }))}
+                                    className="ml-1.5 hover:bg-muted-foreground/20 rounded-full p-0.5"
+                                >
+                                    <X className="h-3 w-3" />
+                                </button>
+                            </Badge>
+                        ))}
+                        {filters.assignedToMe && (
+                            <Badge variant="secondary" className="h-6 text-xs px-2">
+                                Assigned to me
+                                <button
+                                    onClick={() => setFilters(prev => ({ ...prev, assignedToMe: false }))}
+                                    className="ml-1.5 hover:bg-muted-foreground/20 rounded-full p-0.5"
+                                >
+                                    <X className="h-3 w-3" />
+                                </button>
+                            </Badge>
+                        )}
+                        {filters.createdByMe && (
+                            <Badge variant="secondary" className="h-6 text-xs px-2">
+                                Tasks I created
+                                <button
+                                    onClick={() => setFilters(prev => ({ ...prev, createdByMe: false }))}
+                                    className="ml-1.5 hover:bg-muted-foreground/20 rounded-full p-0.5"
+                                >
+                                    <X className="h-3 w-3" />
+                                </button>
+                            </Badge>
+                        )}
+                        {activeFiltersCount > 0 && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={clearAllFilters}
+                                className="h-6 text-xs px-2"
+                            >
+                                Clear all
+                            </Button>
+                        )}
                     </div>
                 )}
             </CardHeader>
@@ -583,6 +971,165 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                     router.refresh()
                 }}
             />
+            
+            {/* Filters Dialog */}
+            <Dialog open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
+                <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Filters</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-6 py-4">
+                        {/* Status Filter */}
+                        <div>
+                            <label className="text-sm font-medium mb-2 block">Status</label>
+                            <div className="space-y-2">
+                                {[
+                                    { value: 'TODO', label: 'Open' },
+                                    { value: 'IN_PROGRESS', label: 'In Progress' },
+                                    { value: 'DONE', label: 'Completed' },
+                                    { value: 'OVERDUE', label: 'Overdue' }
+                                ].map(status => (
+                                    <div key={status.value} className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id={`status-${status.value}`}
+                                            checked={filters.status.includes(status.value)}
+                                            onCheckedChange={(checked) => {
+                                                setFilters(prev => ({
+                                                    ...prev,
+                                                    status: checked
+                                                        ? [...prev.status, status.value]
+                                                        : prev.status.filter(s => s !== status.value)
+                                                }))
+                                            }}
+                                        />
+                                        <label
+                                            htmlFor={`status-${status.value}`}
+                                            className="text-sm cursor-pointer"
+                                        >
+                                            {status.label}
+                                        </label>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Deadline Filter */}
+                        <div>
+                            <label className="text-sm font-medium mb-2 block">Deadline</label>
+                            <div className="space-y-2">
+                                {[
+                                    { value: 'today', label: 'Today' },
+                                    { value: 'thisWeek', label: 'This week' },
+                                    { value: 'overdue', label: 'Overdue' }
+                                ].map(option => (
+                                    <div key={option.value} className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id={`deadline-${option.value}`}
+                                            checked={filters.deadline.includes(option.value)}
+                                            onCheckedChange={(checked) => {
+                                                setFilters(prev => ({
+                                                    ...prev,
+                                                    deadline: checked
+                                                        ? [...prev.deadline, option.value]
+                                                        : prev.deadline.filter(d => d !== option.value)
+                                                }))
+                                            }}
+                                        />
+                                        <label
+                                            htmlFor={`deadline-${option.value}`}
+                                            className="text-sm cursor-pointer"
+                                        >
+                                            {option.label}
+                                        </label>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Priority Filter */}
+                        <div>
+                            <label className="text-sm font-medium mb-2 block">Priority</label>
+                            <div className="space-y-2">
+                                {[
+                                    { value: 'high', label: 'High' },
+                                    { value: 'medium', label: 'Medium' },
+                                    { value: 'low', label: 'Low' }
+                                ].map(priority => (
+                                    <div key={priority.value} className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id={`priority-${priority.value}`}
+                                            checked={filters.priority.includes(priority.value)}
+                                            onCheckedChange={(checked) => {
+                                                setFilters(prev => ({
+                                                    ...prev,
+                                                    priority: checked
+                                                        ? [...prev.priority, priority.value]
+                                                        : prev.priority.filter(p => p !== priority.value)
+                                                }))
+                                            }}
+                                        />
+                                        <label
+                                            htmlFor={`priority-${priority.value}`}
+                                            className="text-sm cursor-pointer"
+                                        >
+                                            {priority.label}
+                                        </label>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Personal Scope Filters */}
+                        <div>
+                            <label className="text-sm font-medium mb-2 block">Personal Scope</label>
+                            <div className="space-y-2">
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                        id="assignedToMe"
+                                        checked={filters.assignedToMe}
+                                        onCheckedChange={(checked) => {
+                                            setFilters(prev => ({ ...prev, assignedToMe: checked as boolean }))
+                                        }}
+                                    />
+                                    <label
+                                        htmlFor="assignedToMe"
+                                        className="text-sm cursor-pointer"
+                                    >
+                                        Tasks assigned to me
+                                    </label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                        id="createdByMe"
+                                        checked={filters.createdByMe}
+                                        onCheckedChange={(checked) => {
+                                            setFilters(prev => ({ ...prev, createdByMe: checked as boolean }))
+                                        }}
+                                    />
+                                    <label
+                                        htmlFor="createdByMe"
+                                        className="text-sm cursor-pointer"
+                                    >
+                                        Tasks I created
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-4 border-t">
+                        <Button
+                            variant="outline"
+                            onClick={clearAllFilters}
+                            disabled={activeFiltersCount === 0}
+                        >
+                            Clear all
+                        </Button>
+                        <Button onClick={() => setIsFiltersOpen(false)}>
+                            Close
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </Card>
     )
 }
