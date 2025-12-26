@@ -105,27 +105,26 @@ export function canManageUser(currentUser: User, targetUser: User, allUsers?: Us
     }
 
     // Shared chiefs: if both users are in the same sharedChiefGroupId, they can manage each other's employees
-    if (currentUser.sharedChiefGroupId && 
-        targetUser.sharedChiefGroupId && 
+    if (currentUser.sharedChiefGroupId &&
+        targetUser.sharedChiefGroupId &&
         currentUser.sharedChiefGroupId === targetUser.sharedChiefGroupId &&
         currentUser.role === "ADMIN" &&
         allUsers) {
         // Both are shared chiefs in the same group
         // Check if targetUser reports to any chief in the shared group
-        const sharedGroupChiefs = allUsers.filter(u => 
-            u.sharedChiefGroupId === currentUser.sharedChiefGroupId && 
+        const sharedGroupChiefs = allUsers.filter(u =>
+            u.sharedChiefGroupId === currentUser.sharedChiefGroupId &&
             u.role === "ADMIN" &&
             !u.managerId
         )
-        
+
         // If targetUser reports to any chief in the shared group, currentUser can manage them
         if (targetUser.managerId && sharedGroupChiefs.some(chief => chief.id === targetUser.managerId)) {
             return true
         }
-        
+
         // Also check if targetUser is a descendant of any chief in the shared group
         const sharedChiefIds = sharedGroupChiefs.map(c => c.id)
-        const targetUserDescendants = getAllDescendants(targetUser.id, allUsers)
         if (sharedChiefIds.some(chiefId => getAllDescendants(chiefId, allUsers).includes(targetUser.id))) {
             return true
         }
@@ -148,14 +147,14 @@ export function filterVisibleUsers<T extends { id: string, managerId: string | n
         // ADMIN sees everyone, but if they're in a shared group, they see all employees under any chief in that group
         if (currentUser.sharedChiefGroupId) {
             // Find all chiefs in the same shared group
-            const sharedGroupChiefs = users.filter(u => 
-                u.sharedChiefGroupId === currentUser.sharedChiefGroupId && 
+            const sharedGroupChiefs = users.filter(u =>
+                u.sharedChiefGroupId === currentUser.sharedChiefGroupId &&
                 u.role === "ADMIN" &&
                 !u.managerId
             ) as T[]
-            
+
             const visibleIds = new Set([currentUser.id])
-            
+
             // Add all descendants of all chiefs in the shared group
             sharedGroupChiefs.forEach(chief => {
                 visibleIds.add(chief.id)
@@ -167,10 +166,10 @@ export function filterVisibleUsers<T extends { id: string, managerId: string | n
                 }
                 addDescendants(chief.id)
             })
-            
+
             return users.filter(u => visibleIds.has(u.id))
         }
-        
+
         // Independent ADMIN sees everyone
         return users
     }

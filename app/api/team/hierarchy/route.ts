@@ -66,9 +66,10 @@ export async function GET() {
                 },
                 orderBy: { createdAt: "asc" }
             })
-        } catch (fieldError: any) {
+        } catch (fieldError: unknown) {
             // If the field doesn't exist in Prisma client yet, fetch without it
-            if (fieldError.message?.includes('sharedChiefGroupId') || fieldError.message?.includes('Unknown field')) {
+            const error = fieldError as { message?: string }
+            if (error.message?.includes('sharedChiefGroupId') || error.message?.includes('Unknown field')) {
                 console.warn("sharedChiefGroupId field not available in Prisma client, fetching without it")
                 allUsers = await prisma.user.findMany({
                     where: { projectId: currentUser.projectId },
@@ -113,9 +114,9 @@ export async function GET() {
     } catch (error) {
         console.error("[HIERARCHY_FETCH_ERROR]", error)
         const errorMessage = error instanceof Error ? error.message : "Unknown error"
-        return NextResponse.json({ 
+        return NextResponse.json({
             message: "Failed to fetch hierarchy",
-            error: errorMessage 
+            error: errorMessage
         }, { status: 500 })
     }
 }

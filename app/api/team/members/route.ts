@@ -25,7 +25,7 @@ export async function POST(req: Request) {
 
         const currentUser = await prisma.user.findUnique({
             where: { id: session.user.id },
-            select: { 
+            select: {
                 projectId: true,
                 id: true
             }
@@ -66,16 +66,17 @@ export async function POST(req: Request) {
             if (chiefType === "partner") {
                 // Partner (Shared Chief) logic
                 // Check if current user is already a top-level chief (no manager)
-                let currentUserFull: any
+                let currentUserFull: { managerId: string | null; sharedChiefGroupId?: string | null } | null
                 try {
                     // Try to fetch with sharedChiefGroupId
                     currentUserFull = await prisma.user.findUnique({
                         where: { id: currentUser.id },
                         select: { managerId: true, sharedChiefGroupId: true }
                     })
-                } catch (e: any) {
+                } catch (fieldError: unknown) {
                     // If field doesn't exist, fetch without it
-                    if (e.message?.includes('sharedChiefGroupId') || e.message?.includes('Unknown field')) {
+                    const error = fieldError as { message?: string }
+                    if (error.message?.includes('sharedChiefGroupId') || error.message?.includes('Unknown field')) {
                         currentUserFull = await prisma.user.findUnique({
                             where: { id: currentUser.id },
                             select: { managerId: true }
@@ -83,13 +84,13 @@ export async function POST(req: Request) {
                         // Set to null if field doesn't exist
                         currentUserFull = currentUserFull ? { ...currentUserFull, sharedChiefGroupId: null } : null
                     } else {
-                        throw e
+                        throw fieldError
                     }
                 }
 
                 if (currentUserFull?.managerId) {
-                    return NextResponse.json({ 
-                        message: "Only top-level chiefs can add partners. You must be a root-level chief." 
+                    return NextResponse.json({
+                        message: "Only top-level chiefs can add partners. You must be a root-level chief."
                     }, { status: 400 })
                 }
 
@@ -99,16 +100,17 @@ export async function POST(req: Request) {
                 } else {
                     // Create new shared group ID (using cuid-like format)
                     sharedChiefGroupId = `shared-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
-                    
+
                     // Update current user to have this shared group ID
                     try {
                         await prisma.user.update({
                             where: { id: currentUser.id },
-                            data: { sharedChiefGroupId } as any
+                            data: { sharedChiefGroupId } as Record<string, unknown>
                         })
-                    } catch (updateError: any) {
+                    } catch (updateError: unknown) {
                         // If field doesn't exist in Prisma client, log warning but continue
-                        if (updateError.message?.includes('sharedChiefGroupId') || updateError.message?.includes('Unknown field')) {
+                        const error = updateError as { message?: string }
+                        if (error.message?.includes('sharedChiefGroupId') || error.message?.includes('Unknown field')) {
                             console.warn("sharedChiefGroupId field not available in Prisma client, skipping update")
                             // Set to null so we don't try to use it
                             sharedChiefGroupId = null
@@ -131,7 +133,7 @@ export async function POST(req: Request) {
         }
 
         // Prepare user data
-        const userData: any = {
+        const userData: Record<string, unknown> = {
             name,
             email,
             password: hashedPassword,
@@ -147,7 +149,7 @@ export async function POST(req: Request) {
         if (sharedChiefGroupId !== null) {
             try {
                 userData.sharedChiefGroupId = sharedChiefGroupId
-            } catch (e) {
+            } catch {
                 // Field might not exist in Prisma client yet, log warning but continue
                 console.warn("sharedChiefGroupId field not available, creating without it")
             }
@@ -159,28 +161,9 @@ export async function POST(req: Request) {
 
         // If adding as partner, assign all employees under current chief to also report to new chief
         if (role === "ADMIN" && chiefType === "partner" && sharedChiefGroupId) {
-            // Get all employees currently under the current chief (direct and indirect)
-            const allEmployees = await prisma.user.findMany({
-                where: {
-                    projectId: currentUser.projectId,
-                    managerId: currentUser.id
-                },
-                select: { id: true }
-            })
-
-            // Update all employees to also have the new chief as their manager
-            // Actually, we need to think about this differently - shared chiefs should share the same employees
-            // But the current structure has managerId pointing to one manager
-            // For shared chiefs, we'll make employees report to both by updating their managerId to the new chief
-            // OR we could use a many-to-many relationship, but that's more complex
-            // For now, let's make all direct reports of current chief also report to new chief
-            // Actually, wait - if both chiefs are partners, employees should be able to report to either
-            // But our current schema only supports one managerId
-            
-            // Solution: For shared chiefs, we'll make employees report to the "primary" chief (the one who was there first)
-            // But both chiefs can see and manage all employees in the shared group
+            // Note: For shared chiefs, employees report to the "primary" chief (the one who was there first)
+            // Both chiefs can see and manage all employees in the shared group
             // The permission checks will need to account for sharedChiefGroupId
-            
             // For now, we'll leave employees reporting to the original chief
             // Permission checks will be updated to allow both chiefs to manage employees in their shared group
         }
@@ -204,9 +187,9 @@ export async function POST(req: Request) {
         if (error instanceof Error) {
             console.error("[CREATE_MEMBER_ERROR] Stack:", error.stack)
         }
-        return NextResponse.json({ 
+        return NextResponse.json({
             message: "Failed to create member",
-            error: errorMessage 
+            error: errorMessage
         }, { status: 500 })
     }
 }

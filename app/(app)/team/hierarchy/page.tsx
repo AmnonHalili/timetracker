@@ -16,8 +16,8 @@ import { JoinRequestsWidget } from "@/components/team/JoinRequestsWidget"
 import { TeamOnboardingWidget } from "@/components/dashboard/TeamOnboardingWidget"
 
 // Defined locally to match RecursiveNode props
-type TreeNode = User & { 
-    children: TreeNode[], 
+type TreeNode = User & {
+    children: TreeNode[],
     managerId: string | null,
     sharedChiefGroupId?: string | null,
     createdAt: Date
@@ -241,11 +241,12 @@ export default function HierarchyPage() {
             // Initialize recursive nodes
             users.forEach((user) => {
                 // Ensure all required fields exist with defaults
-                const node: TreeNode = { 
-                    ...user, 
+                const userWithExtras = user as User & { sharedChiefGroupId?: string | null; createdAt?: Date | string }
+                const node: TreeNode = {
+                    ...user,
                     children: [],
-                    sharedChiefGroupId: (user as any).sharedChiefGroupId || null,
-                    createdAt: (user as any).createdAt ? new Date((user as any).createdAt) : new Date()
+                    sharedChiefGroupId: userWithExtras.sharedChiefGroupId || null,
+                    createdAt: userWithExtras.createdAt ? new Date(userWithExtras.createdAt) : new Date()
                 }
                 userMap.set(user.id, node)
             })
@@ -258,7 +259,8 @@ export default function HierarchyPage() {
                 } else {
                     // If manager is not in the list (filtered out) or doesn't exist, this is a root node for the current view
                     // Group shared chiefs together
-                    const sharedGroupId = (user as any).sharedChiefGroupId
+                    const userWithExtras = user as User & { sharedChiefGroupId?: string | null }
+                    const sharedGroupId = userWithExtras.sharedChiefGroupId
                     if (sharedGroupId && user.role === 'ADMIN') {
                         if (!sharedChiefGroups.has(sharedGroupId)) {
                             sharedChiefGroups.set(sharedGroupId, [])
@@ -273,9 +275,9 @@ export default function HierarchyPage() {
             // Add shared chief groups as single nodes (we'll render them specially)
             // For now, we'll add the first chief from each group as the representative
             // and mark it as having shared partners
-            sharedChiefGroups.forEach((groupNodes, groupId) => {
+            sharedChiefGroups.forEach((groupNodes) => {
                 // Sort group nodes by creation date (oldest first)
-                groupNodes.sort((a, b) => 
+                groupNodes.sort((a, b) =>
                     a.createdAt.getTime() - b.createdAt.getTime()
                 )
                 // Add all nodes from the group to rootNodes
@@ -554,14 +556,14 @@ export default function HierarchyPage() {
                             // Group root nodes by sharedChiefGroupId
                             const grouped: Array<{ type: 'shared' | 'independent', nodes: TreeNode[], groupId?: string }> = []
                             const processed = new Set<string>()
-                            
+
                             tree?.forEach((node) => {
                                 if (processed.has(node.id)) return
-                                
+
                                 if (node.sharedChiefGroupId && node.role === 'ADMIN') {
                                     // Find all nodes in the same shared group
-                                    const sharedGroup = tree.filter(n => 
-                                        n.sharedChiefGroupId === node.sharedChiefGroupId && 
+                                    const sharedGroup = tree.filter(n =>
+                                        n.sharedChiefGroupId === node.sharedChiefGroupId &&
                                         n.role === 'ADMIN' &&
                                         !n.managerId
                                     )
@@ -572,7 +574,7 @@ export default function HierarchyPage() {
                                     grouped.push({ type: 'independent', nodes: [node] })
                                 }
                             })
-                            
+
                             return grouped.map((group, groupIndex) => {
                                 if (group.type === 'shared' && group.nodes.length > 1) {
                                     // Render shared chiefs in a grouped container
@@ -599,10 +601,10 @@ export default function HierarchyPage() {
                                                     ))}
                                                 </div>
                                             </div>
-                                            
+
                                             {/* Vertical line up to the Project Bus */}
                                             <div className="h-8 w-px bg-border absolute -top-8 left-1/2 -translate-x-1/2" />
-                                            
+
                                             {/* Horizontal connector */}
                                             {groupIndex < grouped.length - 1 && (
                                                 <div className="absolute top-[-2rem] right-[-1rem] h-px bg-border w-[calc(50%+1rem)]" />
