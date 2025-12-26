@@ -24,8 +24,8 @@ export default async function TeamPage() {
         currentUser = await prisma.user.findUnique({
             where: { id: session.user.id },
             select: { projectId: true, role: true, project: true, id: true, sharedChiefGroupId: true } as never
-        }) as { projectId: string | null; role: string; project: any; id: string; sharedChiefGroupId?: string | null } | null
-    } catch (error) {
+        }) as { projectId: string | null; role: string; project: { id: string; name: string } | null; id: string; sharedChiefGroupId?: string | null } | null
+    } catch {
         // If field doesn't exist, fetch without it
         const basicUser = await prisma.user.findUnique({
             where: { id: session.user.id },
@@ -250,7 +250,7 @@ export default async function TeamPage() {
                 </div>
             </div>
 
-            <TeamList users={teamMembers as any} currentUserId={session.user.id} currentUserRole={currentUser.role} />
+            <TeamList users={teamMembers as never} currentUserId={session.user.id} currentUserRole={currentUser.role} />
         </div>
     )
 }
