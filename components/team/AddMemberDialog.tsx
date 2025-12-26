@@ -12,9 +12,11 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Card } from "@/components/ui/card"
 import { useState, useEffect } from "react"
-import { Loader2, UserPlus } from "lucide-react"
+import { Loader2, UserPlus, Check } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { cn } from "@/lib/utils"
 
 import {
     Select,
@@ -57,6 +59,8 @@ export function AddMemberDialog({
     const [jobTitle, setJobTitle] = useState("")
     const [managerId, setManagerId] = useState<string>(hideManagerSelect ? "unassigned" : "")
     const [managers, setManagers] = useState<SimpleUser[]>([])
+    // Chief type selection: 'partner' | 'independent' | null
+    const [chiefType, setChiefType] = useState<'partner' | 'independent' | null>(null)
 
     // Fetch potential managers when dialog opens
     useEffect(() => {
@@ -84,6 +88,13 @@ export function AddMemberDialog({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+        
+        // If adding a chief (ADMIN role with hideManagerSelect), require chief type selection
+        if (role === "ADMIN" && hideManagerSelect && !chiefType) {
+            alert("Please select how this chief should be added (Partner or Independent)")
+            return
+        }
+        
         setLoading(true)
 
         try {
@@ -95,13 +106,17 @@ export function AddMemberDialog({
                     email,
                     role,
                     jobTitle,
-                    managerId: managerId === "unassigned" ? null : managerId
+                    managerId: managerId === "unassigned" ? null : managerId,
+                    chiefType: role === "ADMIN" && hideManagerSelect ? chiefType : undefined
                 }),
             })
 
             if (!res.ok) {
                 const data = await res.json()
-                throw new Error(data.message || "Failed to add member")
+                const errorMsg = data.error 
+                    ? `${data.message}: ${data.error}` 
+                    : data.message || "Failed to add member"
+                throw new Error(errorMsg)
             }
 
             setOpen(false)
@@ -110,13 +125,22 @@ export function AddMemberDialog({
             // Reset form
             setName("")
             setEmail("")
+            setJobTitle("")
             setManagerId(hideManagerSelect ? "unassigned" : "")
+            setChiefType(null)
         } catch (error) {
             alert(error)
         } finally {
             setLoading(false)
         }
     }
+    
+    // Reset chief type when dialog closes
+    useEffect(() => {
+        if (!open) {
+            setChiefType(null)
+        }
+    }, [open])
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -201,6 +225,92 @@ export function AddMemberDialog({
                                 className="col-span-3"
                             />
                         </div>
+
+                        {/* Chief Type Selection - Only shown when adding a chief */}
+                        {role === "ADMIN" && hideManagerSelect && (
+                            <div className="space-y-4 pt-2">
+                                <div>
+                                    <Label className="text-base font-semibold">
+                                        Chief Type <span className="text-destructive">*</span>
+                                    </Label>
+                                    <p className="text-sm text-muted-foreground mt-1 mb-4">
+                                        Select how this chief should be added to the organization
+                                    </p>
+                                </div>
+                                
+                                <div className="grid gap-3">
+                                    {/* Option 1: Partner */}
+                                    <Card
+                                        className={cn(
+                                            "p-4 cursor-pointer border-2 transition-all hover:border-primary/50",
+                                            chiefType === "partner" 
+                                                ? "border-primary bg-primary/5" 
+                                                : "border-border"
+                                        )}
+                                        onClick={() => setChiefType("partner")}
+                                    >
+                                        <div className="flex items-start gap-3">
+                                            <div className={cn(
+                                                "mt-0.5 h-5 w-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
+                                                chiefType === "partner" 
+                                                    ? "border-primary bg-primary" 
+                                                    : "border-muted-foreground"
+                                            )}>
+                                                {chiefType === "partner" && (
+                                                    <Check className="h-3 w-3 text-primary-foreground" />
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className="font-semibold text-sm mb-1">
+                                                    Partner – Shared Leadership
+                                                </h4>
+                                                <p className="text-sm text-muted-foreground mb-2">
+                                                    This chief will act as a shared manager together with the chief who added them. Both chiefs behave as a single logical entity in terms of permissions and data.
+                                                </p>
+                                                <p className="text-xs font-medium text-primary mt-2">
+                                                    Use this option when two founders / partners manage the same team together.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </Card>
+
+                                    {/* Option 2: Independent */}
+                                    <Card
+                                        className={cn(
+                                            "p-4 cursor-pointer border-2 transition-all hover:border-primary/50",
+                                            chiefType === "independent" 
+                                                ? "border-primary bg-primary/5" 
+                                                : "border-border"
+                                        )}
+                                        onClick={() => setChiefType("independent")}
+                                    >
+                                        <div className="flex items-start gap-3">
+                                            <div className={cn(
+                                                "mt-0.5 h-5 w-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
+                                                chiefType === "independent" 
+                                                    ? "border-primary bg-primary" 
+                                                    : "border-muted-foreground"
+                                            )}>
+                                                {chiefType === "independent" && (
+                                                    <Check className="h-3 w-3 text-primary-foreground" />
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className="font-semibold text-sm mb-1">
+                                                    Independent Chief – Separate Branch
+                                                </h4>
+                                                <p className="text-sm text-muted-foreground mb-2">
+                                                    This chief will be added as a separate top-level manager with their own hierarchy.
+                                                </p>
+                                                <p className="text-xs font-medium text-primary mt-2">
+                                                    Use this option when adding a new senior manager who manages their own team.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </Card>
+                                </div>
+                            </div>
+                        )}
                     </div>
                     <DialogFooter>
                         <Button type="submit" disabled={loading}>

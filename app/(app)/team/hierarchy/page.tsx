@@ -16,7 +16,12 @@ import { JoinRequestsWidget } from "@/components/team/JoinRequestsWidget"
 import { TeamOnboardingWidget } from "@/components/dashboard/TeamOnboardingWidget"
 
 // Defined locally to match RecursiveNode props
-type TreeNode = User & { children: TreeNode[], managerId: string | null }
+type TreeNode = User & { 
+    children: TreeNode[], 
+    managerId: string | null,
+    sharedChiefGroupId?: string | null,
+    createdAt: Date
+}
 
 export default function HierarchyPage() {
     const { data: session } = useSession()
@@ -136,8 +141,9 @@ export default function HierarchyPage() {
             setHasProject(data.projectName !== "Private Workspace")
 
         } catch (error) {
-            console.error(error)
-            toast.error("Failed to load hierarchy")
+            console.error("Failed to fetch hierarchy:", error)
+            const errorMessage = error instanceof Error ? error.message : "Unknown error"
+            toast.error(`Failed to load hierarchy: ${errorMessage}`)
         } finally {
             setIsLoading(false)
             // Reset initialization after a small delay to ensure DOM is updated
@@ -225,29 +231,78 @@ export default function HierarchyPage() {
 
     // Build Tree Structure from Flat List
     const tree = useMemo(() => {
-        if (!users.length) return null
+        try {
+            if (!users.length) return null
 
-        const userMap = new Map<string, TreeNode>()
-        const rootNodes: TreeNode[] = []
+            const userMap = new Map<string, TreeNode>()
+            const rootNodes: TreeNode[] = []
+            const sharedChiefGroups = new Map<string, TreeNode[]>()
 
-        // Initialize recursive nodes
-        users.forEach((user) => {
-            userMap.set(user.id, { ...user, children: [] })
-        })
+            // Initialize recursive nodes
+            users.forEach((user) => {
+                // Ensure all required fields exist with defaults
+                const node: TreeNode = { 
+                    ...user, 
+                    children: [],
+                    sharedChiefGroupId: (user as any).sharedChiefGroupId || null,
+                    createdAt: (user as any).createdAt ? new Date((user as any).createdAt) : new Date()
+                }
+                userMap.set(user.id, node)
+            })
 
-        // Build relations
-        users.forEach((user) => {
-            const node = userMap.get(user.id)!
-            if (user.managerId && userMap.has(user.managerId)) {
-                userMap.get(user.managerId)!.children.push(node)
-            } else {
-                // If manager is not in the list (filtered out) or doesn't exist, this is a root node for the current view
-                rootNodes.push(node)
-            }
-        })
+            // Build relations
+            users.forEach((user) => {
+                const node = userMap.get(user.id)!
+                if (user.managerId && userMap.has(user.managerId)) {
+                    userMap.get(user.managerId)!.children.push(node)
+                } else {
+                    // If manager is not in the list (filtered out) or doesn't exist, this is a root node for the current view
+                    // Group shared chiefs together
+                    const sharedGroupId = (user as any).sharedChiefGroupId
+                    if (sharedGroupId && user.role === 'ADMIN') {
+                        if (!sharedChiefGroups.has(sharedGroupId)) {
+                            sharedChiefGroups.set(sharedGroupId, [])
+                        }
+                        sharedChiefGroups.get(sharedGroupId)!.push(node)
+                    } else {
+                        rootNodes.push(node)
+                    }
+                }
+            })
 
-        // Sort roots: Admin first, then others
-        return rootNodes.sort((a, b) => (a.role === 'ADMIN' ? -1 : b.role === 'ADMIN' ? 1 : 0))
+            // Add shared chief groups as single nodes (we'll render them specially)
+            // For now, we'll add the first chief from each group as the representative
+            // and mark it as having shared partners
+            sharedChiefGroups.forEach((groupNodes, groupId) => {
+                // Sort group nodes by creation date (oldest first)
+                groupNodes.sort((a, b) => 
+                    a.createdAt.getTime() - b.createdAt.getTime()
+                )
+                // Add all nodes from the group to rootNodes
+                rootNodes.push(...groupNodes)
+            })
+
+            // Sort roots: Shared chiefs first (grouped), then independent admins, then others
+            return rootNodes.sort((a, b) => {
+                // Shared chiefs first
+                if (a.sharedChiefGroupId && !b.sharedChiefGroupId) return -1
+                if (!a.sharedChiefGroupId && b.sharedChiefGroupId) return 1
+                // Within shared chiefs, group by sharedChiefGroupId
+                if (a.sharedChiefGroupId && b.sharedChiefGroupId) {
+                    if (a.sharedChiefGroupId !== b.sharedChiefGroupId) {
+                        return a.sharedChiefGroupId.localeCompare(b.sharedChiefGroupId)
+                    }
+                }
+                // Admin before others
+                if (a.role === 'ADMIN' && b.role !== 'ADMIN') return -1
+                if (a.role !== 'ADMIN' && b.role === 'ADMIN') return 1
+                return 0
+            })
+        } catch (error) {
+            console.error("Error building tree:", error)
+            // Return empty array on error to prevent crash
+            return []
+        }
     }, [users])
 
     // Calculate optimal zoom level and center the tree initially
@@ -494,42 +549,106 @@ export default function HierarchyPage() {
                 {/* Tree Container */}
                 <div className="flex justify-center">
                     <div className="flex gap-8 relative items-start">
-                        {/* Horizontal Line Logic:
-                        We construct the horizontal bus line using segments from each child.
-                        Gap is 32px (2rem). Half gap is 16px (1rem).
-                     */}
-                        {tree?.map((rootNode, index) => {
-                            const isFirst = index === 0
-                            const isLast = index === (tree.length - 1)
-                            const isOnly = tree.length === 1
-
-                            return (
-                                <div key={rootNode.id} className="relative flex flex-col items-center">
-                                    {/* Horizontal Segments */}
-                                    {!isOnly && (
-                                        <>
-                                            {/* Connector to Right Sibling (for First and Middle) */}
-                                            {!isLast && (
+                        {/* Group shared chiefs and render them together */}
+                        {(() => {
+                            // Group root nodes by sharedChiefGroupId
+                            const grouped: Array<{ type: 'shared' | 'independent', nodes: TreeNode[], groupId?: string }> = []
+                            const processed = new Set<string>()
+                            
+                            tree?.forEach((node) => {
+                                if (processed.has(node.id)) return
+                                
+                                if (node.sharedChiefGroupId && node.role === 'ADMIN') {
+                                    // Find all nodes in the same shared group
+                                    const sharedGroup = tree.filter(n => 
+                                        n.sharedChiefGroupId === node.sharedChiefGroupId && 
+                                        n.role === 'ADMIN' &&
+                                        !n.managerId
+                                    )
+                                    sharedGroup.forEach(n => processed.add(n.id))
+                                    grouped.push({ type: 'shared', nodes: sharedGroup, groupId: node.sharedChiefGroupId })
+                                } else {
+                                    processed.add(node.id)
+                                    grouped.push({ type: 'independent', nodes: [node] })
+                                }
+                            })
+                            
+                            return grouped.map((group, groupIndex) => {
+                                if (group.type === 'shared' && group.nodes.length > 1) {
+                                    // Render shared chiefs in a grouped container
+                                    return (
+                                        <div key={group.groupId} className="relative flex flex-col items-center">
+                                            {/* Shared Chiefs Container */}
+                                            <div className="relative border-2 border-primary/30 rounded-lg p-3 bg-primary/5 backdrop-blur-sm">
+                                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-primary/10 border border-primary/30 rounded text-xs font-medium text-primary">
+                                                    Shared Leadership
+                                                </div>
+                                                <div className="flex gap-4 items-start">
+                                                    {group.nodes.map((node, nodeIndex) => (
+                                                        <div key={node.id} className="relative flex flex-col items-center">
+                                                            {nodeIndex > 0 && (
+                                                                <div className="absolute -left-2 top-1/2 h-px w-4 bg-border" />
+                                                            )}
+                                                            <RecursiveNode
+                                                                node={node}
+                                                                allUsers={users}
+                                                                onAddClick={handleAddClick}
+                                                                depth={0}
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Vertical line up to the Project Bus */}
+                                            <div className="h-8 w-px bg-border absolute -top-8 left-1/2 -translate-x-1/2" />
+                                            
+                                            {/* Horizontal connector */}
+                                            {groupIndex < grouped.length - 1 && (
                                                 <div className="absolute top-[-2rem] right-[-1rem] h-px bg-border w-[calc(50%+1rem)]" />
                                             )}
-                                            {/* Connector to Left Sibling (for Last and Middle) */}
-                                            {!isFirst && (
+                                            {groupIndex > 0 && (
                                                 <div className="absolute top-[-2rem] left-[-1rem] h-px bg-border w-[calc(50%+1rem)]" />
                                             )}
-                                        </>
-                                    )}
+                                        </div>
+                                    )
+                                } else {
+                                    // Render independent nodes normally
+                                    return group.nodes.map((rootNode, nodeIndex) => {
+                                        const isFirst = groupIndex === 0 && nodeIndex === 0
+                                        const isLast = groupIndex === grouped.length - 1 && nodeIndex === group.nodes.length - 1
+                                        const isOnly = grouped.length === 1 && group.nodes.length === 1
 
-                                    {/* Vertical line up to the Project Bus */}
-                                    <div className="h-8 w-px bg-border absolute -top-8" />
+                                        return (
+                                            <div key={rootNode.id} className="relative flex flex-col items-center">
+                                                {/* Horizontal Segments */}
+                                                {!isOnly && (
+                                                    <>
+                                                        {/* Connector to Right Sibling (for First and Middle) */}
+                                                        {!isLast && (
+                                                            <div className="absolute top-[-2rem] right-[-1rem] h-px bg-border w-[calc(50%+1rem)]" />
+                                                        )}
+                                                        {/* Connector to Left Sibling (for Last and Middle) */}
+                                                        {!isFirst && (
+                                                            <div className="absolute top-[-2rem] left-[-1rem] h-px bg-border w-[calc(50%+1rem)]" />
+                                                        )}
+                                                    </>
+                                                )}
 
-                                    <RecursiveNode
-                                        node={rootNode}
-                                        allUsers={users}
-                                        onAddClick={hasProject ? handleAddClick : undefined} // Disable add for private
-                                    />
-                                </div>
-                            )
-                        })}
+                                                {/* Vertical line up to the Project Bus */}
+                                                <div className="h-8 w-px bg-border absolute -top-8" />
+                                                <RecursiveNode
+                                                    node={rootNode}
+                                                    allUsers={users}
+                                                    onAddClick={handleAddClick}
+                                                    depth={0}
+                                                />
+                                            </div>
+                                        )
+                                    })
+                                }
+                            })
+                        })()}
                         {!tree?.length && <div className="text-muted-foreground">No users found.</div>}
                     </div>
                 </div>

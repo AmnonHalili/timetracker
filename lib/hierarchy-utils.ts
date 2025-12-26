@@ -90,9 +90,10 @@ export function detectCircularReference(
  * Check if currentUser can manage targetUser
  * @param currentUser - User attempting to manage
  * @param targetUser - User being managed
+ * @param allUsers - All users in the system (needed for shared chief checks)
  * @returns true if currentUser has permission
  */
-export function canManageUser(currentUser: User, targetUser: User): boolean {
+export function canManageUser(currentUser: User, targetUser: User, allUsers?: User[]): boolean {
     // ADMIN can manage anyone
     if (currentUser.role === "ADMIN") {
         return true
@@ -103,32 +104,79 @@ export function canManageUser(currentUser: User, targetUser: User): boolean {
         return true
     }
 
+    // Shared chiefs: if both users are in the same sharedChiefGroupId, they can manage each other's employees
+    if (currentUser.sharedChiefGroupId && 
+        targetUser.sharedChiefGroupId && 
+        currentUser.sharedChiefGroupId === targetUser.sharedChiefGroupId &&
+        currentUser.role === "ADMIN" &&
+        allUsers) {
+        // Both are shared chiefs in the same group
+        // Check if targetUser reports to any chief in the shared group
+        const sharedGroupChiefs = allUsers.filter(u => 
+            u.sharedChiefGroupId === currentUser.sharedChiefGroupId && 
+            u.role === "ADMIN" &&
+            !u.managerId
+        )
+        
+        // If targetUser reports to any chief in the shared group, currentUser can manage them
+        if (targetUser.managerId && sharedGroupChiefs.some(chief => chief.id === targetUser.managerId)) {
+            return true
+        }
+        
+        // Also check if targetUser is a descendant of any chief in the shared group
+        const sharedChiefIds = sharedGroupChiefs.map(c => c.id)
+        const targetUserDescendants = getAllDescendants(targetUser.id, allUsers)
+        if (sharedChiefIds.some(chiefId => getAllDescendants(chiefId, allUsers).includes(targetUser.id))) {
+            return true
+        }
+    }
+
     return false
 }
 
 /**
  * Filter users to only those visible to current user based on hierarchy
  * @param users - All users
- * @param currentUser - User requesting data
+ * @param currentUser - User requesting data (must include sharedChiefGroupId if applicable)
  * @returns Filtered array of users
  */
-export function filterVisibleUsers<T extends { id: string, managerId: string | null }>(
+export function filterVisibleUsers<T extends { id: string, managerId: string | null, sharedChiefGroupId?: string | null, role?: string }>(
     users: T[],
-    currentUser: { id: string, role: string }
+    currentUser: { id: string, role: string, sharedChiefGroupId?: string | null }
 ): T[] {
     if (currentUser.role === "ADMIN") {
-        // ADMIN sees everyone
+        // ADMIN sees everyone, but if they're in a shared group, they see all employees under any chief in that group
+        if (currentUser.sharedChiefGroupId) {
+            // Find all chiefs in the same shared group
+            const sharedGroupChiefs = users.filter(u => 
+                u.sharedChiefGroupId === currentUser.sharedChiefGroupId && 
+                u.role === "ADMIN" &&
+                !u.managerId
+            ) as T[]
+            
+            const visibleIds = new Set([currentUser.id])
+            
+            // Add all descendants of all chiefs in the shared group
+            sharedGroupChiefs.forEach(chief => {
+                visibleIds.add(chief.id)
+                const addDescendants = (parentId: string) => {
+                    users.filter(u => u.managerId === parentId).forEach(child => {
+                        visibleIds.add(child.id)
+                        addDescendants(child.id)
+                    })
+                }
+                addDescendants(chief.id)
+            })
+            
+            return users.filter(u => visibleIds.has(u.id))
+        }
+        
+        // Independent ADMIN sees everyone
         return users
     }
 
     if (currentUser.role === "MANAGER") {
         // MANAGER sees themselves + all descendants
-        // We need the full list to calculate descendants, but getAllDescendants expects User[]
-        // We need to cast or make getAllDescendants generic too.
-        // Let's make getAllDescendants generic as well locally or cast.
-        // Actually simplest is to just extract IDs and filter.
-
-        // const directReports = users.filter(u => u.managerId === currentUser.id)
         const visibleIds = new Set([currentUser.id])
 
         // Simple recursive finder locally to avoid changing everything

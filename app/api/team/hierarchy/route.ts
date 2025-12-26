@@ -48,20 +48,48 @@ export async function GET() {
         // Fetch all users in the project
         // We fetch flat list and build tree securely in memory or rely on relation
         // For deep nesting, Prisma recursion is limited, but we can fetch all and rebuild
-        const allUsers = await prisma.user.findMany({
-            where: { projectId: currentUser.projectId },
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                role: true,
-                image: true,
-                managerId: true,
-                jobTitle: true,
-                // We'll fetch flat and reconstruct for valid JSON tree
-            },
-            orderBy: { createdAt: "asc" }
-        })
+        let allUsers
+        try {
+            // Try to fetch with new fields first
+            allUsers = await prisma.user.findMany({
+                where: { projectId: currentUser.projectId },
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    role: true,
+                    image: true,
+                    managerId: true,
+                    jobTitle: true,
+                    sharedChiefGroupId: true,
+                    createdAt: true,
+                },
+                orderBy: { createdAt: "asc" }
+            })
+        } catch (fieldError: any) {
+            // If the field doesn't exist in Prisma client yet, fetch without it
+            if (fieldError.message?.includes('sharedChiefGroupId') || fieldError.message?.includes('Unknown field')) {
+                console.warn("sharedChiefGroupId field not available in Prisma client, fetching without it")
+                allUsers = await prisma.user.findMany({
+                    where: { projectId: currentUser.projectId },
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        role: true,
+                        image: true,
+                        managerId: true,
+                        jobTitle: true,
+                        createdAt: true,
+                    },
+                    orderBy: { createdAt: "asc" }
+                })
+                // Add null sharedChiefGroupId to each user
+                allUsers = allUsers.map(user => ({ ...user, sharedChiefGroupId: null }))
+            } else {
+                throw fieldError
+            }
+        }
 
         // Robustly fetch project logo
         let projectLogo = null
@@ -84,6 +112,10 @@ export async function GET() {
         })
     } catch (error) {
         console.error("[HIERARCHY_FETCH_ERROR]", error)
-        return NextResponse.json({ message: "Failed to fetch hierarchy" }, { status: 500 })
+        const errorMessage = error instanceof Error ? error.message : "Unknown error"
+        return NextResponse.json({ 
+            message: "Failed to fetch hierarchy",
+            error: errorMessage 
+        }, { status: 500 })
     }
 }

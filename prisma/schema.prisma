@@ -40,6 +40,10 @@ model User {
   manager       User?   @relation("UserHierarchy", fields: [managerId], references: [id], onDelete: SetNull)
   directReports User[]  @relation("UserHierarchy")
 
+  // Shared Chiefs: Chiefs with the same sharedChiefGroupId are partners
+  // They share the same employees and permissions
+  sharedChiefGroupId String?
+
   // Deprecated: Kept to prevent data loss in Vercel build
   secondaryManagerId String?
   
