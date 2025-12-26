@@ -81,12 +81,14 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
         priority: string[];
         createdByMe: boolean;
         assignedToMe: boolean;
+        users: string[];
     }>({
         status: [],
         deadline: [],
         priority: [],
         createdByMe: false,
         assignedToMe: false,
+        users: [],
     })
     const [sortBy, setSortBy] = useState<string>("smart")
 
@@ -161,6 +163,13 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
         // Assigned to me filter
         if (filters.assignedToMe && currentUserId) {
             if (!task.assignees || !task.assignees.some(a => a.id === currentUserId)) {
+                return false
+            }
+        }
+        
+        // Users filter
+        if (filters.users.length > 0) {
+            if (!task.assignees || !task.assignees.some(a => filters.users.includes(a.id))) {
                 return false
             }
         }
@@ -244,6 +253,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
         filters.status.length +
         filters.deadline.length +
         filters.priority.length +
+        filters.users.length +
         (filters.createdByMe ? 1 : 0) +
         (filters.assignedToMe ? 1 : 0)
     
@@ -254,6 +264,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
             priority: [],
             createdByMe: false,
             assignedToMe: false,
+            users: [],
         })
     }
     
@@ -282,6 +293,10 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                 'low': 'Low'
             }
             return labels[value] || value
+        }
+        if (type === 'users') {
+            const user = users.find(u => u.id === value)
+            return user?.name || user?.email || value
         }
         return value
     }
@@ -720,6 +735,20 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                 </button>
                             </Badge>
                         ))}
+                        {filters.users.map(userId => (
+                            <Badge key={userId} variant="secondary" className="h-6 text-xs px-2">
+                                {getFilterLabel('users', userId)}
+                                <button
+                                    onClick={() => setFilters(prev => ({
+                                        ...prev,
+                                        users: prev.users.filter(u => u !== userId)
+                                    }))}
+                                    className="ml-1.5 hover:bg-muted-foreground/20 rounded-full p-0.5"
+                                >
+                                    <X className="h-3 w-3" />
+                                </button>
+                            </Badge>
+                        ))}
                         {filters.assignedToMe && (
                             <Badge variant="secondary" className="h-6 text-xs px-2">
                                 Assigned to me
@@ -1076,6 +1105,38 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                             className="text-sm cursor-pointer"
                                         >
                                             {priority.label}
+                                        </label>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Users Filter */}
+                        <div>
+                            <label className="text-sm font-medium mb-2 block">Assigned To</label>
+                            <div className="space-y-2 max-h-40 overflow-y-auto">
+                                {users.map(user => (
+                                    <div key={user.id} className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id={`user-filter-${user.id}`}
+                                            checked={filters.users.includes(user.id)}
+                                            onCheckedChange={(checked) => {
+                                                setFilters(prev => ({
+                                                    ...prev,
+                                                    users: checked
+                                                        ? [...prev.users, user.id]
+                                                        : prev.users.filter(u => u !== user.id)
+                                                }))
+                                            }}
+                                        />
+                                        <label
+                                            htmlFor={`user-filter-${user.id}`}
+                                            className="text-sm cursor-pointer"
+                                        >
+                                            {user.name || user.email}
+                                            {currentUserId && user.id === currentUserId && (
+                                                <span className="text-muted-foreground ml-1">(you)</span>
+                                            )}
                                         </label>
                                     </div>
                                 ))}

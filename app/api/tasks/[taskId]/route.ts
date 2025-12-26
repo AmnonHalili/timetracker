@@ -104,7 +104,11 @@ export async function PATCH(
         if (deadline !== undefined) updateData.deadline = deadline ? new Date(deadline) : null
 
         // Handle assignee updates if provided
+        let previousAssigneeIds: string[] = []
         if (assignedToIds) {
+            // Get previous assignees before update
+            previousAssigneeIds = taskToCheck.assignees.map(u => u.id)
+            
             updateData.assignees = {
                 set: [], // Clear existing
                 connect: (assignedToIds as string[]).map(id => ({ id }))
@@ -124,6 +128,26 @@ export async function PATCH(
                 }
             }
         })
+
+        // Create notifications for newly assigned users (excluding the creator)
+        if (assignedToIds) {
+            const newAssigneeIds = (assignedToIds as string[])
+            const newlyAssigned = newAssigneeIds.filter(id => 
+                !previousAssigneeIds.includes(id) && id !== session.user.id
+            )
+
+            if (newlyAssigned.length > 0) {
+                await prisma.notification.createMany({
+                    data: newlyAssigned.map(id => ({
+                        userId: id,
+                        title: "New Task Assigned",
+                        message: `You have been assigned to task: "${task.title || title || 'Untitled Task'}"`,
+                        link: '/tasks',
+                        type: "INFO" as const
+                    }))
+                })
+            }
+        }
 
         return NextResponse.json(task)
     } catch (error) {

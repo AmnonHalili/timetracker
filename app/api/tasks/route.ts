@@ -84,13 +84,18 @@ export async function POST(req: Request) {
         })
 
         // ... notification logic (kept simple or improved)
-        const notificationsData = (assignedToIds as string[]).map(id => ({
-            userId: id,
-            title: "New Task Assigned",
-            message: `You have been assigned to task: "${title}"`,
-            link: '/tasks',
-            type: "INFO" as const
-        }))
+        // Only create notifications for users other than the creator
+        // If user assigns task to themselves, no notification
+        // If user assigns task to others, they get notifications
+        const notificationsData = (assignedToIds as string[])
+            .filter(id => id !== session.user.id) // Exclude the creator
+            .map(id => ({
+                userId: id,
+                title: "New Task Assigned",
+                message: `You have been assigned to task: "${title}"`,
+                link: '/tasks',
+                type: "INFO" as const
+            }))
 
         if (notificationsData.length > 0) {
             await prisma.notification.createMany({
