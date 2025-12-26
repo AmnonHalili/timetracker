@@ -99,40 +99,50 @@ export function canManageUser(currentUser: User, targetUser: User, allUsers?: Us
     const targetUserExt = targetUser as User & { sharedChiefGroupId?: string | null }
     const allUsersExt = allUsers as (User & { sharedChiefGroupId?: string | null })[] | undefined
 
-    // ADMIN can manage anyone
+    // Don't allow managing yourself (edge case)
+    if (currentUserExt.id === targetUserExt.id) {
+        return false
+    }
+
+    // ADMIN logic depends on whether they're Independent or Partner
     if (currentUserExt.role === "ADMIN") {
-        return true
-    }
+        // Partner Chief (Shared): Can manage employees of any partner in the same group
+        if (currentUserExt.sharedChiefGroupId && allUsersExt) {
+            const sharedGroupChiefs = allUsersExt.filter(u =>
+                u.sharedChiefGroupId === currentUserExt.sharedChiefGroupId &&
+                u.role === "ADMIN" &&
+                !u.managerId
+            )
 
-    // MANAGER can manage direct reports
-    if (currentUserExt.role === "MANAGER" && targetUserExt.managerId === currentUserExt.id) {
-        return true
-    }
+            // If targetUser reports to any chief in the shared group, currentUser can manage them
+            if (targetUserExt.managerId && sharedGroupChiefs.some(chief => chief.id === targetUserExt.managerId)) {
+                return true
+            }
 
-    // Shared chiefs: if both users are in the same sharedChiefGroupId, they can manage each other's employees
-    if (currentUserExt.sharedChiefGroupId &&
-        targetUserExt.sharedChiefGroupId &&
-        currentUserExt.sharedChiefGroupId === targetUserExt.sharedChiefGroupId &&
-        (currentUser as User).role === "ADMIN" &&
-        allUsersExt) {
-        // Both are shared chiefs in the same group
-        // Check if targetUser reports to any chief in the shared group
-        const sharedGroupChiefs = allUsersExt.filter(u =>
-            u.sharedChiefGroupId === currentUserExt.sharedChiefGroupId &&
-            u.role === "ADMIN" &&
-            !u.managerId
-        )
+            // Also check if targetUser is a descendant of any chief in the shared group
+            const sharedChiefIds = sharedGroupChiefs.map(c => c.id)
+            if (sharedChiefIds.some(chiefId => getAllDescendants(chiefId, allUsersExt!).includes(targetUserExt.id))) {
+                return true
+            }
 
-        // If targetUser reports to any chief in the shared group, currentUser can manage them
-        if (targetUserExt.managerId && sharedGroupChiefs.some(chief => chief.id === targetUserExt.managerId)) {
-            return true
+            // Cannot manage users outside the shared group
+            return false
         }
 
-        // Also check if targetUser is a descendant of any chief in the shared group
-        const sharedChiefIds = sharedGroupChiefs.map(c => c.id)
-        if (sharedChiefIds.some(chiefId => getAllDescendants(chiefId, allUsersExt!).includes(targetUserExt.id))) {
-            return true
+        // Independent Chief: Can only manage their own descendants
+        if (allUsersExt) {
+            const myDescendants = getAllDescendants(currentUserExt.id, allUsersExt)
+            return myDescendants.includes(targetUserExt.id)
         }
+
+        // Fallback: if no allUsers provided, deny (safer default)
+        return false
+    }
+
+    // MANAGER can manage direct reports and their descendants
+    if (currentUserExt.role === "MANAGER" && allUsersExt) {
+        const myDescendants = getAllDescendants(currentUserExt.id, allUsersExt)
+        return myDescendants.includes(targetUserExt.id)
     }
 
     return false
@@ -175,8 +185,18 @@ export function filterVisibleUsers<T extends { id: string, managerId: string | n
             return users.filter(u => visibleIds.has(u.id))
         }
 
-        // Independent ADMIN sees everyone
-        return users
+        // Independent ADMIN sees ONLY themselves + their own direct/indirect descendants
+        const visibleIds = new Set([currentUser.id])
+
+        const addDescendants = (parentId: string) => {
+            users.filter(u => u.managerId === parentId).forEach(child => {
+                visibleIds.add(child.id)
+                addDescendants(child.id)
+            })
+        }
+
+        addDescendants(currentUser.id)
+        return users.filter(u => visibleIds.has(u.id))
     }
 
     if (currentUser.role === "MANAGER") {

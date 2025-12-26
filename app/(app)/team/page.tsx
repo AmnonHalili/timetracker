@@ -72,23 +72,63 @@ export default async function TeamPage() {
         )
     }
 
-    const allTeamMembers = await prisma.user.findMany({
-        where: { projectId: currentUser.projectId },
-        select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-            status: true,
-            image: true,
-            dailyTarget: true,
-            workDays: true,
-            createdAt: true,
-            jobTitle: true,
-            managerId: true, // Needed for hierarchy
-        },
-        orderBy: { createdAt: "asc" }
-    })
+    type TeamMember = {
+        id: string
+        name: string | null
+        email: string
+        role: string
+        status: string
+        image: string | null
+        dailyTarget: number | null
+        workDays: number[]
+        createdAt: Date
+        jobTitle: string | null
+        managerId: string | null
+        sharedChiefGroupId?: string | null
+    }
+
+    let allTeamMembers: TeamMember[]
+    try {
+        // Try to fetch with sharedChiefGroupId
+        allTeamMembers = await prisma.user.findMany({
+            where: { projectId: currentUser.projectId },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                status: true,
+                image: true,
+                dailyTarget: true,
+                workDays: true,
+                createdAt: true,
+                jobTitle: true,
+                managerId: true,
+                sharedChiefGroupId: true, // CRITICAL for filterVisibleUsers!
+            } as never,
+            orderBy: { createdAt: "asc" }
+        }) as TeamMember[]
+    } catch {
+        // If field doesn't exist, fetch without it and add null
+        const fetchedUsers = await prisma.user.findMany({
+            where: { projectId: currentUser.projectId },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                status: true,
+                image: true,
+                dailyTarget: true,
+                workDays: true,
+                createdAt: true,
+                jobTitle: true,
+                managerId: true,
+            },
+            orderBy: { createdAt: "asc" }
+        })
+        allTeamMembers = fetchedUsers.map(u => ({ ...u, sharedChiefGroupId: null as string | null }))
+    }
 
     // Function to sort users by hierarchy level order (level by level)
     const sortByHierarchy = (users: typeof allTeamMembers, currentUserId: string) => {
@@ -143,7 +183,7 @@ export default async function TeamPage() {
             if (roleDiff !== 0) return roleDiff
 
             // Within the same role, sort by name
-            return a.name.localeCompare(b.name)
+            return (a.name || '').localeCompare(b.name || '')
         })
 
         // Put current user at the top
@@ -210,7 +250,7 @@ export default async function TeamPage() {
                 </div>
             </div>
 
-            <TeamList users={teamMembers} currentUserId={session.user.id} currentUserRole={currentUser.role} />
+            <TeamList users={teamMembers as any} currentUserId={session.user.id} currentUserRole={currentUser.role} />
         </div>
     )
 }
