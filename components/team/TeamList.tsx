@@ -105,7 +105,7 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
             const res = await fetch(`/api/team/hierarchy`)
             if (res.ok) {
                 const data = await res.json()
-                const foundUser = data.users.find((u: User & { secondaryManagers: any[] }) => u.id === user.id)
+                const foundUser = data.users.find((u: User & { secondaryManagers: Array<{ managerId: string; permissions: string[] }> }) => u.id === user.id)
                 setSecondaryManagers(foundUser?.secondaryManagers || [])
             }
         } catch (error) {

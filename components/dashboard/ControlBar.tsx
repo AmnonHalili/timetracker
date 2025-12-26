@@ -50,21 +50,21 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                 const optimisticStart = new Date(optimisticEntry.startTime).getTime()
                 const serverStart = new Date(activeEntry.startTime).getTime()
                 const now = Date.now()
-                
+
                 // If we have an optimistic entry that was just created (within last 10 seconds)
                 // and the server time is close (within 5 seconds), keep the optimistic startTime
                 // This prevents jumping while still allowing the timer to start immediately
                 const timeSinceOptimistic = now - optimisticStart
                 const timeDiff = Math.abs(serverStart - optimisticStart)
-                
+
                 if (timeSinceOptimistic < 10000 && timeDiff < 5000) {
                     // Merge server data (tasks, description, breaks) but keep optimistic startTime
                     setOptimisticEntry({
                         ...activeEntry,
                         startTime: optimisticEntry.startTime,
                         // Preserve breaks from optimistic if they're more recent
-                        breaks: optimisticEntry.breaks && optimisticEntry.breaks.length > 0 
-                            ? optimisticEntry.breaks 
+                        breaks: optimisticEntry.breaks && optimisticEntry.breaks.length > 0
+                            ? optimisticEntry.breaks
                             : activeEntry.breaks
                     })
                 } else {
@@ -82,7 +82,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
             setOptimisticEntry(null)
             setIsDataLoaded(false)
         }
-    }, [activeEntry])
+    }, [activeEntry, optimisticEntry])
 
     useEffect(() => {
         if (optimisticEntry?.description) {
@@ -138,24 +138,24 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
         // Optimistic update FIRST - timer starts immediately, no delay
         const now = new Date()
         const previousEntry = optimisticEntry // Backup for rollback
-        
+
         // Reset data loaded flag - data needs to load before stop is allowed
         setIsDataLoaded(false)
-        
+
         if (!isManualMode) {
             // Timer Start - update optimistically IMMEDIATELY
             setOptimisticEntry({
                 startTime: now,
                 breaks: [],
                 description: description || null,
-                tasks: selectedTaskIds.length > 0 
+                tasks: selectedTaskIds.length > 0
                     ? tasks.filter(t => selectedTaskIds.includes(t.id))
                     : undefined
             })
         }
-        
+
         setLoading(true)
-        
+
         // API call happens in background - doesn't block UI
         try {
             if (isManualMode && manualStart && manualEnd) {
@@ -204,11 +204,11 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
 
     const handleAction = async (action: 'stop' | 'pause' | 'resume') => {
         setLoading(true)
-        
+
         // Optimistic updates for immediate UI feedback
         const now = new Date()
         const previousEntry = optimisticEntry // Backup for rollback
-        
+
         if (action === 'stop') {
             // Create the stopped entry data for optimistic display
             if (optimisticEntry && onTimerStopped) {
@@ -224,7 +224,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                 }
                 onTimerStopped(stoppedEntry)
             }
-            
+
             setOptimisticEntry(null)
             setDescription("")
             setSelectedTaskIds([])
@@ -244,7 +244,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                 })
             }
         }
-        
+
         try {
             await fetch('/api/time-entries', {
                 method: 'POST',
@@ -273,7 +273,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                     <label htmlFor="work-description" className="sr-only">
                         What are you working on?
                     </label>
-                        <Input
+                    <Input
                         id="work-description"
                         placeholder="What are you working on?"
                         value={description}
