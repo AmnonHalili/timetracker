@@ -40,10 +40,48 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
     const [isManualMode, setIsManualMode] = useState(false)
     const [manualStart, setManualStart] = useState("")
     const [manualEnd, setManualEnd] = useState("")
+    const [isDataLoaded, setIsDataLoaded] = useState(!!activeEntry) // Track if server data has loaded - true if we already have activeEntry
 
     // Sync optimistic state with server state when it arrives
+    // Preserve optimistic startTime to prevent jumping while allowing smooth updates
     useEffect(() => {
-        setOptimisticEntry(activeEntry)
+        if (activeEntry) {
+            if (optimisticEntry) {
+                const optimisticStart = new Date(optimisticEntry.startTime).getTime()
+                const serverStart = new Date(activeEntry.startTime).getTime()
+                const now = Date.now()
+                
+                // If we have an optimistic entry that was just created (within last 10 seconds)
+                // and the server time is close (within 5 seconds), keep the optimistic startTime
+                // This prevents jumping while still allowing the timer to start immediately
+                const timeSinceOptimistic = now - optimisticStart
+                const timeDiff = Math.abs(serverStart - optimisticStart)
+                
+                if (timeSinceOptimistic < 10000 && timeDiff < 5000) {
+                    // Merge server data (tasks, description, breaks) but keep optimistic startTime
+                    setOptimisticEntry({
+                        ...activeEntry,
+                        startTime: optimisticEntry.startTime,
+                        // Preserve breaks from optimistic if they're more recent
+                        breaks: optimisticEntry.breaks && optimisticEntry.breaks.length > 0 
+                            ? optimisticEntry.breaks 
+                            : activeEntry.breaks
+                    })
+                } else {
+                    // Use server value if it's significantly different or optimistic is old
+                    setOptimisticEntry(activeEntry)
+                }
+            } else {
+                // No optimistic entry, use server value
+                setOptimisticEntry(activeEntry)
+            }
+            // Mark data as loaded when server entry arrives
+            setIsDataLoaded(true)
+        } else {
+            // Server says no active entry, clear optimistic state
+            setOptimisticEntry(null)
+            setIsDataLoaded(false)
+        }
     }, [activeEntry])
 
     useEffect(() => {
@@ -97,14 +135,15 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
     }
 
     const handleStart = async () => {
-        setLoading(true)
-        
-        // Optimistic update: immediately show timer as started
+        // Optimistic update FIRST - timer starts immediately, no delay
         const now = new Date()
         const previousEntry = optimisticEntry // Backup for rollback
         
+        // Reset data loaded flag - data needs to load before stop is allowed
+        setIsDataLoaded(false)
+        
         if (!isManualMode) {
-            // Timer Start - update optimistically
+            // Timer Start - update optimistically IMMEDIATELY
             setOptimisticEntry({
                 startTime: now,
                 breaks: [],
@@ -115,6 +154,9 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
             })
         }
         
+        setLoading(true)
+        
+        // API call happens in background - doesn't block UI
         try {
             if (isManualMode && manualStart && manualEnd) {
                 // Manual Entry
@@ -340,7 +382,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                                     variant="destructive"
                                     className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-medium h-9 shadow-sm"
                                     onClick={() => handleAction('stop')}
-                                    disabled={loading}
+                                    disabled={loading || !isDataLoaded}
                                 >
                                     Stop
                                 </Button>

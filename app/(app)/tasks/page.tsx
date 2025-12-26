@@ -83,19 +83,29 @@ export default async function TasksPage() {
                 }
             }
         },
-        select: {
-            id: true,
+        include: {
             tasks: {
                 select: { id: true }
+            },
+            user: {
+                select: {
+                    id: true,
+                    name: true
+                }
             }
         }
     })
 
-    // Create a map of task IDs that have active timers
-    const tasksWithActiveTimers = new Set<string>()
+    // Create a map of task IDs to users who are actively working on them
+    const tasksWithActiveTimers = new Map<string, Array<{ id: string; name: string | null }>>()
     activeTimeEntries.forEach(entry => {
         entry.tasks.forEach(task => {
-            tasksWithActiveTimers.add(task.id)
+            const existing = tasksWithActiveTimers.get(task.id) || []
+            // Avoid duplicates
+            if (!existing.some(u => u.id === entry.user.id)) {
+                existing.push({ id: entry.user.id, name: entry.user.name })
+            }
+            tasksWithActiveTimers.set(task.id, existing)
         })
     })
 
@@ -116,7 +126,7 @@ export default async function TasksPage() {
                 users={users}
                 isAdmin={isAdmin}
                 currentUserId={session.user.id}
-                tasksWithActiveTimers={Array.from(tasksWithActiveTimers)}
+                tasksWithActiveTimers={Object.fromEntries(tasksWithActiveTimers)}
             />
         </div>
     )

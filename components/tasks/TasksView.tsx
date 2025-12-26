@@ -47,10 +47,10 @@ interface TasksViewProps {
     users: User[]
     isAdmin: boolean
     currentUserId?: string
-    tasksWithActiveTimers?: string[] // Array of task IDs that have active timers
+    tasksWithActiveTimers?: Record<string, Array<{ id: string; name: string | null }>> // Map of task IDs to users actively working on them
 }
 
-export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWithActiveTimers = [] }: TasksViewProps) {
+export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWithActiveTimers = {} }: TasksViewProps) {
     const router = useRouter()
     const [tasks, setTasks] = useState(initialTasks)
     const [filterUserId, setFilterUserId] = useState<string>("all")
@@ -156,10 +156,11 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
     }
 
     const openTaskDetail = async (task: TasksViewProps['initialTasks'][0]) => {
+        // Set the task first
         setSelectedTask(task)
-        setIsDetailOpen(true)
         
         try {
+            // Fetch time entries first, then open dialog
             const res = await fetch(`/api/tasks/${task.id}/time-entries`)
             if (res.ok) {
                 const entries = await res.json()
@@ -170,6 +171,9 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
         } catch (error) {
             console.error("Failed to fetch time entries:", error)
             setTaskTimeEntries([])
+        } finally {
+            // Open dialog only after data is loaded
+            setIsDetailOpen(true)
         }
     }
 
@@ -400,9 +404,12 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                             <span className="text-xs text-muted-foreground">
                                                 Status: {task.status === 'DONE' 
                                                     ? 'Done' 
-                                                    : tasksWithActiveTimers.includes(task.id) 
-                                                        ? 'In Progress' 
-                                                        : 'To Do'}
+                                                    : (() => {
+                                                        const activeUsers = tasksWithActiveTimers[task.id]
+                                                        return activeUsers && activeUsers.length > 0
+                                                            ? `In Progress by ${activeUsers.map(u => u.name || 'Unknown').join(', ')}`
+                                                            : 'To Do'
+                                                    })()}
                                             </span>
                                         </div>
 

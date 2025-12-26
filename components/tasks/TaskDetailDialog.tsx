@@ -1,8 +1,10 @@
 "use client"
 
+import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Clock, Users, CheckCircle2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Calendar, Clock, Users, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react"
 import { format } from "date-fns"
 
 interface TaskDetailDialogProps {
@@ -32,6 +34,8 @@ interface TaskDetailDialogProps {
 }
 
 export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }: TaskDetailDialogProps) {
+    const [showTimeHistory, setShowTimeHistory] = useState(false)
+    
     if (!task) return null
 
     // Calculate total time spent on this task
@@ -132,14 +136,6 @@ export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }:
                         </div>
                     )}
 
-                    {/* Total Time Spent - Right after Assigned To */}
-                    <div>
-                        <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                            <Clock className="h-4 w-4" />
-                            Total Time Spent
-                        </h3>
-                        <p className="text-lg font-medium">{calculateTotalTime()}</p>
-                    </div>
 
                     {/* Description */}
                     {task.description && (
@@ -179,79 +175,90 @@ export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }:
                         </div>
                     )}
 
-                    {/* Time by User */}
-                    {timeByUser.size > 0 && (
-                        <div>
-                            <h3 className="text-sm font-semibold mb-2">Time by User</h3>
-                            <div className="space-y-2">
-                                {Array.from(timeByUser.values()).map(({ user, totalSeconds }) => (
-                                    <div key={user.id} className="flex justify-between items-center p-2 bg-muted/50 rounded">
-                                        <span className="text-sm">{user.name || 'Unknown'}</span>
-                                        <span className="text-sm font-medium">{formatTime(totalSeconds)}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Users Who Worked */}
+                    {/* Users Who Worked on This Task - Combined with Time by User */}
                     {usersWhoWorked.length > 0 && (
                         <div>
                             <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
                                 <Users className="h-4 w-4" />
                                 Users Who Worked on This Task
                             </h3>
-                            <div className="flex flex-wrap gap-2">
-                                {usersWhoWorked.map(user => (
-                                    <Badge key={user.id} variant="outline">
-                                        {user.name || 'Unknown'}
-                                    </Badge>
-                                ))}
+                            <div className="space-y-2">
+                                {Array.from(timeByUser.values())
+                                    .sort((a, b) => b.totalSeconds - a.totalSeconds) // Sort by time descending
+                                    .map(({ user, totalSeconds }) => (
+                                        <div key={user.id} className="flex justify-between items-center p-2 bg-muted/50 rounded">
+                                            <span className="text-sm">{user.name || 'Unknown'}</span>
+                                            <span className="text-sm font-medium">{formatTime(totalSeconds)}</span>
+                                        </div>
+                                    ))}
+                            </div>
+                            {/* Total Time Spent - Under the users list */}
+                            <div className="mt-3 pt-3 border-t">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm font-semibold flex items-center gap-2">
+                                        <Clock className="h-4 w-4" />
+                                        Total Time Spent
+                                    </span>
+                                    <span className="text-lg font-medium">{calculateTotalTime()}</span>
+                                </div>
                             </div>
                         </div>
                     )}
 
 
 
-                    {/* Time Entries History */}
+                    {/* Time Entries History - Collapsible */}
                     {timeEntries.length > 0 && (
                         <div>
-                            <h3 className="text-sm font-semibold mb-2">Time Entries History</h3>
-                            <div className="space-y-2 max-h-60 overflow-y-auto">
-                                {timeEntries
-                                    .filter(entry => entry.endTime)
-                                    .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
-                                    .map(entry => {
-                                        const start = new Date(entry.startTime)
-                                        const end = new Date(entry.endTime!)
-                                        const duration = Math.floor((end.getTime() - start.getTime()) / 1000)
-                                        const hours = Math.floor(duration / 3600)
-                                        const minutes = Math.floor((duration % 3600) / 60)
-                                        const seconds = duration % 60
-                                        const durationStr = hours > 0 
-                                            ? `${hours}h ${minutes}m` 
-                                            : minutes > 0 
-                                                ? `${minutes}m ${seconds}s` 
-                                                : `${seconds}s`
+                            <Button
+                                variant="ghost"
+                                onClick={() => setShowTimeHistory(!showTimeHistory)}
+                                className="w-full justify-between p-2 h-auto"
+                            >
+                                <span className="text-sm font-semibold">Time Entries History</span>
+                                {showTimeHistory ? (
+                                    <ChevronUp className="h-4 w-4" />
+                                ) : (
+                                    <ChevronDown className="h-4 w-4" />
+                                )}
+                            </Button>
+                            {showTimeHistory && (
+                                <div className="space-y-2 max-h-60 overflow-y-auto mt-2">
+                                    {timeEntries
+                                        .filter(entry => entry.endTime)
+                                        .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
+                                        .map(entry => {
+                                            const start = new Date(entry.startTime)
+                                            const end = new Date(entry.endTime!)
+                                            const duration = Math.floor((end.getTime() - start.getTime()) / 1000)
+                                            const hours = Math.floor(duration / 3600)
+                                            const minutes = Math.floor((duration % 3600) / 60)
+                                            const seconds = duration % 60
+                                            const durationStr = hours > 0 
+                                                ? `${hours}h ${minutes}m` 
+                                                : minutes > 0 
+                                                    ? `${minutes}m ${seconds}s` 
+                                                    : `${seconds}s`
 
-                                        return (
-                                            <div key={entry.id} className="p-2 bg-muted/50 rounded text-sm">
-                                                <div className="flex justify-between items-start">
-                                                    <div>
-                                                        <p className="font-medium">{entry.user?.name || 'Unknown'}</p>
-                                                        {entry.description && (
-                                                            <p className="text-xs text-muted-foreground mt-1">{entry.description}</p>
-                                                        )}
-                                                        <p className="text-xs text-muted-foreground mt-1">
-                                                            {format(start, 'dd/MM/yyyy HH:mm')} - {format(end, 'HH:mm')}
-                                                        </p>
+                                            return (
+                                                <div key={entry.id} className="p-2 bg-muted/50 rounded text-sm">
+                                                    <div className="flex justify-between items-start">
+                                                        <div>
+                                                            <p className="font-medium">{entry.user?.name || 'Unknown'}</p>
+                                                            {entry.description && (
+                                                                <p className="text-xs text-muted-foreground mt-1">{entry.description}</p>
+                                                            )}
+                                                            <p className="text-xs text-muted-foreground mt-1">
+                                                                {format(start, 'dd/MM/yyyy HH:mm')} - {format(end, 'HH:mm')}
+                                                            </p>
+                                                        </div>
+                                                        <span className="font-medium">{durationStr}</span>
                                                     </div>
-                                                    <span className="font-medium">{durationStr}</span>
                                                 </div>
-                                            </div>
-                                        )
-                                    })}
-                            </div>
+                                            )
+                                        })}
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
