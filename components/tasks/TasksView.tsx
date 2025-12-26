@@ -486,22 +486,15 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
         })
     }
 
-    const handleToggleSubtask = async (taskId: string, subtaskId: string, currentDone: boolean) => {
-        // Skip if operation is already pending
-        if (pendingOperations.current.has(subtaskId)) {
-            return
-        }
-
-        pendingOperations.current.add(subtaskId)
+    const handleToggleSubtask = (taskId: string, subtaskId: string, currentDone: boolean) => {
         const newDoneState = !currentDone
 
-        // Optimistic update
+        // Optimistic update - INSTANT visual feedback
         setLocalSubtasks(prev => {
             const taskSubtasks = prev[taskId] || []
             // Check if subtask still exists (might have been deleted)
             const subtaskExists = taskSubtasks.some(s => s.id === subtaskId)
             if (!subtaskExists) {
-                pendingOperations.current.delete(subtaskId)
                 return prev
             }
             const updatedSubtasks = taskSubtasks.map(s => 
@@ -542,19 +535,24 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
             }
         })
 
-        try {
-            const res = await fetch("/api/tasks/subtasks", {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id: subtaskId, isDone: newDoneState })
-            })
+        // API call happens in background - doesn't block UI
+        // Use a unique key to track this specific operation
+        const operationKey = `${subtaskId}-${Date.now()}`
+        pendingOperations.current.add(operationKey)
 
+        fetch("/api/tasks/subtasks", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: subtaskId, isDone: newDoneState })
+        })
+        .then(async (res) => {
             if (!res.ok) {
                 throw new Error("Failed to update subtask")
             }
-
+            // Refresh in background after successful update
             router.refresh()
-        } catch (error) {
+        })
+        .catch((error) => {
             console.error("Failed to toggle subtask:", error)
             // Revert on error only if subtask still exists
             setLocalSubtasks(prev => {
@@ -570,9 +568,13 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                     )
                 }
             })
-        } finally {
-            pendingOperations.current.delete(subtaskId)
-        }
+        })
+        .finally(() => {
+            // Remove from pending operations after a short delay
+            setTimeout(() => {
+                pendingOperations.current.delete(operationKey)
+            }, 500)
+        })
     }
 
     const handleDeleteSubtask = async (taskId: string, subtaskId: string) => {
