@@ -12,9 +12,10 @@ interface RecursiveNodeProps {
     allUsers: User[] // Passed down for the Add dialog context
     onAddClick?: (parentId: string, parentName: string) => void
     depth?: number
+    hideConnectorLines?: boolean // Hide horizontal connector lines (used for shared partners children)
 }
 
-export function RecursiveNode({ node, allUsers, onAddClick, depth = 0 }: RecursiveNodeProps) {
+export function RecursiveNode({ node, allUsers, onAddClick, depth = 0, hideConnectorLines = false }: RecursiveNodeProps) {
     const { data: session } = useSession()
     const hasChildren = node.children && node.children.length > 0
 
@@ -118,35 +119,17 @@ export function RecursiveNode({ node, allUsers, onAddClick, depth = 0 }: Recursi
                 })()}
             </div>
 
-            {/* Children Container */}
-            {hasChildren && (
-                <div className="relative flex pt-8 gap-8">
-                    {/* Horizontal connector line logic is tricky without explicit measurements. 
-                        We use a simplified approach:
-                        A line above all children, connected to the parent's line.
-                     */}
 
-                    {/* Top connector for group of children */}
-                    <div className="absolute top-0 left-0 w-full h-8 flex justify-center">
-                        {/* Vertical stem from parent */}
-                        <div className="h-full w-px bg-border" />
-                    </div>
-
-                    {/* Horizontal bar connecting first to last child usually needed here, 
-                         but flex-gap handles spacing. We need distinct lines for each child.
-                         
-                         Instead of one parent connector, each child renders its own "up" connector 
-                         that joins a horizontal bar.
-                     */}
-                </div>
-            )}
 
             {/* 
                 Recursive Children Rendering 
                 We render children in a horizontal row 
             */}
             {hasChildren && (
-                <div className="flex items-start gap-4 mt-0 relative">
+                <div className="flex items-start gap-4 mt-8 relative">
+                    {/* Central Stem from Parent down to the bus line height */}
+                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 h-8 w-px bg-border" />
+
                     {/* 
                         Connector Lines Wrapper
                         We need a horizontal line connecting the center of the first child to the center of the last child 
@@ -180,7 +163,7 @@ export function RecursiveNode({ node, allUsers, onAddClick, depth = 0 }: Recursi
                                  And connect it to the parent.
                              */}
 
-                            {node.children!.length > 1 && (
+                            {!hideConnectorLines && node.children!.length > 1 && (
                                 <div className={cn(
                                     "absolute top-[-2rem] h-px bg-border",
                                     index === 0 ? "left-1/2 w-1/2" :
@@ -197,6 +180,7 @@ export function RecursiveNode({ node, allUsers, onAddClick, depth = 0 }: Recursi
                                 allUsers={allUsers}
                                 onAddClick={onAddClick}
                                 depth={depth + 1}
+                                hideConnectorLines={hideConnectorLines}
                             />
                         </div>
                     ))}

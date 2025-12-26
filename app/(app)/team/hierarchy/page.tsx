@@ -577,40 +577,110 @@ export default function HierarchyPage() {
 
                             return grouped.map((group, groupIndex) => {
                                 if (group.type === 'shared' && group.nodes.length > 1) {
-                                    // Render shared chiefs in a grouped container
+                                    // Merge all children from all partners in the group
+                                    const mergedChildren: TreeNode[] = []
+                                    const childrenSet = new Set<string>()
+
+                                    group.nodes.forEach(partner => {
+                                        partner.children.forEach(child => {
+                                            if (!childrenSet.has(child.id)) {
+                                                childrenSet.add(child.id)
+                                                mergedChildren.push(child)
+                                            }
+                                        })
+                                    })
+
+                                    // Render shared chiefs connected by a horizontal line
                                     return (
                                         <div key={group.groupId} className="relative flex flex-col items-center">
-                                            {/* Shared Chiefs Container */}
-                                            <div className="relative border-2 border-primary/30 rounded-lg p-3 bg-primary/5 backdrop-blur-sm">
-                                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-primary/10 border border-primary/30 rounded text-xs font-medium text-primary">
-                                                    Shared Leadership
-                                                </div>
-                                                <div className="flex gap-4 items-start">
-                                                    {group.nodes.map((node, nodeIndex) => (
+                                            {/* Shared Chiefs - horizontal layout */}
+                                            <div className="flex gap-8 items-center relative">
+                                                {group.nodes.map((node, nodeIndex) => {
+                                                    // Create a version of the node without children (they'll be rendered separately below)
+                                                    const nodeWithoutChildren = { ...node, children: [] }
+
+                                                    return (
                                                         <div key={node.id} className="relative flex flex-col items-center">
-                                                            {nodeIndex > 0 && (
-                                                                <div className="absolute -left-2 top-1/2 h-px w-4 bg-border" />
-                                                            )}
                                                             <RecursiveNode
-                                                                node={node}
+                                                                node={nodeWithoutChildren}
                                                                 allUsers={users}
                                                                 onAddClick={handleAddClick}
                                                                 depth={0}
                                                             />
+
+                                                            {/* Horizontal connecting line between partners (except for the last one) */}
+                                                            {nodeIndex < group.nodes.length - 1 && (
+                                                                <div
+                                                                    className="absolute top-1/2 -translate-y-1/2 left-full h-px bg-border z-0"
+                                                                    style={{ width: '2rem' }}
+                                                                />
+                                                            )}
                                                         </div>
-                                                    ))}
-                                                </div>
+                                                    )
+                                                })}
                                             </div>
 
-                                            {/* Vertical line up to the Project Bus */}
+                                            {/* Vertical line up to the Project Bus (from center of group) */}
                                             <div className="h-8 w-px bg-border absolute -top-8 left-1/2 -translate-x-1/2" />
 
-                                            {/* Horizontal connector */}
+                                            {/* Horizontal connector to siblings */}
                                             {groupIndex < grouped.length - 1 && (
                                                 <div className="absolute top-[-2rem] right-[-1rem] h-px bg-border w-[calc(50%+1rem)]" />
                                             )}
                                             {groupIndex > 0 && (
                                                 <div className="absolute top-[-2rem] left-[-1rem] h-px bg-border w-[calc(50%+1rem)]" />
+                                            )}
+
+                                            {/* Render merged children below the partner group */}
+                                            {mergedChildren.length > 0 && (
+                                                <div className="relative flex flex-col items-center mt-16">
+                                                    {/* Vertical connector from partners to children horizontal bus - shortened to stop at bus line */}
+                                                    <div className="absolute -top-16 h-8 w-px bg-border" />
+
+                                                    {/* Children in a horizontal row */}
+                                                    <div className="flex gap-8 relative items-start">
+                                                        {mergedChildren.map((child, childIndex) => {
+                                                            const isFirst = childIndex === 0
+                                                            const isLast = childIndex === mergedChildren.length - 1
+                                                            const isOnly = mergedChildren.length === 1
+
+                                                            return (
+                                                                <div key={child.id} className="relative flex flex-col items-center">
+                                                                    {/* Horizontal connector segments (bus line) */}
+                                                                    {!isOnly && (
+                                                                        <>
+                                                                            {/* Right segment - extends to right edge of this card */}
+                                                                            {!isLast && (
+                                                                                <div
+                                                                                    className="absolute -top-8 right-[-1rem] h-px bg-border"
+                                                                                    style={{ width: 'calc(50% + 1rem)' }}
+                                                                                />
+                                                                            )}
+                                                                            {/* Left segment - extends from left edge of this card */}
+                                                                            {!isFirst && (
+                                                                                <div
+                                                                                    className="absolute -top-8 left-[-1rem] h-px bg-border"
+                                                                                    style={{ width: 'calc(50% + 1rem)' }}
+                                                                                />
+                                                                            )}
+                                                                        </>
+                                                                    )}
+
+                                                                    {/* Vertical drop line from bus to child card */}
+                                                                    <div className="h-8 w-px bg-border absolute -top-8" />
+
+                                                                    <RecursiveNode
+                                                                        node={child}
+                                                                        allUsers={users}
+                                                                        onAddClick={handleAddClick}
+                                                                        depth={1}
+                                                                        hideConnectorLines={true}
+                                                                    />
+                                                                </div>
+                                                            )
+                                                        })}
+                                                    </div>
+                                                </div>
                                             )}
                                         </div>
                                     )
