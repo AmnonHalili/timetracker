@@ -112,8 +112,8 @@ export function canManageUser(currentUser: User, targetUser: User, allUsers?: Us
     // Shared chiefs: if both users are in the same sharedChiefGroupId, they can manage each other's employees
     if (currentUserExt.sharedChiefGroupId &&
         targetUserExt.sharedChiefGroupId &&
-        currentUserExt.sharedChiefGroupId === targetUser.sharedChiefGroupId &&
-        currentUserExt.role === "ADMIN" &&
+        currentUserExt.sharedChiefGroupId === targetUserExt.sharedChiefGroupId &&
+        (currentUser as User).role === "ADMIN" &&
         allUsersExt) {
         // Both are shared chiefs in the same group
         // Check if targetUser reports to any chief in the shared group

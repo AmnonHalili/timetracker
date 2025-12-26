@@ -79,8 +79,8 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
             const realEnd = entry.endTime ? new Date(entry.endTime).getTime() : null
 
             // Match if start times are within 2 seconds and end times are within 2 seconds
-            return Math.abs(optStart - realStart) < 2000 && 
-                   optEnd && realEnd && Math.abs(optEnd - realEnd) < 2000
+            return Math.abs(optStart - realStart) < 2000 &&
+                optEnd && realEnd && Math.abs(optEnd - realEnd) < 2000
         })
 
         if (matchingEntry) {
@@ -90,7 +90,7 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
     }, [historyEntries, optimisticStoppedEntry])
 
     // Combine server entries with optimistic entry
-    const allEntries = optimisticStoppedEntry 
+    const allEntries = optimisticStoppedEntry
         ? [optimisticStoppedEntry, ...historyEntries]
         : historyEntries
 
@@ -102,8 +102,8 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
                 onTimerStopped={handleTimerStopped}
             />
             <div className="pt-4">
-                <EntryHistory 
-                    entries={allEntries} 
+                <EntryHistory
+                    entries={allEntries as never}
                     tasks={tasks}
                     optimisticEntryId={optimisticStoppedEntry?.id}
                     onOptimisticEntryCleared={handleOptimisticEntryCleared}
