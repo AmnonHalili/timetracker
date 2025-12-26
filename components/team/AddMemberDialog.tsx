@@ -55,6 +55,7 @@ export function AddMemberDialog({
     const [loading, setLoading] = useState(false)
     const [name, setName] = useState("")
     const [email, setEmail] = useState("")
+    const [password, setPassword] = useState("")
     const [role] = useState(defaultRole) // Changed from [role, setRole] to [role]
     const [jobTitle, setJobTitle] = useState("")
     const [managerId, setManagerId] = useState<string>(hideManagerSelect ? "unassigned" : "")
@@ -104,6 +105,7 @@ export function AddMemberDialog({
                 body: JSON.stringify({
                     name,
                     email,
+                    password,
                     role,
                     jobTitle,
                     managerId: managerId === "unassigned" ? null : managerId,
@@ -125,6 +127,7 @@ export function AddMemberDialog({
             // Reset form
             setName("")
             setEmail("")
+            setPassword("")
             setJobTitle("")
             setManagerId(hideManagerSelect ? "unassigned" : "")
             setChiefType(null)
@@ -190,6 +193,18 @@ export function AddMemberDialog({
                                 onChange={(e) => setEmail(e.target.value)}
                                 className="col-span-3"
                                 required
+                            />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="password" className="text-right">
+                                Initial Password
+                            </Label>
+                            <Input
+                                id="password"
+                                type="text"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="col-span-3"
                             />
                         </div>
 
