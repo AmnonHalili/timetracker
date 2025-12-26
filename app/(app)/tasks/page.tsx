@@ -33,15 +33,17 @@ export default async function TasksPage() {
             include: {
                 assignees: true,
                 checklist: { orderBy: { createdAt: 'asc' } },
+                // @ts-expect-error - subtasks might not be in generated types yet
                 subtasks: {
                     orderBy: { createdAt: 'asc' }
                 }
             },
             orderBy: { createdAt: "desc" }
         })
-    } catch (e: any) {
+    } catch (e: unknown) {
         // If subtasks relation doesn't exist, fetch without it
-        if (e.message?.includes('subtasks') || e.message?.includes('Unknown argument') || e.message?.includes('SubTaskItem')) {
+        const errorMessage = e instanceof Error ? e.message : String(e)
+        if (errorMessage.includes('subtasks') || errorMessage.includes('Unknown argument') || errorMessage.includes('SubTaskItem')) {
             console.warn("subtasks relation not available, fetching without it")
             tasks = await prisma.task.findMany({
                 where,
@@ -52,6 +54,7 @@ export default async function TasksPage() {
                 orderBy: { createdAt: "desc" }
             })
             // Add empty subtasks array to each task
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             tasks = tasks.map((task: any) => ({ ...task, subtasks: [] }))
         } else {
             throw e

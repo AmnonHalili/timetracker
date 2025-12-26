@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const prismaAny = prisma as any;
+
 // POST: Create a subtask item
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions)
@@ -42,19 +45,20 @@ export async function POST(req: Request) {
         try {
             // Check if subTaskItem exists in Prisma client
             if (!('subTaskItem' in prisma) || !prisma.subTaskItem) {
-                return NextResponse.json({ 
-                    message: "SubTaskItem model not available. Please stop your dev server, run: npx prisma db push && npx prisma generate, then restart the server." 
+                return NextResponse.json({
+                    message: "SubTaskItem model not available. Please stop your dev server, run: npx prisma db push && npx prisma generate, then restart the server."
                 }, { status: 500 })
             }
-            
-            subtask = await (prisma as any).subTaskItem.create({
+
+            subtask = await prismaAny.subTaskItem.create({
                 data: { taskId, title }
             })
-        } catch (e: any) {
+        } catch (e: unknown) {
             // If SubTaskItem model doesn't exist yet, return error with helpful message
-            if (e.message?.includes('SubTaskItem') || e.message?.includes('Unknown model') || e.message?.includes('Cannot read properties')) {
-                return NextResponse.json({ 
-                    message: "SubTaskItem model not available. Please stop your dev server, run: npx prisma db push && npx prisma generate, then restart the server." 
+            const errorMessage = e instanceof Error ? e.message : String(e)
+            if (errorMessage.includes('SubTaskItem') || errorMessage.includes('Unknown model') || errorMessage.includes('Cannot read properties')) {
+                return NextResponse.json({
+                    message: "SubTaskItem model not available. Please stop your dev server, run: npx prisma db push && npx prisma generate, then restart the server."
                 }, { status: 500 })
             }
             throw e
@@ -64,9 +68,9 @@ export async function POST(req: Request) {
     } catch (error) {
         console.error("[CREATE_SUBTASK_ERROR]", error)
         const errorMessage = error instanceof Error ? error.message : "Unknown error"
-        return NextResponse.json({ 
+        return NextResponse.json({
             message: "Error creating subtask",
-            error: errorMessage 
+            error: errorMessage
         }, { status: 500 })
     }
 }
@@ -85,14 +89,14 @@ export async function PATCH(req: Request) {
 
         // Verify subtask exists and get task for permission check
         if (!('subTaskItem' in prisma) || !prisma.subTaskItem) {
-            return NextResponse.json({ 
-                message: "SubTaskItem model not available. Please stop your dev server, run: npx prisma db push && npx prisma generate, then restart the server." 
+            return NextResponse.json({
+                message: "SubTaskItem model not available. Please stop your dev server, run: npx prisma db push && npx prisma generate, then restart the server."
             }, { status: 500 })
         }
-        
+
         let subtask
         try {
-            subtask = await (prisma as any).subTaskItem.findUnique({
+            subtask = await prismaAny.subTaskItem.findUnique({
                 where: { id },
                 include: {
                     task: {
@@ -100,10 +104,11 @@ export async function PATCH(req: Request) {
                     }
                 }
             })
-        } catch (e: any) {
-            if (e.message?.includes('SubTaskItem') || e.message?.includes('Unknown model') || e.message?.includes('Cannot read properties')) {
-                return NextResponse.json({ 
-                    message: "SubTaskItem model not available. Please run: npx prisma db push && npx prisma generate" 
+        } catch (e: unknown) {
+            const errorMessage = e instanceof Error ? e.message : String(e)
+            if (errorMessage.includes('SubTaskItem') || errorMessage.includes('Unknown model') || errorMessage.includes('Cannot read properties')) {
+                return NextResponse.json({
+                    message: "SubTaskItem model not available. Please run: npx prisma db push && npx prisma generate"
                 }, { status: 500 })
             }
             throw e
@@ -117,7 +122,7 @@ export async function PATCH(req: Request) {
         let hasPermission = false
         if (session.user.role === "ADMIN") {
             hasPermission = true
-        } else if (subtask.task.assignees.some(u => u.id === session.user.id)) {
+        } else if (subtask.task.assignees.some((u: { id: string }) => u.id === session.user.id)) {
             hasPermission = true
         }
 
@@ -126,7 +131,7 @@ export async function PATCH(req: Request) {
         }
 
         // Update subtask
-        const updated = await (prisma as any).subTaskItem.update({
+        const updated = await prismaAny.subTaskItem.update({
             where: { id },
             data: { isDone: isDone || false }
         })
@@ -135,9 +140,9 @@ export async function PATCH(req: Request) {
     } catch (error) {
         console.error("[UPDATE_SUBTASK_ERROR]", error)
         const errorMessage = error instanceof Error ? error.message : "Unknown error"
-        return NextResponse.json({ 
+        return NextResponse.json({
             message: "Error updating subtask",
-            error: errorMessage 
+            error: errorMessage
         }, { status: 500 })
     }
 }
@@ -157,14 +162,14 @@ export async function DELETE(req: Request) {
     try {
         // Verify subtask exists and get task for permission check
         if (!('subTaskItem' in prisma) || !prisma.subTaskItem) {
-            return NextResponse.json({ 
-                message: "SubTaskItem model not available. Please stop your dev server, run: npx prisma db push && npx prisma generate, then restart the server." 
+            return NextResponse.json({
+                message: "SubTaskItem model not available. Please stop your dev server, run: npx prisma db push && npx prisma generate, then restart the server."
             }, { status: 500 })
         }
-        
+
         let subtask
         try {
-            subtask = await (prisma as any).subTaskItem.findUnique({
+            subtask = await prismaAny.subTaskItem.findUnique({
                 where: { id },
                 include: {
                     task: {
@@ -172,10 +177,11 @@ export async function DELETE(req: Request) {
                     }
                 }
             })
-        } catch (e: any) {
-            if (e.message?.includes('SubTaskItem') || e.message?.includes('Unknown model') || e.message?.includes('Cannot read properties')) {
-                return NextResponse.json({ 
-                    message: "SubTaskItem model not available. Please stop your dev server, run: npx prisma db push && npx prisma generate, then restart the server." 
+        } catch (e: unknown) {
+            const errorMessage = e instanceof Error ? e.message : String(e)
+            if (errorMessage.includes('SubTaskItem') || errorMessage.includes('Unknown model') || errorMessage.includes('Cannot read properties')) {
+                return NextResponse.json({
+                    message: "SubTaskItem model not available. Please stop your dev server, run: npx prisma db push && npx prisma generate, then restart the server."
                 }, { status: 500 })
             }
             throw e
@@ -189,7 +195,7 @@ export async function DELETE(req: Request) {
         let hasPermission = false
         if (session.user.role === "ADMIN") {
             hasPermission = true
-        } else if (subtask.task.assignees.some(u => u.id === session.user.id)) {
+        } else if (subtask.task.assignees.some((u: { id: string }) => u.id === session.user.id)) {
             hasPermission = true
         }
 
@@ -197,14 +203,14 @@ export async function DELETE(req: Request) {
             return NextResponse.json({ message: "You don't have permission to delete this subtask" }, { status: 403 })
         }
 
-        await (prisma as any).subTaskItem.delete({ where: { id } })
+        await prismaAny.subTaskItem.delete({ where: { id } })
         return NextResponse.json({ message: "Deleted" })
     } catch (error) {
         console.error("[DELETE_SUBTASK_ERROR]", error)
         const errorMessage = error instanceof Error ? error.message : "Unknown error"
-        return NextResponse.json({ 
+        return NextResponse.json({
             message: "Error deleting subtask",
-            error: errorMessage 
+            error: errorMessage
         }, { status: 500 })
     }
 }
