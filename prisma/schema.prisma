@@ -47,6 +47,10 @@ model User {
   // Deprecated: Kept to prevent data loss in Vercel build
   secondaryManagerId String?
   
+  // Secondary Manager Relations (Matrix Management)
+  secondaryManagers    SecondaryManager[] @relation("SecondaryManagers")
+  secondaryManagedUsers SecondaryManager[] @relation("SecondaryManagedUsers")
+  
   projectId     String?
   project       Project?    @relation(fields: [projectId], references: [id])
 
@@ -61,6 +65,20 @@ model User {
   // NextAuth
   accounts      Account[]
   sessions      Session[]
+}
+
+model SecondaryManager {
+  id         String   @id @default(cuid())
+  employeeId String
+  employee   User     @relation("SecondaryManagers", fields: [employeeId], references: [id], onDelete: Cascade)
+  managerId  String
+  manager    User     @relation("SecondaryManagedUsers", fields: [managerId], references: [id], onDelete: Cascade)
+  permissions String[] // e.g., ["VIEW_TIME", "EDIT_SETTINGS", "APPROVE_TIME", "MANAGE_TASKS"]
+  createdAt  DateTime @default(now())
+  
+  @@unique([employeeId, managerId])
+  @@index([employeeId])
+  @@index([managerId])
 }
 
 model Project {

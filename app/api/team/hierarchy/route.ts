@@ -63,14 +63,28 @@ export async function GET() {
                     jobTitle: true,
                     sharedChiefGroupId: true,
                     createdAt: true,
+                    secondaryManagers: {
+                        include: {
+                            manager: {
+                                select: { id: true, name: true, image: true, email: true }
+                            }
+                        }
+                    },
+                    secondaryManagedUsers: {
+                        include: {
+                            employee: {
+                                select: { id: true, name: true, image: true, email: true }
+                            }
+                        }
+                    }
                 } as never,
                 orderBy: { createdAt: "asc" }
             })
         } catch (fieldError: unknown) {
             // If the field doesn't exist in Prisma client yet, fetch without it
             const error = fieldError as { message?: string }
-            if (error.message?.includes('sharedChiefGroupId') || error.message?.includes('Unknown field')) {
-                console.warn("sharedChiefGroupId field not available in Prisma client, fetching without it")
+            if (error.message?.includes('sharedChiefGroupId') || error.message?.includes('Unknown field') || error.message?.includes('secondaryManagers')) {
+                console.warn("New fields not available in Prisma client, fetching without them")
                 allUsers = await prisma.user.findMany({
                     where: { projectId: currentUser.projectId },
                     select: {
@@ -85,8 +99,13 @@ export async function GET() {
                     },
                     orderBy: { createdAt: "asc" }
                 })
-                // Add null sharedChiefGroupId to each user
-                allUsers = allUsers.map(user => ({ ...user, sharedChiefGroupId: null }))
+                // Add null values for missing fields
+                allUsers = allUsers.map(user => ({
+                    ...user,
+                    sharedChiefGroupId: null,
+                    secondaryManagers: [],
+                    secondaryManagedUsers: []
+                }))
             } else {
                 throw fieldError
             }

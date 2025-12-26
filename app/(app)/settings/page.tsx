@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ProfileForm, SecurityForm, PreferencesForm } from "@/components/settings/SettingsForms"
 import { AppearanceForm } from "@/components/settings/AppearanceForm"
 import { CompanyForm } from "@/components/settings/CompanyForm"
+import { ReportingStructure } from "@/components/settings/ReportingStructure"
 
 export default async function SettingsPage() {
     const session = await getServerSession(authOptions)
@@ -14,24 +15,80 @@ export default async function SettingsPage() {
         redirect("/login")
     }
 
-    const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-            jobTitle: true,
-            dailyTarget: true,
-            workDays: true,
-            workMode: true,
-            role: true,
-            projectId: true,
-            project: {
-                select: { name: true, workMode: true, joinCode: true }
+    let user: any = null
+
+    try {
+        // Try to fetch full user details including new schema fields
+        user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                image: true,
+                jobTitle: true,
+                dailyTarget: true,
+                workDays: true,
+                workMode: true,
+                role: true,
+                projectId: true,
+                managerId: true,
+                manager: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        image: true,
+                        jobTitle: true
+                    }
+                },
+                secondaryManagers: {
+                    include: {
+                        manager: {
+                            select: {
+                                id: true,
+                                name: true,
+                                email: true,
+                                image: true,
+                                jobTitle: true
+                            }
+                        }
+                    }
+                },
+                project: {
+                    select: { name: true, workMode: true, joinCode: true }
+                }
             }
+        })
+    } catch (e) {
+        console.warn("Failed to fetch full user details, falling back to basic query:", e)
+        // Fallback for stale Prisma client
+        user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                image: true,
+                jobTitle: true,
+                dailyTarget: true,
+                workDays: true,
+                workMode: true,
+                role: true,
+                projectId: true,
+                // Basic fields only
+                project: {
+                    select: { name: true, workMode: true, joinCode: true }
+                }
+            }
+        })
+        // Add null/empty values for missing fields
+        if (user) {
+            user.manager = null
+            user.secondaryManagers = []
+            user.managerId = null
         }
-    })
+    }
 
     if (!user) return null
 
@@ -53,7 +110,7 @@ export default async function SettingsPage() {
                     )}
                 </TabsList>
 
-                <TabsContent value="profile" className="mt-6">
+                <TabsContent value="profile" className="mt-6 space-y-6">
                     <ProfileForm user={{
                         name: user.name,
                         email: user.email,
@@ -62,6 +119,11 @@ export default async function SettingsPage() {
                         role: user.role,
                         projectId: user.projectId
                     }} />
+
+                    <ReportingStructure
+                        primaryManager={user.manager}
+                        secondaryManagers={user.secondaryManagers}
+                    />
                 </TabsContent>
 
                 <TabsContent value="preferences" className="mt-6">

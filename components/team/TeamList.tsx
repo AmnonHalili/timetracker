@@ -27,7 +27,9 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useState } from "react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { SecondaryManagersForm } from "./SecondaryManagersForm"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2, Trash2 } from "lucide-react"
 
@@ -42,6 +44,7 @@ interface User {
     workDays: number[]
     createdAt: Date
     jobTitle: string | null
+    managerId: string | null
 }
 
 interface TeamListProps {
@@ -56,6 +59,8 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
     const [editTarget, setEditTarget] = useState<string>("")
     const [editDays, setEditDays] = useState<number[]>([])
     const [saving, setSaving] = useState(false)
+    const [secondaryManagers, setSecondaryManagers] = useState<any[]>([])
+    const [loadingSecondary, setLoadingSecondary] = useState(false)
 
     // Role change dialog state
     const [roleDialogUser, setRoleDialogUser] = useState<User | null>(null)
@@ -78,13 +83,28 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
         { value: 6, label: 'Saturday' },
     ]
 
-    const openDialog = (user: User) => {
+    const openDialog = async (user: User) => {
         // Employees cannot edit settings
         if (currentUserRole === 'EMPLOYEE') return
 
         setSelectedUser(user)
         setEditTarget(user.dailyTarget?.toString() || "")
         setEditDays(user.workDays || [])
+
+        // Fetch secondary managers
+        setLoadingSecondary(true)
+        try {
+            const res = await fetch(`/api/team/hierarchy`)
+            if (res.ok) {
+                const data = await res.json()
+                const foundUser = data.users.find((u: any) => u.id === user.id)
+                setSecondaryManagers(foundUser?.secondaryManagers || [])
+            }
+        } catch (error) {
+            console.error("Failed to fetch secondary managers", error)
+        } finally {
+            setLoadingSecondary(false)
+        }
     }
 
     const closeDialog = () => {
@@ -197,6 +217,52 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
         }
     }
 
+    const handleSaveSecondaryManagers = async (managers: Array<{ managerId: string; permissions: string[] }>) => {
+        if (!selectedUser) return
+
+        try {
+            // Get current secondary managers to determine what to add/remove
+            const currentManagerIds = secondaryManagers.map((sm: any) => sm.managerId)
+            const newManagerIds = managers.map(m => m.managerId)
+
+            // Remove managers that are no longer selected
+            for (const current of secondaryManagers) {
+                if (!newManagerIds.includes(current.managerId)) {
+                    await fetch("/api/team/secondary-manager/remove", {
+                        method: "DELETE",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            employeeId: selectedUser.id,
+                            managerId: current.managerId
+                        })
+                    })
+                }
+            }
+
+            // Add or update managers
+            for (const manager of managers) {
+                if (manager.permissions.length > 0) {
+                    await fetch("/api/team/secondary-manager/add", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            employeeId: selectedUser.id,
+                            managerId: manager.managerId,
+                            permissions: manager.permissions
+                        })
+                    })
+                }
+            }
+
+            router.refresh()
+            alert("Secondary managers updated successfully")
+        } catch (error) {
+            console.error("Error updating secondary managers:", error)
+            alert("Error updating secondary managers")
+            throw error
+        }
+    }
+
     const toggleDay = (day: number) => {
         setEditDays(prev =>
             prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day].sort((a, b) => a - b)
@@ -269,63 +335,125 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
                 </Table>
             </div>
 
-            {/* Work Settings Dialog */}
+            {/* Team Member Settings Dialog */}
             <Dialog open={!!selectedUser} onOpenChange={(open) => !open && closeDialog()}>
-                <DialogContent className="sm:max-w-[500px]">
+                <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle>Work Settings - {selectedUser?.name}</DialogTitle>
+                        <DialogTitle>Team Member Settings - {selectedUser?.name}</DialogTitle>
                         <DialogDescription>
-                            Configure work days and daily target hours for this team member.
+                            Manage work settings and manager assignments.
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="space-y-6 pt-4">
-                        <div className="space-y-3">
-                            <Label>Work Days</Label>
-                            <p className="text-xs text-muted-foreground">
-                                Select the days this team member typically works.
-                            </p>
-                            <div className="grid grid-cols-2 gap-2">
-                                {daysOfWeek.map(day => (
-                                    <button
-                                        key={day.value}
-                                        type="button"
-                                        onClick={() => toggleDay(day.value)}
-                                        className={`px-4 py-3 rounded-md text-sm font-medium transition-colors ${editDays.includes(day.value)
-                                            ? 'bg-primary text-primary-foreground'
-                                            : 'bg-muted hover:bg-muted/80 text-muted-foreground'
-                                            }`}
-                                    >
-                                        {day.label}
-                                    </button>
-                                ))}
+                    <Tabs defaultValue="work" className="mt-4">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="work">Work Settings</TabsTrigger>
+                            <TabsTrigger value="managers">Managers</TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="work" className="space-y-6 pt-4">
+                            <div className="space-y-3">
+                                <Label>Work Days</Label>
+                                <p className="text-xs text-muted-foreground">
+                                    Select the days this team member typically works.
+                                </p>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {daysOfWeek.map(day => (
+                                        <button
+                                            key={day.value}
+                                            type="button"
+                                            onClick={() => toggleDay(day.value)}
+                                            className={`px-4 py-3 rounded-md text-sm font-medium transition-colors ${editDays.includes(day.value)
+                                                ? 'bg-primary text-primary-foreground'
+                                                : 'bg-muted hover:bg-muted/80 text-muted-foreground'
+                                                }`}
+                                        >
+                                            {day.label}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="target">Daily Target (Hours)</Label>
-                            <Input
-                                id="target"
-                                type="number"
-                                step="0.5"
-                                value={editTarget}
-                                onChange={e => setEditTarget(e.target.value)}
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                This is used to calculate daily progress in reports.
-                            </p>
-                        </div>
-                    </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="target">Daily Target (Hours)</Label>
+                                <Input
+                                    id="target"
+                                    type="number"
+                                    step="0.5"
+                                    value={editTarget}
+                                    onChange={e => setEditTarget(e.target.value)}
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    This is used to calculate daily progress in reports.
+                                </p>
+                            </div>
 
-                    <DialogFooter>
-                        <Button variant="outline" onClick={closeDialog} disabled={saving}>
-                            Cancel
-                        </Button>
-                        <Button onClick={saveEdit} disabled={saving}>
-                            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Save Changes
-                        </Button>
-                    </DialogFooter>
+                            <div className="flex justify-end pt-4 border-t">
+                                <Button onClick={saveEdit} disabled={saving}>
+                                    {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Save Work Settings
+                                </Button>
+                            </div>
+                        </TabsContent>
+
+                        <TabsContent value="managers" className="pt-4">
+                            {loadingSecondary ? (
+                                <div className="flex justify-center py-8">
+                                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                                </div>
+                            ) : selectedUser ? (
+                                <div className="space-y-6">
+                                    {/* Main Manager Section */}
+                                    <div className="space-y-3">
+                                        <Label className="text-base font-semibold">Main Manager</Label>
+                                        <div className="p-4 border rounded-lg bg-muted/30">
+                                            {selectedUser.managerId ? (() => {
+                                                const manager = users.find(u => u.id === selectedUser.managerId)
+                                                return manager ? (
+                                                    <div className="flex items-start gap-3">
+                                                        <Avatar className="h-10 w-10">
+                                                            <AvatarImage src={manager.image || undefined} alt={manager.name} />
+                                                            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                                                                {manager.name.substring(0, 2).toUpperCase()}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                        <div className="flex-1">
+                                                            <h4 className="font-semibold">{manager.name}</h4>
+                                                            <p className="text-sm text-muted-foreground">{manager.email}</p>
+                                                            {manager.jobTitle && (
+                                                                <p className="text-xs text-muted-foreground capitalize mt-0.5">
+                                                                    {manager.jobTitle}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Manager not found in current team
+                                                    </p>
+                                                )
+                                            })() : (
+                                                <p className="text-sm text-muted-foreground">
+                                                    No main manager assigned
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Secondary Managers Section */}
+                                    <div className="space-y-3">
+                                        <Label className="text-base font-semibold">Secondary Managers</Label>
+                                        <SecondaryManagersForm
+                                            employeeId={selectedUser.id}
+                                            currentSecondaryManagers={secondaryManagers}
+                                            availableManagers={users.filter(u => u.role === 'ADMIN' || u.role === 'MANAGER')}
+                                            onSave={handleSaveSecondaryManagers}
+                                        />
+                                    </div>
+                                </div>
+                            ) : null}
+                        </TabsContent>
+                    </Tabs>
                 </DialogContent>
             </Dialog>
 

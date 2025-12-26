@@ -218,3 +218,45 @@ export function filterVisibleUsers<T extends { id: string, managerId: string | n
     // EMPLOYEE sees only themselves
     return users.filter(u => u.id === currentUser.id)
 }
+
+/**
+ * Check if a user has permission to perform an action on a target user
+ * Checks both primary manager relationship and secondary manager permissions
+ * @param actorId - ID of user performing the action
+ * @param targetUserId - ID of user being acted upon
+ * @param action - The permission action (e.g., "VIEW_TIME", "EDIT_SETTINGS")
+ * @param allUsers - All users in the system
+ * @param secondaryRelations - All secondary manager relationships
+ * @returns true if actor has permission, false otherwise
+ */
+export function checkPermission(
+    actorId: string,
+    targetUserId: string,
+    action: string,
+    allUsers: User[],
+    secondaryRelations: Array<{ employeeId: string; managerId: string; permissions: string[] }>
+): boolean {
+    // Don't allow actions on yourself for now (can be customized per action)
+    if (actorId === targetUserId) {
+        return true // Users can manage themselves
+    }
+
+    const actor = allUsers.find(u => u.id === actorId)
+    const target = allUsers.find(u => u.id === targetUserId)
+
+    if (!actor || !target) {
+        return false
+    }
+
+    // 1. Check if actor is primary manager or has admin rights
+    if (canManageUser(actor, target, allUsers)) {
+        return true
+    }
+
+    // 2. Check if actor is secondary manager with specific permission
+    const secondaryRel = secondaryRelations.find(
+        rel => rel.employeeId === targetUserId && rel.managerId === actorId
+    )
+
+    return secondaryRel?.permissions.includes(action) ?? false
+}
