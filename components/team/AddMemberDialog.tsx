@@ -88,13 +88,13 @@ export function AddMemberDialog({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        
+
         // If adding a chief (ADMIN role with hideManagerSelect), require chief type selection
         if (role === "ADMIN" && hideManagerSelect && !chiefType) {
             alert("Please select how this chief should be added (Partner or Independent)")
             return
         }
-        
+
         setLoading(true)
 
         try {
@@ -113,8 +113,8 @@ export function AddMemberDialog({
 
             if (!res.ok) {
                 const data = await res.json()
-                const errorMsg = data.error 
-                    ? `${data.message}: ${data.error}` 
+                const errorMsg = data.error
+                    ? `${data.message}: ${data.error}`
                     : data.message || "Failed to add member"
                 throw new Error(errorMsg)
             }
@@ -134,7 +134,7 @@ export function AddMemberDialog({
             setLoading(false)
         }
     }
-    
+
     // Reset chief type when dialog closes
     useEffect(() => {
         if (!open) {
@@ -157,9 +157,13 @@ export function AddMemberDialog({
             <DialogContent className="sm:max-w-[425px]">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
-                        <DialogTitle>Add Team Member</DialogTitle>
+                        <DialogTitle>
+                            {role === "ADMIN" ? "Add New Chief" : "Add Team Member"}
+                        </DialogTitle>
                         <DialogDescription>
-                            Create a new account for your employee. They will be added to your project immediately.
+                            {role === "ADMIN"
+                                ? "Create a new account for a chief executive. You can assign them as a partner or an independent manager."
+                                : "Create a new account for your employee. They will be added to your project immediately."}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
@@ -237,14 +241,14 @@ export function AddMemberDialog({
                                         Select how this chief should be added to the organization
                                     </p>
                                 </div>
-                                
+
                                 <div className="grid gap-3">
                                     {/* Option 1: Partner */}
                                     <Card
                                         className={cn(
                                             "p-4 cursor-pointer border-2 transition-all hover:border-primary/50",
-                                            chiefType === "partner" 
-                                                ? "border-primary bg-primary/5" 
+                                            chiefType === "partner"
+                                                ? "border-primary bg-primary/5"
                                                 : "border-border"
                                         )}
                                         onClick={() => setChiefType("partner")}
@@ -252,8 +256,8 @@ export function AddMemberDialog({
                                         <div className="flex items-start gap-3">
                                             <div className={cn(
                                                 "mt-0.5 h-5 w-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
-                                                chiefType === "partner" 
-                                                    ? "border-primary bg-primary" 
+                                                chiefType === "partner"
+                                                    ? "border-primary bg-primary"
                                                     : "border-muted-foreground"
                                             )}>
                                                 {chiefType === "partner" && (
@@ -278,8 +282,8 @@ export function AddMemberDialog({
                                     <Card
                                         className={cn(
                                             "p-4 cursor-pointer border-2 transition-all hover:border-primary/50",
-                                            chiefType === "independent" 
-                                                ? "border-primary bg-primary/5" 
+                                            chiefType === "independent"
+                                                ? "border-primary bg-primary/5"
                                                 : "border-border"
                                         )}
                                         onClick={() => setChiefType("independent")}
@@ -287,8 +291,8 @@ export function AddMemberDialog({
                                         <div className="flex items-start gap-3">
                                             <div className={cn(
                                                 "mt-0.5 h-5 w-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
-                                                chiefType === "independent" 
-                                                    ? "border-primary bg-primary" 
+                                                chiefType === "independent"
+                                                    ? "border-primary bg-primary"
                                                     : "border-muted-foreground"
                                             )}>
                                                 {chiefType === "independent" && (
