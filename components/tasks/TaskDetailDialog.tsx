@@ -37,7 +37,7 @@ export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }:
     // Calculate total time spent on this task
     const calculateTotalTime = () => {
         let totalSeconds = 0
-        
+
         timeEntries.forEach(entry => {
             if (entry.endTime) {
                 const start = new Date(entry.startTime).getTime()
@@ -71,19 +71,19 @@ export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }:
     // Calculate percentage of subtasks done
     const subtasksDone = task.subtasks?.filter(s => s.isDone).length || 0
     const totalSubtasks = task.subtasks?.length || 0
-    const completionPercentage = totalSubtasks > 0 
-        ? Math.round((subtasksDone / totalSubtasks) * 100) 
+    const completionPercentage = totalSubtasks > 0
+        ? Math.round((subtasksDone / totalSubtasks) * 100)
         : task.status === 'DONE' ? 100 : 0
 
     // Group time entries by user
     const timeByUser = new Map<string, { user: { id: string; name: string | null }, totalSeconds: number }>()
-    
+
     timeEntries.forEach(entry => {
         if (entry.endTime && entry.user) {
             const start = new Date(entry.startTime).getTime()
             const end = new Date(entry.endTime).getTime()
             const seconds = Math.floor((end - start) / 1000)
-            
+
             const existing = timeByUser.get(entry.user.id)
             if (existing) {
                 existing.totalSeconds += seconds
@@ -168,7 +168,7 @@ export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }:
                                 Completion: {completionPercentage}%
                             </h3>
                             <div className="w-full bg-muted rounded-full h-2.5">
-                                <div 
+                                <div
                                     className="bg-primary h-2.5 rounded-full transition-all"
                                     style={{ width: `${completionPercentage}%` }}
                                 />
@@ -228,10 +228,10 @@ export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }:
                                         const hours = Math.floor(duration / 3600)
                                         const minutes = Math.floor((duration % 3600) / 60)
                                         const seconds = duration % 60
-                                        const durationStr = hours > 0 
-                                            ? `${hours}h ${minutes}m` 
-                                            : minutes > 0 
-                                                ? `${minutes}m ${seconds}s` 
+                                        const durationStr = hours > 0
+                                            ? `${hours}h ${minutes}m`
+                                            : minutes > 0
+                                                ? `${minutes}m ${seconds}s`
                                                 : `${seconds}s`
 
                                         return (
@@ -258,14 +258,4 @@ export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }:
             </DialogContent>
         </Dialog>
     )
-}
-
-function getPriorityColor(priority: string) {
-    switch (priority) {
-        case 'URGENT': return 'bg-red-600 hover:bg-red-600'
-        case 'HIGH': return 'bg-orange-500 hover:bg-orange-500'
-        case 'MEDIUM': return 'bg-blue-500 hover:bg-blue-500'
-        case 'LOW': return 'bg-slate-500 hover:bg-slate-500'
-        default: return 'bg-slate-500'
-    }
 }
