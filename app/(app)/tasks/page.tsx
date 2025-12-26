@@ -33,6 +33,7 @@ export default async function TasksPage() {
             include: {
                 assignees: true,
                 checklist: { orderBy: { createdAt: 'asc' } },
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
                 subtasks: {
                     orderBy: { createdAt: 'asc' }
