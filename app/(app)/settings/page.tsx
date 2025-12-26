@@ -15,6 +15,7 @@ export default async function SettingsPage() {
         redirect("/login")
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let user: any = null
 
     try {

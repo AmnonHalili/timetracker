@@ -29,7 +29,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { SecondaryManagersForm } from "./SecondaryManagersForm"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2, Trash2 } from "lucide-react"
 
@@ -59,7 +59,15 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
     const [editTarget, setEditTarget] = useState<string>("")
     const [editDays, setEditDays] = useState<number[]>([])
     const [saving, setSaving] = useState(false)
-    const [secondaryManagers, setSecondaryManagers] = useState<any[]>([])
+    const [secondaryManagers, setSecondaryManagers] = useState<Array<{
+        managerId: string
+        manager: {
+            id: string
+            name: string
+            email: string
+        }
+        permissions: string[]
+    }>>([])
     const [loadingSecondary, setLoadingSecondary] = useState(false)
 
     // Role change dialog state
@@ -97,7 +105,7 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
             const res = await fetch(`/api/team/hierarchy`)
             if (res.ok) {
                 const data = await res.json()
-                const foundUser = data.users.find((u: any) => u.id === user.id)
+                const foundUser = data.users.find((u: User & { secondaryManagers: any[] }) => u.id === user.id)
                 setSecondaryManagers(foundUser?.secondaryManagers || [])
             }
         } catch (error) {
@@ -222,7 +230,6 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
 
         try {
             // Get current secondary managers to determine what to add/remove
-            const currentManagerIds = secondaryManagers.map((sm: any) => sm.managerId)
             const newManagerIds = managers.map(m => m.managerId)
 
             // Remove managers that are no longer selected

@@ -11,7 +11,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { X, Plus, Loader2 } from "lucide-react"
+import { X, Loader2 } from "lucide-react"
 
 interface Manager {
     id: string
