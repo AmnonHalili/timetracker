@@ -159,20 +159,24 @@ export function filterVisibleUsers<T extends { id: string, managerId: string | n
     currentUser: { id: string, role: string, sharedChiefGroupId?: string | null }
 ): T[] {
     if (currentUser.role === "ADMIN") {
-        // ADMIN sees everyone, but if they're in a shared group, they see all employees under any chief in that group
+        const visibleIds = new Set([currentUser.id])
+
+        // Add ALL other ADMIN users (chiefs see each other regardless of shared/independent status)
+        users.filter(u => u.role === "ADMIN" && !u.managerId).forEach(chief => {
+            visibleIds.add(chief.id)
+        })
+
+        // Add employees based on shared/independent status
         if (currentUser.sharedChiefGroupId) {
-            // Find all chiefs in the same shared group
+            // Partner Chief: Add all employees under any partner in the same group
             const sharedGroupChiefs = users.filter(u =>
                 u.sharedChiefGroupId === currentUser.sharedChiefGroupId &&
                 u.role === "ADMIN" &&
                 !u.managerId
             ) as T[]
 
-            const visibleIds = new Set([currentUser.id])
-
             // Add all descendants of all chiefs in the shared group
             sharedGroupChiefs.forEach(chief => {
-                visibleIds.add(chief.id)
                 const addDescendants = (parentId: string) => {
                     users.filter(u => u.managerId === parentId).forEach(child => {
                         visibleIds.add(child.id)
@@ -181,21 +185,17 @@ export function filterVisibleUsers<T extends { id: string, managerId: string | n
                 }
                 addDescendants(chief.id)
             })
-
-            return users.filter(u => visibleIds.has(u.id))
+        } else {
+            // Independent Chief: Add only their own descendants
+            const addDescendants = (parentId: string) => {
+                users.filter(u => u.managerId === parentId).forEach(child => {
+                    visibleIds.add(child.id)
+                    addDescendants(child.id)
+                })
+            }
+            addDescendants(currentUser.id)
         }
 
-        // Independent ADMIN sees ONLY themselves + their own direct/indirect descendants
-        const visibleIds = new Set([currentUser.id])
-
-        const addDescendants = (parentId: string) => {
-            users.filter(u => u.managerId === parentId).forEach(child => {
-                visibleIds.add(child.id)
-                addDescendants(child.id)
-            })
-        }
-
-        addDescendants(currentUser.id)
         return users.filter(u => visibleIds.has(u.id))
     }
 

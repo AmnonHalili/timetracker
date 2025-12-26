@@ -26,6 +26,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2, Trash2 } from "lucide-react"
@@ -36,6 +37,7 @@ interface User {
     email: string
     role: string
     status: string
+    image: string | null
     dailyTarget: number | null
     workDays: number[]
     createdAt: Date
@@ -213,6 +215,7 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
                 <Table>
                     <TableHeader>
                         <TableRow>
+                            <TableHead className="w-[80px]">Profile</TableHead>
                             <TableHead>Name</TableHead>
                             <TableHead>Email</TableHead>
                             <TableHead>Job Title</TableHead>
@@ -226,6 +229,14 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
                                 className={`${currentUserRole !== 'EMPLOYEE' ? 'cursor-pointer hover:bg-muted/50' : ''}`}
                                 onClick={() => openDialog(user)}
                             >
+                                <TableCell>
+                                    <Avatar className="h-10 w-10">
+                                        <AvatarImage src={user.image || undefined} alt={user.name} />
+                                        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                                            {user.name.substring(0, 2).toUpperCase()}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                </TableCell>
                                 <TableCell className="font-bold">
                                     {user.name} {user.id === currentUserId && <span className="text-muted-foreground font-normal">(you)</span>}
                                 </TableCell>
