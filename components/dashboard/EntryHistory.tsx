@@ -33,9 +33,11 @@ interface Task {
 interface EntryHistoryProps {
     entries: TimeEntry[]
     tasks: Task[]
+    optimisticEntryId?: string | null
+    onOptimisticEntryCleared?: () => void
 }
 
-export function EntryHistory({ entries, tasks }: EntryHistoryProps) {
+export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEntryCleared }: EntryHistoryProps) {
     const router = useRouter()
     const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null)
     const [editDialogOpen, setEditDialogOpen] = useState(false)
@@ -45,7 +47,22 @@ export function EntryHistory({ entries, tasks }: EntryHistoryProps) {
 
     useEffect(() => {
         setLocalEntries(entries)
-    }, [entries])
+        
+        // When server entries arrive, check if we should remove the optimistic entry
+        if (optimisticEntryId && onOptimisticEntryCleared) {
+            // Check if the optimistic entry (temp ID) is still in the list
+            const hasOptimisticEntry = entries.some(e => e.id === optimisticEntryId)
+            
+            // If optimistic entry is gone, it means server data replaced it
+            // Clear the callback to indicate we no longer need the optimistic entry
+            if (!hasOptimisticEntry) {
+                // Small delay to ensure smooth transition
+                setTimeout(() => {
+                    onOptimisticEntryCleared()
+                }, 100)
+            }
+        }
+    }, [entries, optimisticEntryId, onOptimisticEntryCleared])
 
     const handleEditStart = (entry: TimeEntry) => {
         setEditingEntry(entry)

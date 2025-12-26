@@ -4,8 +4,7 @@ import { calculateBalance } from "@/lib/time-calculations"
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 
-import { ControlBar } from "@/components/dashboard/ControlBar"
-import { EntryHistory } from "@/components/dashboard/EntryHistory"
+import { DashboardContent } from "@/components/dashboard/DashboardContent"
 import { StatsWidget } from "@/components/dashboard/StatsWidget"
 import { TeamStatusWidget } from "@/components/dashboard/TeamStatusWidget"
 
@@ -148,18 +147,11 @@ export default async function DashboardPage() {
             <div className={`grid grid-cols-1 ${showSidebar ? "lg:grid-cols-[1fr_220px]" : ""} gap-8 items-start`}>
                 {/* Main Content Area */}
                 <div className="space-y-8 min-w-0">
-
-
-                    {/* Timer Control */}
-                    <ControlBar
+                    <DashboardContent
                         activeEntry={activeEntry || null}
+                        historyEntries={historyEntries}
                         tasks={tasks}
                     />
-
-                    {/* History List */}
-                    <div className="pt-4">
-                        <EntryHistory entries={historyEntries} tasks={tasks} />
-                    </div>
                 </div>
 
                 {/* Right Sidebar */}

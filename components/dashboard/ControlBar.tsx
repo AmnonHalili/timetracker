@@ -20,10 +20,19 @@ interface ControlBarProps {
         tasks?: Array<{ id: string; title: string }>
     } | null
     tasks: Array<{ id: string; title: string }>
+    onTimerStopped?: (stoppedEntry: {
+        startTime: Date
+        endTime: Date
+        description?: string | null
+        breaks?: Array<{ startTime: Date; endTime: Date | null }>
+        tasks?: Array<{ id: string; title: string }>
+    }) => void
 }
 
-export function ControlBar({ activeEntry, tasks }: ControlBarProps) {
+export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarProps) {
     const router = useRouter()
+    // Optimistic state for immediate UI updates
+    const [optimisticEntry, setOptimisticEntry] = useState<ControlBarProps['activeEntry']>(activeEntry)
     const [elapsed, setElapsed] = useState(0)
     const [loading, setLoading] = useState(false)
     const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
@@ -32,35 +41,40 @@ export function ControlBar({ activeEntry, tasks }: ControlBarProps) {
     const [manualStart, setManualStart] = useState("")
     const [manualEnd, setManualEnd] = useState("")
 
+    // Sync optimistic state with server state when it arrives
     useEffect(() => {
-        if (activeEntry?.description) {
-            setDescription(activeEntry.description)
-        } else if (!activeEntry) {
+        setOptimisticEntry(activeEntry)
+    }, [activeEntry])
+
+    useEffect(() => {
+        if (optimisticEntry?.description) {
+            setDescription(optimisticEntry.description)
+        } else if (!optimisticEntry) {
             setDescription("")
         }
 
-        if (activeEntry?.tasks) {
-            setSelectedTaskIds(activeEntry.tasks.map(t => t.id))
-        } else if (!activeEntry) {
+        if (optimisticEntry?.tasks) {
+            setSelectedTaskIds(optimisticEntry.tasks.map(t => t.id))
+        } else if (!optimisticEntry) {
             setSelectedTaskIds([])
         }
-    }, [activeEntry])
+    }, [optimisticEntry])
 
 
-    const isPaused = activeEntry?.breaks?.some((b) => !b.endTime)
+    const isPaused = optimisticEntry?.breaks?.some((b) => !b.endTime)
 
     useEffect(() => {
-        if (!activeEntry) {
+        if (!optimisticEntry) {
             setElapsed(0)
             return
         }
 
         const calculate = () => {
             const now = new Date().getTime()
-            const start = new Date(activeEntry.startTime).getTime()
+            const start = new Date(optimisticEntry.startTime).getTime()
             let totalBreakTime = 0
 
-            activeEntry.breaks?.forEach((b) => {
+            optimisticEntry.breaks?.forEach((b) => {
                 const bStart = new Date(b.startTime).getTime()
                 const bEnd = b.endTime ? new Date(b.endTime).getTime() : now
                 totalBreakTime += (bEnd - bStart)
@@ -69,10 +83,11 @@ export function ControlBar({ activeEntry, tasks }: ControlBarProps) {
             setElapsed(Math.max(0, Math.floor((now - start - totalBreakTime) / 1000)))
         }
 
+        // Calculate immediately for instant display
         calculate()
         const interval = setInterval(calculate, 1000)
         return () => clearInterval(interval)
-    }, [activeEntry])
+    }, [optimisticEntry])
 
     const formatTime = (seconds: number) => {
         const h = Math.floor(seconds / 3600)
@@ -83,6 +98,23 @@ export function ControlBar({ activeEntry, tasks }: ControlBarProps) {
 
     const handleStart = async () => {
         setLoading(true)
+        
+        // Optimistic update: immediately show timer as started
+        const now = new Date()
+        const previousEntry = optimisticEntry // Backup for rollback
+        
+        if (!isManualMode) {
+            // Timer Start - update optimistically
+            setOptimisticEntry({
+                startTime: now,
+                breaks: [],
+                description: description || null,
+                tasks: selectedTaskIds.length > 0 
+                    ? tasks.filter(t => selectedTaskIds.includes(t.id))
+                    : undefined
+            })
+        }
+        
         try {
             if (isManualMode && manualStart && manualEnd) {
                 // Manual Entry
@@ -120,6 +152,8 @@ export function ControlBar({ activeEntry, tasks }: ControlBarProps) {
             router.refresh()
         } catch (error) {
             console.error(error)
+            // Revert optimistic update on error
+            setOptimisticEntry(previousEntry)
             alert("Failed to save entry")
         } finally {
             setLoading(false)
@@ -128,16 +162,58 @@ export function ControlBar({ activeEntry, tasks }: ControlBarProps) {
 
     const handleAction = async (action: 'stop' | 'pause' | 'resume') => {
         setLoading(true)
+        
+        // Optimistic updates for immediate UI feedback
+        const now = new Date()
+        const previousEntry = optimisticEntry // Backup for rollback
+        
+        if (action === 'stop') {
+            // Create the stopped entry data for optimistic display
+            if (optimisticEntry && onTimerStopped) {
+                const stoppedEntry = {
+                    startTime: new Date(optimisticEntry.startTime),
+                    endTime: now,
+                    description: optimisticEntry.description || null,
+                    breaks: optimisticEntry.breaks?.map(b => ({
+                        startTime: new Date(b.startTime),
+                        endTime: b.endTime ? new Date(b.endTime) : null
+                    })) || [],
+                    tasks: optimisticEntry.tasks || []
+                }
+                onTimerStopped(stoppedEntry)
+            }
+            
+            setOptimisticEntry(null)
+            setDescription("")
+            setSelectedTaskIds([])
+        } else if (action === 'pause' && optimisticEntry) {
+            setOptimisticEntry({
+                ...optimisticEntry,
+                breaks: [...(optimisticEntry.breaks || []), { startTime: now, endTime: null }]
+            })
+        } else if (action === 'resume' && optimisticEntry && optimisticEntry.breaks) {
+            const newBreaks = [...optimisticEntry.breaks]
+            const lastBreakIndex = newBreaks.findIndex(b => !b.endTime)
+            if (lastBreakIndex >= 0) {
+                newBreaks[lastBreakIndex] = { ...newBreaks[lastBreakIndex], endTime: now.toISOString() }
+                setOptimisticEntry({
+                    ...optimisticEntry,
+                    breaks: newBreaks
+                })
+            }
+        }
+        
         try {
             await fetch('/api/time-entries', {
                 method: 'POST',
                 body: JSON.stringify({ action }),
             })
-            if (action === 'stop') {
-                setDescription("")
-                setSelectedTaskIds([])
-            }
             router.refresh()
+        } catch (error) {
+            console.error("Timer action failed", error)
+            // Revert optimistic update on error
+            setOptimisticEntry(previousEntry)
+            alert("Failed to update timer. Please try again.")
         } finally {
             setLoading(false)
         }
@@ -155,13 +231,13 @@ export function ControlBar({ activeEntry, tasks }: ControlBarProps) {
                     <label htmlFor="work-description" className="sr-only">
                         What are you working on?
                     </label>
-                    <Input
+                        <Input
                         id="work-description"
                         placeholder="What are you working on?"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         className="bg-background border-input hover:bg-accent/50 focus:bg-background shadow-sm h-9 text-sm max-w-sm"
-                        disabled={!!activeEntry}
+                        disabled={!!optimisticEntry}
                         aria-label="What are you working on?"
                     />
 
@@ -182,7 +258,7 @@ export function ControlBar({ activeEntry, tasks }: ControlBarProps) {
                 <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
 
                     {/* Timer / Manual Inputs */}
-                    {!activeEntry && isManualMode ? (
+                    {!optimisticEntry && isManualMode ? (
                         <div className="flex items-center gap-2">
                             <label htmlFor="manual-start-time" className="sr-only">
                                 Start time
@@ -217,7 +293,7 @@ export function ControlBar({ activeEntry, tasks }: ControlBarProps) {
 
                     {/* Action Buttons */}
                     <div className="flex items-center gap-2">
-                        {!activeEntry ? (
+                        {!optimisticEntry ? (
                             <>
                                 <Button
                                     size="sm"
