@@ -972,6 +972,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                 onTaskCreated={() => {
                     router.refresh()
                 }}
+                currentUserId={currentUserId}
             />
             
             {/* Filters Dialog */}

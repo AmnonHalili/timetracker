@@ -26,9 +26,10 @@ interface CreateTaskDialogProps {
     mode?: 'create' | 'edit'
     open?: boolean
     onOpenChange?: (open: boolean) => void
+    currentUserId?: string
 }
 
-export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mode = 'create', open: controlledOpen, onOpenChange: setControlledOpen }: CreateTaskDialogProps) {
+export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mode = 'create', open: controlledOpen, onOpenChange: setControlledOpen, currentUserId }: CreateTaskDialogProps) {
     const router = useRouter()
     const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
 
@@ -51,16 +52,26 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mod
             // Initialize users list
             if (initialUsers && initialUsers.length > 0) {
                 setUsers(initialUsers)
-                if (mode === 'create' && initialUsers.length === 1) {
-                    setAssignedToIds([initialUsers[0].id])
+                if (mode === 'create') {
+                    // If currentUserId is provided, mark it as default
+                    if (currentUserId && initialUsers.some(u => u.id === currentUserId)) {
+                        setAssignedToIds([currentUserId])
+                    } else if (initialUsers.length === 1) {
+                        setAssignedToIds([initialUsers[0].id])
+                    }
                 }
             } else {
                 fetch("/api/team?all=true")
                     .then(res => res.json())
                     .then(data => {
                         setUsers(data)
-                        if (mode === 'create' && Array.isArray(data) && data.length === 1) {
-                            setAssignedToIds([data[0].id])
+                        if (mode === 'create') {
+                            // If currentUserId is provided, mark it as default
+                            if (currentUserId && Array.isArray(data) && data.some((u: { id: string }) => u.id === currentUserId)) {
+                                setAssignedToIds([currentUserId])
+                            } else if (Array.isArray(data) && data.length === 1) {
+                                setAssignedToIds([data[0].id])
+                            }
                         }
                     })
                     .catch(() => {
@@ -101,14 +112,19 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mod
             } else if (mode === 'create') {
                 // Reset fields
                 setTitle("")
-                //  setAssignedToIds([]) // Don't reset if just loaded single user
+                // Set default assigned user if currentUserId is provided
+                if (currentUserId && users.some(u => u.id === currentUserId)) {
+                    setAssignedToIds([currentUserId])
+                } else {
+                    setAssignedToIds([])
+                }
                 setPriority("MEDIUM")
                 setDeadline("")
                 setDeadlineTime("")
                 setDescription("")
             }
         }
-    }, [isOpen, initialUsers, mode, task])
+    }, [isOpen, initialUsers, mode, task, currentUserId, users])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -227,6 +243,9 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mod
                                             />
                                             <Label htmlFor={`user-${user.id}`} className="cursor-pointer text-sm font-normal">
                                                 {user.name || user.email}
+                                                {currentUserId && user.id === currentUserId && (
+                                                    <span className="text-muted-foreground ml-1">(you)</span>
+                                                )}
                                             </Label>
                                         </div>
                                     ))}

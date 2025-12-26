@@ -118,7 +118,10 @@ export default async function TasksPage() {
                         {isAdmin ? "Manage and assign tasks" : "Your assigned tasks"}
                     </p>
                 </div>
-                <CreateTaskDialog users={isAdmin && users.length > 0 ? users : [{ id: session.user.id, name: session.user.name || "Me", email: session.user.email ?? null }]} />
+                <CreateTaskDialog 
+                    users={isAdmin && users.length > 0 ? users : [{ id: session.user.id, name: session.user.name || "Me", email: session.user.email ?? null }]} 
+                    currentUserId={session.user.id}
+                />
             </div>
 
             <TasksView
