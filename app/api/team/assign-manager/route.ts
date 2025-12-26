@@ -1,6 +1,6 @@
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { detectCircularReference } from "@/lib/hierarchy-utils"
+import { detectCircularReference, canManageUser } from "@/lib/hierarchy-utils"
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 
@@ -11,6 +11,14 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
+    const currentUser = await prisma.user.findUnique({
+        where: { id: session.user.id }
+    })
+
+    if (!currentUser?.projectId) {
+        return NextResponse.json({ message: "No project found" }, { status: 404 })
+    }
+
     try {
         const { employeeId, managerId } = await req.json()
 
@@ -18,19 +26,9 @@ export async function PATCH(req: Request) {
             return NextResponse.json({ message: "Employee ID is required" }, { status: 400 })
         }
 
-        const currentUser = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: { role: true, projectId: true, id: true }
-        })
-
-        if (!currentUser?.projectId) {
-            return NextResponse.json({ message: "No project found" }, { status: 404 })
-        }
-
         // Fetch employee user
         const employee = await prisma.user.findUnique({
-            where: { id: employeeId },
-            select: { projectId: true, role: true, managerId: true }
+            where: { id: employeeId }
         })
 
         if (!employee) {
@@ -41,12 +39,13 @@ export async function PATCH(req: Request) {
             return NextResponse.json({ message: "Employee not in your project" }, { status: 403 })
         }
 
-        // Permission check
-        if (currentUser.role !== "ADMIN") {
-            // Manager can only assign their own direct reports
-            if (currentUser.role !== "MANAGER" || employee.managerId !== currentUser.id) {
-                return NextResponse.json({ message: "Forbidden: You can only manage your direct reports" }, { status: 403 })
-            }
+        // Permission check using canManageUser
+        const allUsers = await prisma.user.findMany({
+            where: { projectId: currentUser.projectId }
+        })
+
+        if (!canManageUser(currentUser, employee, allUsers)) {
+            return NextResponse.json({ message: "Forbidden: You don't have permission to manage this user" }, { status: 403 })
         }
 
         // Validate assignment if managerId is provided
@@ -73,11 +72,7 @@ export async function PATCH(req: Request) {
                 return NextResponse.json({ message: "EMPLOYEE cannot be a manager" }, { status: 400 })
             }
 
-            // Check for circular references
-            const allUsers = await prisma.user.findMany({
-                where: { projectId: currentUser.projectId }
-            })
-
+            // Check for circular references (reuse allUsers from above)
             if (detectCircularReference(employeeId, managerId, allUsers)) {
                 return NextResponse.json({ message: "This assignment would create a circular reference" }, { status: 400 })
             }
@@ -99,3 +94,4 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ message: "Failed to assign manager" }, { status: 500 })
     }
 }
+

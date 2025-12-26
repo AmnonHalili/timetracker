@@ -1,5 +1,6 @@
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { canManageUser } from "@/lib/hierarchy-utils"
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 
@@ -10,13 +11,16 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
-    // Verify admin role
+    // Verify user permissions
     const currentUser = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { role: true, projectId: true }
+        where: { id: session.user.id }
     })
 
-    if (currentUser?.role !== "ADMIN") {
+    if (!currentUser) {
+        return NextResponse.json({ message: "User not found" }, { status: 404 })
+    }
+
+    if (currentUser.role !== "ADMIN") {
         return NextResponse.json({ message: "Forbidden: Admin access required" }, { status: 403 })
     }
 
@@ -31,14 +35,22 @@ export async function PATCH(req: Request) {
             return NextResponse.json({ message: "Invalid role" }, { status: 400 })
         }
 
-        // Verify the user belongs to the same project
+        // Verify the user belongs to the same project and check permissions
         const targetUser = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { projectId: true }
+            where: { id: userId }
         })
 
-        if (targetUser?.projectId !== currentUser.projectId) {
+        if (!targetUser || targetUser.projectId !== currentUser.projectId) {
             return NextResponse.json({ message: "Forbidden: User not in your project" }, { status: 403 })
+        }
+
+        // Check if current user can manage target user  
+        const allUsers = await prisma.user.findMany({
+            where: { projectId: currentUser.projectId }
+        })
+
+        if (!canManageUser(currentUser, targetUser, allUsers)) {
+            return NextResponse.json({ message: "Forbidden: You don't have permission to manage this user" }, { status: 403 })
         }
 
         // Prevent changing role if this is the last admin

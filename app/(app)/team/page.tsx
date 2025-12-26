@@ -18,10 +18,21 @@ export default async function TeamPage() {
         redirect("/login")
     }
 
-    const currentUser = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { projectId: true, role: true, project: true, id: true }
-    })
+    let currentUser
+    try {
+        // Try to fetch with sharedChiefGroupId
+        currentUser = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { projectId: true, role: true, project: true, id: true, sharedChiefGroupId: true } as never
+        }) as { projectId: string | null; role: string; project: any; id: string; sharedChiefGroupId?: string | null } | null
+    } catch (error) {
+        // If field doesn't exist, fetch without it
+        const basicUser = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { projectId: true, role: true, project: true, id: true }
+        })
+        currentUser = basicUser ? { ...basicUser, sharedChiefGroupId: null } : null
+    }
 
     if (!currentUser?.projectId) {
         // Fetch full user details for the private view
