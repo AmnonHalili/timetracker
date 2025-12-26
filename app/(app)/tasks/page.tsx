@@ -72,6 +72,32 @@ export default async function TasksPage() {
         select: { id: true, name: true, email: true }
     }) : [{ id: session.user.id, name: session.user.name || "Me", email: session.user.email ?? null }]
 
+    // Fetch active time entries (timers that are currently running) to determine task status
+    const activeTimeEntries = await prisma.timeEntry.findMany({
+        where: {
+            endTime: null, // Active timer
+            tasks: {
+                some: {
+                    id: { in: tasks.map(t => t.id) }
+                }
+            }
+        },
+        select: {
+            id: true,
+            tasks: {
+                select: { id: true }
+            }
+        }
+    })
+
+    // Create a map of task IDs that have active timers
+    const tasksWithActiveTimers = new Set<string>()
+    activeTimeEntries.forEach(entry => {
+        entry.tasks.forEach(task => {
+            tasksWithActiveTimers.add(task.id)
+        })
+    })
+
     return (
         <div className="container mx-auto space-y-8">
             <div className="flex justify-between items-center">
@@ -84,7 +110,13 @@ export default async function TasksPage() {
                 <CreateTaskDialog users={isAdmin && users.length > 0 ? users : [{ id: session.user.id, name: session.user.name || "Me", email: session.user.email ?? null }]} />
             </div>
 
-            <TasksView initialTasks={tasks} users={users} isAdmin={isAdmin} currentUserId={session.user.id} />
+            <TasksView 
+                initialTasks={tasks} 
+                users={users} 
+                isAdmin={isAdmin} 
+                currentUserId={session.user.id}
+                tasksWithActiveTimers={Array.from(tasksWithActiveTimers)}
+            />
         </div>
     )
 }
