@@ -5,11 +5,55 @@ import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { useEffect, useState } from "react"
 
 import { signOut } from "next-auth/react"
 
 export function Sidebar() {
     const pathname = usePathname()
+    const [isPinkTheme, setIsPinkTheme] = useState(false)
+    const [isWhiteTheme, setIsWhiteTheme] = useState(false)
+
+    useEffect(() => {
+        // Check which theme is active
+        const checkTheme = () => {
+            const body = document.body
+            const html = document.documentElement
+            // Check both class and localStorage
+            const isPink = body.classList.contains("pink-theme") || 
+                          html.classList.contains("pink-theme") ||
+                          localStorage.getItem("theme") === "pink" ||
+                          localStorage.getItem("appTheme") === "pink"
+            const isWhite = body.classList.contains("white-theme") || 
+                           html.classList.contains("white-theme") ||
+                           localStorage.getItem("theme") === "white" ||
+                           localStorage.getItem("appTheme") === "white"
+            setIsPinkTheme(isPink)
+            setIsWhiteTheme(isWhite)
+        }
+        
+        checkTheme()
+        
+        // Watch for theme changes
+        const observer = new MutationObserver(checkTheme)
+        observer.observe(document.body, {
+            attributes: true,
+            attributeFilter: ['class']
+        })
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['class']
+        })
+        
+        // Also listen to storage changes
+        const handleStorageChange = () => checkTheme()
+        window.addEventListener("storage", handleStorageChange)
+        
+        return () => {
+            observer.disconnect()
+            window.removeEventListener("storage", handleStorageChange)
+        }
+    }, [])
 
     const routes = [
         {
@@ -49,22 +93,56 @@ export function Sidebar() {
         <aside className="flex flex-col h-screen w-52 border-r bg-background" aria-label="Main navigation">
             <div className="px-4 py-6 border-b flex items-center justify-center z-10 relative">
                 <Link href="/dashboard" className="flex flex-col items-center gap-2" aria-label="Collabo Home">
-                    <Image 
-                        src="/collabologo.png" 
-                        alt="Collabo Logo" 
-                        width={80} 
-                        height={80} 
-                        className="h-16 w-auto dark:hidden" 
-                        priority 
-                    />
-                    <Image 
-                        src="/collabologowhitenoback.png" 
-                        alt="Collabo Logo" 
-                        width={80} 
-                        height={80} 
-                        className="h-16 w-auto hidden dark:block" 
-                        priority 
-                    />
+                    {isPinkTheme ? (
+                        <>
+                            <Image 
+                                src="/collabologopink.png" 
+                                alt="Collabo Logo" 
+                                width={80} 
+                                height={80} 
+                                className="h-16 w-auto dark:hidden" 
+                                priority 
+                            />
+                            <Image 
+                                src="/collabologopink.png" 
+                                alt="Collabo Logo" 
+                                width={80} 
+                                height={80} 
+                                className="h-16 w-auto hidden dark:block" 
+                                priority 
+                            />
+                        </>
+                    ) : isWhiteTheme ? (
+                        <>
+                            <Image 
+                                src="/collabologoblack.png" 
+                                alt="Collabo Logo" 
+                                width={80} 
+                                height={80} 
+                                className="h-16 w-auto" 
+                                priority 
+                            />
+                        </>
+                    ) : (
+                        <>
+                            <Image 
+                                src="/collabologo.png" 
+                                alt="Collabo Logo" 
+                                width={80} 
+                                height={80} 
+                                className="h-16 w-auto dark:hidden" 
+                                priority 
+                            />
+                            <Image 
+                                src="/collabologowhitenoback.png" 
+                                alt="Collabo Logo" 
+                                width={80} 
+                                height={80} 
+                                className="h-16 w-auto hidden dark:block" 
+                                priority 
+                            />
+                        </>
+                    )}
                 </Link>
             </div>
 

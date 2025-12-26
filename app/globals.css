@@ -146,6 +146,80 @@
     --ring: 204 100% 60%;
   }
 
+  /* White Theme - Black buttons on white background */
+  .white-theme {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+    --primary: 0 0% 0%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 0%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 0%;
+  }
+
+  .dark.white-theme {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+    --primary: 0 0% 0%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 0%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 0%;
+  }
+
+  /* Pink Theme */
+  .pink-theme {
+    --primary: 330 81% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 330 40% 96%;
+    --secondary-foreground: 330 20% 20%;
+    --muted: 330 30% 95%;
+    --muted-foreground: 330 15% 45%;
+    --accent: 330 40% 96%;
+    --accent-foreground: 330 20% 20%;
+    --border: 330 25% 85%;
+    --input: 330 25% 85%;
+    --ring: 330 81% 60%;
+  }
+
+  .dark.pink-theme {
+    --primary: 330 70% 70%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 330 20% 20%;
+    --secondary-foreground: 330 40% 95%;
+    --muted: 330 15% 18%;
+    --muted-foreground: 330 20% 65%;
+    --accent: 330 20% 20%;
+    --accent-foreground: 330 40% 95%;
+    --border: 330 15% 30%;
+    --input: 330 15% 30%;
+    --ring: 330 70% 70%;
+  }
+
   /* Reduce Motion */
   .reduce-motion *,
   .reduce-motion *::before,

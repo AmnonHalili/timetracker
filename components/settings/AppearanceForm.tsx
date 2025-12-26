@@ -10,7 +10,7 @@ export function AppearanceForm() {
             <CardHeader>
                 <CardTitle>Appearance</CardTitle>
                 <CardDescription>
-                    Customize the look and feel of the application. Automatically switch between day and night themes.
+                    Customize the look and feel of the application. Choose between white, black, pink, or system theme.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

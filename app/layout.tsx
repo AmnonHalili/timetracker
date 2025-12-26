@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -45,6 +46,69 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <Script
+          id="theme-init"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  // Check both next-themes storage and our custom storage
+                  const nextTheme = localStorage.getItem('theme');
+                  const appTheme = localStorage.getItem('appTheme') || nextTheme || 'blue';
+                  
+                  if (appTheme === 'white') {
+                    document.documentElement.classList.remove('dark');
+                    document.body.classList.remove('dark');
+                    document.documentElement.classList.add('white-theme');
+                    document.body.classList.add('white-theme');
+                    document.documentElement.classList.remove('pink-theme');
+                    document.body.classList.remove('pink-theme');
+                  } else if (appTheme === 'blue') {
+                    document.documentElement.classList.remove('dark');
+                    document.body.classList.remove('dark');
+                    document.documentElement.classList.remove('white-theme');
+                    document.body.classList.remove('white-theme');
+                    document.documentElement.classList.remove('pink-theme');
+                    document.body.classList.remove('pink-theme');
+                  } else if (appTheme === 'black') {
+                    document.documentElement.classList.add('dark');
+                    document.body.classList.add('dark');
+                    document.documentElement.classList.remove('white-theme');
+                    document.body.classList.remove('white-theme');
+                    document.documentElement.classList.remove('pink-theme');
+                    document.body.classList.remove('pink-theme');
+                  } else if (appTheme === 'pink') {
+                    document.documentElement.classList.remove('dark');
+                    document.body.classList.remove('dark');
+                    document.documentElement.classList.remove('white-theme');
+                    document.body.classList.remove('white-theme');
+                    document.documentElement.classList.add('pink-theme');
+                    document.body.classList.add('pink-theme');
+                  } else {
+                    // system or default - white when light mode, black when dark mode
+                    const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+                    if (systemPrefersDark) {
+                      // Dark mode → black theme
+                      document.documentElement.classList.add('dark');
+                      document.body.classList.add('dark');
+                      document.documentElement.classList.remove('white-theme');
+                      document.body.classList.remove('white-theme');
+                    } else {
+                      // Light mode → white theme
+                      document.documentElement.classList.remove('dark');
+                      document.body.classList.remove('dark');
+                      document.documentElement.classList.add('white-theme');
+                      document.body.classList.add('white-theme');
+                    }
+                    document.documentElement.classList.remove('pink-theme');
+                    document.body.classList.remove('pink-theme');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
         <Providers>
           <a
             href="#main-content"
