@@ -132,6 +132,7 @@ model Task {
   
   timeEntries  TimeEntry[]
   checklist    ChecklistItem[]
+  subtasks     SubTaskItem[]
 }
 
 model ChecklistItem {
@@ -139,6 +140,15 @@ model ChecklistItem {
   taskId    String
   task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   text      String
+  isDone    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model SubTaskItem {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  title     String
   isDone    Boolean  @default(false)
   createdAt DateTime @default(now())
 }

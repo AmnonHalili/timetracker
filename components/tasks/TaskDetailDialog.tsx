@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Trash2, Plus, Calendar, Loader2 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { format } from "date-fns"
@@ -19,6 +20,12 @@ import { useRouter } from "next/navigation"
 interface ChecklistItem {
     id: string
     text: string
+    isDone: boolean
+}
+
+interface Subtask {
+    id: string
+    title: string
     isDone: boolean
 }
 
@@ -32,6 +39,7 @@ interface TaskDetailDialogProps {
         description: string | null
         assignees: Array<{ id: string; name: string | null }>
         checklist?: ChecklistItem[]
+        subtasks?: Subtask[]
     } | null
     open: boolean
     onOpenChange: (open: boolean) => void
@@ -39,15 +47,25 @@ interface TaskDetailDialogProps {
 
 export function TaskDetailDialog({ task, open, onOpenChange }: TaskDetailDialogProps) {
     const [checklist, setChecklist] = useState<ChecklistItem[]>([])
+    const [subtasks, setSubtasks] = useState<Subtask[]>([])
     const [newItemText, setNewItemText] = useState("")
+    const [newSubtaskTitle, setNewSubtaskTitle] = useState("")
     const [adding, setAdding] = useState(false)
+    const [addingSubtask, setAddingSubtask] = useState(false)
     const router = useRouter()
 
     useEffect(() => {
-        if (task && task.checklist) {
-            setChecklist(task.checklist)
-        } else {
-            setChecklist([])
+        if (task) {
+            if (task.checklist) {
+                setChecklist(task.checklist)
+            } else {
+                setChecklist([])
+            }
+            if (task.subtasks) {
+                setSubtasks(task.subtasks)
+            } else {
+                setSubtasks([])
+            }
         }
     }, [task])
 
@@ -143,66 +161,162 @@ export function TaskDetailDialog({ task, open, onOpenChange }: TaskDetailDialogP
                         )}
                     </div>
 
-                    {/* Checklist Section */}
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-semibold flex items-center gap-2">
+                    {/* Tabs for Checklist and Subtasks */}
+                    <Tabs defaultValue="checklist" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="checklist">
                                 Checklist
-                                <Badge variant="secondary" className="rounded-full px-2 text-xs">
-                                    {completedCount}/{checklist.length}
-                                </Badge>
-                            </h3>
+                                {checklist.length > 0 && (
+                                    <Badge variant="secondary" className="ml-2 rounded-full px-1.5 text-xs">
+                                        {completedCount}/{checklist.length}
+                                    </Badge>
+                                )}
+                            </TabsTrigger>
+                            <TabsTrigger value="subtasks">
+                                Subtasks
+                                {subtasks.length > 0 && (
+                                    <Badge variant="secondary" className="ml-2 rounded-full px-1.5 text-xs">
+                                        {subtasks.filter(s => s.isDone).length}/{subtasks.length}
+                                    </Badge>
+                                )}
+                            </TabsTrigger>
+                        </TabsList>
+
+                        {/* Checklist Tab */}
+                        <TabsContent value="checklist" className="space-y-4 mt-4">
                             {checklist.length > 0 && (
-                                <span className="text-xs text-muted-foreground">{progress}% done</span>
-                            )}
-                        </div>
-
-                        {/* Progress Bar */}
-                        {checklist.length > 0 && (
-                            <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-                                <div
-                                    className="h-full bg-primary transition-all duration-300"
-                                    style={{ width: `${progress}%` }}
-                                />
-                            </div>
-                        )}
-
-                        <div className="space-y-2">
-                            {checklist.map(item => (
-                                <div key={item.id} className="flex items-start gap-3 group bg-muted/20 p-2 rounded-md hover:bg-muted/40 transition-colors">
-                                    <Checkbox
-                                        checked={item.isDone}
-                                        onCheckedChange={(checked) => toggleItem(item.id, checked as boolean)}
-                                        className="mt-1"
+                                <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-primary transition-all duration-300"
+                                        style={{ width: `${progress}%` }}
                                     />
-                                    <span className={`flex-1 text-sm ${item.isDone ? "line-through text-muted-foreground opacity-70" : ""}`}>
-                                        {item.text}
-                                    </span>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                                        onClick={() => deleteItem(item.id)}
-                                    >
-                                        <Trash2 className="h-3 w-3" />
-                                    </Button>
                                 </div>
-                            ))}
-                        </div>
+                            )}
 
-                        <form onSubmit={handleAddItem} className="flex items-center gap-2 mt-2">
-                            <Plus className="h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Add an item..."
-                                value={newItemText}
-                                onChange={(e) => setNewItemText(e.target.value)}
-                                className="flex-1 h-9 bg-transparent border-0 border-b rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary shadow-none"
-                            />
-                            <Button type="submit" size="sm" variant="ghost" disabled={adding || !newItemText.trim()}>
-                                {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add"}
-                            </Button>
-                        </form>
-                    </div>
+                            <div className="space-y-2">
+                                {checklist.map(item => (
+                                    <div key={item.id} className="flex items-start gap-3 group bg-muted/20 p-2 rounded-md hover:bg-muted/40 transition-colors">
+                                        <Checkbox
+                                            checked={item.isDone}
+                                            onCheckedChange={(checked) => toggleItem(item.id, checked as boolean)}
+                                            className="mt-1"
+                                        />
+                                        <span className={`flex-1 text-sm ${item.isDone ? "line-through text-muted-foreground opacity-70" : ""}`}>
+                                            {item.text}
+                                        </span>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                                            onClick={() => deleteItem(item.id)}
+                                        >
+                                            <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <form onSubmit={handleAddItem} className="flex items-center gap-2 mt-2">
+                                <Plus className="h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Add an item..."
+                                    value={newItemText}
+                                    onChange={(e) => setNewItemText(e.target.value)}
+                                    className="flex-1 h-9 bg-transparent border-0 border-b rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary shadow-none"
+                                />
+                                <Button type="submit" size="sm" variant="ghost" disabled={adding || !newItemText.trim()}>
+                                    {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add"}
+                                </Button>
+                            </form>
+                        </TabsContent>
+
+                        {/* Subtasks Tab */}
+                        <TabsContent value="subtasks" className="space-y-4 mt-4">
+                            <div className="space-y-2">
+                                {subtasks.map(subtask => (
+                                    <div key={subtask.id} className="flex items-start gap-3 group bg-muted/20 p-2 rounded-md hover:bg-muted/40 transition-colors">
+                                        <Checkbox
+                                            checked={subtask.isDone}
+                                            onCheckedChange={async (checked) => {
+                                                const newSubtasks = subtasks.map(s => 
+                                                    s.id === subtask.id 
+                                                        ? { ...s, isDone: checked as boolean }
+                                                        : s
+                                                )
+                                                setSubtasks(newSubtasks)
+                                                try {
+                                                    await fetch("/api/tasks/subtasks", {
+                                                        method: "PATCH",
+                                                        headers: { "Content-Type": "application/json" },
+                                                        body: JSON.stringify({ id: subtask.id, isDone: checked })
+                                                    })
+                                                    router.refresh()
+                                                } catch {
+                                                    console.error("Failed to toggle subtask")
+                                                    // Revert on error
+                                                    setSubtasks(subtasks)
+                                                }
+                                            }}
+                                            className="mt-1"
+                                        />
+                                        <span className={`flex-1 text-sm ${subtask.isDone ? "line-through text-muted-foreground opacity-70" : ""}`}>
+                                            {subtask.title}
+                                        </span>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                                            onClick={async () => {
+                                                setSubtasks(subtasks.filter(s => s.id !== subtask.id))
+                                                try {
+                                                    await fetch(`/api/tasks/subtasks?id=${subtask.id}`, { method: "DELETE" })
+                                                    router.refresh()
+                                                } catch {
+                                                    console.error("Failed to delete subtask")
+                                                    setSubtasks(subtasks)
+                                                }
+                                            }}
+                                        >
+                                            <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <form onSubmit={async (e) => {
+                                e.preventDefault()
+                                if (!newSubtaskTitle.trim() || !task) return
+
+                                setAddingSubtask(true)
+                                try {
+                                    const res = await fetch("/api/tasks/subtasks", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ taskId: task.id, title: newSubtaskTitle.trim() })
+                                    })
+                                    const newSubtask = await res.json()
+                                    setSubtasks([...subtasks, newSubtask])
+                                    setNewSubtaskTitle("")
+                                    router.refresh()
+                                } catch {
+                                    console.error("Failed to add subtask")
+                                } finally {
+                                    setAddingSubtask(false)
+                                }
+                            }} className="flex items-center gap-2 mt-2">
+                                <Plus className="h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Add a subtask..."
+                                    value={newSubtaskTitle}
+                                    onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                                    className="flex-1 h-9 bg-transparent border-0 border-b rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary shadow-none"
+                                />
+                                <Button type="submit" size="sm" variant="ghost" disabled={addingSubtask || !newSubtaskTitle.trim()}>
+                                    {addingSubtask ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add"}
+                                </Button>
+                            </form>
+                        </TabsContent>
+                    </Tabs>
                 </div>
             </DialogContent>
         </Dialog>

@@ -21,19 +21,42 @@ export default async function TasksPage() {
     })
 
     // Fetch Tasks
-    // Fetch Tasks
     const where = isAdmin
         ? { assignees: { some: { projectId: currentUser?.projectId } } }
         : { assignees: { some: { id: session.user.id } } }
 
-    const tasks = await prisma.task.findMany({
-        where,
-        include: {
-            assignees: true,
-            checklist: { orderBy: { createdAt: 'asc' } }
-        },
-        orderBy: { createdAt: "desc" }
-    })
+    let tasks
+    try {
+        // Try to fetch with subtasks (SubTaskItem)
+        tasks = await prisma.task.findMany({
+            where,
+            include: {
+                assignees: true,
+                checklist: { orderBy: { createdAt: 'asc' } },
+                subtasks: {
+                    orderBy: { createdAt: 'asc' }
+                }
+            },
+            orderBy: { createdAt: "desc" }
+        })
+    } catch (e: any) {
+        // If subtasks relation doesn't exist, fetch without it
+        if (e.message?.includes('subtasks') || e.message?.includes('Unknown argument') || e.message?.includes('SubTaskItem')) {
+            console.warn("subtasks relation not available, fetching without it")
+            tasks = await prisma.task.findMany({
+                where,
+                include: {
+                    assignees: true,
+                    checklist: { orderBy: { createdAt: 'asc' } }
+                },
+                orderBy: { createdAt: "desc" }
+            })
+            // Add empty subtasks array to each task
+            tasks = tasks.map((task: any) => ({ ...task, subtasks: [] }))
+        } else {
+            throw e
+        }
+    }
 
     // Fetch Users (Only if admin, for the dropdown)
     // MUST be scoped to the same project
