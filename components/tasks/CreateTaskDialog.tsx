@@ -194,6 +194,21 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mod
                                 required
                             />
                         </div>
+
+                        <div className="grid grid-cols-4 items-start gap-4">
+                            <Label htmlFor="description" className="text-right pt-2">
+                                Description
+                            </Label>
+                            <Textarea
+                                id="description"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                className="col-span-3"
+                                placeholder="Add task description..."
+                                aria-label="Task description"
+                            />
+                        </div>
+
                         {/* Only show assignment if there are users loaded */}
                         {(users.length > 0) && (
                             <div className="grid grid-cols-4 items-start gap-4">
@@ -259,20 +274,6 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mod
                                     aria-label="Deadline time"
                                 />
                             </div>
-                        </div>
-
-                        <div className="grid grid-cols-4 items-start gap-4">
-                            <Label htmlFor="description" className="text-right pt-2">
-                                Description
-                            </Label>
-                            <Textarea
-                                id="description"
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                className="col-span-3"
-                                placeholder="Add task description..."
-                                aria-label="Task description"
-                            />
                         </div>
                     </div>
                     <DialogFooter>

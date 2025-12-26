@@ -1,324 +1,271 @@
 "use client"
 
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Trash2, Plus, Calendar, Loader2 } from "lucide-react"
-import { useState, useEffect } from "react"
+import { Calendar, Clock, Users, CheckCircle2 } from "lucide-react"
 import { format } from "date-fns"
-import { useRouter } from "next/navigation"
-
-interface ChecklistItem {
-    id: string
-    text: string
-    isDone: boolean
-}
-
-interface Subtask {
-    id: string
-    title: string
-    isDone: boolean
-}
 
 interface TaskDetailDialogProps {
     task: {
         id: string
         title: string
+        description: string | null
         status: string
         priority: string
         deadline: Date | string | null
-        description: string | null
         assignees: Array<{ id: string; name: string | null }>
-        checklist?: ChecklistItem[]
-        subtasks?: Subtask[]
+        checklist: Array<{ id: string; text: string; isDone: boolean }>
+        subtasks?: Array<{ id: string; title: string; isDone: boolean }>
     } | null
     open: boolean
     onOpenChange: (open: boolean) => void
+    timeEntries?: Array<{
+        id: string
+        startTime: Date | string
+        endTime: Date | string | null
+        description: string | null
+        user: {
+            id: string
+            name: string | null
+        }
+    }>
 }
 
-export function TaskDetailDialog({ task, open, onOpenChange }: TaskDetailDialogProps) {
-    const [checklist, setChecklist] = useState<ChecklistItem[]>([])
-    const [subtasks, setSubtasks] = useState<Subtask[]>([])
-    const [newItemText, setNewItemText] = useState("")
-    const [newSubtaskTitle, setNewSubtaskTitle] = useState("")
-    const [adding, setAdding] = useState(false)
-    const [addingSubtask, setAddingSubtask] = useState(false)
-    const router = useRouter()
-
-    useEffect(() => {
-        if (task) {
-            if (task.checklist) {
-                setChecklist(task.checklist)
-            } else {
-                setChecklist([])
-            }
-            if (task.subtasks) {
-                setSubtasks(task.subtasks)
-            } else {
-                setSubtasks([])
-            }
-        }
-    }, [task])
-
+export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }: TaskDetailDialogProps) {
     if (!task) return null
 
-    const handleAddItem = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!newItemText.trim()) return
+    // Calculate total time spent on this task
+    const calculateTotalTime = () => {
+        let totalSeconds = 0
+        
+        timeEntries.forEach(entry => {
+            if (entry.endTime) {
+                const start = new Date(entry.startTime).getTime()
+                const end = new Date(entry.endTime).getTime()
+                totalSeconds += Math.floor((end - start) / 1000)
+            }
+        })
 
-        setAdding(true)
-        try {
-            const res = await fetch("/api/tasks/checklist", {
-                method: "POST",
-                body: JSON.stringify({ taskId: task.id, text: newItemText }),
-            })
-            const newItem = await res.json()
-            setChecklist([...checklist, newItem])
-            setNewItemText("")
-            router.refresh()
-        } catch {
-            console.error("Failed to add item")
-        } finally {
-            setAdding(false)
+        const hours = Math.floor(totalSeconds / 3600)
+        const minutes = Math.floor((totalSeconds % 3600) / 60)
+        const seconds = totalSeconds % 60
+
+        if (hours > 0) {
+            return `${hours}h ${minutes}m ${seconds}s`
+        } else if (minutes > 0) {
+            return `${minutes}m ${seconds}s`
+        } else {
+            return `${seconds}s`
         }
     }
 
-    const toggleItem = async (id: string, isDone: boolean) => {
-        setChecklist(checklist.map(item => item.id === id ? { ...item, isDone } : item))
-        try {
-            await fetch("/api/tasks/checklist", {
-                method: "PATCH",
-                body: JSON.stringify({ id, isDone }),
-            })
-            router.refresh()
-        } catch {
-            console.error("Failed to toggle item")
+    // Get unique users who worked on this task
+    const usersWhoWorked = Array.from(
+        new Map(
+            timeEntries
+                .filter(entry => entry.user)
+                .map(entry => [entry.user.id, entry.user])
+        ).values()
+    )
+
+    // Calculate percentage of subtasks done
+    const subtasksDone = task.subtasks?.filter(s => s.isDone).length || 0
+    const totalSubtasks = task.subtasks?.length || 0
+    const completionPercentage = totalSubtasks > 0 
+        ? Math.round((subtasksDone / totalSubtasks) * 100) 
+        : task.status === 'DONE' ? 100 : 0
+
+    // Group time entries by user
+    const timeByUser = new Map<string, { user: { id: string; name: string | null }, totalSeconds: number }>()
+    
+    timeEntries.forEach(entry => {
+        if (entry.endTime && entry.user) {
+            const start = new Date(entry.startTime).getTime()
+            const end = new Date(entry.endTime).getTime()
+            const seconds = Math.floor((end - start) / 1000)
+            
+            const existing = timeByUser.get(entry.user.id)
+            if (existing) {
+                existing.totalSeconds += seconds
+            } else {
+                timeByUser.set(entry.user.id, {
+                    user: entry.user,
+                    totalSeconds: seconds
+                })
+            }
+        }
+    })
+
+    const formatTime = (totalSeconds: number) => {
+        const hours = Math.floor(totalSeconds / 3600)
+        const minutes = Math.floor((totalSeconds % 3600) / 60)
+        const seconds = totalSeconds % 60
+
+        if (hours > 0) {
+            return `${hours}h ${minutes}m`
+        } else if (minutes > 0) {
+            return `${minutes}m ${seconds}s`
+        } else {
+            return `${seconds}s`
         }
     }
-
-    const deleteItem = async (id: string) => {
-        setChecklist(checklist.filter(item => item.id !== id))
-        try {
-            await fetch(`/api/tasks/checklist?id=${id}`, { method: "DELETE" })
-            router.refresh()
-        } catch {
-            console.error("Failed to delete item")
-        }
-    }
-
-    const getPriorityColor = (p: string) => {
-        switch (p) {
-            case 'URGENT': return 'bg-red-600'
-            case 'HIGH': return 'bg-orange-500'
-            case 'MEDIUM': return 'bg-blue-500'
-            case 'LOW': return 'bg-slate-500'
-            default: return 'bg-slate-500'
-        }
-    }
-
-    const completedCount = checklist.filter(i => i.isDone).length
-    const progress = checklist.length > 0 ? Math.round((completedCount / checklist.length) * 100) : 0
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <div className="flex items-center gap-3 pr-8">
-                        <DialogTitle className="text-xl">{task.title}</DialogTitle>
-                        <Badge className={`${getPriorityColor(task.priority)}`}>{task.priority}</Badge>
-                        <Badge variant="outline">{task.status.replace('_', ' ')}</Badge>
-                    </div>
-                    {task.description && (
-                        <DialogDescription className="text-base pt-2">
-                            {task.description}
-                        </DialogDescription>
-                    )}
+                    <DialogTitle className="text-2xl">{task.title}</DialogTitle>
                 </DialogHeader>
 
-                <div className="grid gap-6 py-4">
-                    {/* Meta Info */}
-                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground border-b pb-4">
-                        {task.deadline && (
-                            <div className="flex items-center gap-1">
-                                <Calendar className="h-4 w-4" />
-                                <span>Due: {format(new Date(task.deadline), "PPP")}</span>
+                <div className="space-y-6">
+                    {/* Assigned Users - At the top */}
+                    {task.assignees.length > 0 && (
+                        <div>
+                            <h3 className="text-sm font-semibold mb-2">Assigned To</h3>
+                            <div className="flex flex-wrap gap-2">
+                                {task.assignees.map(assignee => (
+                                    <Badge key={assignee.id} variant="secondary">
+                                        {assignee.name || 'Unknown'}
+                                    </Badge>
+                                ))}
                             </div>
-                        )}
-                        {task.assignees.length > 0 && (
-                            <div className="flex items-center gap-1">
-                                <span className="font-semibold">Assignees:</span>
-                                <span>{task.assignees.map(a => a.name).join(", ")}</span>
-                            </div>
-                        )}
+                        </div>
+                    )}
+
+                    {/* Total Time Spent - Right after Assigned To */}
+                    <div>
+                        <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            Total Time Spent
+                        </h3>
+                        <p className="text-lg font-medium">{calculateTotalTime()}</p>
                     </div>
 
-                    {/* Tabs for Checklist and Subtasks */}
-                    <Tabs defaultValue="checklist" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="checklist">
-                                Checklist
-                                {checklist.length > 0 && (
-                                    <Badge variant="secondary" className="ml-2 rounded-full px-1.5 text-xs">
-                                        {completedCount}/{checklist.length}
-                                    </Badge>
-                                )}
-                            </TabsTrigger>
-                            <TabsTrigger value="subtasks">
-                                Subtasks
-                                {subtasks.length > 0 && (
-                                    <Badge variant="secondary" className="ml-2 rounded-full px-1.5 text-xs">
-                                        {subtasks.filter(s => s.isDone).length}/{subtasks.length}
-                                    </Badge>
-                                )}
-                            </TabsTrigger>
-                        </TabsList>
+                    {/* Description */}
+                    {task.description && (
+                        <div>
+                            <h3 className="text-sm font-semibold mb-2">Description</h3>
+                            <p className="text-sm text-muted-foreground">{task.description}</p>
+                        </div>
+                    )}
 
-                        {/* Checklist Tab */}
-                        <TabsContent value="checklist" className="space-y-4 mt-4">
-                            {checklist.length > 0 && (
-                                <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full bg-primary transition-all duration-300"
-                                        style={{ width: `${progress}%` }}
-                                    />
-                                </div>
-                            )}
+                    {/* Task Info */}
+                    {task.deadline && (
+                        <div>
+                            <h3 className="text-sm font-semibold mb-2">Deadline</h3>
+                            <div className="flex items-center gap-2 text-sm">
+                                <Calendar className="h-4 w-4" />
+                                {format(new Date(task.deadline), 'dd/MM/yyyy')}
+                            </div>
+                        </div>
+                    )}
 
+                    {/* Completion Percentage - Only show if there are subtasks */}
+                    {totalSubtasks > 0 && (
+                        <div>
+                            <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                                <CheckCircle2 className="h-4 w-4" />
+                                Completion: {completionPercentage}%
+                            </h3>
+                            <div className="w-full bg-muted rounded-full h-2.5">
+                                <div 
+                                    className="bg-primary h-2.5 rounded-full transition-all"
+                                    style={{ width: `${completionPercentage}%` }}
+                                />
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                {subtasksDone} of {totalSubtasks} subtasks completed
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Time by User */}
+                    {timeByUser.size > 0 && (
+                        <div>
+                            <h3 className="text-sm font-semibold mb-2">Time by User</h3>
                             <div className="space-y-2">
-                                {checklist.map(item => (
-                                    <div key={item.id} className="flex items-start gap-3 group bg-muted/20 p-2 rounded-md hover:bg-muted/40 transition-colors">
-                                        <Checkbox
-                                            checked={item.isDone}
-                                            onCheckedChange={(checked) => toggleItem(item.id, checked as boolean)}
-                                            className="mt-1"
-                                        />
-                                        <span className={`flex-1 text-sm ${item.isDone ? "line-through text-muted-foreground opacity-70" : ""}`}>
-                                            {item.text}
-                                        </span>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                                            onClick={() => deleteItem(item.id)}
-                                        >
-                                            <Trash2 className="h-3 w-3" />
-                                        </Button>
+                                {Array.from(timeByUser.values()).map(({ user, totalSeconds }) => (
+                                    <div key={user.id} className="flex justify-between items-center p-2 bg-muted/50 rounded">
+                                        <span className="text-sm">{user.name || 'Unknown'}</span>
+                                        <span className="text-sm font-medium">{formatTime(totalSeconds)}</span>
                                     </div>
                                 ))}
                             </div>
+                        </div>
+                    )}
 
-                            <form onSubmit={handleAddItem} className="flex items-center gap-2 mt-2">
-                                <Plus className="h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Add an item..."
-                                    value={newItemText}
-                                    onChange={(e) => setNewItemText(e.target.value)}
-                                    className="flex-1 h-9 bg-transparent border-0 border-b rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary shadow-none"
-                                />
-                                <Button type="submit" size="sm" variant="ghost" disabled={adding || !newItemText.trim()}>
-                                    {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add"}
-                                </Button>
-                            </form>
-                        </TabsContent>
-
-                        {/* Subtasks Tab */}
-                        <TabsContent value="subtasks" className="space-y-4 mt-4">
-                            <div className="space-y-2">
-                                {subtasks.map(subtask => (
-                                    <div key={subtask.id} className="flex items-start gap-3 group bg-muted/20 p-2 rounded-md hover:bg-muted/40 transition-colors">
-                                        <Checkbox
-                                            checked={subtask.isDone}
-                                            onCheckedChange={async (checked) => {
-                                                const newSubtasks = subtasks.map(s => 
-                                                    s.id === subtask.id 
-                                                        ? { ...s, isDone: checked as boolean }
-                                                        : s
-                                                )
-                                                setSubtasks(newSubtasks)
-                                                try {
-                                                    await fetch("/api/tasks/subtasks", {
-                                                        method: "PATCH",
-                                                        headers: { "Content-Type": "application/json" },
-                                                        body: JSON.stringify({ id: subtask.id, isDone: checked })
-                                                    })
-                                                    router.refresh()
-                                                } catch {
-                                                    console.error("Failed to toggle subtask")
-                                                    // Revert on error
-                                                    setSubtasks(subtasks)
-                                                }
-                                            }}
-                                            className="mt-1"
-                                        />
-                                        <span className={`flex-1 text-sm ${subtask.isDone ? "line-through text-muted-foreground opacity-70" : ""}`}>
-                                            {subtask.title}
-                                        </span>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                                            onClick={async () => {
-                                                setSubtasks(subtasks.filter(s => s.id !== subtask.id))
-                                                try {
-                                                    await fetch(`/api/tasks/subtasks?id=${subtask.id}`, { method: "DELETE" })
-                                                    router.refresh()
-                                                } catch {
-                                                    console.error("Failed to delete subtask")
-                                                    setSubtasks(subtasks)
-                                                }
-                                            }}
-                                        >
-                                            <Trash2 className="h-3 w-3" />
-                                        </Button>
-                                    </div>
+                    {/* Users Who Worked */}
+                    {usersWhoWorked.length > 0 && (
+                        <div>
+                            <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                                <Users className="h-4 w-4" />
+                                Users Who Worked on This Task
+                            </h3>
+                            <div className="flex flex-wrap gap-2">
+                                {usersWhoWorked.map(user => (
+                                    <Badge key={user.id} variant="outline">
+                                        {user.name || 'Unknown'}
+                                    </Badge>
                                 ))}
                             </div>
+                        </div>
+                    )}
 
-                            <form onSubmit={async (e) => {
-                                e.preventDefault()
-                                if (!newSubtaskTitle.trim() || !task) return
 
-                                setAddingSubtask(true)
-                                try {
-                                    const res = await fetch("/api/tasks/subtasks", {
-                                        method: "POST",
-                                        headers: { "Content-Type": "application/json" },
-                                        body: JSON.stringify({ taskId: task.id, title: newSubtaskTitle.trim() })
-                                    })
-                                    const newSubtask = await res.json()
-                                    setSubtasks([...subtasks, newSubtask])
-                                    setNewSubtaskTitle("")
-                                    router.refresh()
-                                } catch {
-                                    console.error("Failed to add subtask")
-                                } finally {
-                                    setAddingSubtask(false)
-                                }
-                            }} className="flex items-center gap-2 mt-2">
-                                <Plus className="h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Add a subtask..."
-                                    value={newSubtaskTitle}
-                                    onChange={(e) => setNewSubtaskTitle(e.target.value)}
-                                    className="flex-1 h-9 bg-transparent border-0 border-b rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary shadow-none"
-                                />
-                                <Button type="submit" size="sm" variant="ghost" disabled={addingSubtask || !newSubtaskTitle.trim()}>
-                                    {addingSubtask ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add"}
-                                </Button>
-                            </form>
-                        </TabsContent>
-                    </Tabs>
+
+                    {/* Time Entries History */}
+                    {timeEntries.length > 0 && (
+                        <div>
+                            <h3 className="text-sm font-semibold mb-2">Time Entries History</h3>
+                            <div className="space-y-2 max-h-60 overflow-y-auto">
+                                {timeEntries
+                                    .filter(entry => entry.endTime)
+                                    .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
+                                    .map(entry => {
+                                        const start = new Date(entry.startTime)
+                                        const end = new Date(entry.endTime!)
+                                        const duration = Math.floor((end.getTime() - start.getTime()) / 1000)
+                                        const hours = Math.floor(duration / 3600)
+                                        const minutes = Math.floor((duration % 3600) / 60)
+                                        const seconds = duration % 60
+                                        const durationStr = hours > 0 
+                                            ? `${hours}h ${minutes}m` 
+                                            : minutes > 0 
+                                                ? `${minutes}m ${seconds}s` 
+                                                : `${seconds}s`
+
+                                        return (
+                                            <div key={entry.id} className="p-2 bg-muted/50 rounded text-sm">
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <p className="font-medium">{entry.user?.name || 'Unknown'}</p>
+                                                        {entry.description && (
+                                                            <p className="text-xs text-muted-foreground mt-1">{entry.description}</p>
+                                                        )}
+                                                        <p className="text-xs text-muted-foreground mt-1">
+                                                            {format(start, 'dd/MM/yyyy HH:mm')} - {format(end, 'HH:mm')}
+                                                        </p>
+                                                    </div>
+                                                    <span className="font-medium">{durationStr}</span>
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </DialogContent>
         </Dialog>
     )
+}
+
+function getPriorityColor(priority: string) {
+    switch (priority) {
+        case 'URGENT': return 'bg-red-600 hover:bg-red-600'
+        case 'HIGH': return 'bg-orange-500 hover:bg-orange-500'
+        case 'MEDIUM': return 'bg-blue-500 hover:bg-blue-500'
+        case 'LOW': return 'bg-slate-500 hover:bg-slate-500'
+        default: return 'bg-slate-500'
+    }
 }

@@ -3,7 +3,7 @@
 
 import { useRouter } from "next/navigation"
 import { useState, useEffect, useRef } from "react"
-import { Trash2, Calendar, Plus } from "lucide-react"
+import { Trash2, Calendar, Plus, MoreVertical, Pencil } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -16,7 +16,15 @@ import {
 } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { format, isPast, isToday } from "date-fns"
+import { TaskDetailDialog } from "./TaskDetailDialog"
+import { CreateTaskDialog } from "./CreateTaskDialog"
 
 interface User {
     id: string
@@ -51,6 +59,17 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
     const [localSubtasks, setLocalSubtasks] = useState<Record<string, Array<{ id: string; title: string; isDone: boolean }>>>({})
     const subtaskInputRef = useRef<HTMLInputElement | null>(null)
     const pendingOperations = useRef<Set<string>>(new Set()) // Track pending operations by subtask ID
+    const [selectedTask, setSelectedTask] = useState<TasksViewProps['initialTasks'][0] | null>(null)
+    const [isDetailOpen, setIsDetailOpen] = useState(false)
+    const [taskTimeEntries, setTaskTimeEntries] = useState<Array<{
+        id: string
+        startTime: Date | string
+        endTime: Date | string | null
+        description: string | null
+        user: { id: string; name: string | null }
+    }>>([])
+    const [editingTask, setEditingTask] = useState<TasksViewProps['initialTasks'][0] | null>(null)
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
     // Sync local state when server data changes (e.g., after task creation)
     useEffect(() => {
@@ -136,6 +155,23 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
             })
     }
 
+    const openTaskDetail = async (task: TasksViewProps['initialTasks'][0]) => {
+        setSelectedTask(task)
+        setIsDetailOpen(true)
+        
+        try {
+            const res = await fetch(`/api/tasks/${task.id}/time-entries`)
+            if (res.ok) {
+                const entries = await res.json()
+                setTaskTimeEntries(entries)
+            } else {
+                setTaskTimeEntries([])
+            }
+        } catch (error) {
+            console.error("Failed to fetch time entries:", error)
+            setTaskTimeEntries([])
+        }
+    }
 
     const handleAddSubtask = async (taskId: string) => {
         const trimmedTitle = newSubtaskTitle.trim()
@@ -339,21 +375,25 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                         className="mt-1"
                                     />
                                     <div className="space-y-1 flex-1">
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2 cursor-pointer" onClick={() => openTaskDetail(task)}>
                                             <span className={`text-sm font-medium group-hover:text-primary transition-colors ${task.status === 'DONE' ? 'line-through text-muted-foreground' : ''}`}>
                                                 {task.title}
                                             </span>
-                                            {isAdmin && task.assignees && task.assignees.length > 0 && (
-                                                <span className="text-xs text-muted-foreground ml-2">
-                                                    ({task.assignees.map(a => a.id === currentUserId ? `${a.name} (you)` : a.name).join(', ')})
-                                                </span>
-                                            )}
                                             {task.checklist && task.checklist.length > 0 && (
                                                 <Badge variant="outline" className="text-[10px] h-5 px-2 text-muted-foreground border-muted-foreground/30">
                                                     {task.checklist.filter(i => i.isDone).length}/{task.checklist.length}
                                                 </Badge>
                                             )}
                                         </div>
+
+                                        {/* Assign To */}
+                                        {task.assignees && task.assignees.length > 0 && (
+                                            <div className="pl-1">
+                                                <span className="text-xs text-muted-foreground">
+                                                    Assign to: {task.assignees.map(a => a.name || 'Unknown').join(', ')}
+                                                </span>
+                                            </div>
+                                        )}
 
                                         {/* Status: To Do / In Progress */}
                                         <div className="pl-1">
@@ -483,9 +523,29 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                         {task.priority}
                                     </Badge>
                                     {(isAdmin || (currentUserId && task.assignees.some(a => a.id === currentUserId))) && (
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDelete(task.id)} aria-label={`Delete task: ${task.title}`}>
-                                            <Trash2 className="h-4 w-4" aria-hidden="true" />
-                                        </Button>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                    <MoreVertical className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => {
+                                                    setEditingTask(task)
+                                                    setIsEditDialogOpen(true)
+                                                }}>
+                                                    <Pencil className="h-4 w-4 mr-2" />
+                                                    Edit
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem 
+                                                    onClick={() => handleDelete(task.id)}
+                                                    className="text-destructive focus:text-destructive"
+                                                >
+                                                    <Trash2 className="h-4 w-4 mr-2" />
+                                                    Delete
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     )}
                                 </div>
                             </div>
@@ -493,6 +553,29 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                     )}
                 </div>
             </CardContent>
+
+            <TaskDetailDialog
+                task={selectedTask}
+                open={isDetailOpen}
+                onOpenChange={setIsDetailOpen}
+                timeEntries={taskTimeEntries}
+            />
+
+            <CreateTaskDialog
+                users={users}
+                task={editingTask || undefined}
+                mode="edit"
+                open={isEditDialogOpen}
+                onOpenChange={(open) => {
+                    setIsEditDialogOpen(open)
+                    if (!open) {
+                        setEditingTask(null)
+                    }
+                }}
+                onTaskCreated={() => {
+                    router.refresh()
+                }}
+            />
         </Card>
     )
 }
