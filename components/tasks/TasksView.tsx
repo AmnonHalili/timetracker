@@ -17,7 +17,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { format, isPast, isToday } from "date-fns"
-import { TaskDetailDialog } from "./TaskDetailDialog"
 
 interface User {
     id: string
@@ -40,14 +39,13 @@ interface TasksViewProps {
     users: User[]
     isAdmin: boolean
     currentUserId?: string
+    tasksWithActiveTimers?: string[] // Array of task IDs that have active timers
 }
 
-export function TasksView({ initialTasks, users, isAdmin, currentUserId }: TasksViewProps) {
+export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWithActiveTimers = [] }: TasksViewProps) {
     const router = useRouter()
     const [tasks, setTasks] = useState(initialTasks)
     const [filterUserId, setFilterUserId] = useState<string>("all")
-    const [selectedTask, setSelectedTask] = useState<TasksViewProps['initialTasks'][0] | null>(null)
-    const [isDetailOpen, setIsDetailOpen] = useState(false)
     const [addingSubtaskTo, setAddingSubtaskTo] = useState<string | null>(null)
     const [newSubtaskTitle, setNewSubtaskTitle] = useState("")
     const [localSubtasks, setLocalSubtasks] = useState<Record<string, Array<{ id: string; title: string; isDone: boolean }>>>({})
@@ -57,11 +55,6 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId }: Tasks
     // Sync local state when server data changes (e.g., after task creation)
     useEffect(() => {
         setTasks(initialTasks)
-        // Update selected task if it's open, to reflect checklist changes
-        if (selectedTask) {
-            const updated = initialTasks.find(t => t.id === selectedTask.id)
-            if (updated) setSelectedTask(updated)
-        }
         // Sync subtasks from server data
         const subtasksMap: Record<string, Array<{ id: string; title: string; isDone: boolean }>> = {}
         initialTasks.forEach(task => {
@@ -70,7 +63,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId }: Tasks
             }
         })
         setLocalSubtasks(subtasksMap)
-    }, [initialTasks, selectedTask])
+    }, [initialTasks])
 
     // Filter tasks
     const filteredTasks = tasks.filter(task => {
@@ -117,11 +110,6 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId }: Tasks
             return newSubtasks
         })
 
-        // Close detail dialog if this task was open
-        if (selectedTask?.id === id) {
-            setIsDetailOpen(false)
-            setSelectedTask(null)
-        }
 
         // Fire and forget - API call in background
         fetch(`/api/tasks?id=${id}`, { method: "DELETE" })
@@ -148,10 +136,6 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId }: Tasks
             })
     }
 
-    const openTaskDetail = (task: TasksViewProps['initialTasks'][0]) => {
-        setSelectedTask(task)
-        setIsDetailOpen(true)
-    }
 
     const handleAddSubtask = async (taskId: string) => {
         const trimmedTitle = newSubtaskTitle.trim()
@@ -355,7 +339,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId }: Tasks
                                         className="mt-1"
                                     />
                                     <div className="space-y-1 flex-1">
-                                        <div className="flex items-center gap-2 cursor-pointer" onClick={() => openTaskDetail(task)}>
+                                        <div className="flex items-center gap-2">
                                             <span className={`text-sm font-medium group-hover:text-primary transition-colors ${task.status === 'DONE' ? 'line-through text-muted-foreground' : ''}`}>
                                                 {task.title}
                                             </span>
@@ -371,7 +355,18 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId }: Tasks
                                             )}
                                         </div>
 
-                                        <div className="flex items-center gap-4 text-xs text-muted-foreground pl-1 cursor-pointer" onClick={() => openTaskDetail(task)}>
+                                        {/* Status: To Do / In Progress */}
+                                        <div className="pl-1">
+                                            <span className="text-xs text-muted-foreground">
+                                                Status: {task.status === 'DONE' 
+                                                    ? 'Done' 
+                                                    : tasksWithActiveTimers.includes(task.id) 
+                                                        ? 'In Progress' 
+                                                        : 'To Do'}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex items-center gap-4 text-xs text-muted-foreground pl-1">
                                             {task.deadline && (
                                                 <span className={`flex items-center gap-1 ${isPast(new Date(task.deadline)) && !isToday(new Date(task.deadline)) && task.status !== 'DONE' ? 'text-red-500 font-bold' : ''}`}>
                                                     <Calendar className="h-3 w-3" />
@@ -498,12 +493,6 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId }: Tasks
                     )}
                 </div>
             </CardContent>
-
-            <TaskDetailDialog
-                task={selectedTask}
-                open={isDetailOpen}
-                onOpenChange={setIsDetailOpen}
-            />
         </Card>
     )
 }
