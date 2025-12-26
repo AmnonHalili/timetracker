@@ -94,38 +94,43 @@ export function detectCircularReference(
  * @returns true if currentUser has permission
  */
 export function canManageUser(currentUser: User, targetUser: User, allUsers?: User[]): boolean {
+    // Extend User type to include sharedChiefGroupId
+    const currentUserExt = currentUser as User & { sharedChiefGroupId?: string | null }
+    const targetUserExt = targetUser as User & { sharedChiefGroupId?: string | null }
+    const allUsersExt = allUsers as (User & { sharedChiefGroupId?: string | null })[] | undefined
+
     // ADMIN can manage anyone
-    if (currentUser.role === "ADMIN") {
+    if (currentUserExt.role === "ADMIN") {
         return true
     }
 
     // MANAGER can manage direct reports
-    if (currentUser.role === "MANAGER" && targetUser.managerId === currentUser.id) {
+    if (currentUserExt.role === "MANAGER" && targetUserExt.managerId === currentUserExt.id) {
         return true
     }
 
     // Shared chiefs: if both users are in the same sharedChiefGroupId, they can manage each other's employees
-    if (currentUser.sharedChiefGroupId &&
-        targetUser.sharedChiefGroupId &&
-        currentUser.sharedChiefGroupId === targetUser.sharedChiefGroupId &&
-        currentUser.role === "ADMIN" &&
-        allUsers) {
+    if (currentUserExt.sharedChiefGroupId &&
+        targetUserExt.sharedChiefGroupId &&
+        currentUserExt.sharedChiefGroupId === targetUser.sharedChiefGroupId &&
+        currentUserExt.role === "ADMIN" &&
+        allUsersExt) {
         // Both are shared chiefs in the same group
         // Check if targetUser reports to any chief in the shared group
-        const sharedGroupChiefs = allUsers.filter(u =>
-            u.sharedChiefGroupId === currentUser.sharedChiefGroupId &&
+        const sharedGroupChiefs = allUsersExt.filter(u =>
+            u.sharedChiefGroupId === currentUserExt.sharedChiefGroupId &&
             u.role === "ADMIN" &&
             !u.managerId
         )
 
         // If targetUser reports to any chief in the shared group, currentUser can manage them
-        if (targetUser.managerId && sharedGroupChiefs.some(chief => chief.id === targetUser.managerId)) {
+        if (targetUserExt.managerId && sharedGroupChiefs.some(chief => chief.id === targetUserExt.managerId)) {
             return true
         }
 
         // Also check if targetUser is a descendant of any chief in the shared group
         const sharedChiefIds = sharedGroupChiefs.map(c => c.id)
-        if (sharedChiefIds.some(chiefId => getAllDescendants(chiefId, allUsers).includes(targetUser.id))) {
+        if (sharedChiefIds.some(chiefId => getAllDescendants(chiefId, allUsersExt!).includes(targetUserExt.id))) {
             return true
         }
     }

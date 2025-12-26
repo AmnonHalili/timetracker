@@ -63,7 +63,7 @@ export async function GET() {
                     jobTitle: true,
                     sharedChiefGroupId: true,
                     createdAt: true,
-                },
+                } as never,
                 orderBy: { createdAt: "asc" }
             })
         } catch (fieldError: unknown) {

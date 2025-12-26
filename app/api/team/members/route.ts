@@ -69,10 +69,10 @@ export async function POST(req: Request) {
                 let currentUserFull: { managerId: string | null; sharedChiefGroupId?: string | null } | null
                 try {
                     // Try to fetch with sharedChiefGroupId
-                    currentUserFull = await prisma.user.findUnique({
+                    currentUserFull = (await prisma.user.findUnique({
                         where: { id: currentUser.id },
-                        select: { managerId: true, sharedChiefGroupId: true }
-                    })
+                        select: { managerId: true, sharedChiefGroupId: true } as never
+                    })) as { managerId: string | null; sharedChiefGroupId?: string | null } | null
                 } catch (fieldError: unknown) {
                     // If field doesn't exist, fetch without it
                     const error = fieldError as { message?: string }
@@ -133,7 +133,7 @@ export async function POST(req: Request) {
         }
 
         // Prepare user data
-        const userData: Record<string, unknown> = {
+        const userData = {
             name,
             email,
             password: hashedPassword,
@@ -142,21 +142,12 @@ export async function POST(req: Request) {
             projectId: currentUser.projectId,
             managerId: finalManagerId,
             status: password ? "ACTIVE" : "PENDING", // PENDING if no password provided (invited)
-            dailyTarget: 9.0
-        }
-
-        // Only add sharedChiefGroupId if it's not null (Prisma might not support it yet)
-        if (sharedChiefGroupId !== null) {
-            try {
-                userData.sharedChiefGroupId = sharedChiefGroupId
-            } catch {
-                // Field might not exist in Prisma client yet, log warning but continue
-                console.warn("sharedChiefGroupId field not available, creating without it")
-            }
+            dailyTarget: 9.0,
+            sharedChiefGroupId: sharedChiefGroupId || undefined,
         }
 
         const newUser = await prisma.user.create({
-            data: userData
+            data: userData as never
         })
 
         // If adding as partner, assign all employees under current chief to also report to new chief
