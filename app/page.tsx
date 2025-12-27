@@ -3,9 +3,9 @@ import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { ArrowRight, CheckCircle2, Clock, Users, BarChart3, ShieldCheck } from "lucide-react"
 import Link from "next/link"
-import Image from "next/image"
 import { HierarchyDemo } from "@/components/landing/HierarchyDemo"
 import { AccessibilityButton } from "@/components/accessibility/AccessibilityButton"
+import { ThemeLogo } from "@/components/landing/ThemeLogo"
 
 export const dynamic = "force-dynamic"
 
@@ -28,7 +28,7 @@ export default async function Home() {
           <div className="w-full px-6 md:px-8 h-24 flex items-center justify-between">
             <div className="flex items-center">
               <Link href="/" aria-label="Collabo Home">
-                <Image src="/icon.png" alt="Collabo Logo" width={360} height={144} className="h-36 w-auto" priority />
+                <ThemeLogo width={140} height={56} className="h-12 w-auto" priority />
               </Link>
             </div>
             <div className="flex items-center gap-4">
@@ -137,7 +137,7 @@ export default async function Home() {
       <footer className="border-t py-12 bg-muted/20" role="contentinfo">
         <div className="container mx-auto px-4 text-center">
           <div className="flex justify-center mb-4">
-            <Image src="/icon.png" alt="Collabo Logo" width={300} height={128} className="h-32 w-auto opacity-80" />
+            <ThemeLogo width={120} height={48} className="h-10 w-auto opacity-80" />
           </div>
           <p className="text-muted-foreground text-sm mb-8 max-w-md mx-auto">
             The modern solution for time and project management.
@@ -153,8 +153,8 @@ export default async function Home() {
 
 function FeatureCard({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
   return (
-    <article className="bg-card border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
-      <div className="mb-4" aria-hidden="true">{icon}</div>
+    <article className="bg-card border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow text-center">
+      <div className="mb-4 flex justify-center" aria-hidden="true">{icon}</div>
       <h3 className="text-xl font-bold mb-2">{title}</h3>
       <p className="text-muted-foreground text-sm leading-relaxed">{description}</p>
     </article>

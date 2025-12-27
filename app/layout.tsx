@@ -86,21 +86,11 @@ export default function RootLayout({
                     document.documentElement.classList.add('pink-theme');
                     document.body.classList.add('pink-theme');
                   } else {
-                    // system or default - white when light mode, black when dark mode
-                    const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-                    if (systemPrefersDark) {
-                      // Dark mode → black theme
-                      document.documentElement.classList.add('dark');
-                      document.body.classList.add('dark');
-                      document.documentElement.classList.remove('white-theme');
-                      document.body.classList.remove('white-theme');
-                    } else {
-                      // Light mode → white theme
-                      document.documentElement.classList.remove('dark');
-                      document.body.classList.remove('dark');
-                      document.documentElement.classList.add('white-theme');
-                      document.body.classList.add('white-theme');
-                    }
+                    // system or default - always apply dark mode (same as black theme)
+                    document.documentElement.classList.add('dark');
+                    document.body.classList.add('dark');
+                    document.documentElement.classList.remove('white-theme');
+                    document.body.classList.remove('white-theme');
                     document.documentElement.classList.remove('pink-theme');
                     document.body.classList.remove('pink-theme');
                   }

@@ -14,41 +14,28 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 export function ModeToggle() {
-    const { theme, setTheme, resolvedTheme } = useTheme()
+    const { theme, setTheme } = useTheme()
     const [mounted, setMounted] = useState(false)
 
     useEffect(() => {
         setMounted(true)
     }, [])
 
-    // Separate effect to handle system theme with resolvedTheme
+    // Separate effect to handle system theme - always apply dark mode (same as black theme)
     useEffect(() => {
         if (!mounted || theme !== "system") return
 
         const body = document.body
         const html = document.documentElement
 
-        // Check system preference directly, but also use resolvedTheme as fallback
-        const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
-        const isDark = resolvedTheme === "dark" || (resolvedTheme === undefined && systemPrefersDark)
-
-        // When system theme is active, apply white/black based on system preference
-        if (isDark) {
-            // Dark mode → black theme
-            body.classList.add("dark")
-            html.classList.add("dark")
-            body.classList.remove("white-theme")
-            html.classList.remove("white-theme")
-        } else {
-            // Light mode → white theme
-            body.classList.remove("dark")
-            html.classList.remove("dark")
-            body.classList.add("white-theme")
-            html.classList.add("white-theme")
-        }
+        // System theme always applies dark mode (same as black theme)
+        body.classList.add("dark")
+        html.classList.add("dark")
+        body.classList.remove("white-theme")
+        html.classList.remove("white-theme")
         body.classList.remove("pink-theme")
         html.classList.remove("pink-theme")
-    }, [theme, resolvedTheme, mounted])
+    }, [theme, mounted])
 
     useEffect(() => {
         if (!mounted) return
@@ -100,21 +87,11 @@ export function ModeToggle() {
                 localStorage.setItem("appTheme", "black")
                 localStorage.setItem("theme", "black")
             } else if (currentTheme === "system" || !currentTheme) {
-                // System theme: apply immediately based on system preference
-                const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
-                if (systemPrefersDark) {
-                    // Dark mode → black theme
-                    body.classList.add("dark")
-                    html.classList.add("dark")
-                    body.classList.remove("white-theme")
-                    html.classList.remove("white-theme")
-                } else {
-                    // Light mode → white theme
-                    body.classList.remove("dark")
-                    html.classList.remove("dark")
-                    body.classList.add("white-theme")
-                    html.classList.add("white-theme")
-                }
+                // System theme: always apply dark mode (same as black theme)
+                body.classList.add("dark")
+                html.classList.add("dark")
+                body.classList.remove("white-theme")
+                html.classList.remove("white-theme")
                 body.classList.remove("pink-theme")
                 html.classList.remove("pink-theme")
                 localStorage.setItem("appTheme", "system")
@@ -124,36 +101,8 @@ export function ModeToggle() {
 
         applyTheme(theme)
 
-        // Listen for system preference changes when theme is "system"
-        if (theme === "system" || !theme) {
-            const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
-            const handleChange = () => {
-                if (theme === "system" || !theme) {
-                    // Re-apply system theme when preference changes
-                    // Use resolvedTheme or check system preference
-                    const isDark = resolvedTheme === "dark" ||
-                        window.matchMedia("(prefers-color-scheme: dark)").matches
-                    if (isDark) {
-                        // Dark mode → black theme
-                        body.classList.add("dark")
-                        html.classList.add("dark")
-                        body.classList.remove("white-theme")
-                        html.classList.remove("white-theme")
-                    } else {
-                        // Light mode → white theme
-                        body.classList.remove("dark")
-                        html.classList.remove("dark")
-                        body.classList.add("white-theme")
-                        html.classList.add("white-theme")
-                    }
-                    body.classList.remove("pink-theme")
-                    html.classList.remove("pink-theme")
-                }
-            }
-            mediaQuery.addEventListener("change", handleChange)
-            return () => mediaQuery.removeEventListener("change", handleChange)
-        }
-    }, [theme, resolvedTheme, mounted])
+        // System theme always applies dark mode, no need to listen for system preference changes
+    }, [theme, mounted])
 
     if (!mounted) {
         return (
@@ -174,10 +123,8 @@ export function ModeToggle() {
         } else if (theme === "white") {
             return <Sun className="h-[1.2rem] w-[1.2rem]" />
         } else if (theme === "system") {
-            // System: show Moon if dark mode, Sun if light mode
-            const systemPrefersDark = typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches
-            const isDark = resolvedTheme === "dark" || (resolvedTheme === undefined && systemPrefersDark)
-            return isDark ? <Moon className="h-[1.2rem] w-[1.2rem]" /> : <Sun className="h-[1.2rem] w-[1.2rem]" />
+            // System theme always shows Moon icon (always dark mode)
+            return <Moon className="h-[1.2rem] w-[1.2rem]" />
         } else {
             // default
             return <Sun className="h-[1.2rem] w-[1.2rem]" />
