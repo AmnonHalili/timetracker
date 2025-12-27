@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react"
 import { RecursiveNode } from "@/components/team/RecursiveNode"
 import { AddChildDialog } from "@/components/team/AddChildDialog"
 import { User } from "@prisma/client"
-import { Loader2, UserPlus, Pencil, ZoomIn, ZoomOut, Network, ChevronLeft } from "lucide-react"
+import { Loader2, UserPlus, Pencil, ZoomIn, ZoomOut, Network, ArrowLeft, ScanFace } from "lucide-react"
 import { toast } from "sonner"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
@@ -103,6 +103,43 @@ export default function HierarchyPage() {
                     setPanPosition({ x: newPanX, y: 0 })
                     setIsInitialized(true)
                 }
+            }
+        })
+    }
+
+    const handleFindMe = () => {
+        if (!session?.user?.id) return
+
+        requestAnimationFrame(() => {
+            const container = document.querySelector('[data-hierarchy-container]') as HTMLElement
+            const node = document.getElementById(`node-${session.user.id}`)
+
+            if (container && node) {
+                const parentContainer = container.parentElement
+                if (parentContainer) {
+                    const parentRect = parentContainer.getBoundingClientRect()
+                    const nodeRect = node.getBoundingClientRect()
+
+                    // Calculate center of the node relative to viewport
+                    const nodeCenterX = nodeRect.left + nodeRect.width / 2
+                    const nodeCenterY = nodeRect.top + nodeRect.height / 2
+
+                    // Calculate center of viewport
+                    const viewportCenterX = parentRect.left + parentRect.width / 2
+                    const viewportCenterY = parentRect.top + parentRect.height / 2
+
+                    // Calculate delta
+                    const deltaX = viewportCenterX - nodeCenterX
+                    const deltaY = viewportCenterY - nodeCenterY
+
+                    // Apply to current pan
+                    setPanPosition(prev => ({
+                        x: prev.x + deltaX,
+                        y: prev.y + deltaY
+                    }))
+                }
+            } else {
+                toast.error("Could not find your card in the tree")
             }
         })
     }
@@ -398,10 +435,10 @@ export default function HierarchyPage() {
                             variant="ghost"
                             size="icon"
                             asChild
-                            className="mr-2 bg-background/50 backdrop-blur-sm border"
+                            className="-ml-2"
                         >
                             <Link href="/team" aria-label="Back to Team">
-                                <ChevronLeft className="h-4 w-4" />
+                                <ArrowLeft className="h-5 w-5" />
                             </Link>
                         </Button>
                         <Button
@@ -413,41 +450,50 @@ export default function HierarchyPage() {
                             <Network className="h-4 w-4" />
                             <span className="hidden sm:inline">Overview</span>
                         </Button>
-                        <div className="flex items-center gap-1 bg-background/50 backdrop-blur-sm border rounded-md p-1">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={handleZoomOut}
-                                disabled={zoomLevel <= baseZoom}
-                                className="h-8 w-8"
-                                aria-label="Zoom out"
-                            >
-                                <ZoomOut className="h-4 w-4" aria-hidden="true" />
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={handleZoomReset}
-                                className="h-8 px-2 text-xs font-mono"
-                                aria-label={`Reset zoom (current: ${getRelativeZoomPercent(zoomLevel)}%)`}
-                            >
-                                {getRelativeZoomPercent(zoomLevel)}%
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={handleZoomIn}
-                                disabled={zoomLevel >= maxZoom}
-                                className="h-8 w-8"
-                                aria-label="Zoom in"
-                            >
-                                <ZoomIn className="h-4 w-4" aria-hidden="true" />
-                            </Button>
-                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleFindMe}
+                            className="bg-background/50 backdrop-blur-sm gap-2 h-8"
+                        >
+                            <ScanFace className="h-4 w-4" />
+                            <span className="hidden sm:inline">Find Me</span>
+                        </Button>
                     </div>
-                    {/* Add Admin Button - Right Side (Only for actual Admins with Project) */}
+                    {/* Zoom and Add Chief Controls - Right Side */}
                     {hasProject && session?.user?.role === "ADMIN" && (
-                        <div className="absolute right-0 top-0">
+                        <div className="absolute right-0 top-0 flex items-center gap-2">
+                            <div className="flex items-center gap-1 bg-background/50 backdrop-blur-sm border rounded-md p-1">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={handleZoomOut}
+                                    disabled={zoomLevel <= baseZoom}
+                                    className="h-8 w-8"
+                                    aria-label="Zoom out"
+                                >
+                                    <ZoomOut className="h-4 w-4" aria-hidden="true" />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleZoomReset}
+                                    className="h-8 px-2 text-xs font-mono"
+                                    aria-label={`Reset zoom (current: ${getRelativeZoomPercent(zoomLevel)}%)`}
+                                >
+                                    {getRelativeZoomPercent(zoomLevel)}%
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={handleZoomIn}
+                                    disabled={zoomLevel >= maxZoom}
+                                    className="h-8 w-8"
+                                    aria-label="Zoom in"
+                                >
+                                    <ZoomIn className="h-4 w-4" aria-hidden="true" />
+                                </Button>
+                            </div>
                             <AddMemberDialog
                                 triggerLabel="Add Chief"
                                 defaultRole="ADMIN"

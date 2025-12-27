@@ -31,12 +31,14 @@ export function RecursiveNode({ node, allUsers, onAddClick, depth = 0, hideConne
             )}
 
             {/* User Card */}
-            <div className={cn(
-                "relative group flex flex-col items-start p-4 rounded-lg border text-card-foreground shadow-sm w-[220px] transition-all",
-                isCurrentUser
-                    ? "bg-primary/10 border-primary shadow-md ring-1 ring-primary/20"
-                    : "bg-card hover:shadow-md border-border"
-            )}>
+            <div
+                id={`node-${node.id}`}
+                className={cn(
+                    "relative group flex flex-col items-start p-4 rounded-lg border text-card-foreground shadow-sm w-[220px] transition-all",
+                    isCurrentUser
+                        ? "bg-primary/10 border-primary shadow-md ring-1 ring-primary/20"
+                        : "bg-card hover:shadow-md border-border"
+                )}>
                 {/* Header/Role Color Indicator */}
                 <div className={cn(
                     "absolute top-0 left-0 w-1 h-full rounded-l-lg",
