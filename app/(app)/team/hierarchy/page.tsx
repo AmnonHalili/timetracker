@@ -460,8 +460,8 @@ export default function HierarchyPage() {
                             <span className="hidden sm:inline">Find Me</span>
                         </Button>
                     </div>
-                    {/* Zoom and Add Chief Controls - Right Side */}
-                    {hasProject && session?.user?.role === "ADMIN" && (
+                    {/* Zoom Controls - Right Side - Visible to All */}
+                    {hasProject && (
                         <div className="absolute right-0 top-0 flex items-center gap-2">
                             <div className="flex items-center gap-1 bg-background/50 backdrop-blur-sm border rounded-md p-1">
                                 <Button
@@ -494,19 +494,22 @@ export default function HierarchyPage() {
                                     <ZoomIn className="h-4 w-4" aria-hidden="true" />
                                 </Button>
                             </div>
-                            <AddMemberDialog
-                                triggerLabel="Add Chief"
-                                defaultRole="ADMIN"
-                                lockRole={true}
-                                hideManagerSelect={true}
-                                onSuccess={fetchHierarchy}
-                                customTrigger={
-                                    <Button variant="outline" size="sm" className="gap-2 bg-background/50 backdrop-blur-sm">
-                                        <UserPlus className="h-4 w-4" />
-                                        <span className="hidden sm:inline">Add Chief</span>
-                                    </Button>
-                                }
-                            />
+                            {/* Add Chief Button - Only for ADMIN */}
+                            {session?.user?.role === "ADMIN" && (
+                                <AddMemberDialog
+                                    triggerLabel="Add Chief"
+                                    defaultRole="ADMIN"
+                                    lockRole={true}
+                                    hideManagerSelect={true}
+                                    onSuccess={fetchHierarchy}
+                                    customTrigger={
+                                        <Button variant="outline" size="sm" className="gap-2 bg-background/50 backdrop-blur-sm">
+                                            <UserPlus className="h-4 w-4" />
+                                            <span className="hidden sm:inline">Add Chief</span>
+                                        </Button>
+                                    }
+                                />
+                            )}
                         </div>
                     )}
                 </div>
