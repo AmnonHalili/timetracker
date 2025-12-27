@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react"
 import { RecursiveNode } from "@/components/team/RecursiveNode"
 import { AddChildDialog } from "@/components/team/AddChildDialog"
 import { User } from "@prisma/client"
-import { Loader2, UserPlus, Pencil, ZoomIn, ZoomOut } from "lucide-react"
+import { Loader2, UserPlus, Pencil, ZoomIn, ZoomOut, Network } from "lucide-react"
 import { toast } from "sonner"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
@@ -58,6 +58,54 @@ export default function HierarchyPage() {
         return Math.round((zoom / baseZoom) * 100)
     }
 
+    const fitToScreen = () => {
+        // Use requestAnimationFrame to ensure we measure correctly
+        requestAnimationFrame(() => {
+            const container = document.querySelector('[data-hierarchy-container]') as HTMLElement
+            if (container) {
+                const parentContainer = container.parentElement
+                if (parentContainer) {
+                    const parentRect = parentContainer.getBoundingClientRect()
+                    const containerRect = container.getBoundingClientRect()
+
+                    // If container has 0 dims, retry later
+                    if (containerRect.width === 0 || containerRect.height === 0) return
+
+                    // Get header height
+                    const headerElement = parentContainer.querySelector('.p-8') as HTMLElement
+                    const headerHeight = headerElement ? headerElement.getBoundingClientRect().height : 200
+                    const availableHeight = parentRect.height - headerHeight - 40
+                    const availableWidth = parentRect.width - 40
+
+                    // Calculate required zoom based on UNTRANSFORMED dimensions
+                    // We use offsetWidth/offsetHeight for unscaled size
+                    const widthZoom = availableWidth / container.offsetWidth
+                    const heightZoom = availableHeight / container.offsetHeight
+
+                    // Optimal zoom
+                    const optimalZoom = Math.max(0.4, Math.min(widthZoom, heightZoom, 1.0))
+
+                    setBaseZoom(optimalZoom)
+                    setZoomLevel(optimalZoom)
+
+                    // Robust Centering (Delta Correction)
+                    // Calculate shift needed to move current visual center to target center
+                    const currentVisualCenterX = containerRect.left + containerRect.width / 2
+                    const targetCenterX = parentRect.left + parentRect.width / 2
+                    const deltaX = targetCenterX - currentVisualCenterX
+
+                    // Apply delta to current pan to preserve center
+                    const newPanX = panPosition.x + deltaX
+
+                    // Vertical: Reset to top (0) or apply specific offset
+                    // Using 0 ensures it starts naturally below the header
+                    setPanPosition({ x: newPanX, y: 0 })
+                    setIsInitialized(true)
+                }
+            }
+        })
+    }
+
     const handleZoomIn = () => {
         setZoomLevel(prev => Math.min(prev + zoomStep, maxZoom))
     }
@@ -67,8 +115,7 @@ export default function HierarchyPage() {
     }
 
     const handleZoomReset = () => {
-        setZoomLevel(baseZoom) // Reset to base zoom (the 100% level)
-        setIsInitialized(false) // Trigger recentering
+        fitToScreen()
     }
 
     // Handle mouse wheel for zoom
@@ -136,8 +183,7 @@ export default function HierarchyPage() {
             if (data.projectLogo) setProjectLogo(data.projectLogo)
             if (data.projectId) setProjectId(data.projectId)
 
-            // Check if it's a private workspace (project name check is a proxy, or check user count/role)
-            // But API now returns "Private Workspace" if no project
+            // Private workspace check
             setHasProject(data.projectName !== "Private Workspace")
 
         } catch (error) {
@@ -146,10 +192,8 @@ export default function HierarchyPage() {
             toast.error(`Failed to load hierarchy: ${errorMessage}`)
         } finally {
             setIsLoading(false)
-            // Reset initialization after a small delay to ensure DOM is updated
-            setTimeout(() => {
-                setIsInitialized(false)
-            }, 50)
+            // Trigger initialization immediately
+            setIsInitialized(false)
         }
     }
 
@@ -310,54 +354,13 @@ export default function HierarchyPage() {
     // Calculate optimal zoom level and center the tree initially
     useEffect(() => {
         if (tree && !isInitialized && !isLoading) {
-            // Small delay to ensure DOM is rendered
-            const timeoutId = setTimeout(() => {
-                const container = document.querySelector('[data-hierarchy-container]') as HTMLElement
-                if (container) {
-                    // Get the parent container (the one with overflow hidden)
-                    const parentContainer = container.parentElement
-                    if (parentContainer) {
-                        const parentRect = parentContainer.getBoundingClientRect()
-                        const viewportWidth = parentRect.width
-                        const viewportHeight = parentRect.height
-                        const containerRect = container.getBoundingClientRect()
-
-                        // Calculate optimal zoom level so the entire tree fits in the viewport
-                        // Get header height to know available space
-                        const headerElement = parentContainer.querySelector('.p-8') as HTMLElement
-                        const headerHeight = headerElement ? headerElement.getBoundingClientRect().height : 200
-                        const availableHeight = viewportHeight - headerHeight - 80 // Leave margin for padding
-                        const availableWidth = viewportWidth - 80 // Leave margin for padding
-
-                        // Calculate required zoom to fit both width and height
-                        const widthZoom = availableWidth / containerRect.width
-                        const heightZoom = availableHeight / containerRect.height
-
-                        // Use the smaller zoom to ensure everything fits
-                        // Don't zoom in beyond 1.0 if tree is small, don't zoom out below 0.4 (minimum reasonable zoom)
-                        const optimalZoom = Math.max(0.4, Math.min(widthZoom, heightZoom, 1.0))
-
-                        // Set base zoom (this becomes our 100%)
-                        setBaseZoom(optimalZoom)
-                        setZoomLevel(optimalZoom)
-
-                        // Calculate the center position
-                        // Since transform origin is 'top center', scaling happens around the top-center point
-                        // So we calculate the center based on the natural (unscaled) position
-                        const containerCenterX = containerRect.left - parentRect.left + (containerRect.width / 2)
-                        const viewportCenterX = viewportWidth / 2
-                        const centerX = viewportCenterX - containerCenterX
-
-                        // Position vertically: start just below the header (closer to title)
-                        const centerY = headerHeight - 50 // Position project card closer to title by moving tree up
-
-                        setPanPosition({ x: centerX, y: centerY })
-                        setIsInitialized(true)
-                    }
-                }
-            }, 150)
-
-            return () => clearTimeout(timeoutId)
+            // Delay slightly to allow layout to settle (images etc might take a frame)
+            // Double RAF
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    fitToScreen()
+                })
+            })
         }
     }, [tree, isInitialized, isLoading])
 
@@ -389,7 +392,16 @@ export default function HierarchyPage() {
                 <div className="flex justify-between items-center max-w-5xl mx-auto mb-8 relative">
                     <h1 className="text-2xl font-bold text-center w-full">Organization Hierarchy</h1>
                     {/* Zoom Controls - Left Side */}
-                    <div className="absolute left-0 top-0">
+                    <div className="absolute left-0 top-0 flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleZoomReset}
+                            className="bg-background/50 backdrop-blur-sm gap-2 h-8"
+                        >
+                            <Network className="h-4 w-4" />
+                            <span className="hidden sm:inline">מבט על</span>
+                        </Button>
                         <div className="flex items-center gap-1 bg-background/50 backdrop-blur-sm border rounded-md p-1">
                             <Button
                                 variant="ghost"
@@ -467,7 +479,9 @@ export default function HierarchyPage() {
                     transform: `translate(${panPosition.x}px, ${panPosition.y}px) scale(${zoomLevel})`,
                     transformOrigin: 'top center',
                     cursor: isDragging ? 'grabbing' : 'grab',
-                    userSelect: 'none'
+                    userSelect: 'none',
+                    opacity: isInitialized ? 1 : 0,
+                    transition: 'opacity 0.3s ease-in-out'
                 }}
             >
                 {/* Project Root Node Section */}
