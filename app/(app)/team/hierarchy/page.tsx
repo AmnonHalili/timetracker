@@ -4,12 +4,13 @@ import { useEffect, useState, useMemo } from "react"
 import { RecursiveNode } from "@/components/team/RecursiveNode"
 import { AddChildDialog } from "@/components/team/AddChildDialog"
 import { User } from "@prisma/client"
-import { Loader2, UserPlus, Pencil, ZoomIn, ZoomOut, Network } from "lucide-react"
+import { Loader2, UserPlus, Pencil, ZoomIn, ZoomOut, Network, ChevronLeft } from "lucide-react"
 import { toast } from "sonner"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { ImageCropperDialog } from "@/components/ui/ImageCropperDialog"
 import Image from "next/image"
+import Link from "next/link"
 
 import { AddMemberDialog } from "@/components/team/AddMemberDialog"
 import { JoinRequestsWidget } from "@/components/team/JoinRequestsWidget"
@@ -394,13 +395,23 @@ export default function HierarchyPage() {
                     {/* Zoom Controls - Left Side */}
                     <div className="absolute left-0 top-0 flex items-center gap-2">
                         <Button
+                            variant="ghost"
+                            size="icon"
+                            asChild
+                            className="mr-2 bg-background/50 backdrop-blur-sm border"
+                        >
+                            <Link href="/team" aria-label="Back to Team">
+                                <ChevronLeft className="h-4 w-4" />
+                            </Link>
+                        </Button>
+                        <Button
                             variant="outline"
                             size="sm"
                             onClick={handleZoomReset}
                             className="bg-background/50 backdrop-blur-sm gap-2 h-8"
                         >
                             <Network className="h-4 w-4" />
-                            <span className="hidden sm:inline">מבט על</span>
+                            <span className="hidden sm:inline">Overview</span>
                         </Button>
                         <div className="flex items-center gap-1 bg-background/50 backdrop-blur-sm border rounded-md p-1">
                             <Button
