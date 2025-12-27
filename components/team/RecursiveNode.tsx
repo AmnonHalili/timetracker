@@ -18,18 +18,27 @@ interface RecursiveNodeProps {
 export function RecursiveNode({ node, allUsers, onAddClick, depth = 0, hideConnectorLines = false }: RecursiveNodeProps) {
     const { data: session } = useSession()
     const hasChildren = node.children && node.children.length > 0
+    const isCurrentUser = session?.user?.id === node.id
 
     return (
         <div className="flex flex-col items-center">
             {/* Connection Line from Parent to current Node */}
             {depth > 0 && (
-                <div className="h-8 w-px bg-border mb-0 relative group-hover:bg-primary/50 transition-colors" />
+                <div className={cn(
+                    "h-8 w-px mb-0 relative transition-colors",
+                    isCurrentUser ? "bg-primary" : "bg-border group-hover:bg-primary/50"
+                )} />
             )}
 
             {/* User Card */}
-            <div className={cn(
-                "relative group flex flex-col items-start p-4 rounded-lg border bg-card text-card-foreground shadow-sm w-[220px] hover:shadow-md transition-all"
-            )}>
+            <div
+                id={`node-${node.id}`}
+                className={cn(
+                    "relative group flex flex-col items-start p-4 rounded-lg border text-card-foreground shadow-sm w-[220px] transition-all",
+                    isCurrentUser
+                        ? "bg-primary/10 border-primary shadow-md ring-1 ring-primary/20"
+                        : "bg-card hover:shadow-md border-border"
+                )}>
                 {/* Header/Role Color Indicator */}
                 <div className={cn(
                     "absolute top-0 left-0 w-1 h-full rounded-l-lg",
