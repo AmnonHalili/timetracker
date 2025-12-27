@@ -152,11 +152,13 @@ export function canManageUser(currentUser: User, targetUser: User, allUsers?: Us
  * Filter users to only those visible to current user based on hierarchy
  * @param users - All users
  * @param currentUser - User requesting data (must include sharedChiefGroupId if applicable)
+ * @param secondaryRelations - Secondary manager relationships for visibility
  * @returns Filtered array of users
  */
 export function filterVisibleUsers<T extends { id: string, managerId: string | null, sharedChiefGroupId?: string | null, role?: string }>(
     users: T[],
-    currentUser: { id: string, role: string, sharedChiefGroupId?: string | null }
+    currentUser: { id: string, role: string, sharedChiefGroupId?: string | null },
+    secondaryRelations?: Array<{ employeeId: string; managerId: string; permissions: string[] }>
 ): T[] {
     if (currentUser.role === "ADMIN") {
         const visibleIds = new Set([currentUser.id])
@@ -212,6 +214,14 @@ export function filterVisibleUsers<T extends { id: string, managerId: string | n
         }
 
         addDescendants(currentUser.id)
+
+        // Add employees managed as secondary manager
+        if (secondaryRelations) {
+            secondaryRelations
+                .filter(rel => rel.managerId === currentUser.id)
+                .forEach(rel => visibleIds.add(rel.employeeId))
+        }
+
         return users.filter(u => visibleIds.has(u.id))
     }
 

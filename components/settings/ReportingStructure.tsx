@@ -27,7 +27,6 @@ interface ReportingStructureProps {
 const PERMISSION_LABELS: Record<string, { label: string; color: string }> = {
     'VIEW_TIME': { label: 'Viewer', color: 'bg-blue-500' },
     'EDIT_SETTINGS': { label: 'Editor', color: 'bg-purple-500' },
-    'APPROVE_TIME': { label: 'Approver', color: 'bg-green-500' },
     'MANAGE_TASKS': { label: 'Task Manager', color: 'bg-orange-500' }
 }
 

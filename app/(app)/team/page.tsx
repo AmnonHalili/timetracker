@@ -216,8 +216,23 @@ export default async function TeamPage() {
         })
     }
 
+    // Fetch secondary manager relationships for visibility filtering
+    const secondaryRelations = await prisma.secondaryManager.findMany({
+        where: {
+            OR: [
+                { managerId: currentUser.id }, // Where current user is the secondary manager
+                { employeeId: currentUser.id }  // Where current user is the employee
+            ]
+        },
+        select: {
+            employeeId: true,
+            managerId: true,
+            permissions: true
+        }
+    })
+
     const teamMembers = sortByHierarchy(
-        filterVisibleUsers(allTeamMembers, currentUser),
+        filterVisibleUsers(allTeamMembers, currentUser, secondaryRelations),
         session.user.id
     )
 

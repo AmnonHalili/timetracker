@@ -47,8 +47,23 @@ export default async function ReportsPage({
             orderBy: { name: "asc" }
         })
 
-        // Filter based on hierarchy
-        projectUsers = filterVisibleUsers(allProjectUsers, { id: currentUser.id, role: currentUser.role })
+        // Fetch secondary manager relationships for visibility with VIEW_TIME permission
+        const secondaryRelations = await prisma.secondaryManager.findMany({
+            where: {
+                OR: [
+                    { managerId: currentUser.id }, // Where current user is the secondary manager
+                    { employeeId: currentUser.id }  // Where current user is the employee
+                ]
+            },
+            select: {
+                employeeId: true,
+                managerId: true,
+                permissions: true
+            }
+        })
+
+        // Filter based on hierarchy + secondary manager relationships
+        projectUsers = filterVisibleUsers(allProjectUsers, { id: currentUser.id, role: currentUser.role }, secondaryRelations)
 
         // If userId param is present, verify it belongs to the visible scope
         if (searchParams.userId) {

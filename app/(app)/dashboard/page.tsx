@@ -14,7 +14,6 @@ type DashboardUser = User & {
     timeEntries: (TimeEntry & {
         breaks: TimeBreak[]
         tasks: Task[]
-        subtask?: { id: string; title: string } | null
     })[]
     pendingProjectId?: string | null
 }
@@ -30,7 +29,7 @@ export default async function DashboardPage() {
         where: { id: session.user.id },
         include: {
             timeEntries: {
-                include: { breaks: true, tasks: true, subtask: true }
+                include: { breaks: true, tasks: true }
             },
             project: {
                 select: { workMode: true }

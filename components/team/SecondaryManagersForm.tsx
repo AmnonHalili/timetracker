@@ -42,7 +42,6 @@ interface SecondaryManagersFormProps {
 const PERMISSIONS = [
     { id: 'VIEW_TIME', label: 'View Time Entries', description: 'Can view time tracking data' },
     { id: 'EDIT_SETTINGS', label: 'Edit Work Settings', description: 'Can modify work days and targets' },
-    { id: 'APPROVE_TIME', label: 'Approve Time Entries', description: 'Can approve submitted time' },
     { id: 'MANAGE_TASKS', label: 'Manage Tasks', description: 'Can assign and manage tasks' }
 ]
 

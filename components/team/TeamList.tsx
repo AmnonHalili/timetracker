@@ -70,6 +70,10 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
     }>>([])
     const [loadingSecondary, setLoadingSecondary] = useState(false)
 
+    // Main manager editing state
+    const [editingMainManager, setEditingMainManager] = useState<string>("")
+    const [savingMainManager, setSavingMainManager] = useState(false)
+
     // Role change dialog state
     const [roleDialogUser, setRoleDialogUser] = useState<User | null>(null)
     const [selectedRole, setSelectedRole] = useState<string>("")
@@ -98,6 +102,7 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
         setSelectedUser(user)
         setEditTarget(user.dailyTarget?.toString() || "")
         setEditDays(user.workDays || [])
+        setEditingMainManager(user.managerId || "none")
 
         // Fetch secondary managers
         setLoadingSecondary(true)
@@ -270,6 +275,55 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
         }
     }
 
+    // Check if current user can edit main manager for selected user
+    const canEditMainManager = (selectedUserId: string): boolean => {
+        if (!selectedUser) return false
+        if (currentUserRole === 'ADMIN') return true
+        if (currentUserRole === 'EMPLOYEE') return false
+
+        // Manager can edit if they are the selected user's current manager
+        if (selectedUser.managerId === currentUserId) return true
+
+        // Or if they are above in hierarchy
+        // Build hierarchy chain upward from selected user
+        const getManagerChain = (userId: string): string[] => {
+            const user = users.find(u => u.id === userId)
+            if (!user || !user.managerId) return []
+            return [user.managerId, ...getManagerChain(user.managerId)]
+        }
+
+        const chain = getManagerChain(selectedUserId)
+        return chain.includes(currentUserId)
+    }
+
+    const handleSaveMainManager = async () => {
+        if (!selectedUser) return
+
+        setSavingMainManager(true)
+        try {
+            const res = await fetch("/api/team/manager", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    userId: selectedUser.id,
+                    managerId: editingMainManager === "none" ? null : editingMainManager
+                })
+            })
+
+            if (!res.ok) {
+                const data = await res.json()
+                throw new Error(data.message || "Failed to update manager")
+            }
+
+            router.refresh()
+            alert("Main manager updated successfully")
+        } catch (error) {
+            alert(error instanceof Error ? error.message : "Error updating main manager")
+        } finally {
+            setSavingMainManager(false)
+        }
+    }
+
     const toggleDay = (day: number) => {
         setEditDays(prev =>
             prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day].sort((a, b) => a - b)
@@ -413,38 +467,67 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
                                     {/* Main Manager Section */}
                                     <div className="space-y-3">
                                         <Label className="text-base font-semibold">Main Manager</Label>
-                                        <div className="p-4 border rounded-lg bg-muted/30">
-                                            {selectedUser.managerId ? (() => {
-                                                const manager = users.find(u => u.id === selectedUser.managerId)
-                                                return manager ? (
-                                                    <div className="flex items-start gap-3">
-                                                        <Avatar className="h-10 w-10">
-                                                            <AvatarImage src={manager.image || undefined} alt={manager.name} />
-                                                            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                                                                {manager.name.substring(0, 2).toUpperCase()}
-                                                            </AvatarFallback>
-                                                        </Avatar>
-                                                        <div className="flex-1">
-                                                            <h4 className="font-semibold">{manager.name}</h4>
-                                                            <p className="text-sm text-muted-foreground">{manager.email}</p>
-                                                            {manager.jobTitle && (
-                                                                <p className="text-xs text-muted-foreground capitalize mt-0.5">
-                                                                    {manager.jobTitle}
-                                                                </p>
-                                                            )}
+                                        {canEditMainManager(selectedUser.id) ? (
+                                            <div className="space-y-3">
+                                                <Select value={editingMainManager || "none"} onValueChange={setEditingMainManager}>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select a manager..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="none">No Manager</SelectItem>
+                                                        {users
+                                                            .filter(u => u.id !== selectedUser.id && (u.role === 'ADMIN' || u.role === 'MANAGER'))
+                                                            .map(u => (
+                                                                <SelectItem key={u.id} value={u.id}>
+                                                                    {u.name} ({u.email})
+                                                                </SelectItem>
+                                                            ))
+                                                        }
+                                                    </SelectContent>
+                                                </Select>
+                                                <Button
+                                                    onClick={handleSaveMainManager}
+                                                    disabled={savingMainManager || editingMainManager === (selectedUser.managerId || "none")}
+                                                    size="sm"
+                                                >
+                                                    {savingMainManager && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                    Save Manager
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <div className="p-4 border rounded-lg bg-muted/30">
+                                                {selectedUser.managerId ? (() => {
+                                                    const manager = users.find(u => u.id === selectedUser.managerId)
+                                                    return manager ? (
+                                                        <div className="flex items-start gap-3">
+                                                            <Avatar className="h-10 w-10">
+                                                                <AvatarImage src={manager.image || undefined} alt={manager.name} />
+                                                                <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                                                                    {manager.name.substring(0, 2).toUpperCase()}
+                                                                </AvatarFallback>
+                                                            </Avatar>
+                                                            <div className="flex-1">
+                                                                <h4 className="font-semibold">{manager.name}</h4>
+                                                                <p className="text-sm text-muted-foreground">{manager.email}</p>
+                                                                {manager.jobTitle && (
+                                                                    <p className="text-xs text-muted-foreground capitalize mt-0.5">
+                                                                        {manager.jobTitle}
+                                                                    </p>
+                                                                )}
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ) : (
+                                                    ) : (
+                                                        <p className="text-sm text-muted-foreground">
+                                                            Manager not found in current team
+                                                        </p>
+                                                    )
+                                                })() : (
                                                     <p className="text-sm text-muted-foreground">
-                                                        Manager not found in current team
+                                                        No main manager assigned
                                                     </p>
-                                                )
-                                            })() : (
-                                                <p className="text-sm text-muted-foreground">
-                                                    No main manager assigned
-                                                </p>
-                                            )}
-                                        </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Secondary Managers Section */}

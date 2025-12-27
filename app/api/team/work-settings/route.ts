@@ -1,6 +1,6 @@
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { canManageUser } from "@/lib/hierarchy-utils"
+import { checkPermission } from "@/lib/hierarchy-utils"
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 
@@ -49,8 +49,14 @@ export async function PATCH(req: Request) {
             where: { projectId: currentUser.projectId }
         })
 
-        if (!canManageUser(currentUser, targetUser, allUsers)) {
-            return NextResponse.json({ message: "Forbidden: You don't have permission to manage this user" }, { status: 403 })
+        // Fetch secondary manager relationships for permission check
+        const secondaryRelations = await prisma.secondaryManager.findMany({
+            where: { employeeId: userId },
+            select: { employeeId: true, managerId: true, permissions: true }
+        })
+
+        if (!checkPermission(currentUser.id, userId, 'EDIT_SETTINGS', allUsers, secondaryRelations)) {
+            return NextResponse.json({ message: "Forbidden: You don't have permission to edit work settings for this user" }, { status: 403 })
         }
 
         const updatedUser = await prisma.user.update({
