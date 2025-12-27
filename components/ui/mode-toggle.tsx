@@ -24,14 +24,14 @@ export function ModeToggle() {
     // Separate effect to handle system theme with resolvedTheme
     useEffect(() => {
         if (!mounted || theme !== "system") return
-        
+
         const body = document.body
         const html = document.documentElement
-        
+
         // Check system preference directly, but also use resolvedTheme as fallback
         const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
         const isDark = resolvedTheme === "dark" || (resolvedTheme === undefined && systemPrefersDark)
-        
+
         // When system theme is active, apply white/black based on system preference
         if (isDark) {
             // Dark mode → black theme
@@ -52,11 +52,11 @@ export function ModeToggle() {
 
     useEffect(() => {
         if (!mounted) return
-        
+
         const body = document.body
         const html = document.documentElement
-        
-        const applyTheme = (currentTheme: string | undefined, resolved: string | undefined) => {
+
+        const applyTheme = (currentTheme: string | undefined) => {
             // Handle theme changes
             if (currentTheme === "pink") {
                 // Pink theme: light mode + pink colors
@@ -121,9 +121,9 @@ export function ModeToggle() {
                 localStorage.setItem("theme", "system")
             }
         }
-        
-        applyTheme(theme, resolvedTheme)
-        
+
+        applyTheme(theme)
+
         // Listen for system preference changes when theme is "system"
         if (theme === "system" || !theme) {
             const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
@@ -131,8 +131,8 @@ export function ModeToggle() {
                 if (theme === "system" || !theme) {
                     // Re-apply system theme when preference changes
                     // Use resolvedTheme or check system preference
-                    const isDark = resolvedTheme === "dark" || 
-                                  window.matchMedia("(prefers-color-scheme: dark)").matches
+                    const isDark = resolvedTheme === "dark" ||
+                        window.matchMedia("(prefers-color-scheme: dark)").matches
                     if (isDark) {
                         // Dark mode → black theme
                         body.classList.add("dark")
