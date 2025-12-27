@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
+import { formatTimeWithAMPM } from "@/lib/utils"
 import { Calendar, MapPin, Trash2, Users } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -111,7 +112,7 @@ export function EventDetailDialog({ event, open, onOpenChange }: EventDetailDial
                                     <p className="text-sm text-muted-foreground">All day</p>
                                 ) : (
                                     <p className="text-sm text-muted-foreground">
-                                        {format(start, 'h:mm a')} - {format(end, 'h:mm a')}
+                                        {formatTimeWithAMPM(start)} - {formatTimeWithAMPM(end)}
                                     </p>
                                 )}
                             </div>

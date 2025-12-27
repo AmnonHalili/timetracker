@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { cn } from "@/lib/utils"
+import { cn, formatTimeWithAMPM } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { format } from "date-fns"
@@ -246,7 +246,7 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
                             <span>{event.type === 'TASK_TIME' ? 'Deadline: Today' : 'All day'}</span>
                         ) : (
                             <span>
-                                {format(start, 'h:mm a')} - {format(end, 'h:mm a')}
+                                {formatTimeWithAMPM(start)} - {formatTimeWithAMPM(end)}
                             </span>
                         )}
                     </div>

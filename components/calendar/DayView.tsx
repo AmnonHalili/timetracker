@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button"
 import { format, eachHourOfInterval, isSameHour, isSameDay } from "date-fns"
+import { formatTimeWithAMPM } from "@/lib/utils"
 import { EventCard } from "./EventCard"
 import { CreateEventDialog } from "./CreateEventDialog"
 import { cn } from "@/lib/utils"
@@ -155,13 +156,13 @@ export function DayView({ date, events, tasks, projectId, onOptimisticEventCreat
                         <div
                             key={hour.toISOString()}
                             className={cn(
-                                "grid grid-cols-[80px_1fr] border-b last:border-b-0 min-h-[60px]",
+                                "grid grid-cols-[100px_1fr] border-b last:border-b-0 min-h-[60px]",
                                 isCurrentHour && "bg-primary/5"
                             )}
                         >
                             {/* Time label */}
-                            <div className="p-3 text-sm font-medium text-muted-foreground border-r flex items-start">
-                                {format(hour, 'h:mm a')}
+                            <div className="p-3 text-sm font-medium text-muted-foreground border-r flex items-center justify-center whitespace-nowrap">
+                                {formatTimeWithAMPM(hour)}
                             </div>
 
                             {/* Events for this hour */}

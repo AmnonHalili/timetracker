@@ -30,3 +30,21 @@ export function formatHoursMinutes(hours: number): string {
   
   return `${h}h ${m}m`
 }
+
+/**
+ * Format time as 24-hour format with AM/PM suffix (e.g., "15:00 pm", "03:00 am")
+ * @param date - Date object to format
+ * @returns Formatted string like "15:00 pm" or "03:00 am"
+ */
+export function formatTimeWithAMPM(date: Date): string {
+  const hours = date.getHours()
+  const minutes = date.getMinutes()
+  const isPM = hours >= 12
+  const period = isPM ? 'pm' : 'am'
+  
+  // Format as HH:mm with am/pm suffix (with space)
+  const formattedHours = hours.toString().padStart(2, '0')
+  const formattedMinutes = minutes.toString().padStart(2, '0')
+  
+  return `${formattedHours}:${formattedMinutes} ${period}`
+}
