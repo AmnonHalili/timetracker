@@ -3,6 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell } from "recharts"
 import { format } from "date-fns"
+import { formatHoursMinutes } from "@/lib/utils"
 
 interface DailyReport {
     date: Date
@@ -121,11 +122,11 @@ export function Charts({ days }: ChartsProps) {
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <span className="text-sm font-medium">Total Hours</span>
-                            <span className="text-2xl font-bold">{totalHours.toFixed(1)}</span>
+                            <span className="text-2xl font-bold">{formatHoursMinutes(totalHours)}</span>
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-sm font-medium">Average (Active Days)</span>
-                            <span className="text-2xl font-bold">{averageHours.toFixed(1)}</span>
+                            <span className="text-2xl font-bold">{formatHoursMinutes(averageHours)}</span>
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-sm font-medium">Work Days</span>

@@ -11,6 +11,7 @@ import { UserSelector } from "@/components/reports/UserSelector"
 import { getReportData } from "@/lib/report-service"
 import { ExportButton } from "@/components/reports/ExportButton"
 import { filterVisibleUsers } from "@/lib/hierarchy-utils"
+import { formatHoursMinutes } from "@/lib/utils"
 
 export default async function ReportsPage({
     searchParams,
@@ -106,7 +107,7 @@ export default async function ReportsPage({
                                 <CardTitle className="text-sm font-medium">Total Worked</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{report.totalMonthlyHours.toFixed(2)} hrs</div>
+                                <div className="text-2xl font-bold">{formatHoursMinutes(report.totalMonthlyHours)}</div>
                             </CardContent>
                         </Card>
 
@@ -117,7 +118,7 @@ export default async function ReportsPage({
                             <CardContent>
                                 <div className="text-2xl font-bold">
                                     {(data.user.dailyTarget && data.user.dailyTarget > 0)
-                                        ? `${report.totalTargetHours.toFixed(2)} hrs`
+                                        ? formatHoursMinutes(report.totalTargetHours)
                                         : 'None'}
                                 </div>
                             </CardContent>

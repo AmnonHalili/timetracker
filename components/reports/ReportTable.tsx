@@ -1,7 +1,7 @@
 import { DailyReport } from "@/lib/report-calculations"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { format } from "date-fns"
-import { cn } from "@/lib/utils"
+import { cn, formatHoursMinutes } from "@/lib/utils"
 
 interface ReportTableProps {
     days: DailyReport[]
@@ -35,7 +35,7 @@ export function ReportTable({ days }: ReportTableProps) {
                                 {day.endTime ? format(day.endTime, "HH:mm") : (day.startTime ? "Running..." : "-")}
                             </TableCell>
                             <TableCell className="text-right font-mono">
-                                {day.totalDurationHours > 0 ? day.totalDurationHours.toFixed(2) + "h" : "-"}
+                                {formatHoursMinutes(day.totalDurationHours)}
                             </TableCell>
                         </TableRow>
                     ))}
