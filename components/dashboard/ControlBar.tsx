@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { MultiSelect } from "@/components/ui/multi-select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface ControlBarProps {
     activeEntry: {
@@ -18,14 +18,20 @@ interface ControlBarProps {
         description?: string | null
         // Assuming activeEntry might now have a 'tasks' array based on the useEffect change
         tasks?: Array<{ id: string; title: string }>
+        subtaskId?: string | null
     } | null
-    tasks: Array<{ id: string; title: string }>
+    tasks: Array<{ 
+        id: string
+        title: string
+        subtasks?: Array<{ id: string; title: string; isDone: boolean }>
+    }>
     onTimerStopped?: (stoppedEntry: {
         startTime: Date
         endTime: Date
         description?: string | null
         breaks?: Array<{ startTime: Date; endTime: Date | null }>
         tasks?: Array<{ id: string; title: string }>
+        subtaskId?: string | null
     }) => void
 }
 
@@ -36,6 +42,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
     const [elapsed, setElapsed] = useState(0)
     const [loading, setLoading] = useState(false)
     const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
+    const [selectedSubtaskId, setSelectedSubtaskId] = useState<string | null>(null)
     const [description, setDescription] = useState("")
     const [isManualMode, setIsManualMode] = useState(false)
     const [manualStart, setManualStart] = useState("")
@@ -95,6 +102,13 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
             setSelectedTaskIds(optimisticEntry.tasks.map(t => t.id))
         } else if (!optimisticEntry) {
             setSelectedTaskIds([])
+            setSelectedSubtaskId(null)
+        }
+        
+        if (optimisticEntry?.subtaskId !== undefined) {
+            setSelectedSubtaskId(optimisticEntry.subtaskId)
+        } else if (!optimisticEntry) {
+            setSelectedSubtaskId(null)
         }
     }, [optimisticEntry])
 
@@ -150,7 +164,8 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                 description: description || null,
                 tasks: selectedTaskIds.length > 0
                     ? tasks.filter(t => selectedTaskIds.includes(t.id))
-                    : undefined
+                    : undefined,
+                subtaskId: selectedSubtaskId || null
             })
         }
 
@@ -173,13 +188,15 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                     body: JSON.stringify({
                         action: 'manual',
                         manualData: { start, end, description },
-                        taskIds: selectedTaskIds.length > 0 ? selectedTaskIds : undefined
+                        taskIds: selectedTaskIds.length > 0 ? selectedTaskIds : undefined,
+                        subtaskId: selectedSubtaskId || null
                     }),
                 })
                 setManualStart("")
                 setManualEnd("")
                 setDescription("")
                 setSelectedTaskIds([])
+                setSelectedSubtaskId(null)
             } else {
                 // Timer Start
                 await fetch('/api/time-entries', {
@@ -187,7 +204,8 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                     body: JSON.stringify({
                         action: 'start',
                         description,
-                        taskIds: selectedTaskIds.length > 0 ? selectedTaskIds : undefined
+                        taskIds: selectedTaskIds.length > 0 ? selectedTaskIds : undefined,
+                        subtaskId: selectedSubtaskId || null
                     }),
                 })
             }
@@ -220,7 +238,8 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                         startTime: new Date(b.startTime),
                         endTime: b.endTime ? new Date(b.endTime) : null
                     })) || [],
-                    tasks: optimisticEntry.tasks || []
+                    tasks: optimisticEntry.tasks || [],
+                    subtaskId: optimisticEntry.subtaskId || null
                 }
                 onTimerStopped(stoppedEntry)
             }
@@ -228,6 +247,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
             setOptimisticEntry(null)
             setDescription("")
             setSelectedTaskIds([])
+            setSelectedSubtaskId(null)
         } else if (action === 'pause' && optimisticEntry) {
             setOptimisticEntry({
                 ...optimisticEntry,
@@ -285,15 +305,57 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
 
                     {/* Task Selector */}
                     <div className="w-[180px] shrink-0">
-                        <MultiSelect
-                            options={tasks.map(t => ({ label: t.title, value: t.id }))}
-                            selected={selectedTaskIds}
-                            onChange={setSelectedTaskIds}
-                            placeholder="Tasks..."
-                            className="bg-background border-input hover:bg-accent/50 text-sm h-9 shadow-sm"
-                            maxCount={1}
-                        />
+                        <Select
+                            value={selectedTaskIds.length > 0 ? selectedTaskIds[0] : undefined}
+                            onValueChange={(value) => {
+                                setSelectedTaskIds(value ? [value] : [])
+                                // Clear subtask selection when task changes
+                                setSelectedSubtaskId(null)
+                            }}
+                            disabled={!!optimisticEntry}
+                        >
+                            <SelectTrigger className="bg-background border-input hover:bg-accent/50 text-sm h-9 shadow-sm">
+                                <SelectValue placeholder="Tasks..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {tasks.map((task) => (
+                                    <SelectItem key={task.id} value={task.id}>
+                                        {task.title}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
+
+                    {/* Subtask Selector - Only show if a task is selected and has subtasks */}
+                    {selectedTaskIds.length > 0 && (() => {
+                        const selectedTask = tasks.find(t => selectedTaskIds.includes(t.id))
+                        const availableSubtasks = selectedTask?.subtasks?.filter(st => !st.isDone) || []
+                        
+                        if (availableSubtasks.length > 0) {
+                            return (
+                                <div className="w-[160px] shrink-0">
+                                    <Select
+                                        value={selectedSubtaskId || undefined}
+                                        onValueChange={(value) => setSelectedSubtaskId(value)}
+                                        disabled={!!optimisticEntry}
+                                    >
+                                        <SelectTrigger className="bg-background border-input hover:bg-accent/50 text-sm h-9 shadow-sm">
+                                            <SelectValue placeholder="Subtask..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {availableSubtasks.map((subtask) => (
+                                                <SelectItem key={subtask.id} value={subtask.id}>
+                                                    {subtask.title}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )
+                        }
+                        return null
+                    })()}
                 </div>
 
                 {/* Controls Area */}

@@ -37,11 +37,12 @@ export async function POST(req: Request) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
-    const { action, manualData, taskIds, description }: {
+    const { action, manualData, taskIds, description, subtaskId }: {
         action: 'start' | 'stop' | 'pause' | 'resume' | 'manual',
         manualData?: Record<string, unknown>,
         taskIds?: string[],
-        description?: string
+        description?: string,
+        subtaskId?: string | null
     } = await req.json()
 
     try {
@@ -64,6 +65,7 @@ export async function POST(req: Request) {
                     tasks: taskIds && taskIds.length > 0 ? {
                         connect: taskIds.map(id => ({ id }))
                     } : undefined,
+                    subtaskId: subtaskId || null,
                 }
             })
 
@@ -162,7 +164,8 @@ export async function POST(req: Request) {
                     isManual: true,
                     tasks: taskIds && taskIds.length > 0 ? {
                         connect: taskIds.map(id => ({ id }))
-                    } : undefined
+                    } : undefined,
+                    subtaskId: subtaskId || null,
                 }
             })
             console.log("API: Created entry", entry.id)

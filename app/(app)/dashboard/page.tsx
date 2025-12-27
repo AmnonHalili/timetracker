@@ -14,6 +14,7 @@ type DashboardUser = User & {
     timeEntries: (TimeEntry & {
         breaks: TimeBreak[]
         tasks: Task[]
+        subtask?: { id: string; title: string } | null
     })[]
     pendingProjectId?: string | null
 }
@@ -29,7 +30,7 @@ export default async function DashboardPage() {
         where: { id: session.user.id },
         include: {
             timeEntries: {
-                include: { breaks: true, tasks: true }
+                include: { breaks: true, tasks: true, subtask: true }
             },
             project: {
                 select: { workMode: true }
@@ -49,11 +50,16 @@ export default async function DashboardPage() {
     const stats = calculateBalance(user)
     const remainingHours = stats.accumulatedDeficit
 
-    // Fetch available tasks for the user
+    // Fetch available tasks for the user with subtasks
     const tasks = await prisma.task.findMany({
         where: {
             assignees: { some: { id: user.id } },
             status: { not: 'DONE' }
+        },
+        include: {
+            subtasks: {
+                orderBy: { createdAt: 'asc' }
+            }
         },
         orderBy: { updatedAt: 'desc' }
     })

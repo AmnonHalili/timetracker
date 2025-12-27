@@ -20,6 +20,7 @@ interface TimeEntry {
 interface Task {
     id: string
     title: string
+    subtasks?: Array<{ id: string; title: string; isDone: boolean }>
 }
 
 interface DashboardContentProps {
@@ -32,6 +33,8 @@ interface DashboardContentProps {
         taskId?: string | null
         description?: string | null
         tasks?: Array<{ id: string; title: string }>
+        subtaskId?: string | null
+        subtask?: { id: string; title: string } | null
     } | null
     historyEntries: TimeEntry[]
     tasks: Task[]
@@ -48,6 +51,7 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
         description?: string | null
         breaks?: Array<{ startTime: Date; endTime: Date | null }>
         tasks?: Array<{ id: string; title: string }>
+        subtaskId?: string | null
     }) => {
         // Create a temporary entry with a temporary ID
         const optimisticEntry: TimeEntry = {
