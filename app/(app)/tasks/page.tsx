@@ -13,11 +13,12 @@ export default async function TasksPage() {
     }
 
     const isAdmin = session.user.role === "ADMIN"
+    const isManager = session.user.role === "MANAGER"
 
     // Get current user's project ID
     const currentUser = await prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { projectId: true }
+        select: { projectId: true, role: true, id: true }
     })
 
     // Fetch Tasks
@@ -62,16 +63,57 @@ export default async function TasksPage() {
         }
     }
 
-    // Fetch Users (Only if admin, for the dropdown)
-    // MUST be scoped to the same project
-    // List of users available for assignment
-    const users = isAdmin && currentUser?.projectId ? await prisma.user.findMany({
-        where: {
-            status: "ACTIVE",
-            projectId: currentUser.projectId
-        },
-        select: { id: true, name: true, email: true }
-    }) : [{ id: session.user.id, name: session.user.name || "Me", email: session.user.email ?? null }]
+    // Fetch Users (for the assignment dropdown)
+    let users: { id: string; name: string | null; email: string | null }[] = []
+
+    if ((isAdmin || isManager) && currentUser?.projectId) {
+        const baseUsers = await prisma.user.findMany({
+            where: {
+                status: "ACTIVE",
+                projectId: currentUser.projectId
+            },
+            select: { id: true, name: true, email: true, managerId: true }
+        })
+
+        if (isManager && !isAdmin) {
+            // For managers, include:
+            // 1. Themselves
+            // 2. Their direct reports and descendants  
+            // 3. Employees they manage as secondary manager with MANAGE_TASKS
+            const secondaryRelations = await prisma.secondaryManager.findMany({
+                where: {
+                    managerId: currentUser.id,
+                    permissions: { has: 'MANAGE_TASKS' }
+                },
+                select: { employeeId: true }
+            })
+
+            const secondaryEmployeeIds = new Set(secondaryRelations.map(rel => rel.employeeId))
+            const descendants = new Set([currentUser.id])
+
+            // Add all direct reports and their descendants
+            const addDescendants = (userId: string) => {
+                baseUsers
+                    .filter(u => u.managerId === userId)
+                    .forEach(child => {
+                        descendants.add(child.id)
+                        addDescendants(child.id)
+                    })
+            }
+            addDescendants(currentUser.id)
+
+            // Combine primary and secondary managed employees
+            users = baseUsers.filter(u =>
+                descendants.has(u.id) || secondaryEmployeeIds.has(u.id)
+            )
+        } else {
+            // Admin sees all project users
+            users = baseUsers
+        }
+    } else {
+        // Regular employee can only see themselves
+        users = [{ id: session.user.id, name: session.user.name || "Me", email: session.user.email ?? null }]
+    }
 
     // Fetch active time entries (timers that are currently running) to determine task status
     const activeTimeEntries = await prisma.timeEntry.findMany({
@@ -118,8 +160,8 @@ export default async function TasksPage() {
                         {isAdmin ? "Manage and assign tasks" : "Your assigned tasks"}
                     </p>
                 </div>
-                <CreateTaskDialog 
-                    users={isAdmin && users.length > 0 ? users : [{ id: session.user.id, name: session.user.name || "Me", email: session.user.email ?? null }]} 
+                <CreateTaskDialog
+                    users={users}
                     currentUserId={session.user.id}
                 />
             </div>
@@ -127,7 +169,7 @@ export default async function TasksPage() {
             <TasksView
                 initialTasks={tasks}
                 users={users}
-                isAdmin={isAdmin}
+                isAdmin={isAdmin || isManager}
                 currentUserId={session.user.id}
                 tasksWithActiveTimers={Object.fromEntries(tasksWithActiveTimers)}
             />

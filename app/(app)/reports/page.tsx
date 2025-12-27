@@ -48,7 +48,7 @@ export default async function ReportsPage({
         })
 
         // Fetch secondary manager relationships for visibility with VIEW_TIME permission
-        const secondaryRelations = await prisma.secondaryManager.findMany({
+        const allSecondaryRelations = await prisma.secondaryManager.findMany({
             where: {
                 OR: [
                     { managerId: currentUser.id }, // Where current user is the secondary manager
@@ -61,6 +61,11 @@ export default async function ReportsPage({
                 permissions: true
             }
         })
+
+        // Filter to only include relationships with VIEW_TIME permission
+        const secondaryRelations = allSecondaryRelations.filter(rel =>
+            rel.managerId === currentUser.id && rel.permissions.includes('VIEW_TIME')
+        )
 
         // Filter based on hierarchy + secondary manager relationships
         projectUsers = filterVisibleUsers(allProjectUsers, { id: currentUser.id, role: currentUser.role }, secondaryRelations)

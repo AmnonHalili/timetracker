@@ -29,35 +29,47 @@ export async function POST(req: Request) {
         const body = await req.json()
         const { title, assignedToIds, priority, deadline, description } = body
 
-        // Validate permissions
-        // ADMIN: Can assign to anyone (in project? logic handled by frontend usually, but good to enforce project scope if strict)
+        // Validate permissions  
+        // ADMIN: Can assign to anyone in project
         // MANAGER: Can assign to descendants
-        // EMPLOYEE / NO ROLE: Can only assign to SELF
+        // SECONDARY MANAGER with MANAGE_TASKS: Can assign to managed employees
+        // EMPLOYEE: Can only assign to self
 
-        if (session.user.role !== "ADMIN") {
-            // If manager, check descendants. If neither, check self.
-            const currentUser = await prisma.user.findUnique({
-                where: { id: session.user.id },
-                select: { id: true, projectId: true }
+        const currentUser = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { id: true, projectId: true, role: true }
+        })
+
+        if (!currentUser) {
+            return NextResponse.json({ message: "User not found" }, { status: 404 })
+        }
+
+        const targetIds = new Set(assignedToIds as string[])
+
+        if (currentUser.role !== "ADMIN") {
+            const allUsers = await prisma.user.findMany({
+                where: { projectId: currentUser.projectId },
+                select: { id: true, managerId: true }
             })
 
-            const targetIds = new Set(assignedToIds as string[])
+            // Fetch secondary manager relationships
+            const secondaryRelations = await prisma.secondaryManager.findMany({
+                where: { managerId: currentUser.id },
+                select: { employeeId: true, managerId: true, permissions: true }
+            })
 
-            if (session.user.role === "MANAGER" && currentUser?.projectId) {
-                const allUsers = await prisma.user.findMany({
-                    where: { projectId: currentUser.projectId },
-                    select: { id: true, managerId: true }
-                })
-                // Cast to partial type allowed by utils if strictly typed, or fetch needed fields. 
-                // Assuming getAllDescendants just needs structure. It seems it expects full User type in signature but only uses id/managerId.
-                // Let's use 'as any' safely here or better, update the helper file if possible. 
-                // For now, let's just cast to 'any' to avoid the strict type check against the full User model if the helper creates issues.
+            if (currentUser.role === "MANAGER") {
+                // Primary manager check + secondary manager check
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const descendants = getAllDescendants(currentUser.id, allUsers as any)
-                const allowedIds = new Set([currentUser.id, ...descendants])
+                const secondaryEmployees = secondaryRelations
+                    .filter(rel => rel.permissions.includes('MANAGE_TASKS'))
+                    .map(rel => rel.employeeId)
+
+                const allowedIds = new Set([currentUser.id, ...descendants, ...secondaryEmployees])
 
                 if (!Array.from(targetIds).every(id => allowedIds.has(id))) {
-                    return NextResponse.json({ message: "Cannot assign tasks to users outside your hierarchy" }, { status: 403 })
+                    return NextResponse.json({ message: "Cannot assign tasks to users outside your hierarchy or managed employees" }, { status: 403 })
                 }
             } else {
                 // Regular user or Private Workspace: Can only assign to self
