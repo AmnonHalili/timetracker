@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react"
 import { RecursiveNode } from "@/components/team/RecursiveNode"
 import { AddChildDialog } from "@/components/team/AddChildDialog"
 import { User } from "@prisma/client"
-import { Loader2, UserPlus, Pencil, ZoomIn, ZoomOut, Network, ArrowLeft, ScanFace } from "lucide-react"
+import { Loader2, UserPlus, Pencil, ZoomIn, ZoomOut, Network, ArrowLeft, Crosshair } from "lucide-react"
 import { toast } from "sonner"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
@@ -456,7 +456,7 @@ export default function HierarchyPage() {
                             onClick={handleFindMe}
                             className="bg-background/50 backdrop-blur-sm gap-2 h-8"
                         >
-                            <ScanFace className="h-4 w-4" />
+                            <Crosshair className="h-4 w-4" />
                             <span className="hidden sm:inline">Find Me</span>
                         </Button>
                     </div>
