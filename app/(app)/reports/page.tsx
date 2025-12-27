@@ -43,7 +43,7 @@ export default async function ReportsPage({
                 projectId: currentUser.projectId,
                 status: "ACTIVE"
             },
-            select: { id: true, name: true, email: true, managerId: true },
+            select: { id: true, name: true, email: true, managerId: true, role: true },
             orderBy: { name: "asc" }
         })
 
@@ -68,7 +68,49 @@ export default async function ReportsPage({
         )
 
         // Filter based on hierarchy + secondary manager relationships
-        projectUsers = filterVisibleUsers(allProjectUsers, { id: currentUser.id, role: currentUser.role }, secondaryRelations)
+        const visibleUsers = filterVisibleUsers(allProjectUsers, { id: currentUser.id, role: currentUser.role }, secondaryRelations)
+
+        // Sort by hierarchy: admins first, then managers, then employees
+        // Within same role, sort by hierarchy level (0 = top level)
+        const sortedUsers = visibleUsers.sort((a, b) => {
+            // Role priority: ADMIN > MANAGER > EMPLOYEE
+            const roleOrder: Record<string, number> = { 'ADMIN': 0, 'MANAGER': 1, 'EMPLOYEE': 2 }
+            const roleA = roleOrder[a.role || 'EMPLOYEE'] ?? 3
+            const roleB = roleOrder[b.role || 'EMPLOYEE'] ?? 3
+
+            if (roleA !== roleB) {
+                return roleA - roleB
+            }
+
+            // Same role - sort by hierarchy level
+            const getLevel = (userId: string): number => {
+                let level = 0
+                let currentId = userId
+                const visited = new Set<string>()
+
+                while (currentId) {
+                    const user = visibleUsers.find(u => u.id === currentId)
+                    if (!user || !user.managerId || visited.has(currentId)) break
+                    visited.add(currentId)
+                    level++
+                    currentId = user.managerId
+                }
+
+                return level
+            }
+
+            const levelA = getLevel(a.id)
+            const levelB = getLevel(b.id)
+
+            if (levelA !== levelB) {
+                return levelA - levelB // Lower level = higher in hierarchy
+            }
+
+            // Same level - sort by name
+            return (a.name || '').localeCompare(b.name || '')
+        })
+
+        projectUsers = sortedUsers
 
         // If userId param is present, verify it belongs to the visible scope
         if (searchParams.userId) {
