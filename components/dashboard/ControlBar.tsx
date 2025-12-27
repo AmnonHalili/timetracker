@@ -23,6 +23,7 @@ interface ControlBarProps {
     tasks: Array<{ 
         id: string
         title: string
+        status?: string
         subtasks?: Array<{ id: string; title: string; isDone: boolean }>
     }>
     onTimerStopped?: (stoppedEntry: {
@@ -53,35 +54,33 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
     // Preserve optimistic startTime to prevent jumping while allowing smooth updates
     useEffect(() => {
         if (activeEntry) {
-            if (optimisticEntry) {
-                const optimisticStart = new Date(optimisticEntry.startTime).getTime()
-                const serverStart = new Date(activeEntry.startTime).getTime()
-                const now = Date.now()
+            setOptimisticEntry(prev => {
+                if (prev) {
+                    const optimisticStart = new Date(prev.startTime).getTime()
+                    const serverStart = new Date(activeEntry.startTime).getTime()
+                    const now = Date.now()
 
-                // If we have an optimistic entry that was just created (within last 10 seconds)
-                // and the server time is close (within 5 seconds), keep the optimistic startTime
-                // This prevents jumping while still allowing the timer to start immediately
-                const timeSinceOptimistic = now - optimisticStart
-                const timeDiff = Math.abs(serverStart - optimisticStart)
+                    // If we have an optimistic entry that was just created (within last 10 seconds)
+                    // and the server time is close (within 5 seconds), keep the optimistic startTime
+                    // This prevents jumping while still allowing the timer to start immediately
+                    const timeSinceOptimistic = now - optimisticStart
+                    const timeDiff = Math.abs(serverStart - optimisticStart)
 
-                if (timeSinceOptimistic < 10000 && timeDiff < 5000) {
-                    // Merge server data (tasks, description, breaks) but keep optimistic startTime
-                    setOptimisticEntry({
-                        ...activeEntry,
-                        startTime: optimisticEntry.startTime,
-                        // Preserve breaks from optimistic if they're more recent
-                        breaks: optimisticEntry.breaks && optimisticEntry.breaks.length > 0
-                            ? optimisticEntry.breaks
-                            : activeEntry.breaks
-                    })
-                } else {
-                    // Use server value if it's significantly different or optimistic is old
-                    setOptimisticEntry(activeEntry)
+                    if (timeSinceOptimistic < 10000 && timeDiff < 5000) {
+                        // Merge server data (tasks, description, breaks) but keep optimistic startTime
+                        return {
+                            ...activeEntry,
+                            startTime: prev.startTime,
+                            // Preserve breaks from optimistic if they're more recent
+                            breaks: prev.breaks && prev.breaks.length > 0
+                                ? prev.breaks
+                                : activeEntry.breaks
+                        }
+                    }
                 }
-            } else {
-                // No optimistic entry, use server value
-                setOptimisticEntry(activeEntry)
-            }
+                // Use server value if no optimistic entry or it's old
+                return activeEntry
+            })
             // Mark data as loaded when server entry arrives
             setIsDataLoaded(true)
         } else {
@@ -89,7 +88,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
             setOptimisticEntry(null)
             setIsDataLoaded(false)
         }
-    }, [activeEntry, optimisticEntry])
+    }, [activeEntry])
 
     useEffect(() => {
         if (optimisticEntry?.description) {
@@ -146,6 +145,130 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
         const m = Math.floor((seconds % 3600) / 60)
         const s = seconds % 60
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')} `
+    }
+
+    // Handle description update
+    const handleDescriptionUpdate = async (newDescription: string) => {
+        if (!activeEntry || !optimisticEntry) return
+        
+        try {
+            // Get active entry ID from server
+            const activeEntryResponse = await fetch('/api/time-entries')
+            if (activeEntryResponse.ok) {
+                const { activeEntry: serverActiveEntry } = await activeEntryResponse.json()
+                if (serverActiveEntry?.id) {
+                    await fetch('/api/time-entries', {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            id: serverActiveEntry.id,
+                            description: newDescription || null
+                        })
+                    })
+                    // Update optimistic entry
+                    setOptimisticEntry(prev => prev ? { ...prev, description: newDescription || null } : null)
+                }
+            }
+        } catch (error) {
+            console.error("Failed to update description:", error)
+        }
+    }
+
+    // Handle subtask update
+    const handleSubtaskUpdate = async (newSubtaskId: string | null) => {
+        if (!activeEntry || !optimisticEntry) return
+        
+        try {
+            // Get active entry ID from server
+            const activeEntryResponse = await fetch('/api/time-entries')
+            if (activeEntryResponse.ok) {
+                const { activeEntry: serverActiveEntry } = await activeEntryResponse.json()
+                if (serverActiveEntry?.id) {
+                    await fetch('/api/time-entries', {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            id: serverActiveEntry.id,
+                            subtaskId: newSubtaskId
+                        })
+                    })
+                    // Update optimistic entry
+                    setOptimisticEntry(prev => prev ? { ...prev, subtaskId: newSubtaskId } : null)
+                    router.refresh()
+                }
+            }
+        } catch (error) {
+            console.error("Failed to update subtask:", error)
+        }
+    }
+
+    // Handle task change - splits current entry and creates new one
+    const handleTaskChange = async (oldTaskIds: string[], newTaskIds: string[]) => {
+        if (!activeEntry || !optimisticEntry) return
+        
+        setLoading(true)
+        const now = new Date()
+        
+        // Create stopped entry data for optimistic display
+        if (optimisticEntry && onTimerStopped) {
+            const stoppedEntry = {
+                startTime: new Date(optimisticEntry.startTime),
+                endTime: now,
+                description: optimisticEntry.description || null,
+                breaks: optimisticEntry.breaks?.map(b => ({
+                    startTime: new Date(b.startTime),
+                    endTime: b.endTime ? new Date(b.endTime) : null
+                })) || [],
+                tasks: optimisticEntry.tasks || [],
+                subtaskId: optimisticEntry.subtaskId || null
+            }
+            onTimerStopped(stoppedEntry)
+        }
+        
+        try {
+            // Stop current entry (set endTime)
+            await fetch('/api/time-entries', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'stop'
+                })
+            })
+
+            // Immediately start new entry with new task
+            await fetch('/api/time-entries', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'start',
+                    description: description || null,
+                    taskIds: newTaskIds.length > 0 ? newTaskIds : undefined,
+                    subtaskId: null // Clear subtask when task changes
+                })
+            })
+
+            // Update local state
+            setSelectedTaskIds(newTaskIds)
+            setSelectedSubtaskId(null)
+            
+            // Update optimistic entry with new start time
+            setOptimisticEntry({
+                startTime: now,
+                breaks: [],
+                description: description || null,
+                tasks: newTaskIds.length > 0
+                    ? tasks.filter(t => newTaskIds.includes(t.id))
+                    : undefined,
+                subtaskId: null
+            })
+            
+            router.refresh()
+        } catch (error) {
+            console.error("Failed to change task:", error)
+            alert("Failed to change task. Please try again.")
+        } finally {
+            setLoading(false)
+        }
     }
 
     const handleStart = async () => {
@@ -297,9 +420,20 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                         id="work-description"
                         placeholder="What are you working on?"
                         value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        className="bg-background border-input hover:bg-accent/50 focus:bg-background shadow-sm h-9 text-sm max-w-sm"
-                        disabled={!!optimisticEntry}
+                        onChange={(e) => {
+                            setDescription(e.target.value)
+                            // Update description on active entry if timer is running
+                            if (optimisticEntry && activeEntry) {
+                                handleDescriptionUpdate(e.target.value)
+                            }
+                        }}
+                        onBlur={(e) => {
+                            // Save description when input loses focus
+                            if (optimisticEntry && activeEntry) {
+                                handleDescriptionUpdate(e.target.value)
+                            }
+                        }}
+                        className="bg-background border-input hover:bg-accent/50 focus:bg-background shadow-sm h-9 text-sm flex-1"
                         aria-label="What are you working on?"
                     />
 
@@ -308,16 +442,27 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                         <Select
                             value={selectedTaskIds.length > 0 ? selectedTaskIds[0] : undefined}
                             onValueChange={(value) => {
-                                setSelectedTaskIds(value ? [value] : [])
+                                const newTaskIds = value === "__none__" ? [] : (value ? [value] : [])
+                                
+                                // If timer is running and task changed, split the entry
+                                if (optimisticEntry && activeEntry) {
+                                    const taskIdsChanged = JSON.stringify(newTaskIds.sort()) !== JSON.stringify(selectedTaskIds.sort())
+                                    if (taskIdsChanged) {
+                                        handleTaskChange(selectedTaskIds, newTaskIds)
+                                        return // Don't update state yet, will be updated after split
+                                    }
+                                }
+                                
+                                setSelectedTaskIds(newTaskIds)
                                 // Clear subtask selection when task changes
                                 setSelectedSubtaskId(null)
                             }}
-                            disabled={!!optimisticEntry}
                         >
                             <SelectTrigger className="bg-background border-input hover:bg-accent/50 text-sm h-9 shadow-sm">
                                 <SelectValue placeholder="Tasks..." />
                             </SelectTrigger>
                             <SelectContent>
+                                <SelectItem value="__none__">No task</SelectItem>
                                 {tasks.map((task) => (
                                     <SelectItem key={task.id} value={task.id}>
                                         {task.title}
@@ -327,31 +472,238 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                         </Select>
                     </div>
 
-                    {/* Subtask Selector - Only show if a task is selected and has subtasks */}
+                    {/* Subtask Selector with Task Done button - Only show if a task is selected and has subtasks */}
                     {selectedTaskIds.length > 0 && (() => {
                         const selectedTask = tasks.find(t => selectedTaskIds.includes(t.id))
-                        const availableSubtasks = selectedTask?.subtasks?.filter(st => !st.isDone) || []
+                        const allSubtasks = selectedTask?.subtasks || []
                         
-                        if (availableSubtasks.length > 0) {
+                        if (allSubtasks.length > 0) {
+                            const isTaskDone = selectedTask?.status === 'DONE'
+                            
                             return (
-                                <div className="w-[160px] shrink-0">
-                                    <Select
-                                        value={selectedSubtaskId || undefined}
-                                        onValueChange={(value) => setSelectedSubtaskId(value)}
-                                        disabled={!!optimisticEntry}
-                                    >
-                                        <SelectTrigger className="bg-background border-input hover:bg-accent/50 text-sm h-9 shadow-sm">
-                                            <SelectValue placeholder="Subtask..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {availableSubtasks.map((subtask) => (
-                                                <SelectItem key={subtask.id} value={subtask.id}>
-                                                    {subtask.title}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                                <>
+                                    <div className="w-[160px] shrink-0">
+                                        <Select
+                                            value={selectedSubtaskId || undefined}
+                                            onValueChange={(value) => {
+                                                setSelectedSubtaskId(value)
+                                                // Update subtask on active entry if timer is running
+                                                if (optimisticEntry && activeEntry) {
+                                                    handleSubtaskUpdate(value || null)
+                                                }
+                                            }}
+                                        >
+                                            <SelectTrigger className="bg-background border-input hover:bg-accent/50 text-sm h-9 shadow-sm">
+                                                <SelectValue placeholder="Subtask..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {allSubtasks.map((subtask) => (
+                                                    <SelectItem key={subtask.id} value={subtask.id}>
+                                                        {subtask.title}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    {/* Task Done button - only show if timer is running */}
+                                    {optimisticEntry && selectedTask && (() => {
+                                        // Check if subtask is selected and get its done status
+                                        const selectedSubtask = selectedSubtaskId 
+                                            ? allSubtasks.find(st => st.id === selectedSubtaskId)
+                                            : null
+                                        const isSubtaskDone = selectedSubtask?.isDone ?? false
+                                        
+                                        return (
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={async () => {
+                                                    try {
+                                                        // If subtask is selected, mark only the subtask as done
+                                                        if (selectedSubtaskId && selectedSubtask) {
+                                                            await fetch('/api/tasks/subtasks', {
+                                                                method: 'PATCH',
+                                                                headers: { 'Content-Type': 'application/json' },
+                                                                body: JSON.stringify({
+                                                                    id: selectedSubtask.id,
+                                                                    isDone: !isSubtaskDone
+                                                                })
+                                                            })
+                                                        } else {
+                                                            // Mark task as done
+                                                            await fetch('/api/tasks', {
+                                                                method: 'PATCH',
+                                                                headers: { 'Content-Type': 'application/json' },
+                                                                body: JSON.stringify({
+                                                                    id: selectedTask.id,
+                                                                    status: isTaskDone ? 'TODO' : 'DONE'
+                                                                })
+                                                            })
+                                                            
+                                                            // If marking as done, mark all subtasks as done
+                                                            if (!isTaskDone && allSubtasks.length > 0) {
+                                                                const subtasksToUpdate = allSubtasks.filter(st => !st.isDone)
+                                                                if (subtasksToUpdate.length > 0) {
+                                                                    // Update all subtasks in parallel
+                                                                    await Promise.all(
+                                                                        subtasksToUpdate.map(subtask =>
+                                                                            fetch('/api/tasks/subtasks', {
+                                                                                method: 'PATCH',
+                                                                                headers: { 'Content-Type': 'application/json' },
+                                                                                body: JSON.stringify({
+                                                                                    id: subtask.id,
+                                                                                    isDone: true
+                                                                                })
+                                                                            }).catch(err => {
+                                                                                console.error(`Failed to update subtask ${subtask.id}:`, err)
+                                                                            })
+                                                                        )
+                                                                    )
+                                                                }
+                                                            }
+                                                        }
+                                                        
+                                                        // Stop current time entry to add it to history (only if marking subtask/task as done, not when unmarking)
+                                                        const isMarkingDone = selectedSubtaskId 
+                                                            ? !isSubtaskDone
+                                                            : !isTaskDone
+                                                        
+                                                        if (isMarkingDone && optimisticEntry && onTimerStopped) {
+                                                            const now = new Date()
+                                                            const stoppedEntry = {
+                                                                startTime: new Date(optimisticEntry.startTime),
+                                                                endTime: now,
+                                                                description: optimisticEntry.description || null,
+                                                                breaks: optimisticEntry.breaks?.map(b => ({
+                                                                    startTime: new Date(b.startTime),
+                                                                    endTime: b.endTime ? new Date(b.endTime) : null
+                                                                })) || [],
+                                                                tasks: optimisticEntry.tasks || [],
+                                                                subtaskId: optimisticEntry.subtaskId || null
+                                                            }
+                                                            onTimerStopped(stoppedEntry)
+                                                            
+                                                            await fetch('/api/time-entries', {
+                                                                method: 'POST',
+                                                                headers: { 'Content-Type': 'application/json' },
+                                                                body: JSON.stringify({
+                                                                    action: 'stop'
+                                                                })
+                                                            })
+                                                            
+                                                            // Clear optimistic entry
+                                                            setOptimisticEntry(null)
+                                                            setDescription("")
+                                                            setSelectedTaskIds([])
+                                                            setSelectedSubtaskId(null)
+                                                        }
+                                                        
+                                                        router.refresh()
+                                                    } catch (error) {
+                                                        console.error("Failed to update task status:", error)
+                                                    }
+                                                }}
+                                                className="shrink-0 h-9 border-primary text-primary hover:bg-transparent hover:border-primary/80 hover:text-primary/90"
+                                            >
+                                                Task Done
+                                            </Button>
+                                        )
+                                    })()}
+                                </>
+                            )
+                        }
+                        return null
+                    })()}
+
+                    {/* Task Done button - only show if a task is selected but no subtasks */}
+                    {selectedTaskIds.length > 0 && optimisticEntry && (() => {
+                        const selectedTask = tasks.find(t => selectedTaskIds.includes(t.id))
+                        if (!selectedTask) return null
+                        const availableSubtasks = selectedTask?.subtasks?.filter(st => !st.isDone) || []
+                        // Only show button if task has no subtasks (or all are done)
+                        if (availableSubtasks.length === 0) {
+                            const isTaskDone = selectedTask.status === 'DONE'
+                            
+                            return (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={async () => {
+                                        try {
+                                            // Mark task as done
+                                            await fetch('/api/tasks', {
+                                                method: 'PATCH',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({
+                                                    id: selectedTask.id,
+                                                    status: isTaskDone ? 'TODO' : 'DONE'
+                                                })
+                                            })
+                                            
+                                            // If marking as done, mark all subtasks as done
+                                            if (!isTaskDone && selectedTask.subtasks && selectedTask.subtasks.length > 0) {
+                                                const subtasksToUpdate = selectedTask.subtasks.filter(st => !st.isDone)
+                                                if (subtasksToUpdate.length > 0) {
+                                                    // Update all subtasks in parallel
+                                                    await Promise.all(
+                                                        subtasksToUpdate.map(subtask =>
+                                                            fetch('/api/tasks/subtasks', {
+                                                                method: 'PATCH',
+                                                                headers: { 'Content-Type': 'application/json' },
+                                                                body: JSON.stringify({
+                                                                    id: subtask.id,
+                                                                    isDone: true
+                                                                })
+                                                            }).catch(err => {
+                                                                console.error(`Failed to update subtask ${subtask.id}:`, err)
+                                                            })
+                                                        )
+                                                    )
+                                                }
+                                            }
+                                            
+                                            // Stop current time entry to add it to history (only if marking as done)
+                                            if (!isTaskDone && optimisticEntry && onTimerStopped) {
+                                                const now = new Date()
+                                                const stoppedEntry = {
+                                                    startTime: new Date(optimisticEntry.startTime),
+                                                    endTime: now,
+                                                    description: optimisticEntry.description || null,
+                                                    breaks: optimisticEntry.breaks?.map(b => ({
+                                                        startTime: new Date(b.startTime),
+                                                        endTime: b.endTime ? new Date(b.endTime) : null
+                                                    })) || [],
+                                                    tasks: optimisticEntry.tasks || [],
+                                                    subtaskId: optimisticEntry.subtaskId || null
+                                                }
+                                                onTimerStopped(stoppedEntry)
+                                                
+                                                await fetch('/api/time-entries', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({
+                                                        action: 'stop'
+                                                    })
+                                                })
+                                                
+                                                // Clear optimistic entry
+                                                setOptimisticEntry(null)
+                                                setDescription("")
+                                                setSelectedTaskIds([])
+                                                setSelectedSubtaskId(null)
+                                            }
+                                            
+                                            router.refresh()
+                                        } catch (error) {
+                                            console.error("Failed to update task status:", error)
+                                        }
+                                    }}
+                                    className="shrink-0 h-9 border-primary text-primary hover:bg-transparent hover:border-primary/80 hover:text-primary/90"
+                                >
+                                    Task Done
+                                </Button>
                             )
                         }
                         return null

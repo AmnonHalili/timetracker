@@ -14,6 +14,7 @@ type DashboardUser = User & {
     timeEntries: (TimeEntry & {
         breaks: TimeBreak[]
         tasks: Task[]
+        subtask?: { id: string; title: string } | null
     })[]
     pendingProjectId?: string | null
 }
@@ -29,7 +30,11 @@ export default async function DashboardPage() {
         where: { id: session.user.id },
         include: {
             timeEntries: {
-                include: { breaks: true, tasks: true }
+                include: { 
+                    breaks: true, 
+                    tasks: true,
+                    subtask: true
+                }
             },
             project: {
                 select: { workMode: true }
@@ -42,7 +47,14 @@ export default async function DashboardPage() {
     const activeEntry = user.timeEntries.find(e => e.endTime === null)
 
     // For list, use completed entries, reverse chronology
-    const historyEntries = user.timeEntries.filter(e => e.endTime !== null).reverse()
+    // Map entries to include subtask title
+    const historyEntries = user.timeEntries
+        .filter(e => e.endTime !== null)
+        .map(entry => ({
+            ...entry,
+            subtask: entry.subtask ? { id: entry.subtask.id, title: entry.subtask.title } : null
+        }))
+        .reverse()
 
 
     // Use accumulated deficit for remaining hours (per user definition)
@@ -50,10 +62,15 @@ export default async function DashboardPage() {
     const remainingHours = stats.accumulatedDeficit
 
     // Fetch available tasks for the user with subtasks
+    // Include DONE tasks if they're currently assigned to active entry
+    const activeTaskIds = activeEntry?.tasks?.map(t => t.id) || []
     const tasks = await prisma.task.findMany({
         where: {
             assignees: { some: { id: user.id } },
-            status: { not: 'DONE' }
+            OR: [
+                { status: { not: 'DONE' } },
+                { id: { in: activeTaskIds } } // Include DONE tasks if they're in active entry
+            ]
         },
         include: {
             subtasks: {

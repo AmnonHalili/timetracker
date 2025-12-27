@@ -188,8 +188,8 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
-    const payload = await req.json() as { id: string; description?: string; startTime?: string; endTime?: string; taskIds?: string[] }
-    const { id, description, startTime, endTime, taskIds } = payload
+    const payload = await req.json() as { id: string; description?: string; startTime?: string; endTime?: string; taskIds?: string[]; subtaskId?: string | null }
+    const { id, description, startTime, endTime, taskIds, subtaskId } = payload
 
     try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -200,6 +200,7 @@ export async function PATCH(req: Request) {
                 set: taskIds.map(tid => ({ id: tid }))
             }
         }
+        if (subtaskId !== undefined) data.subtaskId = subtaskId
 
         if (startTime) {
             data.startTime = new Date(startTime)

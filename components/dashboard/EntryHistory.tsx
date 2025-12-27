@@ -23,11 +23,13 @@ interface TimeEntry {
     isManual?: boolean
     breaks?: { startTime: Date; endTime: Date | null }[]
     tasks?: { id: string; title: string }[]
+    subtask?: { id: string; title: string } | null
 }
 
 interface Task {
     id: string
     title: string
+    subtasks?: Array<{ id: string; title: string; isDone: boolean }>
 }
 
 interface EntryHistoryProps {
@@ -218,20 +220,34 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
                                                     >
                                                         {entry.description || "No description"}
                                                     </div>
-                                                    {entry.tasks && entry.tasks.length > 0 && (
-                                                        <div className="flex flex-wrap gap-1">
-                                                            {entry.tasks.slice(0, 1).map((t, i) => (
-                                                                <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/20 truncate max-w-[150px]" title={t.title}>
-                                                                    {t.title}
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {entry.tasks && entry.tasks.length > 0 && (
+                                                            <>
+                                                                {entry.tasks.slice(0, 1).map((t, i) => (
+                                                                    <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/20 truncate max-w-[150px]" title={t.title}>
+                                                                        {t.title}
+                                                                    </span>
+                                                                ))}
+                                                                {entry.tasks.length > 1 && (
+                                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground border border-border" title={entry.tasks.slice(1).map(t => t.title).join(', ')}>
+                                                                        +{entry.tasks.length - 1} more
+                                                                    </span>
+                                                                )}
+                                                            </>
+                                                        )}
+                                                        {entry.subtask && (() => {
+                                                            // Try to find the subtask title from tasks array if not provided
+                                                            const subtaskTitle = entry.subtask.title || (() => {
+                                                                const task = tasks.find(t => t.subtasks?.some(st => st.id === entry.subtask?.id))
+                                                                return task?.subtasks?.find(st => st.id === entry.subtask?.id)?.title || entry.subtask.id
+                                                            })()
+                                                            return (
+                                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-secondary/50 text-secondary-foreground border border-secondary/30 truncate max-w-[150px]" title={subtaskTitle}>
+                                                                    {subtaskTitle}
                                                                 </span>
-                                                            ))}
-                                                            {entry.tasks.length > 1 && (
-                                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground border border-border" title={entry.tasks.slice(1).map(t => t.title).join(', ')}>
-                                                                    +{entry.tasks.length - 1} more
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    )}
+                                                            )
+                                                        })()}
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>

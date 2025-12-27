@@ -15,11 +15,13 @@ interface TimeEntry {
         endTime: Date | string | null
     }>
     tasks?: Array<{ id: string; title: string }>
+    subtask?: { id: string; title: string } | null
 }
 
 interface Task {
     id: string
     title: string
+    status?: string
     subtasks?: Array<{ id: string; title: string; isDone: boolean }>
 }
 
@@ -53,6 +55,18 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
         tasks?: Array<{ id: string; title: string }>
         subtaskId?: string | null
     }) => {
+        // Find subtask title from tasks array if subtaskId is provided
+        let subtaskTitle = ''
+        if (stoppedEntry.subtaskId) {
+            for (const task of tasks) {
+                const subtask = task.subtasks?.find(st => st.id === stoppedEntry.subtaskId)
+                if (subtask) {
+                    subtaskTitle = subtask.title
+                    break
+                }
+            }
+        }
+        
         // Create a temporary entry with a temporary ID
         const optimisticEntry: TimeEntry = {
             id: `temp-${Date.now()}`, // Temporary ID
@@ -61,7 +75,8 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
             description: stoppedEntry.description || null,
             isManual: false,
             breaks: stoppedEntry.breaks || [],
-            tasks: stoppedEntry.tasks || []
+            tasks: stoppedEntry.tasks || [],
+            subtask: stoppedEntry.subtaskId ? { id: stoppedEntry.subtaskId, title: subtaskTitle } : null
         }
         setOptimisticStoppedEntry(optimisticEntry)
     }

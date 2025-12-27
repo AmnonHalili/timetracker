@@ -96,6 +96,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
     // Sync local state when server data changes (e.g., after task creation)
     useEffect(() => {
         setTasks(initialTasks)
+        
         // Sync subtasks from server data
         const subtasksMap: Record<string, Array<{ id: string; title: string; isDone: boolean }>> = {}
         initialTasks.forEach(task => {
@@ -238,7 +239,22 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
     const applySort = (a: TasksViewProps['initialTasks'][0], b: TasksViewProps['initialTasks'][0]) => {
         switch (sortBy) {
             case 'smart': {
-                // Smart sort: deadline today + high priority first
+                // Smart sort: new tasks first (by createdAt), then deadline today + high priority
+                // First, sort by creation date (newest first) if both have createdAt
+                if (a.createdAt && b.createdAt) {
+                    const aCreated = new Date(a.createdAt).getTime()
+                    const bCreated = new Date(b.createdAt).getTime()
+                    // Newer tasks first
+                    if (aCreated !== bCreated) {
+                        return bCreated - aCreated
+                    }
+                } else if (a.createdAt && !b.createdAt) {
+                    return -1 // a is newer
+                } else if (!a.createdAt && b.createdAt) {
+                    return 1 // b is newer
+                }
+                
+                // Then by deadline today + high priority
                 const aDeadline = a.deadline ? new Date(a.deadline) : null
                 const bDeadline = b.deadline ? new Date(b.deadline) : null
                 const aIsToday = aDeadline && isToday(aDeadline)
