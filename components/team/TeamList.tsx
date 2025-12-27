@@ -70,7 +70,7 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
     }>>([])
     const [loadingSecondary, setLoadingSecondary] = useState(false)
 
-    // Main manager editing state
+    // Primary manager editing state
     const [editingMainManager, setEditingMainManager] = useState<string>("")
     const [savingMainManager, setSavingMainManager] = useState(false)
 
@@ -316,9 +316,9 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
             }
 
             router.refresh()
-            alert("Main manager updated successfully")
+            alert("Primary manager updated successfully")
         } catch (error) {
-            alert(error instanceof Error ? error.message : "Error updating main manager")
+            alert(error instanceof Error ? error.message : "Error updating primary manager")
         } finally {
             setSavingMainManager(false)
         }
@@ -464,54 +464,69 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
                                 </div>
                             ) : selectedUser ? (
                                 <div className="space-y-6">
-                                    {/* Main Manager Section */}
+                                    {/* Primary Manager(s) Section */}
                                     <div className="space-y-3">
-                                        <Label className="text-base font-semibold">Main Manager</Label>
-                                        {canEditMainManager(selectedUser.id) ? (
-                                            <div className="space-y-3">
-                                                <Select value={editingMainManager || "none"} onValueChange={setEditingMainManager}>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select a manager..." />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="none">No Manager</SelectItem>
-                                                        {users
-                                                            .filter(u => u.id !== selectedUser.id && (u.role === 'ADMIN' || u.role === 'MANAGER'))
-                                                            .map(u => (
-                                                                <SelectItem key={u.id} value={u.id}>
-                                                                    {u.name} ({u.email})
-                                                                </SelectItem>
-                                                            ))
+                                        <Label className="text-base font-semibold">Primary Manager(s)</Label>
+                                        <div className="p-4 border rounded-lg bg-muted/30">
+                                            {(() => {
+                                                // Check if the user's manager is part of a shared chief group
+                                                if (selectedUser.managerId) {
+                                                    const directManager = users.find(u => u.id === selectedUser.managerId)
+
+                                                    // If the direct manager has a sharedChiefGroupId, show all chiefs in that group
+                                                    if (directManager && directManager.role === 'ADMIN' && (directManager as any).sharedChiefGroupId) {
+                                                        const sharedGroupId = (directManager as any).sharedChiefGroupId
+                                                        const allSharedChiefs = users.filter(u =>
+                                                            u.role === 'ADMIN' &&
+                                                            (u as any).sharedChiefGroupId === sharedGroupId &&
+                                                            !u.managerId
+                                                        )
+
+                                                        if (allSharedChiefs.length > 0) {
+                                                            return (
+                                                                <div className="space-y-2">
+                                                                    <p className="text-xs text-muted-foreground mb-3">
+                                                                        Reports to shared chief group:
+                                                                    </p>
+                                                                    {allSharedChiefs.map(chief => (
+                                                                        <div key={chief.id} className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50">
+                                                                            <Avatar className="h-10 w-10">
+                                                                                <AvatarImage src={chief.image || undefined} alt={chief.name} />
+                                                                                <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                                                                                    {chief.name.substring(0, 2).toUpperCase()}
+                                                                                </AvatarFallback>
+                                                                            </Avatar>
+                                                                            <div className="flex-1">
+                                                                                <h4 className="font-semibold">{chief.name}</h4>
+                                                                                <p className="text-sm text-muted-foreground">{chief.email}</p>
+                                                                                {chief.jobTitle && (
+                                                                                    <p className="text-xs text-muted-foreground capitalize mt-0.5">
+                                                                                        {chief.jobTitle}
+                                                                                    </p>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )
                                                         }
-                                                    </SelectContent>
-                                                </Select>
-                                                <Button
-                                                    onClick={handleSaveMainManager}
-                                                    disabled={savingMainManager || editingMainManager === (selectedUser.managerId || "none")}
-                                                    size="sm"
-                                                >
-                                                    {savingMainManager && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                                    Save Manager
-                                                </Button>
-                                            </div>
-                                        ) : (
-                                            <div className="p-4 border rounded-lg bg-muted/30">
-                                                {selectedUser.managerId ? (() => {
-                                                    const manager = users.find(u => u.id === selectedUser.managerId)
-                                                    return manager ? (
+                                                    }
+
+                                                    // Otherwise, show the single direct manager
+                                                    return directManager ? (
                                                         <div className="flex items-start gap-3">
                                                             <Avatar className="h-10 w-10">
-                                                                <AvatarImage src={manager.image || undefined} alt={manager.name} />
+                                                                <AvatarImage src={directManager.image || undefined} alt={directManager.name} />
                                                                 <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                                                                    {manager.name.substring(0, 2).toUpperCase()}
+                                                                    {directManager.name.substring(0, 2).toUpperCase()}
                                                                 </AvatarFallback>
                                                             </Avatar>
                                                             <div className="flex-1">
-                                                                <h4 className="font-semibold">{manager.name}</h4>
-                                                                <p className="text-sm text-muted-foreground">{manager.email}</p>
-                                                                {manager.jobTitle && (
+                                                                <h4 className="font-semibold">{directManager.name}</h4>
+                                                                <p className="text-sm text-muted-foreground">{directManager.email}</p>
+                                                                {directManager.jobTitle && (
                                                                     <p className="text-xs text-muted-foreground capitalize mt-0.5">
-                                                                        {manager.jobTitle}
+                                                                        {directManager.jobTitle}
                                                                     </p>
                                                                 )}
                                                             </div>
@@ -521,13 +536,15 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
                                                             Manager not found in current team
                                                         </p>
                                                     )
-                                                })() : (
+                                                }
+
+                                                return (
                                                     <p className="text-sm text-muted-foreground">
-                                                        No main manager assigned
+                                                        No primary manager assigned
                                                     </p>
-                                                )}
-                                            </div>
-                                        )}
+                                                )
+                                            })()}
+                                        </div>
                                     </div>
 
                                     {/* Secondary Managers Section */}
