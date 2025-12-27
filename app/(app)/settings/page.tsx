@@ -6,7 +6,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ProfileForm, SecurityForm, PreferencesForm } from "@/components/settings/SettingsForms"
 import { AppearanceForm } from "@/components/settings/AppearanceForm"
 import { CompanyForm } from "@/components/settings/CompanyForm"
-import { ReportingStructure } from "@/components/settings/ReportingStructure"
 
 export default async function SettingsPage() {
     const session = await getServerSession(authOptions)
@@ -120,11 +119,6 @@ export default async function SettingsPage() {
                         role: user.role,
                         projectId: user.projectId
                     }} />
-
-                    <ReportingStructure
-                        primaryManager={user.manager}
-                        secondaryManagers={user.secondaryManagers}
-                    />
                 </TabsContent>
 
                 <TabsContent value="preferences" className="mt-6">
