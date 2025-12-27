@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Plus, Pencil } from "lucide-react"
@@ -45,6 +46,7 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mod
     const [description, setDescription] = useState("")
     const [users, setUsers] = useState<Array<{ id: string; name: string | null; email: string | null }>>([])
     const [loading, setLoading] = useState(false)
+    const [showToMe, setShowToMe] = useState(false)
 
 
     useEffect(() => {
@@ -107,7 +109,14 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mod
                 const assignees = task.assignees || (task.participants ? task.participants.map((p: any) => p.user) : [])
                 if (assignees) {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    setAssignedToIds(assignees.map((u: any) => u.id))
+                    const assigneeIds = assignees.map((u: any) => u.id)
+                    setAssignedToIds(assigneeIds)
+                    // Set showToMe if current user is in assignees
+                    if (currentUserId && assigneeIds.includes(currentUserId)) {
+                        setShowToMe(true)
+                    } else {
+                        setShowToMe(false)
+                    }
                 }
             } else if (mode === 'create') {
                 // Reset fields
@@ -115,8 +124,10 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mod
                 // Set default assigned user if currentUserId is provided
                 if (currentUserId && users.some(u => u.id === currentUserId)) {
                     setAssignedToIds([currentUserId])
+                    setShowToMe(true) // Default to showing to creator
                 } else {
                     setAssignedToIds([])
+                    setShowToMe(false)
                 }
                 setPriority("MEDIUM")
                 setDeadline("")
@@ -141,6 +152,19 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mod
                 }
             }
 
+            // If "showToMe" is checked, ensure currentUserId is in assignedToIds
+            let finalAssignedToIds = [...assignedToIds]
+            if (showToMe && currentUserId && !finalAssignedToIds.includes(currentUserId)) {
+                // Add currentUserId if showToMe is checked but user is not in assignedToIds
+                finalAssignedToIds.push(currentUserId)
+            } else if (!showToMe && currentUserId && finalAssignedToIds.includes(currentUserId)) {
+                // Remove currentUserId only if showToMe is unchecked AND user is not manually selected in Assign To
+                // If user manually selected themselves in Assign To, keep them even if showToMe is unchecked
+                if (!assignedToIds.includes(currentUserId)) {
+                    finalAssignedToIds = finalAssignedToIds.filter(id => id !== currentUserId)
+                }
+            }
+
             const url = mode === 'edit' ? `/api/tasks/${task.id}` : "/api/tasks"
             const method = mode === 'edit' ? "PATCH" : "POST"
 
@@ -148,7 +172,7 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mod
                 method: method,
                 body: JSON.stringify({
                     title,
-                    assignedToIds,
+                    assignedToIds: finalAssignedToIds,
                     priority,
                     deadline: finalDeadline,
                     description
@@ -157,7 +181,13 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mod
             setIsOpen(false)
             if (mode === 'create') {
                 setTitle("")
-                setAssignedToIds([])
+                if (currentUserId && users.some(u => u.id === currentUserId)) {
+                    setAssignedToIds([currentUserId])
+                    setShowToMe(true)
+                } else {
+                    setAssignedToIds([])
+                    setShowToMe(false)
+                }
                 setPriority("MEDIUM")
                 setDeadline("")
                 setDeadlineTime("")
@@ -173,11 +203,18 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mod
     }
 
     const toggleUser = (userId: string) => {
-        setAssignedToIds(prev =>
-            prev.includes(userId)
+        setAssignedToIds(prev => {
+            const newIds = prev.includes(userId)
                 ? prev.filter(id => id !== userId)
                 : [...prev, userId]
-        )
+            
+            // If current user is being toggled, sync showToMe state
+            if (currentUserId && userId === currentUserId) {
+                setShowToMe(newIds.includes(currentUserId))
+            }
+            
+            return newIds
+        })
     }
 
     return (
@@ -249,6 +286,25 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mod
                                             </Label>
                                         </div>
                                     ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Show to me checkbox - only in create mode */}
+                        {mode === 'create' && currentUserId && (
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right">
+                                    {/* Empty label for alignment */}
+                                </Label>
+                                <div className="col-span-3 flex items-center space-x-2">
+                                    <Checkbox
+                                        id="showToMe"
+                                        checked={showToMe}
+                                        onCheckedChange={(checked) => setShowToMe(checked as boolean)}
+                                    />
+                                    <Label htmlFor="showToMe" className="cursor-pointer text-sm font-normal">
+                                        Show this task to me
+                                    </Label>
                                 </div>
                             </div>
                         )}

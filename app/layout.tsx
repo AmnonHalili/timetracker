@@ -46,56 +46,35 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Script
-          id="theme-init"
-          strategy="beforeInteractive"
+        <script
           dangerouslySetInnerHTML={{
             __html: `
-              (function() {
-                try {
-                  // Check both next-themes storage and our custom storage
-                  const nextTheme = localStorage.getItem('theme');
-                  const appTheme = localStorage.getItem('appTheme') || nextTheme || 'blue';
-                  
-                  if (appTheme === 'white') {
-                    document.documentElement.classList.remove('dark');
-                    document.body.classList.remove('dark');
-                    document.documentElement.classList.add('white-theme');
-                    document.body.classList.add('white-theme');
-                    document.documentElement.classList.remove('pink-theme');
-                    document.body.classList.remove('pink-theme');
-                  } else if (appTheme === 'blue') {
-                    document.documentElement.classList.remove('dark');
-                    document.body.classList.remove('dark');
-                    document.documentElement.classList.remove('white-theme');
-                    document.body.classList.remove('white-theme');
-                    document.documentElement.classList.remove('pink-theme');
-                    document.body.classList.remove('pink-theme');
-                  } else if (appTheme === 'black') {
-                    document.documentElement.classList.add('dark');
-                    document.body.classList.add('dark');
-                    document.documentElement.classList.remove('white-theme');
-                    document.body.classList.remove('white-theme');
-                    document.documentElement.classList.remove('pink-theme');
-                    document.body.classList.remove('pink-theme');
-                  } else if (appTheme === 'pink') {
-                    document.documentElement.classList.remove('dark');
-                    document.body.classList.remove('dark');
-                    document.documentElement.classList.remove('white-theme');
-                    document.body.classList.remove('white-theme');
-                    document.documentElement.classList.add('pink-theme');
-                    document.body.classList.add('pink-theme');
-                  } else {
-                    // system or default - always apply dark mode (same as black theme)
-                    document.documentElement.classList.add('dark');
-                    document.body.classList.add('dark');
-                    document.documentElement.classList.remove('white-theme');
-                    document.body.classList.remove('white-theme');
-                    document.documentElement.classList.remove('pink-theme');
-                    document.body.classList.remove('pink-theme');
-                  }
-                } catch (e) {}
-              })();
+              try {
+                const nextTheme = localStorage.getItem('theme');
+                const appTheme = localStorage.getItem('appTheme') || nextTheme || 'blue';
+                
+                if (appTheme === 'white') {
+                  document.documentElement.classList.remove('dark');
+                  document.documentElement.classList.add('white-theme');
+                  document.documentElement.classList.remove('pink-theme');
+                } else if (appTheme === 'blue') {
+                  document.documentElement.classList.remove('dark');
+                  document.documentElement.classList.remove('white-theme');
+                  document.documentElement.classList.remove('pink-theme');
+                } else if (appTheme === 'black') {
+                  document.documentElement.classList.add('dark');
+                  document.documentElement.classList.remove('white-theme');
+                  document.documentElement.classList.remove('pink-theme');
+                } else if (appTheme === 'pink') {
+                  document.documentElement.classList.remove('dark');
+                  document.documentElement.classList.remove('white-theme');
+                  document.documentElement.classList.add('pink-theme');
+                } else {
+                  document.documentElement.classList.add('dark');
+                  document.documentElement.classList.remove('white-theme');
+                  document.documentElement.classList.remove('pink-theme');
+                }
+              } catch (e) {}
             `,
           }}
         />

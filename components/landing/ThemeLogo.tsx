@@ -18,60 +18,66 @@ interface ThemeLogoProps {
  * - Blue theme → collabologo.png
  * - System theme (same as black) → collabologowhitenoback.png
  */
+// Function to get logo path based on theme (can be called synchronously)
+function getLogoForTheme(): string {
+    // Only access localStorage on client side
+    if (typeof window === 'undefined') {
+        return "/collabologo.png" // SSR default
+    }
+
+    try {
+        // Check localStorage for theme preference (primary source of truth)
+        const theme = localStorage.getItem("theme") || localStorage.getItem("appTheme") || "blue"
+        
+        if (theme === "pink") {
+            return "/collabologopink.png"
+        }
+        
+        if (theme === "white") {
+            return "/collabologoblack.png"
+        }
+        
+        if (theme === "black" || theme === "system") {
+            return "/collabologowhitenoback.png"
+        }
+        
+        // Fallback: check DOM classes if localStorage doesn't have theme info
+        const body = document.body
+        const html = document.documentElement
+        
+        if (body.classList.contains("pink-theme") || html.classList.contains("pink-theme")) {
+            return "/collabologopink.png"
+        }
+        
+        if (body.classList.contains("white-theme") || html.classList.contains("white-theme")) {
+            return "/collabologoblack.png"
+        }
+        
+        // Check for dark mode (black theme or system theme)
+        if (body.classList.contains("dark") && 
+            html.classList.contains("dark") &&
+            !body.classList.contains("white-theme") && 
+            !body.classList.contains("pink-theme")) {
+            return "/collabologowhitenoback.png"
+        }
+    } catch (e) {
+        // Fallback on error
+    }
+    
+    // Default to blue theme
+    return "/collabologo.png"
+}
+
 export function ThemeLogo({ width = 360, height = 144, className = "", priority = false }: ThemeLogoProps) {
-    const [logoSrc, setLogoSrc] = useState("/collabologo.png") // Default to blue theme
-    const [mounted, setMounted] = useState(false)
+    // Initialize state with the correct logo from localStorage immediately
+    const [logoSrc, setLogoSrc] = useState(() => getLogoForTheme())
 
     useEffect(() => {
-        setMounted(true)
-        
-        // Function to determine which logo to use based on current theme
-        const getLogoForTheme = () => {
-            // Check localStorage for theme preference (primary source of truth)
-            const theme = localStorage.getItem("theme") || localStorage.getItem("appTheme") || "blue"
-            
-            // Priority: check localStorage first, then DOM classes as fallback
-            if (theme === "pink") {
-                return "/collabologopink.png"
-            }
-            
-            if (theme === "white") {
-                return "/collabologoblack.png"
-            }
-            
-            if (theme === "black" || theme === "system") {
-                return "/collabologowhitenoback.png"
-            }
-            
-            // Fallback: check DOM classes if localStorage doesn't have theme info
-            const body = document.body
-            const html = document.documentElement
-            
-            if (body.classList.contains("pink-theme") || html.classList.contains("pink-theme")) {
-                return "/collabologopink.png"
-            }
-            
-            if (body.classList.contains("white-theme") || html.classList.contains("white-theme")) {
-                return "/collabologoblack.png"
-            }
-            
-            // Check for dark mode (black theme or system theme)
-            if (body.classList.contains("dark") && 
-                html.classList.contains("dark") &&
-                !body.classList.contains("white-theme") && 
-                !body.classList.contains("pink-theme")) {
-                return "/collabologowhitenoback.png"
-            }
-            
-            // Default to blue theme
-            return "/collabologo.png"
-        }
-
         const updateLogo = () => {
             setLogoSrc(getLogoForTheme())
         }
 
-        // Initial logo update
+        // Update logo on mount (in case theme changed before component mounted)
         updateLogo()
 
         // Watch for theme changes via DOM mutations
@@ -100,20 +106,7 @@ export function ThemeLogo({ width = 360, height = 144, className = "", priority 
         }
     }, [])
 
-    // Show default logo during SSR to avoid hydration mismatch
-    if (!mounted) {
-        return (
-            <Image 
-                src="/collabologo.png" 
-                alt="Collabo Logo" 
-                width={width} 
-                height={height} 
-                className={className}
-                priority={priority}
-            />
-        )
-    }
-
+    // Always use logoSrc which is initialized correctly from localStorage
     return (
         <Image 
             src={logoSrc} 
