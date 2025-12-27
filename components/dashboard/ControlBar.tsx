@@ -110,6 +110,20 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
             setSelectedSubtaskId(null)
         }
     }, [optimisticEntry])
+    
+    // Clear selectedSubtaskId if the selected subtask is now done
+    useEffect(() => {
+        if (!selectedSubtaskId || selectedTaskIds.length === 0) return
+        
+        const selectedTask = tasks.find(t => selectedTaskIds.includes(t.id))
+        if (!selectedTask) return
+        
+        const selectedSubtask = selectedTask.subtasks?.find(st => st.id === selectedSubtaskId)
+        // If selected subtask is done, clear the selection
+        if (selectedSubtask?.isDone) {
+            setSelectedSubtaskId(null)
+        }
+    }, [tasks, selectedSubtaskId, selectedTaskIds])
 
 
     const isPaused = optimisticEntry?.breaks?.some((b) => !b.endTime)
@@ -476,8 +490,11 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                     {selectedTaskIds.length > 0 && (() => {
                         const selectedTask = tasks.find(t => selectedTaskIds.includes(t.id))
                         const allSubtasks = selectedTask?.subtasks || []
+                        // Filter out done subtasks - only show subtasks that are not done
+                        const availableSubtasks = allSubtasks.filter(st => !st.isDone)
                         
-                        if (allSubtasks.length > 0) {
+                        // Only show subtask selector if there are available (not done) subtasks
+                        if (availableSubtasks.length > 0) {
                             const isTaskDone = selectedTask?.status === 'DONE'
                             
                             return (
@@ -497,7 +514,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                                                 <SelectValue placeholder="Subtask..." />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {allSubtasks.map((subtask) => (
+                                                {availableSubtasks.map((subtask) => (
                                                     <SelectItem key={subtask.id} value={subtask.id}>
                                                         {subtask.title}
                                                     </SelectItem>
@@ -508,6 +525,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                                     {/* Task Done button - only show if timer is running */}
                                     {optimisticEntry && selectedTask && (() => {
                                         // Check if subtask is selected and get its done status
+                                        // Use allSubtasks to check status even if subtask is done
                                         const selectedSubtask = selectedSubtaskId 
                                             ? allSubtasks.find(st => st.id === selectedSubtaskId)
                                             : null
@@ -530,6 +548,11 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                                                                     isDone: !isSubtaskDone
                                                                 })
                                                             })
+                                                            
+                                                            // If marking subtask as done, clear the selection so it disappears from the list
+                                                            if (!isSubtaskDone) {
+                                                                setSelectedSubtaskId(null)
+                                                            }
                                                         } else {
                                                             // Mark task as done
                                                             await fetch('/api/tasks', {
@@ -542,8 +565,8 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                                                             })
                                                             
                                                             // If marking as done, mark all subtasks as done
-                                                            if (!isTaskDone && allSubtasks.length > 0) {
-                                                                const subtasksToUpdate = allSubtasks.filter(st => !st.isDone)
+                                                            if (!isTaskDone && availableSubtasks.length > 0) {
+                                                                const subtasksToUpdate = availableSubtasks.filter(st => !st.isDone)
                                                                 if (subtasksToUpdate.length > 0) {
                                                                     // Update all subtasks in parallel
                                                                     await Promise.all(
