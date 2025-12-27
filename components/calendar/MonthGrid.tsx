@@ -31,7 +31,7 @@ interface MonthGridProps {
             id: string;
             title: string;
             deadline: Date | string | null;
-            priority: 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW';
+            priority: 'HIGH' | 'MEDIUM' | 'LOW';
             status: string;
             assignees: Array<{ name: string; email: string }>;
         }>
@@ -95,7 +95,7 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                     const dailyData = data.dailyReports.find(r => isSameDay(new Date(r.date), day))
 
                     // Find tasks due this day
-                    const priorityOrder = { 'URGENT': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3 };
+                    const priorityOrder = { 'HIGH': 0, 'MEDIUM': 1, 'LOW': 2 };
                     const allDaysTasks = data.tasks
                         .filter(t => t.deadline && isSameDay(new Date(t.deadline), day) && t.status !== 'DONE')
                         .sort((a, b) => (priorityOrder[a.priority as keyof typeof priorityOrder] ?? 2) - (priorityOrder[b.priority as keyof typeof priorityOrder] ?? 2))
@@ -173,9 +173,8 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                                         key={task.id}
                                         className={cn(
                                             "text-[10px] truncate px-1 rounded border",
-                                            task.priority === 'URGENT' ? "bg-red-50 border-red-200 text-red-700" :
-                                                task.priority === 'HIGH' ? "bg-orange-50 border-orange-200 text-orange-700" :
-                                                    "bg-background border-border text-muted-foreground"
+                                            task.priority === 'HIGH' ? "bg-orange-50 border-orange-200 text-orange-700" :
+                                                "bg-background border-border text-muted-foreground"
                                         )}
                                         title={`${task.title} - ${task.assignees?.map((u) => u.name).join(', ') || 'Unassigned'}`}
                                     >

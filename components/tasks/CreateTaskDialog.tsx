@@ -266,7 +266,6 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mod
                                         <SelectItem value="LOW">Low</SelectItem>
                                         <SelectItem value="MEDIUM">Medium</SelectItem>
                                         <SelectItem value="HIGH">High</SelectItem>
-                                        <SelectItem value="URGENT">Urgent</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>

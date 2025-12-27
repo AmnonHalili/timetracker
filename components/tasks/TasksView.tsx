@@ -58,6 +58,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
     const [tasks, setTasks] = useState(initialTasks)
     const [addingSubtaskTo, setAddingSubtaskTo] = useState<string | null>(null)
     const [newSubtaskTitle, setNewSubtaskTitle] = useState("")
+    const [currentTheme, setCurrentTheme] = useState<'pink' | 'white' | 'black' | 'blue'>('blue')
     const [localSubtasks, setLocalSubtasks] = useState<Record<string, Array<{ id: string; title: string; isDone: boolean }>>>({})
     const subtaskInputRef = useRef<HTMLInputElement | null>(null)
     const pendingOperations = useRef<Set<string>>(new Set()) // Track pending operations by subtask ID
@@ -105,6 +106,60 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
         setLocalSubtasks(subtasksMap)
     }, [initialTasks])
 
+    // Detect current theme for priority colors
+    useEffect(() => {
+        const checkTheme = () => {
+            const theme = localStorage.getItem("theme") || localStorage.getItem("appTheme") || "blue"
+            const body = document.body
+            const html = document.documentElement
+
+            // Check localStorage first
+            if (theme === "pink") {
+                setCurrentTheme('pink')
+            } else if (theme === "white") {
+                setCurrentTheme('white')
+            } else if (theme === "black" || theme === "system") {
+                setCurrentTheme('black')
+            } else if (theme === "blue") {
+                setCurrentTheme('blue')
+            } else {
+                // Fallback: check DOM classes
+                if (body.classList.contains("pink-theme") || html.classList.contains("pink-theme")) {
+                    setCurrentTheme('pink')
+                } else if (body.classList.contains("white-theme") || html.classList.contains("white-theme")) {
+                    setCurrentTheme('white')
+                } else if (body.classList.contains("dark") && html.classList.contains("dark")) {
+                    setCurrentTheme('black')
+                } else {
+                    setCurrentTheme('blue')
+                }
+            }
+        }
+
+        checkTheme()
+
+        // Watch for theme changes
+        const observer = new MutationObserver(checkTheme)
+        observer.observe(document.body, {
+            attributes: true,
+            attributeFilter: ['class']
+        })
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['class']
+        })
+
+        const handleStorageChange = () => checkTheme()
+        window.addEventListener("storage", handleStorageChange)
+        window.addEventListener("focus", checkTheme)
+
+        return () => {
+            observer.disconnect()
+            window.removeEventListener("storage", handleStorageChange)
+            window.removeEventListener("focus", checkTheme)
+        }
+    }, [])
+
     // Apply filters
     const applyFilters = (task: TasksViewProps['initialTasks'][0]) => {
         // Status filter
@@ -147,7 +202,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
         // Priority filter
         if (filters.priority.length > 0) {
             const priorityMap: Record<string, string[]> = {
-                'high': ['URGENT', 'HIGH'],
+                'high': ['HIGH'],
                 'medium': ['MEDIUM'],
                 'low': ['LOW']
             }
@@ -188,8 +243,8 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                 const bDeadline = b.deadline ? new Date(b.deadline) : null
                 const aIsToday = aDeadline && isToday(aDeadline)
                 const bIsToday = bDeadline && isToday(bDeadline)
-                const aIsHigh = a.priority === 'HIGH' || a.priority === 'URGENT'
-                const bIsHigh = b.priority === 'HIGH' || b.priority === 'URGENT'
+                const aIsHigh = a.priority === 'HIGH'
+                const bIsHigh = b.priority === 'HIGH'
                 
                 // Priority: today + high > today > high > others
                 if (aIsToday && aIsHigh && !(bIsToday && bIsHigh)) return -1
@@ -217,15 +272,15 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                 return bDeadline - aDeadline
             }
             case 'priority-high': {
-                const priorityOrder = { 'URGENT': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3 }
-                const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] ?? 4
-                const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] ?? 4
+                const priorityOrder = { 'HIGH': 0, 'MEDIUM': 1, 'LOW': 2 }
+                const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] ?? 3
+                const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] ?? 3
                 return aPriority - bPriority
             }
             case 'priority-low': {
-                const priorityOrder = { 'URGENT': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3 }
-                const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] ?? 4
-                const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] ?? 4
+                const priorityOrder = { 'HIGH': 0, 'MEDIUM': 1, 'LOW': 2 }
+                const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] ?? 3
+                const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] ?? 3
                 return bPriority - aPriority
             }
             case 'created-new': {
@@ -638,13 +693,32 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
     }
 
     const getPriorityColor = (p: string) => {
-        switch (p) {
-            case 'URGENT': return 'bg-red-600 hover:bg-red-600'
-            case 'HIGH': return 'bg-orange-500 hover:bg-orange-500'
-            case 'MEDIUM': return 'bg-blue-500 hover:bg-blue-500'
-            case 'LOW': return 'bg-slate-500 hover:bg-slate-500'
-            default: return 'bg-slate-500'
+        // Color scheme based on current theme with different shades for priority levels
+        // LOW = light shade, MEDIUM = medium shade, HIGH = dark shade
+        const colorMap: Record<'pink' | 'white' | 'black' | 'blue', Record<string, string>> = {
+            pink: {
+                'LOW': 'bg-pink-300 hover:bg-pink-300 text-white',
+                'MEDIUM': 'bg-pink-500 hover:bg-pink-500 text-white',
+                'HIGH': 'bg-pink-700 hover:bg-pink-700 text-white'
+            },
+            white: {
+                'LOW': 'bg-gray-300 hover:bg-gray-300 text-white',
+                'MEDIUM': 'bg-gray-500 hover:bg-gray-500 text-white',
+                'HIGH': 'bg-gray-700 hover:bg-gray-700 text-white'
+            },
+            black: {
+                'LOW': 'bg-gray-400 hover:bg-gray-400 text-white',
+                'MEDIUM': 'bg-gray-600 hover:bg-gray-600 text-white',
+                'HIGH': 'bg-gray-800 hover:bg-gray-800 text-white'
+            },
+            blue: {
+                'LOW': 'bg-blue-300 hover:bg-blue-300 text-white',
+                'MEDIUM': 'bg-blue-500 hover:bg-blue-500 text-white',
+                'HIGH': 'bg-blue-700 hover:bg-blue-700 text-white'
+            }
         }
+
+        return colorMap[currentTheme]?.[p] || colorMap[currentTheme]['LOW']
     }
 
     return (
