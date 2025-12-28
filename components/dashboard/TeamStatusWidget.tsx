@@ -20,7 +20,7 @@ interface TeamStatusWidgetProps {
 
 export function TeamStatusWidget({ teamStatus }: TeamStatusWidgetProps) {
     const { t } = useLanguage()
-    
+
     return (
         <Card className="h-fit border bg-card text-card-foreground shadow-sm">
             <CardHeader className="p-4 pb-2">

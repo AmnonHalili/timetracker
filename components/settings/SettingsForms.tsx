@@ -154,34 +154,34 @@ function ProfileForm({ user }: ProfileFormProps) {
     return (
         <div className="space-y-6">
             {/* Profile Information Card */}
-            <Card>
-                <CardHeader>
+        <Card>
+            <CardHeader>
                     <CardTitle>{t('profile.title')}</CardTitle>
                     <CardDescription>{t('profile.description')}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="flex flex-col items-center gap-4">
-                        <div
-                            className="w-24 h-24 rounded-full bg-muted border-2 border-dashed border-muted-foreground/25 flex items-center justify-center overflow-hidden relative group cursor-pointer"
-                            onClick={() => fileInputRef.current?.click()}
-                        >
-                            {image ? (
-                                <Image src={image} alt="Profile" fill className="object-cover" />
-                            ) : (
-                                <User className="h-8 w-8 text-muted-foreground" />
-                            )}
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <Upload className="h-6 w-6 text-white" />
-                            </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="flex flex-col items-center gap-4">
+                    <div
+                        className="w-24 h-24 rounded-full bg-muted border-2 border-dashed border-muted-foreground/25 flex items-center justify-center overflow-hidden relative group cursor-pointer"
+                        onClick={() => fileInputRef.current?.click()}
+                    >
+                        {image ? (
+                            <Image src={image} alt="Profile" fill className="object-cover" />
+                        ) : (
+                            <User className="h-8 w-8 text-muted-foreground" />
+                        )}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <Upload className="h-6 w-6 text-white" />
                         </div>
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            className="hidden"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                            aria-label="Upload profile picture"
-                        />
+                    </div>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        aria-label="Upload profile picture"
+                    />
                     <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} aria-label={t('profile.changePicture')}>
                         {t('profile.changePicture')}
                     </Button>
@@ -210,8 +210,8 @@ function ProfileForm({ user }: ProfileFormProps) {
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {t('profile.saveChanges')}
                 </Button>
-                </CardFooter>
-            </Card>
+            </CardFooter>
+        </Card>
 
             {/* Work Preferences Card */}
             <Card>
@@ -558,17 +558,17 @@ function LanguageForm() {
                             ))}
                         </SelectContent>
                     </Select>
-                    <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">
                         {t('language.descriptionText')}
-                    </p>
+                        </p>
                 </div>
             </CardContent>
-            <CardFooter>
-                <Button onClick={handleSubmit} disabled={loading}>
-                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <CardFooter>
+                    <Button onClick={handleSubmit} disabled={loading}>
+                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {t('language.saveLanguage')}
-                </Button>
-            </CardFooter>
+                    </Button>
+                </CardFooter>
         </Card>
     )
 }

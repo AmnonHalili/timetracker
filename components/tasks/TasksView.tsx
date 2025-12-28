@@ -1019,18 +1019,18 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                     </Button>
                                                 </div>
                                             ) : (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation()
-                                                            setAddingSubtaskTo(task.id)
-                                                        }}
-                                                        className="h-7 text-xs text-muted-foreground hover:text-foreground w-fit"
-                                                    >
-                                                        <Plus className="h-3 w-3 mr-1" />
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        setAddingSubtaskTo(task.id)
+                                                    }}
+                                                    className="h-7 text-xs text-muted-foreground hover:text-foreground w-fit"
+                                                >
+                                                    <Plus className="h-3 w-3 mr-1" />
                                                         {t('tasks.addSubTask')}
-                                                    </Button>
+                                                </Button>
                                             )}
                                         </div>
                                     </div>

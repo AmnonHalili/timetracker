@@ -8,6 +8,7 @@ interface LanguageContextType {
   setLanguage: (lang: Language) => void
   t: (key: TranslationKey) => string
   dir: 'ltr' | 'rtl'
+  isRTL: boolean
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
@@ -61,6 +62,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     setLanguage,
     t,
     dir: isRTL(language) ? 'rtl' : 'ltr',
+    isRTL: isRTL(language),
   }
 
   // Always provide the context, even before mounted, to prevent errors
