@@ -12,9 +12,11 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useLanguage } from "@/lib/useLanguage"
 
 export function ModeToggle() {
     const { theme, setTheme } = useTheme()
+    const { t, dir } = useLanguage()
     const [mounted, setMounted] = useState(false)
 
     useEffect(() => {
@@ -29,10 +31,10 @@ export function ModeToggle() {
         const html = document.documentElement
 
         // System theme always applies dark mode (same as black theme)
-            body.classList.add("dark")
-            html.classList.add("dark")
-            body.classList.remove("white-theme")
-            html.classList.remove("white-theme")
+        body.classList.add("dark")
+        html.classList.add("dark")
+        body.classList.remove("white-theme")
+        html.classList.remove("white-theme")
         body.classList.remove("pink-theme")
         html.classList.remove("pink-theme")
     }, [theme, mounted])
@@ -88,10 +90,10 @@ export function ModeToggle() {
                 localStorage.setItem("theme", "black")
             } else if (currentTheme === "system" || !currentTheme) {
                 // System theme: always apply dark mode (same as black theme)
-                    body.classList.add("dark")
-                    html.classList.add("dark")
-                    body.classList.remove("white-theme")
-                    html.classList.remove("white-theme")
+                body.classList.add("dark")
+                html.classList.add("dark")
+                body.classList.remove("white-theme")
+                html.classList.remove("white-theme")
                 body.classList.remove("pink-theme")
                 html.classList.remove("pink-theme")
                 localStorage.setItem("appTheme", "system")
@@ -132,7 +134,7 @@ export function ModeToggle() {
     }
 
     return (
-        <DropdownMenu>
+        <DropdownMenu dir={dir}>
             <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon">
                     {getIcon()}
@@ -141,19 +143,19 @@ export function ModeToggle() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => setTheme("white")}>
-                    White
+                    {t('appearance.theme.white')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setTheme("black")}>
-                    Black
+                    {t('appearance.theme.black')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setTheme("system")}>
-                    System
+                    {t('appearance.theme.system')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setTheme("blue")}>
-                    Blue
+                    {t('appearance.theme.blue')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setTheme("pink")}>
-                    Pink
+                    {t('appearance.theme.pink')}
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>

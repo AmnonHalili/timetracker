@@ -51,12 +51,12 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
 
     useEffect(() => {
         setLocalEntries(entries)
-        
+
         // When server entries arrive, check if we should remove the optimistic entry
         if (optimisticEntryId && onOptimisticEntryCleared) {
             // Check if the optimistic entry (temp ID) is still in the list
             const hasOptimisticEntry = entries.some(e => e.id === optimisticEntryId)
-            
+
             // If optimistic entry is gone, it means server data replaced it
             // Clear the callback to indicate we no longer need the optimistic entry
             if (!hasOptimisticEntry) {
@@ -292,7 +292,7 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
 
             {localEntries.length === 0 && (
                 <div className="p-8 text-center text-muted-foreground">
-                    You haven&apos;t added any time entries yet.
+                    {t('timeEntries.noEntries')}
                 </div>
             )}
 

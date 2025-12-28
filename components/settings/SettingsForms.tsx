@@ -45,7 +45,7 @@ interface ProfileFormProps {
 }
 
 function ProfileForm({ user }: ProfileFormProps) {
-    const { t } = useLanguage()
+    const { t, dir } = useLanguage()
     const [loading, setLoading] = useState(false)
     const [preferencesLoading, setPreferencesLoading] = useState(false)
     const [name, setName] = useState(user.name)
@@ -152,66 +152,66 @@ function ProfileForm({ user }: ProfileFormProps) {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6" dir={dir}>
             {/* Profile Information Card */}
-        <Card>
-            <CardHeader>
+            <Card>
+                <CardHeader>
                     <CardTitle>{t('profile.title')}</CardTitle>
                     <CardDescription>{t('profile.description')}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="flex flex-col items-center gap-4">
-                    <div
-                        className="w-24 h-24 rounded-full bg-muted border-2 border-dashed border-muted-foreground/25 flex items-center justify-center overflow-hidden relative group cursor-pointer"
-                        onClick={() => fileInputRef.current?.click()}
-                    >
-                        {image ? (
-                            <Image src={image} alt="Profile" fill className="object-cover" />
-                        ) : (
-                            <User className="h-8 w-8 text-muted-foreground" />
-                        )}
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <Upload className="h-6 w-6 text-white" />
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="flex flex-col items-center gap-4">
+                        <div
+                            className="w-24 h-24 rounded-full bg-muted border-2 border-dashed border-muted-foreground/25 flex items-center justify-center overflow-hidden relative group cursor-pointer"
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            {image ? (
+                                <Image src={image} alt="Profile" fill className="object-cover" />
+                            ) : (
+                                <User className="h-8 w-8 text-muted-foreground" />
+                            )}
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <Upload className="h-6 w-6 text-white" />
+                            </div>
                         </div>
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            aria-label="Upload profile picture"
+                        />
+                        <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} aria-label={t('profile.changePicture')}>
+                            {t('profile.changePicture')}
+                        </Button>
                     </div>
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        className="hidden"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        aria-label="Upload profile picture"
-                    />
-                    <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} aria-label={t('profile.changePicture')}>
-                        {t('profile.changePicture')}
-                    </Button>
-                </div>
 
-                <div className="space-y-1">
-                    <Label htmlFor="email">{t('profile.email')}</Label>
-                    <Input id="email" value={user.email} disabled className="bg-muted" />
-                </div>
-                <div className="space-y-1">
-                    <Label htmlFor="name">{t('profile.displayName')}</Label>
-                    <Input id="name" value={name} onChange={e => setName(e.target.value)} />
-                </div>
-                <div className="space-y-1">
-                    <Label htmlFor="jobTitle">{t('profile.jobTitle')}</Label>
-                    <Input
-                        id="jobTitle"
-                        value={jobTitle}
-                        onChange={e => setJobTitle(e.target.value)}
-                        placeholder={t('profile.jobTitle')}
-                    />
-                </div>
-            </CardContent>
-            <CardFooter>
-                <Button onClick={handleSubmit} disabled={loading}>
-                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {t('profile.saveChanges')}
-                </Button>
-            </CardFooter>
-        </Card>
+                    <div className="space-y-1">
+                        <Label htmlFor="email">{t('profile.email')}</Label>
+                        <Input id="email" value={user.email} disabled className="bg-muted" />
+                    </div>
+                    <div className="space-y-1">
+                        <Label htmlFor="name">{t('profile.displayName')}</Label>
+                        <Input id="name" value={name} onChange={e => setName(e.target.value)} />
+                    </div>
+                    <div className="space-y-1">
+                        <Label htmlFor="jobTitle">{t('profile.jobTitle')}</Label>
+                        <Input
+                            id="jobTitle"
+                            value={jobTitle}
+                            onChange={e => setJobTitle(e.target.value)}
+                            placeholder={t('profile.jobTitle')}
+                        />
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <Button onClick={handleSubmit} disabled={loading}>
+                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {t('profile.saveChanges')}
+                    </Button>
+                </CardFooter>
+            </Card>
 
             {/* Work Preferences Card */}
             <Card>
@@ -221,61 +221,61 @@ function ProfileForm({ user }: ProfileFormProps) {
                         {canEditPreferences
                             ? t('preferences.description')
                             : t('preferences.managedByAdmin')}
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                {!canEditPreferences && (
-                    <div className="bg-muted/50 p-4 rounded-lg border text-sm text-muted-foreground">
-                        {t('preferences.contactManager')}
-                    </div>
-                )}
-                <div className={!canEditPreferences ? "opacity-60 pointer-events-none" : ""}>
-                    <div className="space-y-3">
-                        <Label>{t('preferences.workDays')}</Label>
-                        <p className="text-xs text-muted-foreground">
-                            {t('preferences.selectWorkDays')}
-                        </p>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                            {daysOfWeek.map(day => (
-                                <button
-                                    key={day.value}
-                                    type="button"
-                                    onClick={() => toggleDay(day.value)}
-                                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${selectedDays.includes(day.value)
-                                        ? 'bg-primary text-primary-foreground'
-                                        : 'bg-muted hover:bg-muted/80 text-muted-foreground'
-                                        }`}
-                                >
-                                    {day.label}
-                                </button>
-                            ))}
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    {!canEditPreferences && (
+                        <div className="bg-muted/50 p-4 rounded-lg border text-sm text-muted-foreground">
+                            {t('preferences.contactManager')}
+                        </div>
+                    )}
+                    <div className={!canEditPreferences ? "opacity-60 pointer-events-none" : ""}>
+                        <div className="space-y-3">
+                            <Label>{t('preferences.workDays')}</Label>
+                            <p className="text-xs text-muted-foreground">
+                                {t('preferences.selectWorkDays')}
+                            </p>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                {daysOfWeek.map(day => (
+                                    <button
+                                        key={day.value}
+                                        type="button"
+                                        onClick={() => toggleDay(day.value)}
+                                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${selectedDays.includes(day.value)
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'bg-muted hover:bg-muted/80 text-muted-foreground'
+                                            }`}
+                                    >
+                                        {day.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="space-y-1 mt-6">
+                            <Label htmlFor="target">{t('preferences.dailyTarget')}</Label>
+                            <Input
+                                id="target"
+                                type="number"
+                                step="0.5"
+                                value={target}
+                                onChange={e => setTarget(e.target.value)}
+                                disabled={!canEditPreferences}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                {t('preferences.dailyTargetDescription')}
+                            </p>
                         </div>
                     </div>
-
-                    <div className="space-y-1 mt-6">
-                        <Label htmlFor="target">{t('preferences.dailyTarget')}</Label>
-                        <Input
-                            id="target"
-                            type="number"
-                            step="0.5"
-                            value={target}
-                            onChange={e => setTarget(e.target.value)}
-                            disabled={!canEditPreferences}
-                        />
-                        <p className="text-xs text-muted-foreground">
-                            {t('preferences.dailyTargetDescription')}
-                        </p>
-                    </div>
-                </div>
-            </CardContent>
-            {canEditPreferences && (
-                <CardFooter>
-                    <Button onClick={handlePreferencesSubmit} disabled={preferencesLoading}>
-                        {preferencesLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {t('preferences.savePreferences')}
-                    </Button>
-                </CardFooter>
-            )}
+                </CardContent>
+                {canEditPreferences && (
+                    <CardFooter>
+                        <Button onClick={handlePreferencesSubmit} disabled={preferencesLoading}>
+                            {preferencesLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {t('preferences.savePreferences')}
+                        </Button>
+                    </CardFooter>
+                )}
             </Card>
         </div>
     )
@@ -290,7 +290,7 @@ interface SecurityFormProps {
 
 function SecurityForm({ user }: SecurityFormProps) {
     const { data: session } = useSession()
-    const { t } = useLanguage()
+    const { t, dir } = useLanguage()
 
     const [loading, setLoading] = useState(false)
     const [currentPassword, setCurrentPassword] = useState("")
@@ -391,7 +391,7 @@ function SecurityForm({ user }: SecurityFormProps) {
 
     return (
         <>
-            <Card>
+            <Card dir={dir}>
                 <CardHeader>
                     <CardTitle>{t('security.title')}</CardTitle>
                     <CardDescription>{t('security.description')}</CardDescription>
@@ -507,7 +507,7 @@ function SecurityForm({ user }: SecurityFormProps) {
 
 function LanguageForm() {
     const [loading, setLoading] = useState(false)
-    const { language: currentLanguage, setLanguage, t } = useLanguage()
+    const { language: currentLanguage, setLanguage, t, dir } = useLanguage()
     const [language, setLanguageState] = useState<Language>(currentLanguage)
     const router = useRouter()
 
@@ -526,7 +526,7 @@ function LanguageForm() {
         try {
             // Update language using the context
             setLanguage(language)
-            
+
             // Refresh to apply changes
             router.refresh()
             alert(t('language.saved'))
@@ -538,7 +538,7 @@ function LanguageForm() {
     }
 
     return (
-        <Card>
+        <Card dir={dir}>
             <CardHeader>
                 <CardTitle>{t('language.title')}</CardTitle>
                 <CardDescription>{t('language.description')}</CardDescription>
@@ -546,7 +546,7 @@ function LanguageForm() {
             <CardContent className="space-y-6">
                 <div className="space-y-1">
                     <Label htmlFor="language">{t('language.selectLanguage')}</Label>
-                    <Select value={language} onValueChange={(value) => setLanguageState(value as Language)}>
+                    <Select value={language} onValueChange={(value) => setLanguageState(value as Language)} dir={dir}>
                         <SelectTrigger id="language">
                             <SelectValue placeholder={t('language.selectLanguage')} />
                         </SelectTrigger>
@@ -558,17 +558,17 @@ function LanguageForm() {
                             ))}
                         </SelectContent>
                     </Select>
-                        <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                         {t('language.descriptionText')}
-                        </p>
+                    </p>
                 </div>
             </CardContent>
-                <CardFooter>
-                    <Button onClick={handleSubmit} disabled={loading}>
-                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <CardFooter>
+                <Button onClick={handleSubmit} disabled={loading}>
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {t('language.saveLanguage')}
-                    </Button>
-                </CardFooter>
+                </Button>
+            </CardFooter>
         </Card>
     )
 }

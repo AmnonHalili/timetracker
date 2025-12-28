@@ -6,10 +6,10 @@ import { Label } from "@/components/ui/label"
 import { useLanguage } from "@/lib/useLanguage"
 
 export function AppearanceForm() {
-    const { t } = useLanguage()
-    
+    const { t, dir } = useLanguage()
+
     return (
-        <Card>
+        <Card dir={dir}>
             <CardHeader>
                 <CardTitle>{t('appearance.title')}</CardTitle>
                 <CardDescription>

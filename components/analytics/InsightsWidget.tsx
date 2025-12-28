@@ -22,7 +22,10 @@ interface PersonalInsights {
     hasData: boolean
 }
 
+import { useLanguage } from "@/lib/useLanguage"
+
 export function InsightsWidget() {
+    const { t, dir } = useLanguage()
     const [insights, setInsights] = useState<PersonalInsights | null>(null)
     const [loading, setLoading] = useState(true)
 
@@ -55,14 +58,14 @@ export function InsightsWidget() {
 
     if (!insights?.hasData) {
         return (
-            <div className="flex border rounded-lg p-3 bg-muted/20 items-center justify-between text-sm">
+            <div className="flex border rounded-lg p-3 bg-muted/20 items-center justify-between text-sm" dir={dir}>
                 <div className="flex items-center gap-2 text-muted-foreground">
                     <span>💡</span>
-                    <span>Start tracking time to see AI insights</span>
+                    <span>{t('insights.startTracking')}</span>
                 </div>
                 <Button size="sm" variant="ghost" className="h-6 text-xs" asChild>
                     <Link href="/insights">
-                        Learn More <ArrowRight className="ml-1 h-3 w-3" />
+                        {t('insights.learnMore')} <ArrowRight className={`h-3 w-3 ${dir === 'rtl' ? 'mr-1 rotate-180' : 'ml-1'}`} />
                     </Link>
                 </Button>
             </div>
@@ -70,18 +73,18 @@ export function InsightsWidget() {
     }
 
     return (
-        <Card className="shadow-sm">
+        <Card className="shadow-sm" dir={dir}>
             <CardContent className="p-4 grid grid-cols-2 lg:grid-cols-4 gap-4 items-center">
                 <div className="hidden lg:block">
-                    <h3 className="text-sm font-medium text-muted-foreground">Productivity</h3>
+                    <h3 className="text-sm font-medium text-muted-foreground">{t('insights.productivity')}</h3>
                     <div className="flex items-center gap-1.5 mt-1">
-                        <span className="text-lg font-bold">
+                        <span className="text-lg font-bold" dir="ltr">
                             {insights.summary.trend.startsWith('+') ? '+' : ''}{insights.summary.trend}
                         </span>
                         {insights.summary.trend.startsWith('+') ? (
                             <TrendingUp className="h-4 w-4 text-green-500" />
                         ) : (
-                            <span className="text-muted-foreground text-xs">vs last week</span>
+                            <span className="text-muted-foreground text-xs">{t('insights.vsPrevious')}</span>
                         )}
                     </div>
                 </div>
@@ -89,7 +92,7 @@ export function InsightsWidget() {
                 <div className="space-y-1">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <Clock className="h-3 w-3" />
-                        <span>Hours</span>
+                        <span>{t('insights.totalHours')}</span>
                     </div>
                     <div className="text-lg font-bold leading-none">
                         {insights.summary.totalHours}h
@@ -99,7 +102,7 @@ export function InsightsWidget() {
                 <div className="space-y-1">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <Target className="h-3 w-3" />
-                        <span>Tasks</span>
+                        <span>{t('nav.tasks')}</span>
                     </div>
                     <div className="text-lg font-bold leading-none">
                         {insights.summary.tasksCompleted}
@@ -109,7 +112,7 @@ export function InsightsWidget() {
                 <div className="flex justify-end">
                     <Button size="sm" variant="ghost" className="h-8 text-xs" asChild>
                         <Link href="/insights">
-                            Full Report <ArrowRight className="ml-1 h-3 w-3" />
+                            {t('insights.fullReport')} <ArrowRight className={`h-3 w-3 ${dir === 'rtl' ? 'mr-1 rotate-180' : 'ml-1'}`} />
                         </Link>
                     </Button>
                 </div>

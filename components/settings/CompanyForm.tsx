@@ -20,7 +20,7 @@ interface CompanyFormProps {
 
 export function CompanyForm({ initialName, initialWorkMode = 'TIME_BASED', projectId, joinCode }: CompanyFormProps) {
     const router = useRouter()
-    const { t } = useLanguage()
+    const { t, dir } = useLanguage()
     const [isLoading, setIsLoading] = useState(false)
     const [name, setName] = useState(initialName)
     // Filter out PROJECT_BASED since it's deprecated, default to TIME_BASED
@@ -52,7 +52,7 @@ export function CompanyForm({ initialName, initialWorkMode = 'TIME_BASED', proje
     }
 
     return (
-        <form onSubmit={onSubmit}>
+        <form onSubmit={onSubmit} dir={dir}>
             <Card>
                 <CardHeader>
                     <CardTitle>{t('workspace.workspaceInformation')}</CardTitle>
