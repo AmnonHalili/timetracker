@@ -82,7 +82,7 @@ export function AccessibilityButton() {
                 <Button
                     variant="outline"
                     size="icon"
-                    className={`fixed bottom-4 md:bottom-6 z-50 h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-shadow ${isRTL ? 'right-4 md:right-6' : 'left-4 md:left-6'
+                    className={`fixed bottom-24 z-50 h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-shadow ${isRTL ? 'right-4 md:right-6' : 'left-4 md:left-6'
                         }`}
                     aria-label={t('accessibility.options')}
                 >
