@@ -12,22 +12,22 @@ export function cn(...inputs: ClassValue[]) {
  */
 export function formatHoursMinutes(hours: number): string {
   if (hours <= 0) return "-"
-  
+
   const totalMinutes = Math.round(hours * 60)
-  
+
   if (totalMinutes < 60) {
     // Less than 1 hour - show only minutes
     return `${totalMinutes}m`
   }
-  
+
   // 1 hour or more - show hours and minutes
   const h = Math.floor(totalMinutes / 60)
   const m = totalMinutes % 60
-  
+
   if (m === 0) {
     return `${h}h`
   }
-  
+
   return `${h}h ${m}m`
 }
 
@@ -41,11 +41,11 @@ export function formatTimeWithAMPM(date: Date): string {
   const minutes = date.getMinutes()
   const isPM = hours >= 12
   const period = isPM ? 'pm' : 'am'
-  
+
   // Format as HH:mm with am/pm suffix (with space)
   const formattedHours = hours.toString().padStart(2, '0')
   const formattedMinutes = minutes.toString().padStart(2, '0')
-  
+
   return `${formattedHours}:${formattedMinutes} ${period}`
 }
 
@@ -62,10 +62,10 @@ export async function stopActiveTimer(keepalive = false): Promise<boolean> {
     if (!response.ok) {
       return false
     }
-    
+
     const data = await response.json()
     const activeEntry = data.activeEntry
-    
+
     // If there's an active timer, stop it
     if (activeEntry) {
       await fetch('/api/time-entries', {
@@ -76,7 +76,7 @@ export async function stopActiveTimer(keepalive = false): Promise<boolean> {
       })
       return true
     }
-    
+
     return false
   } catch (error) {
     console.error('Failed to stop active timer:', error)
@@ -91,7 +91,7 @@ export async function stopActiveTimer(keepalive = false): Promise<boolean> {
  */
 export function stopActiveTimerOnUnload(): void {
   if (typeof window === 'undefined') return
-  
+
   try {
     // Try to stop the timer - API will handle gracefully if no active timer exists
     // Use keepalive to ensure the request completes even if the page unloads
@@ -103,7 +103,7 @@ export function stopActiveTimerOnUnload(): void {
     }).catch(() => {
       // Silently fail - we don't want to block page unload
     })
-  } catch (error) {
+  } catch {
     // Silently fail - we don't want to block page unload
   }
 }

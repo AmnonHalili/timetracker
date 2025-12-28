@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react"
 import { RecursiveNode } from "@/components/team/RecursiveNode"
 import { AddChildDialog } from "@/components/team/AddChildDialog"
 import { User } from "@prisma/client"
-import { Loader2, UserPlus, Pencil, ZoomIn, ZoomOut, Network, ArrowLeft, ArrowRight, Crosshair } from "lucide-react"
+import { Loader2, UserPlus, Pencil, ZoomIn, ZoomOut, Network, ArrowRight, Crosshair } from "lucide-react"
 import { toast } from "sonner"
 import { useSession } from "next-auth/react"
 import { useLanguage } from "@/lib/useLanguage"
@@ -530,19 +530,19 @@ export default function HierarchyPage() {
                         )}
                         {/* Add Chief Button - Only for ADMIN */}
                         {hasProject && session?.user?.role === "ADMIN" && (
-                                <AddMemberDialog
-                                    triggerLabel={t('hierarchy.addChief')}
-                                    defaultRole="ADMIN"
-                                    lockRole={true}
-                                    hideManagerSelect={true}
-                                    onSuccess={fetchHierarchy}
-                                    customTrigger={
-                                        <Button variant="outline" size="sm" className="gap-2 bg-background/50 backdrop-blur-sm">
-                                            <UserPlus className="h-4 w-4" />
-                                            <span className="hidden sm:inline">{t('hierarchy.addChief')}</span>
-                                        </Button>
-                                    }
-                                />
+                            <AddMemberDialog
+                                triggerLabel={t('hierarchy.addChief')}
+                                defaultRole="ADMIN"
+                                lockRole={true}
+                                hideManagerSelect={true}
+                                onSuccess={fetchHierarchy}
+                                customTrigger={
+                                    <Button variant="outline" size="sm" className="gap-2 bg-background/50 backdrop-blur-sm">
+                                        <UserPlus className="h-4 w-4" />
+                                        <span className="hidden sm:inline">{t('hierarchy.addChief')}</span>
+                                    </Button>
+                                }
+                            />
                         )}
                     </div>
                     {/* Back Button - Far Right */}

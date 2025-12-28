@@ -2,7 +2,6 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
-import { CreateTaskDialog } from "@/components/tasks/CreateTaskDialog"
 import { TasksView } from "@/components/tasks/TasksView"
 import { TasksPageHeader } from "@/components/tasks/TasksPageHeader"
 

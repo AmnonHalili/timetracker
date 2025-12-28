@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 import { getAllDescendants } from "@/lib/hierarchy-utils"
-import { createNotification } from "@/lib/create-notification"
 
 export async function GET(
     req: Request,

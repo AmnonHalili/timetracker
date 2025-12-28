@@ -3,13 +3,8 @@ import { prisma } from "@/lib/prisma"
 
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
-import { MonthSelector } from "@/components/reports/MonthSelector"
 import { ReportTable } from "@/components/reports/ReportTable"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-
-import { UserSelector } from "@/components/reports/UserSelector"
 import { getReportData } from "@/lib/report-service"
-import { ExportButton } from "@/components/reports/ExportButton"
 import { filterVisibleUsers } from "@/lib/hierarchy-utils"
 import { ReportsPageHeader } from "@/components/reports/ReportsPageHeader"
 import { ReportsControls } from "@/components/reports/ReportsControls"
@@ -136,7 +131,7 @@ export default async function ReportsPage({
         <div className="container mx-auto p-4 md:p-8 space-y-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <ReportsPageHeader />
-                <ReportsControls 
+                <ReportsControls
                     projectUsers={projectUsers}
                     targetUserId={targetUserId}
                     currentYear={currentYear}

@@ -5,7 +5,7 @@ import { MonthGrid } from "./MonthGrid"
 import { DayView } from "./DayView"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react"
-import { format, addMonths, subMonths, addDays, subDays } from "date-fns"
+import { addMonths, subMonths, addDays, subDays } from "date-fns"
 import { useLanguage } from "@/lib/useLanguage"
 
 type CalendarEvent = {
@@ -139,7 +139,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                     </div>
 
                     <h2 className="text-3xl font-bold tracking-tight">
-                        {view === 'month' 
+                        {view === 'month'
                             ? `${t(`months.${['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'][currentDate.getMonth()]}` as 'months.january' | 'months.february' | 'months.march' | 'months.april' | 'months.may' | 'months.june' | 'months.july' | 'months.august' | 'months.september' | 'months.october' | 'months.november' | 'months.december')} ${currentDate.getFullYear()}`
                             : `${t(`days.${['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][currentDate.getDay()]}` as 'days.sunday' | 'days.monday' | 'days.tuesday' | 'days.wednesday' | 'days.thursday' | 'days.friday' | 'days.saturday')}, ${t(`months.${['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'][currentDate.getMonth()]}` as 'months.january' | 'months.february' | 'months.march' | 'months.april' | 'months.may' | 'months.june' | 'months.july' | 'months.august' | 'months.september' | 'months.october' | 'months.november' | 'months.december')} ${currentDate.getDate()}, ${currentDate.getFullYear()}`
                         }

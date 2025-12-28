@@ -2,7 +2,6 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
-import { createNotification } from "@/lib/create-notification"
 
 // GET tasks is handled in the page server component usually, but if we need client fetch:
 export async function GET() {
