@@ -13,12 +13,14 @@ interface RecursiveNodeProps {
     onAddClick?: (parentId: string, parentName: string) => void
     depth?: number
     hideConnectorLines?: boolean // Hide horizontal connector lines (used for shared partners children)
+    onlineUserIds?: string[] // List of currently online user IDs
 }
 
-export function RecursiveNode({ node, allUsers, onAddClick, depth = 0, hideConnectorLines = false }: RecursiveNodeProps) {
+export function RecursiveNode({ node, allUsers, onAddClick, depth = 0, hideConnectorLines = false, onlineUserIds = [] }: RecursiveNodeProps) {
     const { data: session } = useSession()
     const hasChildren = node.children && node.children.length > 0
     const isCurrentUser = session?.user?.id === node.id
+    const isOnline = onlineUserIds.includes(node.id)
 
     return (
         <div className="flex flex-col items-center">
@@ -47,12 +49,25 @@ export function RecursiveNode({ node, allUsers, onAddClick, depth = 0, hideConne
                 )} />
 
                 <div className="pl-3 flex items-center gap-3 w-full">
-                    <Avatar className="h-10 w-10 border border-border/50">
-                        <AvatarImage src={node.image || undefined} alt={node.name} />
-                        <AvatarFallback className="bg-muted text-muted-foreground text-xs">
-                            {node.name.slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                    </Avatar>
+                    <div className="relative">
+                        <Avatar className="h-10 w-10 border border-border/50">
+                            <AvatarImage src={node.image || undefined} alt={node.name} />
+                            <AvatarFallback className="bg-muted text-muted-foreground text-xs">
+                                {node.name.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                        </Avatar>
+                        {/* Online Status Badge - only show for other users */}
+                        {!isCurrentUser && (
+                            <div className="absolute -top-0.5 -right-0.5 z-10">
+                                <div className={cn(
+                                    "h-2.5 w-2.5 rounded-full border-2 border-white dark:border-gray-900 transition-colors",
+                                    isOnline
+                                        ? "bg-green-500 shadow-lg shadow-green-500/50"
+                                        : "bg-gray-400"
+                                )} />
+                            </div>
+                        )}
+                    </div>
 
                     <div className="flex flex-col overflow-hidden">
                         <div className="font-semibold truncate text-sm" title={node.name}>{node.name}</div>
@@ -190,6 +205,7 @@ export function RecursiveNode({ node, allUsers, onAddClick, depth = 0, hideConne
                                 onAddClick={onAddClick}
                                 depth={depth + 1}
                                 hideConnectorLines={hideConnectorLines}
+                                onlineUserIds={onlineUserIds}
                             />
                         </div>
                     ))}

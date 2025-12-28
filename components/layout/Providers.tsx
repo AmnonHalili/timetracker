@@ -15,7 +15,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             const nextTheme = localStorage.getItem('theme')
             const appTheme = localStorage.getItem('appTheme') || nextTheme || 'blue'
             setInitialTheme(appTheme)
-        } catch (e) {
+        } catch {
             setInitialTheme('blue')
         }
     }, [])

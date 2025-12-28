@@ -54,6 +54,9 @@ export default function HierarchyPage() {
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
     const [isInitialized, setIsInitialized] = useState(false)
 
+    // Online status tracking
+    const [onlineUserIds, setOnlineUserIds] = useState<string[]>([])
+
     // Calculate relative zoom percentage (baseZoom = 100%)
     const getRelativeZoomPercent = (zoom: number) => {
         return Math.round((zoom / baseZoom) * 100)
@@ -305,6 +308,42 @@ export default function HierarchyPage() {
         }
     }, [])
 
+    // Online status tracking - polling and heartbeat
+    useEffect(() => {
+        if (!session?.user?.id) return
+
+        const fetchOnlineUsers = async () => {
+            try {
+                const res = await fetch('/api/online-status')
+                if (res.ok) {
+                    const data = await res.json()
+                    setOnlineUserIds(data.onlineUsers || [])
+                }
+            } catch (error) {
+                console.error('Failed to fetch online users:', error)
+            }
+        }
+
+        const sendHeartbeat = async () => {
+            try {
+                await fetch('/api/online-status', { method: 'POST' })
+            } catch (error) {
+                console.error('Failed to send heartbeat:', error)
+            }
+        }
+
+        fetchOnlineUsers()
+        sendHeartbeat()
+
+        const fetchInterval = setInterval(fetchOnlineUsers, 30000)
+        const heartbeatInterval = setInterval(sendHeartbeat, 30000)
+
+        return () => {
+            clearInterval(fetchInterval)
+            clearInterval(heartbeatInterval)
+        }
+    }, [session])
+
     const handleAddClick = (parentId: string, parentName: string) => {
         setTargetParentId(parentId)
         setTargetParentName(parentName)
@@ -400,6 +439,7 @@ export default function HierarchyPage() {
                 })
             })
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tree, isInitialized, isLoading])
 
 
@@ -680,6 +720,7 @@ export default function HierarchyPage() {
                                                                 allUsers={users}
                                                                 onAddClick={handleAddClick}
                                                                 depth={0}
+                                                                onlineUserIds={onlineUserIds}
                                                             />
 
                                                             {/* Horizontal connecting line between partners (except for the last one) */}

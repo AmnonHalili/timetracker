@@ -28,42 +28,42 @@ function getLogoForTheme(): string {
     try {
         // Check localStorage for theme preference (primary source of truth)
         const theme = localStorage.getItem("theme") || localStorage.getItem("appTheme") || "blue"
-        
+
         if (theme === "pink") {
             return "/collabologopink.png"
         }
-        
+
         if (theme === "white") {
             return "/collabologoblack.png"
         }
-        
+
         if (theme === "black" || theme === "system") {
             return "/collabologowhitenoback.png"
         }
-        
+
         // Fallback: check DOM classes if localStorage doesn't have theme info
         const body = document.body
         const html = document.documentElement
-        
+
         if (body.classList.contains("pink-theme") || html.classList.contains("pink-theme")) {
             return "/collabologopink.png"
         }
-        
+
         if (body.classList.contains("white-theme") || html.classList.contains("white-theme")) {
             return "/collabologoblack.png"
         }
-        
+
         // Check for dark mode (black theme or system theme)
-        if (body.classList.contains("dark") && 
+        if (body.classList.contains("dark") &&
             html.classList.contains("dark") &&
-            !body.classList.contains("white-theme") && 
+            !body.classList.contains("white-theme") &&
             !body.classList.contains("pink-theme")) {
             return "/collabologowhitenoback.png"
         }
-    } catch (e) {
+    } catch {
         // Fallback on error
     }
-    
+
     // Default to blue theme
     return "/collabologo.png"
 }
@@ -108,11 +108,11 @@ export function ThemeLogo({ width = 360, height = 144, className = "", priority 
 
     // Always use logoSrc which is initialized correctly from localStorage
     return (
-        <Image 
-            src={logoSrc} 
-            alt="Collabo Logo" 
-            width={width} 
-            height={height} 
+        <Image
+            src={logoSrc}
+            alt="Collabo Logo"
+            width={width}
+            height={height}
             className={className}
             priority={priority}
         />

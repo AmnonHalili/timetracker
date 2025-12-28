@@ -72,7 +72,6 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
 
     // Primary manager editing state
     const [editingMainManager, setEditingMainManager] = useState<string>("")
-    const [savingMainManager, setSavingMainManager] = useState(false)
 
     // Role change dialog state
     const [roleDialogUser, setRoleDialogUser] = useState<User | null>(null)
@@ -275,54 +274,7 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
         }
     }
 
-    // Check if current user can edit main manager for selected user
-    const canEditMainManager = (selectedUserId: string): boolean => {
-        if (!selectedUser) return false
-        if (currentUserRole === 'ADMIN') return true
-        if (currentUserRole === 'EMPLOYEE') return false
 
-        // Manager can edit if they are the selected user's current manager
-        if (selectedUser.managerId === currentUserId) return true
-
-        // Or if they are above in hierarchy
-        // Build hierarchy chain upward from selected user
-        const getManagerChain = (userId: string): string[] => {
-            const user = users.find(u => u.id === userId)
-            if (!user || !user.managerId) return []
-            return [user.managerId, ...getManagerChain(user.managerId)]
-        }
-
-        const chain = getManagerChain(selectedUserId)
-        return chain.includes(currentUserId)
-    }
-
-    const handleSaveMainManager = async () => {
-        if (!selectedUser) return
-
-        setSavingMainManager(true)
-        try {
-            const res = await fetch("/api/team/manager", {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    userId: selectedUser.id,
-                    managerId: editingMainManager === "none" ? null : editingMainManager
-                })
-            })
-
-            if (!res.ok) {
-                const data = await res.json()
-                throw new Error(data.message || "Failed to update manager")
-            }
-
-            router.refresh()
-            alert("Primary manager updated successfully")
-        } catch (error) {
-            alert(error instanceof Error ? error.message : "Error updating primary manager")
-        } finally {
-            setSavingMainManager(false)
-        }
-    }
 
     const toggleDay = (day: number) => {
         setEditDays(prev =>
@@ -474,11 +426,11 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
                                                     const directManager = users.find(u => u.id === selectedUser.managerId)
 
                                                     // If the direct manager has a sharedChiefGroupId, show all chiefs in that group
-                                                    if (directManager && directManager.role === 'ADMIN' && (directManager as any).sharedChiefGroupId) {
-                                                        const sharedGroupId = (directManager as any).sharedChiefGroupId
+                                                    if (directManager && directManager.role === 'ADMIN' && (directManager as User & { sharedChiefGroupId?: string }).sharedChiefGroupId) {
+                                                        const sharedGroupId = (directManager as User & { sharedChiefGroupId?: string }).sharedChiefGroupId
                                                         const allSharedChiefs = users.filter(u =>
                                                             u.role === 'ADMIN' &&
-                                                            (u as any).sharedChiefGroupId === sharedGroupId &&
+                                                            (u as User & { sharedChiefGroupId?: string }).sharedChiefGroupId === sharedGroupId &&
                                                             !u.managerId
                                                         )
 
