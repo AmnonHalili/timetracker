@@ -1,3 +1,5 @@
+"use client"
+
 import { Button } from "@/components/ui/button"
 import { format, eachHourOfInterval, isSameHour, isSameDay } from "date-fns"
 import { EventCard } from "./EventCard"
@@ -5,6 +7,7 @@ import { CreateEventDialog } from "./CreateEventDialog"
 import { cn } from "@/lib/utils"
 import { Plus } from "lucide-react"
 import { useState } from "react"
+import { useLanguage } from "@/lib/useLanguage"
 
 interface DayViewProps {
     date: Date
@@ -41,6 +44,7 @@ interface DayViewProps {
 }
 
 export function DayView({ date, events, tasks, projectId, onOptimisticEventCreate }: DayViewProps) {
+    const { t } = useLanguage()
     const [createDialogOpen, setCreateDialogOpen] = useState(false)
     const [selectedHour, setSelectedHour] = useState<Date | undefined>()
 
@@ -124,7 +128,7 @@ export function DayView({ date, events, tasks, projectId, onOptimisticEventCreat
             <div className="flex items-center justify-end">
                 <Button size="sm" onClick={() => { setSelectedHour(undefined); setCreateDialogOpen(true) }}>
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Event
+                    {t('calendar.addEvent')}
                 </Button>
             </div>
 
@@ -160,7 +164,7 @@ export function DayView({ date, events, tasks, projectId, onOptimisticEventCreat
                             )}
                         >
                             {/* Time label */}
-                            <div className="p-3 text-sm font-medium text-muted-foreground border-r flex items-center justify-center whitespace-nowrap">
+                            <div className="p-3 text-sm font-medium text-muted-foreground border-r border-l flex items-center justify-center whitespace-nowrap">
                                 {format(hour, 'HH:mm')}
                             </div>
 

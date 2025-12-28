@@ -18,6 +18,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Plus, Pencil } from "lucide-react"
+import { useLanguage } from "@/lib/useLanguage"
 
 interface CreateTaskDialogProps {
     users: { id: string; name: string | null; email: string | null }[]
@@ -32,6 +33,7 @@ interface CreateTaskDialogProps {
 
 export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mode = 'create', open: controlledOpen, onOpenChange: setControlledOpen, currentUserId }: CreateTaskDialogProps) {
     const router = useRouter()
+    const { t } = useLanguage()
     const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
 
     // Use controlled state if provided, otherwise internal state
@@ -222,22 +224,22 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mod
             {mode === 'create' && (
                 <DialogTrigger asChild>
                     <Button>
-                        <Plus className="mr-2 h-4 w-4" /> Add Task
+                        <Plus className="mr-2 h-4 w-4" /> {t('tasks.addTask')}
                     </Button>
                 </DialogTrigger>
             )}
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[425px] [&>button]:left-4 [&>button]:right-auto">
                 <form onSubmit={handleSubmit}>
-                    <DialogHeader>
-                        <DialogTitle>{mode === 'edit' ? 'Edit Task' : 'Create New Task'}</DialogTitle>
-                        <DialogDescription>
-                            {mode === 'edit' ? 'Update task details and assignments.' : 'Assign a new task to one or more employees.'}
+                    <DialogHeader className="text-right">
+                        <DialogTitle className="text-right">{mode === 'edit' ? t('tasks.edit') : t('tasks.createNewTask')}</DialogTitle>
+                        <DialogDescription className="text-right">
+                            {mode === 'edit' ? t('tasks.edit') : t('tasks.assignNewTask')}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="title" className="text-right">
-                                Title
+                                {t('tasks.titleLabel')}
                             </Label>
                             <Input
                                 id="title"
@@ -250,15 +252,15 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mod
 
                         <div className="grid grid-cols-4 items-start gap-4">
                             <Label htmlFor="description" className="text-right pt-2">
-                                Description
+                                {t('tasks.description')}
                             </Label>
                             <Textarea
                                 id="description"
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
                                 className="col-span-3"
-                                placeholder="Add task description..."
-                                aria-label="Task description"
+                                placeholder={t('tasks.addTaskDescription')}
+                                aria-label={t('tasks.description')}
                             />
                         </div>
 
@@ -266,22 +268,22 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mod
                         {(users.length > 0) && (
                             <div className="grid grid-cols-4 items-start gap-4">
                                 <Label className="text-right pt-2">
-                                    Assign To
+                                    {t('tasks.assignTo')}
                                 </Label>
                                 <div className="col-span-3 border rounded-md max-h-40 overflow-y-auto p-2 space-y-2">
                                     {users.map(user => (
-                                        <div key={user.id} className="flex items-center space-x-2">
+                                        <div key={user.id} className="flex items-center gap-3">
                                             <input
                                                 type="checkbox"
                                                 id={`user-${user.id}`}
                                                 checked={assignedToIds.includes(user.id)}
                                                 onChange={() => toggleUser(user.id)}
-                                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary flex-shrink-0"
                                             />
                                             <Label htmlFor={`user-${user.id}`} className="cursor-pointer text-sm font-normal">
                                                 {user.name || user.email}
                                                 {currentUserId && user.id === currentUserId && (
-                                                    <span className="text-muted-foreground ml-1">(you)</span>
+                                                    <span className="text-muted-foreground ml-1">{t('common.you')}</span>
                                                 )}
                                             </Label>
                                         </div>
@@ -303,7 +305,7 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mod
                                         onCheckedChange={(checked) => setShowToMe(checked as boolean)}
                                     />
                                     <Label htmlFor="showToMe" className="cursor-pointer text-sm font-normal">
-                                        Show this task to me
+                                        {t('tasks.showThisTaskToMe')}
                                     </Label>
                                 </div>
                             </div>
@@ -311,24 +313,24 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mod
 
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="priority" className="text-right">
-                                Priority
+                                {t('tasks.priority')}
                             </Label>
                             <div className="col-span-3">
                                 <Select value={priority} onValueChange={setPriority}>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select priority" />
+                                        <SelectValue placeholder={t('tasks.priority')} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="LOW">Low</SelectItem>
-                                        <SelectItem value="MEDIUM">Medium</SelectItem>
-                                        <SelectItem value="HIGH">High</SelectItem>
+                                        <SelectItem value="LOW">{t('tasks.priorityLow')}</SelectItem>
+                                        <SelectItem value="MEDIUM">{t('tasks.priorityMedium')}</SelectItem>
+                                        <SelectItem value="HIGH">{t('tasks.priorityHigh')}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="deadline" className="text-right">
-                                Deadline
+                                {t('tasks.deadline')}
                             </Label>
                             <div className="col-span-3 flex gap-2">
                                 <Input
@@ -344,16 +346,16 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mod
                                     value={deadlineTime}
                                     onChange={(e) => setDeadlineTime(e.target.value)}
                                     className="w-32"
-                                    placeholder="Time"
-                                    aria-label="Deadline time"
+                                    placeholder={t('tasks.deadline')}
+                                    aria-label={t('tasks.deadline')}
                                 />
                             </div>
                         </div>
                     </div>
-                    <DialogFooter>
+                    <DialogFooter className="justify-end">
                         <Button type="submit" disabled={loading}>
                             {mode === 'edit' ? <Pencil className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
-                            {mode === 'edit' ? 'Update Task' : 'Create Task'}
+                            {mode === 'edit' ? t('tasks.edit') : t('tasks.create')}
                         </Button>
                     </DialogFooter>
                 </form>

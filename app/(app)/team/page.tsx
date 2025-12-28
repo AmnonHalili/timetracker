@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Network } from "lucide-react"
 import Link from "next/link"
 import { TeamRequestsList } from "@/components/team/TeamRequestsList"
+import { TeamPageHeader } from "@/components/team/TeamPageHeader"
 
 export default async function TeamPage() {
     const session = await getServerSession(authOptions)
@@ -245,25 +246,11 @@ export default async function TeamPage() {
                 <TeamRequestsList initialRequests={pendingRequests} />
             )}
 
-            <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Team Management</h1>
-                    <p className="text-muted-foreground">
-                        Project: <span className="font-semibold text-foreground">{currentUser.project?.name}</span>
-                        <span className="mx-2">•</span>
-                        {teamMembers.length} Members
-                    </p>
-                </div>
-                <div className="flex gap-2">
-                    <Link href="/team/hierarchy">
-                        <Button variant="outline">
-                            <Network className="h-4 w-4 mr-2" />
-                            View Hierarchy
-                        </Button>
-                    </Link>
-                    {isManager && <AddMemberDialog />}
-                </div>
-            </div>
+            <TeamPageHeader
+                projectName={currentUser.project?.name || null}
+                membersCount={teamMembers.length}
+                isManager={isManager}
+            />
 
             <TeamList users={teamMembers as never} currentUserId={session.user.id} currentUserRole={currentUser.role} />
         </div>

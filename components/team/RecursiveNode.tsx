@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useSession } from "next-auth/react"
 import { getAllDescendants } from "@/lib/hierarchy-utils"
+import { useLanguage } from "@/lib/useLanguage"
 
 interface RecursiveNodeProps {
     node: User & { children?: RecursiveNodeProps['node'][] }
@@ -18,12 +19,13 @@ interface RecursiveNodeProps {
 
 export function RecursiveNode({ node, allUsers, onAddClick, depth = 0, hideConnectorLines = false, onlineUserIds = [] }: RecursiveNodeProps) {
     const { data: session } = useSession()
+    const { t } = useLanguage()
     const hasChildren = node.children && node.children.length > 0
     const isCurrentUser = session?.user?.id === node.id
     const isOnline = onlineUserIds.includes(node.id)
 
     return (
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center" dir="ltr">
             {/* User Card */}
             <div
                 id={`node-${node.id}`}
@@ -67,8 +69,8 @@ export function RecursiveNode({ node, allUsers, onAddClick, depth = 0, hideConne
                             {(() => {
                                 // If user has a jobTitle, use it
                                 if (node.jobTitle) return node.jobTitle
-                                // Default to "Founder" for ADMIN users
-                                if (node.role === "ADMIN") return "Founder"
+                                // Default to "Company Owner" for ADMIN users (translated)
+                                if (node.role === "ADMIN") return t('team.companyOwner')
                                 // Otherwise fall back to role
                                 return node.role.toLowerCase().replace('_', ' ')
                             })()}

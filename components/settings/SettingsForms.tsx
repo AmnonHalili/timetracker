@@ -22,11 +22,13 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { User, Upload, Loader2, Trash2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { signOut, useSession } from "next-auth/react"
+import { useLanguage } from "@/lib/useLanguage"
+import { Language } from "@/lib/translations"
 
 interface ProfileFormProps {
     user: {
@@ -36,15 +38,29 @@ interface ProfileFormProps {
         jobTitle?: string | null
         role: string
         projectId?: string | null
+        dailyTarget?: number | null
+        workDays?: number[]
+        workMode?: 'OUTPUT_BASED' | 'TIME_BASED' | 'PROJECT_BASED'
     }
 }
 
 function ProfileForm({ user }: ProfileFormProps) {
+    const { t } = useLanguage()
     const [loading, setLoading] = useState(false)
+    const [preferencesLoading, setPreferencesLoading] = useState(false)
     const [name, setName] = useState(user.name)
     const [image, setImage] = useState(user.image || "")
     const fileInputRef = useRef<HTMLInputElement>(null)
     const router = useRouter()
+
+    // Preferences state
+    const [target, setTarget] = useState(user.dailyTarget?.toString() || "")
+    const [selectedDays, setSelectedDays] = useState<number[]>(user.workDays || [])
+    const [workMode] = useState<'OUTPUT_BASED' | 'TIME_BASED'>(
+        user.workMode === 'PROJECT_BASED' ? 'TIME_BASED' : (user.workMode || 'TIME_BASED')
+    )
+
+    const canEditPreferences = !(user.role === 'EMPLOYEE' && user.projectId !== null)
 
     // Calculate default job title based on user role and team status
     // Default to "Founder" for ADMIN users who created a team, "single" for members without a team
@@ -60,6 +76,23 @@ function ProfileForm({ user }: ProfileFormProps) {
     }
 
     const [jobTitle, setJobTitle] = useState(getDefaultJobTitle())
+
+    const daysOfWeek = [
+        { value: 0, label: t('days.sunday') },
+        { value: 1, label: t('days.monday') },
+        { value: 2, label: t('days.tuesday') },
+        { value: 3, label: t('days.wednesday') },
+        { value: 4, label: t('days.thursday') },
+        { value: 5, label: t('days.friday') },
+        { value: 6, label: t('days.saturday') },
+    ]
+
+    const toggleDay = (day: number) => {
+        if (!canEditPreferences) return
+        setSelectedDays(prev =>
+            prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day].sort((a, b) => a - b)
+        )
+    }
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -87,73 +120,164 @@ function ProfileForm({ user }: ProfileFormProps) {
             })
             if (!res.ok) throw new Error("Failed to update")
             router.refresh()
-            alert("Profile updated!")
+            alert(t('profile.updated'))
         } catch {
-            alert("Error updating profile")
+            alert(t('common.error'))
         } finally {
             setLoading(false)
         }
     }
 
+    const handlePreferencesSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setPreferencesLoading(true)
+        try {
+            const res = await fetch("/api/user/preferences", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    dailyTarget: target === "" ? null : parseFloat(target),
+                    workDays: selectedDays,
+                    workMode
+                }),
+            })
+            if (!res.ok) throw new Error("Failed to update")
+            router.refresh()
+            alert(t('preferences.updated'))
+        } catch {
+            alert(t('common.error'))
+        } finally {
+            setPreferencesLoading(false)
+        }
+    }
+
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Profile Information</CardTitle>
-                <CardDescription>Update your public profile details.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="flex flex-col items-center gap-4">
-                    <div
-                        className="w-24 h-24 rounded-full bg-muted border-2 border-dashed border-muted-foreground/25 flex items-center justify-center overflow-hidden relative group cursor-pointer"
-                        onClick={() => fileInputRef.current?.click()}
-                    >
-                        {image ? (
-                            <Image src={image} alt="Profile" fill className="object-cover" />
-                        ) : (
-                            <User className="h-8 w-8 text-muted-foreground" />
-                        )}
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <Upload className="h-6 w-6 text-white" />
+        <div className="space-y-6">
+            {/* Profile Information Card */}
+            <Card>
+                <CardHeader>
+                    <CardTitle>{t('profile.title')}</CardTitle>
+                    <CardDescription>{t('profile.description')}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="flex flex-col items-center gap-4">
+                        <div
+                            className="w-24 h-24 rounded-full bg-muted border-2 border-dashed border-muted-foreground/25 flex items-center justify-center overflow-hidden relative group cursor-pointer"
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            {image ? (
+                                <Image src={image} alt="Profile" fill className="object-cover" />
+                            ) : (
+                                <User className="h-8 w-8 text-muted-foreground" />
+                            )}
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <Upload className="h-6 w-6 text-white" />
+                            </div>
                         </div>
-                    </div>
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        className="hidden"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        aria-label="Upload profile picture"
-                    />
-                    <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} aria-label="Change profile picture">
-                        Change Picture
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            aria-label="Upload profile picture"
+                        />
+                    <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} aria-label={t('profile.changePicture')}>
+                        {t('profile.changePicture')}
                     </Button>
                 </div>
 
                 <div className="space-y-1">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">{t('profile.email')}</Label>
                     <Input id="email" value={user.email} disabled className="bg-muted" />
                 </div>
                 <div className="space-y-1">
-                    <Label htmlFor="name">Display Name</Label>
+                    <Label htmlFor="name">{t('profile.displayName')}</Label>
                     <Input id="name" value={name} onChange={e => setName(e.target.value)} />
                 </div>
                 <div className="space-y-1">
-                    <Label htmlFor="jobTitle">Job Title</Label>
+                    <Label htmlFor="jobTitle">{t('profile.jobTitle')}</Label>
                     <Input
                         id="jobTitle"
                         value={jobTitle}
                         onChange={e => setJobTitle(e.target.value)}
-                        placeholder="Enter your job title"
+                        placeholder={t('profile.jobTitle')}
                     />
                 </div>
             </CardContent>
             <CardFooter>
                 <Button onClick={handleSubmit} disabled={loading}>
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Save Changes
+                    {t('profile.saveChanges')}
                 </Button>
-            </CardFooter>
-        </Card>
+                </CardFooter>
+            </Card>
+
+            {/* Work Preferences Card */}
+            <Card>
+                <CardHeader>
+                    <CardTitle>{t('preferences.title')}</CardTitle>
+                    <CardDescription>
+                        {canEditPreferences
+                            ? t('preferences.description')
+                            : t('preferences.managedByAdmin')}
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                {!canEditPreferences && (
+                    <div className="bg-muted/50 p-4 rounded-lg border text-sm text-muted-foreground">
+                        {t('preferences.contactManager')}
+                    </div>
+                )}
+                <div className={!canEditPreferences ? "opacity-60 pointer-events-none" : ""}>
+                    <div className="space-y-3">
+                        <Label>{t('preferences.workDays')}</Label>
+                        <p className="text-xs text-muted-foreground">
+                            {t('preferences.selectWorkDays')}
+                        </p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            {daysOfWeek.map(day => (
+                                <button
+                                    key={day.value}
+                                    type="button"
+                                    onClick={() => toggleDay(day.value)}
+                                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${selectedDays.includes(day.value)
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-muted hover:bg-muted/80 text-muted-foreground'
+                                        }`}
+                                >
+                                    {day.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="space-y-1 mt-6">
+                        <Label htmlFor="target">{t('preferences.dailyTarget')}</Label>
+                        <Input
+                            id="target"
+                            type="number"
+                            step="0.5"
+                            value={target}
+                            onChange={e => setTarget(e.target.value)}
+                            disabled={!canEditPreferences}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            {t('preferences.dailyTargetDescription')}
+                        </p>
+                    </div>
+                </div>
+            </CardContent>
+            {canEditPreferences && (
+                <CardFooter>
+                    <Button onClick={handlePreferencesSubmit} disabled={preferencesLoading}>
+                        {preferencesLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {t('preferences.savePreferences')}
+                    </Button>
+                </CardFooter>
+            )}
+            </Card>
+        </div>
     )
 }
 
@@ -166,6 +290,7 @@ interface SecurityFormProps {
 
 function SecurityForm({ user }: SecurityFormProps) {
     const { data: session } = useSession()
+    const { t } = useLanguage()
 
     const [loading, setLoading] = useState(false)
     const [currentPassword, setCurrentPassword] = useState("")
@@ -268,27 +393,27 @@ function SecurityForm({ user }: SecurityFormProps) {
         <>
             <Card>
                 <CardHeader>
-                    <CardTitle>Security</CardTitle>
-                    <CardDescription>Manage your password and account security.</CardDescription>
+                    <CardTitle>{t('security.title')}</CardTitle>
+                    <CardDescription>{t('security.description')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="space-y-4">
                         <div className="space-y-1">
-                            <Label htmlFor="current">Current Password</Label>
+                            <Label htmlFor="current">{t('security.currentPassword')}</Label>
                             <Input id="current" type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} />
                         </div>
                         <div className="space-y-1">
-                            <Label htmlFor="new">New Password</Label>
+                            <Label htmlFor="new">{t('security.newPassword')}</Label>
                             <Input id="new" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} />
                         </div>
                         <div className="space-y-1">
-                            <Label htmlFor="confirm">Confirm New Password</Label>
+                            <Label htmlFor="confirm">{t('security.confirmPassword')}</Label>
                             <Input id="confirm" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
                         </div>
                         <div className="pt-2">
                             <Button onClick={handleSubmit} disabled={loading}>
                                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Update Password
+                                {t('security.updatePassword')}
                             </Button>
                         </div>
                     </div>
@@ -297,14 +422,14 @@ function SecurityForm({ user }: SecurityFormProps) {
                     <div className="pt-6 border-t">
                         <div className="space-y-4">
                             <div>
-                                <h3 className="text-lg font-semibold text-destructive">Delete Account</h3>
+                                <h3 className="text-lg font-semibold text-destructive">{t('security.deleteAccount')}</h3>
                                 <p className="text-sm text-muted-foreground">
-                                    Permanently delete your account and all associated data. This action cannot be undone.
+                                    {t('security.deleteWarning')}
                                 </p>
                             </div>
                             <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4">
                                 <p className="text-sm text-destructive">
-                                    ⚠️ Warning: This will permanently delete your account, all your time entries, tasks, and other data.
+                                    {t('security.deleteWarningText')}
                                 </p>
                             </div>
                             <Button
@@ -313,7 +438,7 @@ function SecurityForm({ user }: SecurityFormProps) {
                                 className="gap-2"
                             >
                                 <Trash2 className="h-4 w-4" aria-hidden="true" />
-                                Delete My Account
+                                {t('security.deleteMyAccount')}
                             </Button>
                         </div>
                     </div>
@@ -324,9 +449,9 @@ function SecurityForm({ user }: SecurityFormProps) {
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Account</AlertDialogTitle>
+                        <AlertDialogTitle>{t('security.deleteAccount')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to delete your account? This action cannot be undone.
+                            {t('security.deleteConfirm')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
 
@@ -334,14 +459,14 @@ function SecurityForm({ user }: SecurityFormProps) {
                         <div className="space-y-4 py-4">
                             <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
                                 <p className="text-sm text-amber-800">
-                                    ⚠️ You are the only admin. Please select a new admin before proceeding.
+                                    {t('security.transferAdmin')}
                                 </p>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="newAdmin">Transfer Admin To</Label>
+                                <Label htmlFor="newAdmin">{t('security.transferAdminTo')}</Label>
                                 <Select value={newAdminId} onValueChange={setNewAdminId}>
                                     <SelectTrigger id="newAdmin">
-                                        <SelectValue placeholder="Select user" />
+                                        <SelectValue placeholder={t('security.selectUser')} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {teamMembers.map(member => (
@@ -357,7 +482,7 @@ function SecurityForm({ user }: SecurityFormProps) {
 
                     <AlertDialogFooter>
                         <AlertDialogCancel disabled={isDeleting}>
-                            Cancel
+                            {t('common.cancel')}
                         </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleDelete}
@@ -367,10 +492,10 @@ function SecurityForm({ user }: SecurityFormProps) {
                             {isDeleting ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-                                    Deleting...
+                                    {t('security.deleting')}
                                 </>
                             ) : (
-                                "Delete Account"
+                                t('security.deleteAccount')
                             )}
                         </AlertDialogAction>
                     </AlertDialogFooter>
@@ -380,53 +505,33 @@ function SecurityForm({ user }: SecurityFormProps) {
     )
 }
 
-function PreferencesForm({ user }: { user: { dailyTarget: number | null; workDays: number[]; workMode: 'OUTPUT_BASED' | 'TIME_BASED' | 'PROJECT_BASED'; role: string; projectId: string | null } }) {
+function LanguageForm() {
     const [loading, setLoading] = useState(false)
-    const [target, setTarget] = useState(user.dailyTarget?.toString() || "")
-    const [selectedDays, setSelectedDays] = useState<number[]>(user.workDays || [])
-    // Filter out PROJECT_BASED since it's deprecated, default to TIME_BASED
-    const [workMode] = useState<'OUTPUT_BASED' | 'TIME_BASED'>(
-        user.workMode === 'PROJECT_BASED' ? 'TIME_BASED' : user.workMode
-    )
+    const { language: currentLanguage, setLanguage, t } = useLanguage()
+    const [language, setLanguageState] = useState<Language>(currentLanguage)
     const router = useRouter()
 
-    const canEdit = !(user.role === 'EMPLOYEE' && user.projectId !== null)
+    useEffect(() => {
+        setLanguageState(currentLanguage)
+    }, [currentLanguage])
 
-    const daysOfWeek = [
-        { value: 0, label: 'Sunday' },
-        { value: 1, label: 'Monday' },
-        { value: 2, label: 'Tuesday' },
-        { value: 3, label: 'Wednesday' },
-        { value: 4, label: 'Thursday' },
-        { value: 5, label: 'Friday' },
-        { value: 6, label: 'Saturday' },
+    const languages = [
+        { value: 'en' as Language, label: 'English' },
+        { value: 'he' as Language, label: 'עברית' },
     ]
-
-    const toggleDay = (day: number) => {
-        if (!canEdit) return
-        setSelectedDays(prev =>
-            prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day].sort((a, b) => a - b)
-        )
-    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
         try {
-            const res = await fetch("/api/user/preferences", {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    dailyTarget: target === "" ? null : parseFloat(target),
-                    workDays: selectedDays,
-                    workMode
-                }),
-            })
-            if (!res.ok) throw new Error("Failed to update")
+            // Update language using the context
+            setLanguage(language)
+            
+            // Refresh to apply changes
             router.refresh()
-            alert("Preferences updated!")
+            alert(t('language.saved'))
         } catch {
-            alert("Error updating preferences")
+            alert(t('common.error'))
         } finally {
             setLoading(false)
         }
@@ -435,68 +540,37 @@ function PreferencesForm({ user }: { user: { dailyTarget: number | null; workDay
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Work Preferences</CardTitle>
-                <CardDescription>
-                    {canEdit
-                        ? "Set your daily work goals and schedule."
-                        : "These settings are managed by your team admin."}
-                </CardDescription>
+                <CardTitle>{t('language.title')}</CardTitle>
+                <CardDescription>{t('language.description')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                {!canEdit && (
-                    <div className="bg-muted/50 p-4 rounded-lg border text-sm text-muted-foreground">
-                        Your work schedule and targets are determined by your organization. Please contact your manager to request changes.
-                    </div>
-                )}
-                <div className={!canEdit ? "opacity-60 pointer-events-none" : ""}>
-                    <div className="space-y-3">
-                        <Label>Work Days</Label>
-                        <p className="text-xs text-muted-foreground">
-                            Select the days you typically work.
-                        </p>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                            {daysOfWeek.map(day => (
-                                <button
-                                    key={day.value}
-                                    type="button"
-                                    onClick={() => toggleDay(day.value)}
-                                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${selectedDays.includes(day.value)
-                                        ? 'bg-primary text-primary-foreground'
-                                        : 'bg-muted hover:bg-muted/80 text-muted-foreground'
-                                        }`}
-                                >
-                                    {day.label}
-                                </button>
+                <div className="space-y-1">
+                    <Label htmlFor="language">{t('language.selectLanguage')}</Label>
+                    <Select value={language} onValueChange={(value) => setLanguageState(value as Language)}>
+                        <SelectTrigger id="language">
+                            <SelectValue placeholder={t('language.selectLanguage')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {languages.map(lang => (
+                                <SelectItem key={lang.value} value={lang.value}>
+                                    {lang.label}
+                                </SelectItem>
                             ))}
-                        </div>
-                    </div>
-
-                    <div className="space-y-1 mt-6">
-                        <Label htmlFor="target">Daily Target (Hours)</Label>
-                        <Input
-                            id="target"
-                            type="number"
-                            step="0.5"
-                            value={target}
-                            onChange={e => setTarget(e.target.value)}
-                            disabled={!canEdit}
-                        />
-                        <p className="text-xs text-muted-foreground">
-                            This is used to calculate your &quot;Remaining Hours&quot; for the day. Leave empty if you don&apos;t have a specific target.
-                        </p>
-                    </div>
+                        </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                        {t('language.descriptionText')}
+                    </p>
                 </div>
             </CardContent>
-            {canEdit && (
-                <CardFooter>
-                    <Button onClick={handleSubmit} disabled={loading}>
-                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Save Preferences
-                    </Button>
-                </CardFooter>
-            )}
+            <CardFooter>
+                <Button onClick={handleSubmit} disabled={loading}>
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {t('language.saveLanguage')}
+                </Button>
+            </CardFooter>
         </Card>
     )
 }
 
-export { ProfileForm, SecurityForm, PreferencesForm }
+export { ProfileForm, SecurityForm, LanguageForm }

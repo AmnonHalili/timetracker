@@ -11,7 +11,9 @@ import { UserSelector } from "@/components/reports/UserSelector"
 import { getReportData } from "@/lib/report-service"
 import { ExportButton } from "@/components/reports/ExportButton"
 import { filterVisibleUsers } from "@/lib/hierarchy-utils"
-import { formatHoursMinutes } from "@/lib/utils"
+import { ReportsPageHeader } from "@/components/reports/ReportsPageHeader"
+import { ReportsControls } from "@/components/reports/ReportsControls"
+import { ReportsSummaryCards } from "@/components/reports/ReportsSummaryCards"
 
 export default async function ReportsPage({
     searchParams,
@@ -133,28 +135,13 @@ export default async function ReportsPage({
     return (
         <div className="container mx-auto p-4 md:p-8 space-y-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Monthly Reports</h1>
-                    <p className="text-muted-foreground">View your detailed work history</p>
-                </div>
-                <div className="flex flex-col gap-6">
-                    {/* Controls Row */}
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        {projectUsers.length > 1 && (
-                            <div className="flex flex-col gap-2">
-                                <label className="text-sm font-medium text-muted-foreground">User</label>
-                                <UserSelector currentUserId={targetUserId} users={projectUsers} />
-                            </div>
-                        )}
-                        <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4">
-                            <div className="flex flex-col gap-2">
-                                <label className="text-sm font-medium text-muted-foreground">Period</label>
-                                <MonthSelector year={currentYear} month={currentMonth} />
-                            </div>
-                            <ExportButton userId={targetUserId} year={currentYear} month={currentMonth} />
-                        </div>
-                    </div>
-                </div>
+                <ReportsPageHeader />
+                <ReportsControls 
+                    projectUsers={projectUsers}
+                    targetUserId={targetUserId}
+                    currentYear={currentYear}
+                    currentMonth={currentMonth}
+                />
             </div>
 
             {report.days.length === 0 ? (
@@ -163,29 +150,11 @@ export default async function ReportsPage({
                 </div>
             ) : (
                 <>
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Worked</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{formatHoursMinutes(report.totalMonthlyHours)}</div>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Target Hours</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">
-                                    {(data.user.dailyTarget && data.user.dailyTarget > 0)
-                                        ? formatHoursMinutes(report.totalTargetHours)
-                                        : 'None'}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
+                    <ReportsSummaryCards
+                        totalWorked={report.totalMonthlyHours}
+                        totalTarget={report.totalTargetHours}
+                        hasDailyTarget={!!(data.user.dailyTarget && data.user.dailyTarget > 0)}
+                    />
 
                     <ReportTable days={report.days} showWarnings={currentUser.role === "ADMIN"} />
                 </>

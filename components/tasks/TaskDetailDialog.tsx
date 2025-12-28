@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Calendar, Clock, Users, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react"
 import { format } from "date-fns"
+import { useLanguage } from "@/lib/useLanguage"
 
 interface TaskDetailDialogProps {
     task: {
@@ -34,6 +35,7 @@ interface TaskDetailDialogProps {
 }
 
 export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }: TaskDetailDialogProps) {
+    const { t } = useLanguage()
     const [showTimeHistory, setShowTimeHistory] = useState(false)
 
     if (!task) return null
@@ -125,7 +127,7 @@ export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }:
                     {/* Assigned Users - At the top */}
                     {task.assignees.length > 0 && (
                         <div>
-                            <h3 className="text-sm font-semibold mb-2">Assigned To</h3>
+                            <h3 className="text-sm font-semibold mb-2">{t('tasks.assignTo')}</h3>
                             <div className="flex flex-wrap gap-2">
                                 {task.assignees.map(assignee => (
                                     <Badge key={assignee.id} variant="secondary">
@@ -140,7 +142,7 @@ export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }:
                     {/* Description */}
                     {task.description && (
                         <div>
-                            <h3 className="text-sm font-semibold mb-2">Description</h3>
+                            <h3 className="text-sm font-semibold mb-2">{t('tasks.description')}</h3>
                             <p className="text-sm text-muted-foreground">{task.description}</p>
                         </div>
                     )}
@@ -148,7 +150,7 @@ export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }:
                     {/* Task Info */}
                     {task.deadline && (
                         <div>
-                            <h3 className="text-sm font-semibold mb-2">Deadline</h3>
+                            <h3 className="text-sm font-semibold mb-2">{t('tasks.deadline')}</h3>
                             <div className="flex items-center gap-2 text-sm">
                                 <Calendar className="h-4 w-4" />
                                 {format(new Date(task.deadline), 'dd/MM/yyyy')}

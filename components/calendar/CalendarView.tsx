@@ -6,6 +6,7 @@ import { DayView } from "./DayView"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react"
 import { format, addMonths, subMonths, addDays, subDays } from "date-fns"
+import { useLanguage } from "@/lib/useLanguage"
 
 type CalendarEvent = {
     id: string;
@@ -48,6 +49,7 @@ interface CalendarViewProps {
 }
 
 export function CalendarView({ initialDate, data, projectId }: CalendarViewProps) {
+    const { t, isRTL } = useLanguage()
     const [view, setView] = useState<'month' | 'day'>('month')
     const [currentDate, setCurrentDate] = useState(initialDate)
     const [optimisticEvents, setOptimisticEvents] = useState<CalendarEvent[]>([])
@@ -137,7 +139,10 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                     </div>
 
                     <h2 className="text-3xl font-bold tracking-tight">
-                        {view === 'month' ? format(currentDate, "MMMM yyyy") : format(currentDate, "EEEE, MMMM d, yyyy")}
+                        {view === 'month' 
+                            ? `${t(`months.${['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'][currentDate.getMonth()]}` as 'months.january' | 'months.february' | 'months.march' | 'months.april' | 'months.may' | 'months.june' | 'months.july' | 'months.august' | 'months.september' | 'months.october' | 'months.november' | 'months.december')} ${currentDate.getFullYear()}`
+                            : `${t(`days.${['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][currentDate.getDay()]}` as 'days.sunday' | 'days.monday' | 'days.tuesday' | 'days.wednesday' | 'days.thursday' | 'days.friday' | 'days.saturday')}, ${t(`months.${['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'][currentDate.getMonth()]}` as 'months.january' | 'months.february' | 'months.march' | 'months.april' | 'months.may' | 'months.june' | 'months.july' | 'months.august' | 'months.september' | 'months.october' | 'months.november' | 'months.december')} ${currentDate.getDate()}, ${currentDate.getFullYear()}`
+                        }
                     </h2>
                 </div>
 
@@ -146,21 +151,21 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                     <Button
                         variant="ghost"
                         size="icon"
-                        onClick={view === 'month' ? handlePrevMonth : handlePrevDay}
+                        onClick={view === 'month' ? handleNextMonth : handleNextDay}
                     >
-                        <ChevronLeft className="h-4 w-4" />
+                        {isRTL ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     </Button>
                     <div className="w-[1px] h-6 bg-border" />
                     <Button variant="ghost" size="icon" onClick={handleToday}>
-                        <span className="text-xs font-medium px-2">Today</span>
+                        <span className="text-xs font-medium px-2">{t('calendar.today')}</span>
                     </Button>
                     <div className="w-[1px] h-6 bg-border" />
                     <Button
                         variant="ghost"
                         size="icon"
-                        onClick={view === 'month' ? handleNextMonth : handleNextDay}
+                        onClick={view === 'month' ? handlePrevMonth : handlePrevDay}
                     >
-                        <ChevronRight className="h-4 w-4" />
+                        {isRTL ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
                     </Button>
                 </div>
             </div>

@@ -4,9 +4,10 @@ import { useEffect, useState, useMemo } from "react"
 import { RecursiveNode } from "@/components/team/RecursiveNode"
 import { AddChildDialog } from "@/components/team/AddChildDialog"
 import { User } from "@prisma/client"
-import { Loader2, UserPlus, Pencil, ZoomIn, ZoomOut, Network, ArrowLeft, Crosshair } from "lucide-react"
+import { Loader2, UserPlus, Pencil, ZoomIn, ZoomOut, Network, ArrowLeft, ArrowRight, Crosshair } from "lucide-react"
 import { toast } from "sonner"
 import { useSession } from "next-auth/react"
+import { useLanguage } from "@/lib/useLanguage"
 import { Button } from "@/components/ui/button"
 import { ImageCropperDialog } from "@/components/ui/ImageCropperDialog"
 import Image from "next/image"
@@ -26,6 +27,7 @@ type TreeNode = User & {
 
 export default function HierarchyPage() {
     const { data: session } = useSession()
+    const { t } = useLanguage()
     const [users, setUsers] = useState<User[]>([])
     const [projectName, setProjectName] = useState("Organization")
     const [projectId, setProjectId] = useState<string | null>(null)
@@ -451,6 +453,7 @@ export default function HierarchyPage() {
     return (
         <div
             className="w-full bg-background/50 relative"
+            dir="ltr"
             style={{
                 overflow: 'hidden',
                 width: '100%',
@@ -468,19 +471,9 @@ export default function HierarchyPage() {
             {/* Header and Controls - Fixed at top */}
             <div className="p-8 pb-4 relative z-20 bg-background/95 backdrop-blur-sm border-b">
                 <div className="flex justify-between items-center max-w-5xl mx-auto mb-8 relative">
-                    <h1 className="text-2xl font-bold text-center w-full">Organization Hierarchy</h1>
+                    <h1 className="text-2xl font-bold text-center w-full">{t('hierarchy.organizationHierarchy')}</h1>
                     {/* Zoom Controls - Left Side */}
                     <div className="absolute left-0 top-0 flex items-center gap-2">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            asChild
-                            className="-ml-2"
-                        >
-                            <Link href="/team" aria-label="Back to Team">
-                                <ArrowLeft className="h-5 w-5" />
-                            </Link>
-                        </Button>
                         <Button
                             variant="outline"
                             size="sm"
@@ -488,7 +481,7 @@ export default function HierarchyPage() {
                             className="bg-background/50 backdrop-blur-sm gap-2 h-8"
                         >
                             <Network className="h-4 w-4" />
-                            <span className="hidden sm:inline">Overview</span>
+                            <span className="hidden sm:inline">{t('hierarchy.overview')}</span>
                         </Button>
                         <Button
                             variant="outline"
@@ -497,12 +490,12 @@ export default function HierarchyPage() {
                             className="bg-background/50 backdrop-blur-sm gap-2 h-8"
                         >
                             <Crosshair className="h-4 w-4" />
-                            <span className="hidden sm:inline">Find Me</span>
+                            <span className="hidden sm:inline">{t('hierarchy.findMe')}</span>
                         </Button>
                     </div>
                     {/* Zoom Controls - Right Side - Visible to All */}
-                    {hasProject && (
-                        <div className="absolute right-0 top-0 flex items-center gap-2">
+                    <div className="absolute right-0 top-0 flex items-center gap-2">
+                        {hasProject && (
                             <div className="flex items-center gap-1 bg-background/50 backdrop-blur-sm border rounded-md p-1">
                                 <Button
                                     variant="ghost"
@@ -534,10 +527,11 @@ export default function HierarchyPage() {
                                     <ZoomIn className="h-4 w-4" aria-hidden="true" />
                                 </Button>
                             </div>
-                            {/* Add Chief Button - Only for ADMIN */}
-                            {session?.user?.role === "ADMIN" && (
+                        )}
+                        {/* Add Chief Button - Only for ADMIN */}
+                        {hasProject && session?.user?.role === "ADMIN" && (
                                 <AddMemberDialog
-                                    triggerLabel="Add Chief"
+                                    triggerLabel={t('hierarchy.addChief')}
                                     defaultRole="ADMIN"
                                     lockRole={true}
                                     hideManagerSelect={true}
@@ -545,13 +539,25 @@ export default function HierarchyPage() {
                                     customTrigger={
                                         <Button variant="outline" size="sm" className="gap-2 bg-background/50 backdrop-blur-sm">
                                             <UserPlus className="h-4 w-4" />
-                                            <span className="hidden sm:inline">Add Chief</span>
+                                            <span className="hidden sm:inline">{t('hierarchy.addChief')}</span>
                                         </Button>
                                     }
                                 />
-                            )}
-                        </div>
-                    )}
+                        )}
+                    </div>
+                    {/* Back Button - Far Right */}
+                    <div className="absolute right-0 top-0 flex items-center gap-2 z-30 -mr-16">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            asChild
+                            className="mr-0"
+                        >
+                            <Link href="/team" aria-label="Back to Team">
+                                <ArrowRight className="h-5 w-5" />
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
 
                 {session?.user?.role === "ADMIN" && hasProject && (

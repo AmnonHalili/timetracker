@@ -4,6 +4,7 @@ import { SessionProvider } from "next-auth/react"
 import { ThemeProvider } from "next-themes"
 import { useEffect, useState } from "react"
 import { stopActiveTimerOnUnload } from "@/lib/utils"
+import { LanguageProvider } from "@/lib/useLanguage"
 
 export function Providers({ children }: { children: React.ReactNode }) {
     const [initialTheme, setInitialTheme] = useState<string | undefined>(undefined)
@@ -35,23 +36,32 @@ export function Providers({ children }: { children: React.ReactNode }) {
         }
     }, [])
 
+    // Always wrap with LanguageProvider so useLanguage can be used anywhere
     // Don't render ThemeProvider until we know the theme to prevent flash
     if (!mounted) {
-        return <SessionProvider>{children}</SessionProvider>
+        return (
+            <SessionProvider>
+                <LanguageProvider>
+                    {children}
+                </LanguageProvider>
+            </SessionProvider>
+        )
     }
 
     return (
         <SessionProvider>
-            <ThemeProvider
-                attribute="class"
-                defaultTheme={initialTheme}
-                enableSystem={false}
-                disableTransitionOnChange
-                themes={["white", "blue", "black", "pink", "system"]}
-                storageKey="theme"
-            >
-                {children}
-            </ThemeProvider>
+            <LanguageProvider>
+                <ThemeProvider
+                    attribute="class"
+                    defaultTheme={initialTheme}
+                    enableSystem={false}
+                    disableTransitionOnChange
+                    themes={["white", "blue", "black", "pink", "system"]}
+                    storageKey="theme"
+                >
+                    {children}
+                </ThemeProvider>
+            </LanguageProvider>
         </SessionProvider>
     )
 }

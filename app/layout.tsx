@@ -73,6 +73,12 @@ export default function RootLayout({
                   document.documentElement.classList.remove('white-theme');
                   document.documentElement.classList.remove('pink-theme');
                 }
+                
+                // Set language and direction
+                const savedLanguage = localStorage.getItem('language') || 'en';
+                const isRTL = savedLanguage === 'he';
+                document.documentElement.setAttribute('dir', isRTL ? 'rtl' : 'ltr');
+                document.documentElement.setAttribute('lang', savedLanguage);
               } catch (e) {}
             `,
           }}

@@ -11,6 +11,7 @@ import { Loader2, Plus, Pencil } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { useSession } from "next-auth/react"
+import { useLanguage } from "@/lib/useLanguage"
 
 interface CreateEventDialogProps {
     open: boolean
@@ -35,6 +36,7 @@ export function CreateEventDialog({
 }: CreateEventDialogProps) {
     const router = useRouter()
     const { data: session } = useSession()
+    const { t } = useLanguage()
     const [loading, setLoading] = useState(false)
 
     // Form state
@@ -250,54 +252,54 @@ export function CreateEventDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto [&>button]:left-4 [&>button]:right-auto">
                 <form onSubmit={handleSubmit}>
-                    <DialogHeader>
-                        <DialogTitle>{mode === 'edit' ? 'Edit Event' : 'Create New Event'}</DialogTitle>
-                        <DialogDescription>
-                            {mode === 'edit' ? 'Update event details' : 'Add an event to your calendar'}
+                    <DialogHeader className="text-right">
+                        <DialogTitle className="text-right">{mode === 'edit' ? t('calendar.editEvent') : t('calendar.createNewEvent')}</DialogTitle>
+                        <DialogDescription className="text-right">
+                            {mode === 'edit' ? t('calendar.updateEventDetails') : t('calendar.addEventToCalendar')}
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
                         {/* Title */}
                         <div className="space-y-2">
-                            <Label htmlFor="title">Title *</Label>
+                            <Label htmlFor="title">{t('calendar.title')} *</Label>
                             <Input
                                 id="title"
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
-                                placeholder="Meeting with team"
+                                placeholder={t('calendar.meeting')}
                                 required
                             />
                         </div>
 
                         {/* Description */}
                         <div className="space-y-2">
-                            <Label htmlFor="description">Description</Label>
+                            <Label htmlFor="description">{t('calendar.description')}</Label>
                             <Textarea
                                 id="description"
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
-                                placeholder="Add details about the event..."
+                                placeholder={t('tasks.addTaskDescription')}
                                 rows={3}
                             />
                         </div>
 
                         {/* Type */}
                         <div className="space-y-2">
-                            <Label htmlFor="type">Event Type</Label>
+                            <Label htmlFor="type">{t('calendar.eventType')}</Label>
                             <Select value={type} onValueChange={setType}>
                                 <SelectTrigger id="type">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="MEETING">Meeting</SelectItem>
-                                    <SelectItem value="APPOINTMENT">Appointment</SelectItem>
-                                    <SelectItem value="TASK_TIME">Task Time</SelectItem>
-                                    <SelectItem value="BREAK">Break</SelectItem>
-                                    <SelectItem value="PERSONAL">Personal</SelectItem>
-                                    <SelectItem value="OTHER">Other</SelectItem>
+                                    <SelectItem value="MEETING">{t('calendar.meeting')}</SelectItem>
+                                    <SelectItem value="APPOINTMENT">{t('calendar.appointment')}</SelectItem>
+                                    <SelectItem value="TASK_TIME">{t('calendar.taskTime')}</SelectItem>
+                                    <SelectItem value="BREAK">{t('calendar.break')}</SelectItem>
+                                    <SelectItem value="PERSONAL">{t('calendar.personal')}</SelectItem>
+                                    <SelectItem value="OTHER">{t('calendar.other')}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -311,13 +313,13 @@ export function CreateEventDialog({
                                 onChange={(e) => setAllDay(e.target.checked)}
                                 className="h-4 w-4"
                             />
-                            <Label htmlFor="allDay" className="cursor-pointer">All day event</Label>
+                            <Label htmlFor="allDay" className="cursor-pointer">{t('calendar.allDayEvent')}</Label>
                         </div>
 
                         {/* Start Date/Time */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="startDate">Start Date *</Label>
+                                <Label htmlFor="startDate">{t('calendar.startDate')} *</Label>
                                 <Input
                                     id="startDate"
                                     type="date"
@@ -328,7 +330,7 @@ export function CreateEventDialog({
                             </div>
                             {!allDay && (
                                 <div className="space-y-2">
-                                    <Label htmlFor="startTime">Start Time</Label>
+                                    <Label htmlFor="startTime">{t('calendar.startTime')}</Label>
                                     <Input
                                         id="startTime"
                                         type="time"
@@ -342,7 +344,7 @@ export function CreateEventDialog({
                         {/* End Date/Time */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="endDate">End Date *</Label>
+                                <Label htmlFor="endDate">{t('calendar.endDate')} *</Label>
                                 <Input
                                     id="endDate"
                                     type="date"
@@ -353,7 +355,7 @@ export function CreateEventDialog({
                             </div>
                             {!allDay && (
                                 <div className="space-y-2">
-                                    <Label htmlFor="endTime">End Time</Label>
+                                    <Label htmlFor="endTime">{t('calendar.endTime')}</Label>
                                     <Input
                                         id="endTime"
                                         type="time"
@@ -366,12 +368,12 @@ export function CreateEventDialog({
 
                         {/* Location */}
                         <div className="space-y-2">
-                            <Label htmlFor="location">Location</Label>
+                            <Label htmlFor="location">{t('calendar.location')}</Label>
                             <Input
                                 id="location"
                                 value={location}
                                 onChange={(e) => setLocation(e.target.value)}
-                                placeholder="Office, Zoom link, etc."
+                                placeholder={t('calendar.location')}
                             />
                         </div>
 
@@ -379,7 +381,7 @@ export function CreateEventDialog({
                         {users.length > 0 && (
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                    <Label>Participants</Label>
+                                    <Label>{t('calendar.participants')}</Label>
                                     <Button
                                         type="button"
                                         variant="ghost"
@@ -387,24 +389,24 @@ export function CreateEventDialog({
                                         className="h-auto p-0 text-xs text-muted-foreground hover:text-primary"
                                         onClick={toggleSelectAll}
                                     >
-                                        {participantIds.length === users.length ? 'Deselect All' : 'Select All'}
+                                        {participantIds.length === users.length ? t('common.cancel') : t('common.selectAll')}
                                     </Button>
                                 </div>
                                 <div className="border rounded-md max-h-40 overflow-y-auto p-2 space-y-2">
                                     {users.map(user => {
                                         const isCurrentUser = user.id === session?.user?.id
                                         return (
-                                            <div key={user.id} className="flex items-center space-x-2">
+                                            <div key={user.id} className="flex items-center gap-3">
                                                 <input
                                                     type="checkbox"
                                                     id={`user-${user.id}`}
                                                     checked={participantIds.includes(user.id)}
                                                     onChange={() => toggleUser(user.id)}
-                                                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary flex-shrink-0"
                                                 />
                                                 <Label htmlFor={`user-${user.id}`} className="cursor-pointer text-sm font-normal flex items-center gap-1">
                                                     {user.name || user.email}
-                                                    {isCurrentUser && <span className="text-xs text-muted-foreground">(You)</span>}
+                                                    {isCurrentUser && <span className="text-xs text-muted-foreground">{t('common.you')}</span>}
                                                 </Label>
                                             </div>
                                         )
@@ -416,19 +418,19 @@ export function CreateEventDialog({
 
                     </div>
 
-                    <DialogFooter>
+                    <DialogFooter className="justify-end">
                         <Button
                             type="button"
                             variant="outline"
                             onClick={() => onOpenChange(false)}
                             disabled={loading}
                         >
-                            Cancel
+                            {t('calendar.cancel')}
                         </Button>
                         <Button type="submit" disabled={loading}>
                             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {mode === 'edit' ? <Pencil className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
-                            {mode === 'edit' ? 'Update Event' : 'Create Event'}
+                            {mode === 'edit' ? t('calendar.editEvent') : t('calendar.createEvent')}
                         </Button>
                     </DialogFooter>
                 </form>

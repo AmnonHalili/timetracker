@@ -11,6 +11,7 @@ import { useState, useEffect } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatDistanceToNow } from "date-fns"
 import { useRouter } from "next/navigation"
+import { useLanguage } from "@/lib/useLanguage"
 
 interface Notification {
     id: string
@@ -23,6 +24,7 @@ interface Notification {
 }
 
 export function NotificationBell() {
+    const { t } = useLanguage()
     const [notifications, setNotifications] = useState<Notification[]>([])
     const [unreadCount, setUnreadCount] = useState(0)
     const [isOpen, setIsOpen] = useState(false)
@@ -85,28 +87,28 @@ export function NotificationBell() {
             }
         }}>
             <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative h-14 w-14 [&_svg]:h-7 [&_svg]:w-7" aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}>
+                <Button variant="ghost" size="icon" className="relative h-14 w-14 [&_svg]:h-7 [&_svg]:w-7" aria-label={`${t('notifications.title')}${unreadCount > 0 ? `, ${unreadCount} ${t('notifications.unread')}` : ''}`}>
                     <Bell className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
                     {unreadCount > 0 && (
                         <span className="absolute top-3.5 right-3.5 h-3 w-3 rounded-full bg-red-600 animate-pulse border-2 border-background" aria-hidden="true">
-                            <span className="sr-only">{unreadCount} unread notifications</span>
+                            <span className="sr-only">{unreadCount} {t('notifications.unread')} {t('notifications.title')}</span>
                         </span>
                     )}
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80 p-0" align="end">
                 <div className="flex items-center justify-between p-4 border-b">
-                    <h4 className="font-semibold text-sm">Notifications</h4>
+                    <h4 className="font-semibold text-sm">{t('notifications.title')}</h4>
                     {unreadCount > 0 && (
                         <Button variant="ghost" size="sm" onClick={markAllRead} className="h-auto p-1 text-xs text-muted-foreground hover:text-primary">
-                            Mark all read
+                            {t('notifications.markAllRead')}
                         </Button>
                     )}
                 </div>
                 <ScrollArea className="h-[300px]">
                     {notifications.length === 0 ? (
                         <div className="p-4 text-center text-sm text-muted-foreground">
-                            No notifications
+                            {t('notifications.noNotifications')}
                         </div>
                     ) : (
                         <div className="divide-y">

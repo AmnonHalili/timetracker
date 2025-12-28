@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Download } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 import { useState } from "react"
+import { useLanguage } from "@/lib/useLanguage"
 
 interface ExportButtonProps {
     userId: string
@@ -13,6 +14,7 @@ interface ExportButtonProps {
 
 export function ExportButton({ userId, year, month }: ExportButtonProps) {
     const searchParams = useSearchParams()
+    const { t } = useLanguage()
     const [loading, setLoading] = useState(false)
 
     const handleExport = async () => {
@@ -57,7 +59,7 @@ export function ExportButton({ userId, year, month }: ExportButtonProps) {
     return (
         <Button variant="outline" size="sm" onClick={handleExport} disabled={loading}>
             <Download className="mr-2 h-4 w-4" />
-            {loading ? "Exporting..." : "Export CSV"}
+            {loading ? t('common.loading') : t('reports.exportCSV')}
         </Button>
     )
 }

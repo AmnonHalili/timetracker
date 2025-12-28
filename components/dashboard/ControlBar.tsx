@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useLanguage } from "@/lib/useLanguage"
 
 interface ControlBarProps {
     activeEntry: {
@@ -38,6 +39,7 @@ interface ControlBarProps {
 
 export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarProps) {
     const router = useRouter()
+    const { t } = useLanguage()
     // Optimistic state for immediate UI updates
     const [optimisticEntry, setOptimisticEntry] = useState<ControlBarProps['activeEntry']>(activeEntry)
     const [elapsed, setElapsed] = useState(0)
@@ -428,11 +430,11 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                 {/* Inputs Area */}
                 <div className="flex flex-1 items-center gap-3 w-full">
                     <label htmlFor="work-description" className="sr-only">
-                        What are you working on?
+                        {t('dashboard.whatWorkingOn')}
                     </label>
                     <Input
                         id="work-description"
-                        placeholder="What are you working on?"
+                        placeholder={t('dashboard.whatWorkingOn')}
                         value={description}
                         onChange={(e) => {
                             setDescription(e.target.value)
@@ -448,7 +450,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                             }
                         }}
                         className="bg-background border-input hover:bg-accent/50 focus:bg-background shadow-sm h-9 text-sm flex-1"
-                        aria-label="What are you working on?"
+                        aria-label={t('dashboard.whatWorkingOn')}
                     />
 
                     {/* Task Selector */}
@@ -473,10 +475,10 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                             }}
                         >
                             <SelectTrigger className="bg-background border-input hover:bg-accent/50 text-sm h-9 shadow-sm">
-                                <SelectValue placeholder="Tasks..." />
+                                <SelectValue placeholder={t('tasks.tasksPlaceholder')} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="__none__">No task</SelectItem>
+                                <SelectItem value="__none__">{t('tasks.noTask')}</SelectItem>
                                 {tasks.map((task) => (
                                     <SelectItem key={task.id} value={task.id}>
                                         {task.title}
@@ -511,7 +513,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                                             }}
                                         >
                                             <SelectTrigger className="bg-background border-input hover:bg-accent/50 text-sm h-9 shadow-sm">
-                                                <SelectValue placeholder="Subtask..." />
+                                                <SelectValue placeholder={t('tasks.subtaskPlaceholder')} />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 {availableSubtasks.map((subtask) => (
@@ -780,7 +782,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                                     onClick={() => setIsManualMode(!isManualMode)}
                                     className={`h-9 px-3 text-xs font-medium border-dashed ${isManualMode ? 'bg-primary/10 text-primary border-primary/20' : 'text-muted-foreground border-border'}`}
                                 >
-                                    {isManualMode ? 'Timer' : 'Manual'}
+                                    {isManualMode ? t('dashboard.timer') : t('dashboard.manual')}
                                 </Button>
                                 <Button
                                     size="sm"
@@ -788,7 +790,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                                     disabled={loading || (isManualMode && (!manualStart || !manualEnd))}
                                     className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium min-w-[80px] h-9 shadow-sm"
                                 >
-                                    {isManualMode ? 'Add' : 'Start'}
+                                    {isManualMode ? t('dashboard.add') : t('dashboard.start')}
                                 </Button>
                             </>
                         ) : (
@@ -801,7 +803,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                                         onClick={() => handleAction('resume')}
                                         disabled={loading}
                                     >
-                                        Resume
+                                        {t('dashboard.resume')}
                                     </Button>
                                 ) : (
                                     <Button
@@ -811,7 +813,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                                         onClick={() => handleAction('pause')}
                                         disabled={loading}
                                     >
-                                        Pause
+                                        {t('dashboard.pause')}
                                     </Button>
                                 )}
                                 <Button
@@ -821,7 +823,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                                     onClick={() => handleAction('stop')}
                                     disabled={loading || !isDataLoaded}
                                 >
-                                    Stop
+                                    {t('dashboard.stop')}
                                 </Button>
                             </>
                         )}

@@ -32,6 +32,7 @@ import { SecondaryManagersForm } from "./SecondaryManagersForm"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2, Trash2 } from "lucide-react"
+import { useLanguage } from "@/lib/useLanguage"
 
 interface User {
     id: string
@@ -54,6 +55,7 @@ interface TeamListProps {
 }
 
 export function TeamList({ users, currentUserId, currentUserRole }: TeamListProps) {
+    const { t, isRTL } = useLanguage()
     const router = useRouter()
     const [selectedUser, setSelectedUser] = useState<User | null>(null)
     const [editTarget, setEditTarget] = useState<string>("")
@@ -82,13 +84,13 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
     const [newAdminId, setNewAdminId] = useState<string>("")
 
     const daysOfWeek = [
-        { value: 0, label: 'Sunday' },
-        { value: 1, label: 'Monday' },
-        { value: 2, label: 'Tuesday' },
-        { value: 3, label: 'Wednesday' },
-        { value: 4, label: 'Thursday' },
-        { value: 5, label: 'Friday' },
-        { value: 6, label: 'Saturday' },
+        { value: 0, label: t('days.sunday') },
+        { value: 1, label: t('days.monday') },
+        { value: 2, label: t('days.tuesday') },
+        { value: 3, label: t('days.wednesday') },
+        { value: 4, label: t('days.thursday') },
+        { value: 5, label: t('days.friday') },
+        { value: 6, label: t('days.saturday') },
     ]
 
     const openDialog = async (user: User) => {
@@ -281,7 +283,7 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
 
 
     if (users.length === 0) {
-        return <div className="text-center text-muted-foreground py-8">No team members yet.</div>
+        return <div className="text-center text-muted-foreground py-8">{t('team.noTeamMembersYet')}</div>
     }
 
     return (
@@ -290,11 +292,11 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="w-[80px]">Profile</TableHead>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Job Title</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                            <TableHead className={`w-[80px] ${isRTL ? 'text-right' : 'text-left'}`}>{t('team.profile')}</TableHead>
+                            <TableHead className={isRTL ? 'text-right' : 'text-left'}>{t('team.name')}</TableHead>
+                            <TableHead className={isRTL ? 'text-right' : 'text-left'}>{t('team.email')}</TableHead>
+                            <TableHead className={isRTL ? 'text-right' : 'text-left'}>{t('team.jobTitle')}</TableHead>
+                            <TableHead className={isRTL ? 'text-left' : 'text-right'}>{t('team.actions')}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -304,7 +306,7 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
                                 className={`${currentUserRole !== 'EMPLOYEE' ? 'cursor-pointer hover:bg-muted/50' : ''}`}
                                 onClick={() => openDialog(user)}
                             >
-                                <TableCell>
+                                <TableCell className={isRTL ? 'text-right' : 'text-left'}>
                                     <Avatar className="h-10 w-10">
                                         <AvatarImage src={user.image || undefined} alt={user.name} />
                                         <AvatarFallback className="bg-primary/10 text-primary font-semibold">
@@ -312,11 +314,11 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
                                         </AvatarFallback>
                                     </Avatar>
                                 </TableCell>
-                                <TableCell className="font-bold">
-                                    {user.name} {user.id === currentUserId && <span className="text-muted-foreground font-normal">(you)</span>}
+                                <TableCell className={`font-bold ${isRTL ? 'text-right' : 'text-left'}`}>
+                                    {user.name} {user.id === currentUserId && <span className="text-muted-foreground font-normal">{t('common.you')}</span>}
                                 </TableCell>
-                                <TableCell>{user.email}</TableCell>
-                                <TableCell>
+                                <TableCell className={isRTL ? 'text-right' : 'text-left'}>{user.email}</TableCell>
+                                <TableCell className={isRTL ? 'text-right' : 'text-left'}>
                                     <span className="capitalize">
                                         {(() => {
                                             // If user has a jobTitle, use it
@@ -328,7 +330,7 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
                                         })()}
                                     </span>
                                 </TableCell>
-                                <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                <TableCell className={isRTL ? 'text-left' : 'text-right'} onClick={(e) => e.stopPropagation()}>
                                     <Button
                                         variant="ghost"
                                         size="icon"
@@ -346,25 +348,25 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
 
             {/* Team Member Settings Dialog */}
             <Dialog open={!!selectedUser} onOpenChange={(open) => !open && closeDialog()}>
-                <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>Team Member Settings - {selectedUser?.name}</DialogTitle>
-                        <DialogDescription>
-                            Manage work settings and manager assignments.
+                <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto [&>button]:left-4 [&>button]:right-auto">
+                    <DialogHeader className="text-right">
+                        <DialogTitle className="text-right">{t('team.teamMemberSettings')} - {selectedUser?.name}</DialogTitle>
+                        <DialogDescription className="text-right">
+                            {t('team.manageWorkSettings')}
                         </DialogDescription>
                     </DialogHeader>
 
                     <Tabs defaultValue="work" className="mt-4">
                         <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="work">Work Settings</TabsTrigger>
-                            <TabsTrigger value="managers">Managers</TabsTrigger>
+                            <TabsTrigger value="work">{t('team.workSettings')}</TabsTrigger>
+                            <TabsTrigger value="managers">{t('team.managers')}</TabsTrigger>
                         </TabsList>
 
                         <TabsContent value="work" className="space-y-6 pt-4">
                             <div className="space-y-3">
-                                <Label>Work Days</Label>
+                                <Label>{t('preferences.workDays')}</Label>
                                 <p className="text-xs text-muted-foreground">
-                                    Select the days this team member typically works.
+                                    {t('team.selectWorkDaysMember')}
                                 </p>
                                 <div className="grid grid-cols-2 gap-2">
                                     {daysOfWeek.map(day => (
@@ -384,7 +386,7 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="target">Daily Target (Hours)</Label>
+                                <Label htmlFor="target">{t('team.dailyTargetHours')}</Label>
                                 <Input
                                     id="target"
                                     type="number"
@@ -393,14 +395,14 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
                                     onChange={e => setEditTarget(e.target.value)}
                                 />
                                 <p className="text-xs text-muted-foreground">
-                                    This is used to calculate daily progress in reports.
+                                    {t('team.dailyTargetDescription')}
                                 </p>
                             </div>
 
                             <div className="flex justify-end pt-4 border-t">
                                 <Button onClick={saveEdit} disabled={saving}>
                                     {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Save Work Settings
+                                    {t('team.saveWorkSettings')}
                                 </Button>
                             </div>
                         </TabsContent>

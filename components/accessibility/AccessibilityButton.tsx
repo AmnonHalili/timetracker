@@ -10,6 +10,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Accessibility, Type, Eye, Zap } from "lucide-react"
+import { useLanguage } from "@/lib/useLanguage"
 
 type AccessibilityPreferences = {
     fontSize: 'normal' | 'large' | 'xlarge'
@@ -18,6 +19,7 @@ type AccessibilityPreferences = {
 }
 
 export function AccessibilityButton() {
+    const { t, isRTL } = useLanguage()
     const [open, setOpen] = useState(false)
     const [preferences, setPreferences] = useState<AccessibilityPreferences>({
         fontSize: 'normal',
@@ -80,8 +82,8 @@ export function AccessibilityButton() {
                 <Button
                     variant="outline"
                     size="icon"
-                    className="fixed bottom-4 right-4 z-50 h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-shadow"
-                    aria-label="Accessibility options"
+                    className="fixed bottom-4 left-4 z-50 h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-shadow"
+                    aria-label={t('accessibility.options')}
                 >
                     <Accessibility className="h-5 w-5" aria-hidden="true" />
                 </Button>
@@ -92,22 +94,22 @@ export function AccessibilityButton() {
                 side="top"
             >
                 <div className="space-y-4">
-                    <div className="flex items-center gap-2">
+                    <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                         <Accessibility className="h-5 w-5 text-primary" aria-hidden="true" />
-                        <h3 className="font-semibold text-lg">Accessibility</h3>
+                        <h3 className={`font-semibold text-lg ${isRTL ? 'text-right' : 'text-left'}`}>{t('accessibility.title')}</h3>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                        Customize your viewing experience
+                    <p className={`text-sm text-muted-foreground ${isRTL ? 'text-right' : 'text-left'}`}>
+                        {t('accessibility.description')}
                     </p>
 
                     <Separator />
 
                     {/* Font Size */}
                     <div className="space-y-2">
-                        <div className="flex items-center gap-2">
+                        <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                             <Type className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                            <Label htmlFor="font-size" className="text-sm font-medium">
-                                Text Size
+                            <Label htmlFor="font-size" className={`text-sm font-medium ${isRTL ? 'text-right' : 'text-left'}`}>
+                                {t('accessibility.textSize')}
                             </Label>
                         </div>
                         <div className="flex gap-2">
@@ -118,10 +120,10 @@ export function AccessibilityButton() {
                                     variant={preferences.fontSize === size ? 'default' : 'outline'}
                                     size="sm"
                                     onClick={() => updatePreference('fontSize', size)}
-                                    className="flex-1 capitalize"
+                                    className="flex-1"
                                     aria-pressed={preferences.fontSize === size}
                                 >
-                                    {size === 'normal' ? 'Normal' : size === 'large' ? 'Large' : 'Extra Large'}
+                                    {size === 'normal' ? t('accessibility.normal') : size === 'large' ? t('accessibility.large') : t('accessibility.extraLarge')}
                                 </Button>
                             ))}
                         </div>
@@ -131,11 +133,11 @@ export function AccessibilityButton() {
 
                     {/* High Contrast */}
                     <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
+                        <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+                            <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                                 <Eye className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                                <Label htmlFor="high-contrast" className="text-sm font-medium">
-                                    High Contrast
+                                <Label htmlFor="high-contrast" className={`text-sm font-medium ${isRTL ? 'text-right' : 'text-left'}`}>
+                                    {t('accessibility.highContrast')}
                                 </Label>
                             </div>
                             <Button
@@ -145,11 +147,11 @@ export function AccessibilityButton() {
                                 onClick={() => updatePreference('highContrast', !preferences.highContrast)}
                                 aria-pressed={preferences.highContrast}
                             >
-                                {preferences.highContrast ? 'On' : 'Off'}
+                                {preferences.highContrast ? t('accessibility.on') : t('accessibility.off')}
                             </Button>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                            Increase contrast for better visibility
+                        <p className={`text-xs text-muted-foreground ${isRTL ? 'text-right' : 'text-left'}`}>
+                            {t('accessibility.highContrastDescription')}
                         </p>
                     </div>
 
@@ -157,11 +159,11 @@ export function AccessibilityButton() {
 
                     {/* Reduce Motion */}
                     <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
+                        <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+                            <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                                 <Zap className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                                <Label htmlFor="reduce-motion" className="text-sm font-medium">
-                                    Reduce Motion
+                                <Label htmlFor="reduce-motion" className={`text-sm font-medium ${isRTL ? 'text-right' : 'text-left'}`}>
+                                    {t('accessibility.reduceMotion')}
                                 </Label>
                             </div>
                             <Button
@@ -171,11 +173,11 @@ export function AccessibilityButton() {
                                 onClick={() => updatePreference('reduceMotion', !preferences.reduceMotion)}
                                 aria-pressed={preferences.reduceMotion}
                             >
-                                {preferences.reduceMotion ? 'On' : 'Off'}
+                                {preferences.reduceMotion ? t('accessibility.on') : t('accessibility.off')}
                             </Button>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                            Minimize animations and transitions
+                        <p className={`text-xs text-muted-foreground ${isRTL ? 'text-right' : 'text-left'}`}>
+                            {t('accessibility.reduceMotionDescription')}
                         </p>
                     </div>
                 </div>

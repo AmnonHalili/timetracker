@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { CreateTaskDialog } from "@/components/tasks/CreateTaskDialog"
 import { TasksView } from "@/components/tasks/TasksView"
+import { TasksPageHeader } from "@/components/tasks/TasksPageHeader"
 
 export default async function TasksPage() {
     const session = await getServerSession(authOptions)
@@ -153,18 +154,11 @@ export default async function TasksPage() {
 
     return (
         <div className="container mx-auto space-y-8">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Tasks</h1>
-                    <p className="text-muted-foreground">
-                        {isAdmin ? "Manage and assign tasks" : "Your assigned tasks"}
-                    </p>
-                </div>
-                <CreateTaskDialog
-                    users={users}
-                    currentUserId={session.user.id}
-                />
-            </div>
+            <TasksPageHeader
+                isAdmin={isAdmin || isManager}
+                users={users}
+                currentUserId={session.user.id}
+            />
 
             <TasksView
                 initialTasks={tasks}

@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { useState } from "react"
 import { CreateEventDialog } from "./CreateEventDialog"
+import { useLanguage } from "@/lib/useLanguage"
 
 
 interface MonthGridProps {
@@ -52,6 +53,7 @@ interface MonthGridProps {
 }
 
 export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEventCreate, isLoading }: MonthGridProps) {
+    const { t } = useLanguage()
     const monthStart = startOfMonth(date)
     const monthEnd = endOfMonth(date)
     const startDate = startOfWeek(monthStart)
@@ -72,7 +74,7 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
             <div className="flex items-center justify-end">
                 <Button size="sm" onClick={() => { setSelectedDate(new Date()); setCreateDialogOpen(true) }}>
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Event
+                    {t('calendar.addEvent')}
                 </Button>
             </div>
 

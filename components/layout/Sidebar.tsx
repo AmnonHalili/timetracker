@@ -9,9 +9,11 @@ import { useEffect, useState } from "react"
 
 import { signOut } from "next-auth/react"
 import { stopActiveTimer } from "@/lib/utils"
+import { useLanguage } from "@/lib/useLanguage"
 
 export function Sidebar() {
     const pathname = usePathname()
+    const { t } = useLanguage()
     const [isPinkTheme, setIsPinkTheme] = useState(false)
     const [isWhiteTheme, setIsWhiteTheme] = useState(false)
 
@@ -59,39 +61,39 @@ export function Sidebar() {
     const routes = [
         {
             href: "/dashboard",
-            label: "Time Tracker",
+            label: t('nav.dashboard'),
             active: pathname === "/dashboard",
         },
         {
             href: "/tasks",
-            label: "Tasks",
+            label: t('nav.tasks'),
             active: pathname === "/tasks",
         },
         {
             href: "/calendar",
-            label: "Calendar",
+            label: t('nav.calendar'),
             active: pathname === "/calendar",
         },
         {
             href: "/reports",
-            label: "Reports",
+            label: t('nav.reports'),
             active: pathname === "/reports",
         },
         // Team route logic (assuming admin only later, but for now just showing it)
         {
             href: "/team",
-            label: "Team",
+            label: t('nav.team'),
             active: pathname === "/team",
         },
         {
             href: "/settings",
-            label: "Settings",
+            label: t('nav.settings'),
             active: pathname === "/settings",
         },
     ]
 
     return (
-        <aside className="flex flex-col h-screen w-52 border-r bg-background" aria-label="Main navigation">
+        <aside className="flex flex-col h-screen w-52 border-r border-l bg-background" aria-label="Main navigation">
             <div className="px-4 py-6 border-b flex items-center justify-center z-10 relative">
                 <Link href="/dashboard" className="flex flex-col items-center gap-2" aria-label="Collabo Home">
                     {isPinkTheme ? (
@@ -175,9 +177,9 @@ export function Sidebar() {
                     await stopActiveTimer()
                     signOut({ callbackUrl: "/login" })
                 }}
-                aria-label="Log out"
+                aria-label={t('nav.logout')}
             >
-                Log out
+                {t('nav.logout')}
             </Button>
         </aside>
     )

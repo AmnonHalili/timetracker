@@ -17,6 +17,7 @@ import { useState, useEffect } from "react"
 import { Loader2, UserPlus, Check } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { useLanguage } from "@/lib/useLanguage"
 
 import {
     Select,
@@ -46,12 +47,14 @@ export function AddMemberDialog({
     defaultRole = "EMPLOYEE",
     // lockRole = false, // Unused
     hideManagerSelect = false,
-    triggerLabel = "Add Member",
+    triggerLabel,
     onSuccess,
     customTrigger
 }: AddMemberDialogProps) {
+    const { t } = useLanguage()
     const router = useRouter()
     const [open, setOpen] = useState(false)
+    const defaultTriggerLabel = triggerLabel || t('team.addMember')
     const [loading, setLoading] = useState(false)
     const [name, setName] = useState("")
     const [email, setEmail] = useState("")
@@ -153,20 +156,20 @@ export function AddMemberDialog({
                 ) : (
                     <Button>
                         <UserPlus className="mr-2 h-4 w-4" />
-                        {triggerLabel}
+                        {defaultTriggerLabel}
                     </Button>
                 )}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <form onSubmit={handleSubmit}>
-                    <DialogHeader>
-                        <DialogTitle>
-                            {role === "ADMIN" ? "Add New Chief" : "Add Team Member"}
+                    <DialogHeader className="text-right">
+                        <DialogTitle className="text-right">
+                            {role === "ADMIN" ? t('team.addNewChief') : t('team.addTeamMember')}
                         </DialogTitle>
-                        <DialogDescription>
+                        <DialogDescription className="text-right">
                             {role === "ADMIN"
-                                ? "Create a new account for a chief executive. You can assign them as a partner or an independent manager."
-                                : "Create a new account for your employee. They will be added to your project immediately."}
+                                ? t('team.createChiefAccount')
+                                : t('team.createEmployeeAccount')}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">

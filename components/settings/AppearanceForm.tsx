@@ -3,22 +3,25 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ModeToggle } from "@/components/ui/mode-toggle"
 import { Label } from "@/components/ui/label"
+import { useLanguage } from "@/lib/useLanguage"
 
 export function AppearanceForm() {
+    const { t } = useLanguage()
+    
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Appearance</CardTitle>
+                <CardTitle>{t('appearance.title')}</CardTitle>
                 <CardDescription>
-                    Customize the look and feel of the application. Choose between white, black, pink, or system theme.
+                    {t('appearance.description')}
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                        <Label>Theme</Label>
+                        <Label>{t('appearance.theme')}</Label>
                         <p className="text-sm text-muted-foreground">
-                            Select the theme for the dashboard.
+                            {t('appearance.selectTheme')}
                         </p>
                     </div>
                     <ModeToggle />

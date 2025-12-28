@@ -2,10 +2,12 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ProfileForm, SecurityForm, PreferencesForm } from "@/components/settings/SettingsForms"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
+import { ProfileForm, SecurityForm, LanguageForm } from "@/components/settings/SettingsForms"
 import { AppearanceForm } from "@/components/settings/AppearanceForm"
 import { CompanyForm } from "@/components/settings/CompanyForm"
+import { SettingsHeader } from "@/components/settings/SettingsHeader"
+import { SettingsTabs } from "@/components/settings/SettingsTabs"
 
 export default async function SettingsPage() {
     const session = await getServerSession(authOptions)
@@ -94,21 +96,10 @@ export default async function SettingsPage() {
 
     return (
         <div className="container max-w-4xl py-6 space-y-8">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-                <p className="text-muted-foreground">Manage your account settings.</p>
-            </div>
+            <SettingsHeader />
 
             <Tabs defaultValue="profile" className="w-full">
-                <TabsList className="w-full justify-start h-auto p-1 bg-muted/50 rounded-lg overflow-x-auto">
-                    <TabsTrigger value="profile" className="flex-1 min-w-[100px]">Profile</TabsTrigger>
-                    <TabsTrigger value="preferences" className="flex-1 min-w-[100px]">Preferences</TabsTrigger>
-                    <TabsTrigger value="security" className="flex-1 min-w-[100px]">Security</TabsTrigger>
-                    <TabsTrigger value="appearance" className="flex-1 min-w-[100px]">Appearance</TabsTrigger>
-                    {user.role === "ADMIN" && user.projectId && (
-                        <TabsTrigger value="workspace" className="flex-1 min-w-[100px]">Workspace</TabsTrigger>
-                    )}
-                </TabsList>
+                <SettingsTabs userRole={user.role} hasProject={!!user.projectId} />
 
                 <TabsContent value="profile" className="mt-6 space-y-6">
                     <ProfileForm user={{
@@ -117,18 +108,15 @@ export default async function SettingsPage() {
                         image: user.image,
                         jobTitle: user.jobTitle,
                         role: user.role,
-                        projectId: user.projectId
+                        projectId: user.projectId,
+                        dailyTarget: user.dailyTarget,
+                        workDays: user.workDays,
+                        workMode: user.workMode
                     }} />
                 </TabsContent>
 
-                <TabsContent value="preferences" className="mt-6">
-                    <PreferencesForm user={{
-                        dailyTarget: user.dailyTarget,
-                        workDays: user.workDays,
-                        workMode: user.workMode,
-                        role: user.role,
-                        projectId: user.projectId
-                    }} />
+                <TabsContent value="language" className="mt-6">
+                    <LanguageForm />
                 </TabsContent>
 
                 <TabsContent value="security" className="mt-6">

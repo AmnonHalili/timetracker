@@ -27,6 +27,7 @@ import { TaskDetailDialog } from "./TaskDetailDialog"
 import { CreateTaskDialog } from "./CreateTaskDialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Filter, X, ArrowUpDown } from "lucide-react"
+import { useLanguage } from "@/lib/useLanguage"
 
 interface User {
     id: string
@@ -55,6 +56,7 @@ interface TasksViewProps {
 
 export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWithActiveTimers = {} }: TasksViewProps) {
     const router = useRouter()
+    const { t } = useLanguage()
     const [tasks, setTasks] = useState(initialTasks)
     const [addingSubtaskTo, setAddingSubtaskTo] = useState<string | null>(null)
     const [newSubtaskTitle, setNewSubtaskTitle] = useState("")
@@ -741,7 +743,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
         <Card>
             <CardHeader className="flex flex-col space-y-4 pb-4">
                 <div className="flex flex-row items-center justify-between">
-                    <CardTitle>All Tasks ({filteredTasks.length})</CardTitle>
+                    <CardTitle>{t('tasks.allTasks')} ({filteredTasks.length})</CardTitle>
                     <div className="flex items-center gap-2">
                         {/* Filters Button */}
                         <Button
@@ -751,7 +753,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                             className="h-9 text-sm font-medium"
                         >
                             <Filter className="h-4 w-4 mr-2" />
-                            Filters
+                            {t('tasks.filters')}
                             {activeFiltersCount > 0 && (
                                 <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-xs">
                                     {activeFiltersCount}
@@ -764,11 +766,11 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                             <SelectTrigger className="h-9 text-sm font-medium px-3">
                                 <div className="flex items-center gap-2">
                                     <ArrowUpDown className="h-4 w-4" />
-                                    <SelectValue placeholder="Sort" />
+                                    <SelectValue placeholder={t('tasks.sort')} />
                                 </div>
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="smart">Sort</SelectItem>
+                                <SelectItem value="smart">{t('tasks.sort')}</SelectItem>
                                 <SelectItem value="deadline-near">By deadline: Closest → Farthest</SelectItem>
                                 <SelectItem value="deadline-far">By deadline: Farthest → Closest</SelectItem>
                                 <SelectItem value="priority-high">By priority: High → Low</SelectItem>
@@ -868,7 +870,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                 onClick={clearAllFilters}
                                 className="h-6 text-xs px-2"
                             >
-                                Clear all
+                                {t('common.clearAll')}
                             </Button>
                         )}
                     </div>
@@ -903,7 +905,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                         {task.assignees && task.assignees.length > 0 && (
                                             <div className="pl-1">
                                                 <span className="text-xs text-muted-foreground">
-                                                    Assign to: {task.assignees.map(a => a.name || 'Unknown').join(', ')}
+                                                    {t('tasks.assignToLabel')} {task.assignees.map(a => a.name || 'Unknown').join(', ')}
                                                 </span>
                                             </div>
                                         )}
@@ -911,8 +913,8 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                         {/* Status: To Do / In Progress */}
                                         <div className="pl-1">
                                             <span className="text-xs text-muted-foreground">
-                                                Status: {task.status === 'DONE' 
-                                                    ? 'Done' 
+                                                {t('tasks.status')}: {task.status === 'DONE' 
+                                                    ? t('tasks.statusDone') 
                                                     : (() => {
                                                         const activeUsers = tasksWithActiveTimers[task.id]
                                                         return activeUsers && activeUsers.length > 0
@@ -1017,18 +1019,18 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                     </Button>
                                                 </div>
                                             ) : (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation()
-                                                        setAddingSubtaskTo(task.id)
-                                                    }}
-                                                    className="h-7 text-xs text-muted-foreground hover:text-foreground w-fit"
-                                                >
-                                                    <Plus className="h-3 w-3 mr-1" />
-                                                    Add SubTask
-                                                </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            setAddingSubtaskTo(task.id)
+                                                        }}
+                                                        className="h-7 text-xs text-muted-foreground hover:text-foreground w-fit"
+                                                    >
+                                                        <Plus className="h-3 w-3 mr-1" />
+                                                        {t('tasks.addSubTask')}
+                                                    </Button>
                                             )}
                                         </div>
                                     </div>
@@ -1098,7 +1100,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
             <Dialog open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
                 <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle>Filters</DialogTitle>
+                        <DialogTitle>{t('tasks.filters')}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-6 py-4">
                         {/* Status Filter */}
@@ -1276,10 +1278,10 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                             onClick={clearAllFilters}
                             disabled={activeFiltersCount === 0}
                         >
-                            Clear all
+                            {t('common.clearAll')}
                         </Button>
                         <Button onClick={() => setIsFiltersOpen(false)}>
-                            Close
+                            {t('common.close')}
                         </Button>
                     </div>
                 </DialogContent>

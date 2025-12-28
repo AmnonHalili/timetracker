@@ -14,6 +14,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { EditEntryDialog } from "./EditEntryDialog"
+import { useLanguage } from "@/lib/useLanguage"
 
 interface TimeEntry {
     id: string
@@ -41,6 +42,7 @@ interface EntryHistoryProps {
 
 export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEntryCleared }: EntryHistoryProps) {
     const router = useRouter()
+    const { t } = useLanguage()
     const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null)
     const [editDialogOpen, setEditDialogOpen] = useState(false)
     const [localEntries, setLocalEntries] = useState(entries)
@@ -128,7 +130,7 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
     }
 
     const handleDelete = async (id: string) => {
-        if (!confirm("Delete this entry?")) return
+        if (!confirm(t('common.delete') + "?")) return
         await fetch(`/api/time-entries?id=${id}`, { method: "DELETE" })
         router.refresh()
     }
@@ -167,8 +169,8 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
         const date = new Date(entry.startTime)
         let key = format(date, 'yyyy-MM-dd')
 
-        if (isToday(date)) key = 'Today'
-        else if (isYesterday(date)) key = 'Yesterday'
+        if (isToday(date)) key = t('timeEntries.today')
+        else if (isYesterday(date)) key = t('timeEntries.yesterday')
         else key = format(date, 'dd/MM/yyyy')
 
         if (!groups[key]) {
@@ -218,7 +220,7 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
                                                         onClick={() => startInlineEdit(entry)}
                                                         title="Click to edit"
                                                     >
-                                                        {entry.description || "No description"}
+                                                        {entry.description || t('timeEntries.noDescription')}
                                                     </div>
                                                     <div className="flex flex-wrap gap-1">
                                                         {entry.tasks && entry.tasks.length > 0 && (
@@ -271,11 +273,11 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuItem onClick={() => handleEditStart(entry)}>
                                                         <Pencil className="mr-2 h-4 w-4" />
-                                                        Edit
+                                                        {t('common.edit')}
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => handleDelete(entry.id)} className="text-destructive focus:text-destructive">
                                                         <Trash2 className="mr-2 h-4 w-4" />
-                                                        Delete
+                                                        {t('common.delete')}
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
