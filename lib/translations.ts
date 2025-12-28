@@ -303,6 +303,39 @@ export const translations = {
     'landing.createManagerAccount': 'Create a Manager Account',
     'landing.footerDescription': 'The modern solution for time and project management.',
     'landing.allRightsReserved': 'All rights reserved.',
+    
+    // Time Tracker Section
+    'landing.timeTracker.title': 'Smart Time Tracking',
+    'landing.timeTracker.subtitle': 'Track Every Minute, Maximize Every Hour',
+    'landing.timeTracker.description': 'Our intelligent time tracker helps you understand exactly where your time goes. Whether you\'re working on multiple projects or managing a team, get real-time insights into productivity and efficiency.',
+    'landing.timeTracker.feature1': 'Real-time tracking with automatic session management',
+    'landing.timeTracker.feature2': 'Break detection and pause/resume functionality',
+    'landing.timeTracker.feature3': 'Task and project association for detailed reporting',
+    'landing.timeTracker.feature4': 'Visual progress indicators and daily summaries',
+    'landing.timeTracker.feature5': 'Manual time entry for flexibility',
+    'landing.timeTracker.feature6': 'Export reports for client billing and analysis',
+    
+    // Tasks Section
+    'landing.tasks.title': 'Task Management',
+    'landing.tasks.subtitle': 'Organize, Assign, and Track with Precision',
+    'landing.tasks.description': 'Streamline your workflow with our comprehensive task management system. Create tasks, assign them to team members, track progress in real-time, and never miss a deadline. Perfect for agile teams and project managers.',
+    'landing.tasks.feature1': 'Create and organize tasks with custom categories and priorities',
+    'landing.tasks.feature2': 'Assign tasks to team members with due dates and descriptions',
+    'landing.tasks.feature3': 'Track task completion status and progress in real-time',
+    'landing.tasks.feature4': 'Filter and sort tasks by project, assignee, status, and date',
+    'landing.tasks.feature5': 'Link tasks to time entries for accurate project tracking',
+    'landing.tasks.feature6': 'Create subtasks and dependencies for complex projects',
+    
+    // Calendar Section
+    'landing.calendar.title': 'Smart Calendar',
+    'landing.calendar.subtitle': 'Plan, Schedule, and Never Miss a Deadline',
+    'landing.calendar.description': 'Stay organized with our intelligent calendar system. View your schedule in daily or monthly views, create events, link them to tasks, and get a complete overview of your time commitments. Perfect for managing deadlines and team coordination.',
+    'landing.calendar.feature1': 'Daily and monthly calendar views with intuitive navigation',
+    'landing.calendar.feature2': 'Create and manage events with custom descriptions and times',
+    'landing.calendar.feature3': 'Link events to tasks and projects for seamless workflow',
+    'landing.calendar.feature4': 'Visual time blocks showing your daily schedule at a glance',
+    'landing.calendar.feature5': 'All-day events and recurring event support',
+    'landing.calendar.feature6': 'Quick access to today\'s schedule and upcoming deadlines',
   },
   he: {
     // Common
@@ -605,6 +638,39 @@ export const translations = {
     'landing.createManagerAccount': 'צור חשבון מנהל',
     'landing.footerDescription': 'הפתרון המודרני לניהול זמן ופרויקטים.',
     'landing.allRightsReserved': 'כל הזכויות שמורות.',
+    
+    // Time Tracker Section
+    'landing.timeTracker.title': 'מעקב זמן חכם',
+    'landing.timeTracker.subtitle': 'עקוב אחר כל דקה, מקסם כל שעה',
+    'landing.timeTracker.description': 'מעקב הזמן החכם שלנו עוזר לך להבין בדיוק לאן הולך הזמן שלך. בין אם אתה עובד על מספר פרויקטים או מנהל צוות, קבל תובנות בזמן אמת על פרודוקטיביות ויעילות.',
+    'landing.timeTracker.feature1': 'מעקב בזמן אמת עם ניהול אוטומטי של סשנים',
+    'landing.timeTracker.feature2': 'זיהוי הפסקות ופונקציונליות השהיה/המשך',
+    'landing.timeTracker.feature3': 'קישור למשימות ופרויקטים לדוחות מפורטים',
+    'landing.timeTracker.feature4': 'אינדיקטורי התקדמות חזותיים וסיכומים יומיים',
+    'landing.timeTracker.feature5': 'הזנת זמן ידנית לגמישות',
+    'landing.timeTracker.feature6': 'ייצוא דוחות לחיוב לקוחות וניתוח',
+    
+    // Tasks Section
+    'landing.tasks.title': 'ניהול משימות',
+    'landing.tasks.subtitle': 'ארגן, הקצה ועקוב בדיוק',
+    'landing.tasks.description': 'פשט את זרימת העבודה שלך עם מערכת ניהול המשימות המקיפה שלנו. צור משימות, הקצה אותן לחברי הצוות, עקוב אחר התקדמות בזמן אמת ולעולם אל תפספס מועד אחרון. מושלם לצוותים אג\'יליים ולמנהלי פרויקטים.',
+    'landing.tasks.feature1': 'צור וארגן משימות עם קטגוריות מותאמות אישית וסדרי עדיפויות',
+    'landing.tasks.feature2': 'הקצה משימות לחברי צוות עם תאריכי יעד ותיאורים',
+    'landing.tasks.feature3': 'עקוב אחר סטטוס השלמת משימות והתקדמות בזמן אמת',
+    'landing.tasks.feature4': 'סנן ומיין משימות לפי פרויקט, אחראי, סטטוס ותאריך',
+    'landing.tasks.feature5': 'קשר משימות לרישומי זמן למעקב פרויקט מדויק',
+    'landing.tasks.feature6': 'צור תת-משימות ותלויות לפרויקטים מורכבים',
+    
+    // Calendar Section
+    'landing.calendar.title': 'יומן חכם',
+    'landing.calendar.subtitle': 'תכנן, תזמן ולעולם אל תפספס מועד אחרון',
+    'landing.calendar.description': 'הישאר מאורגן עם מערכת היומן החכמה שלנו. צפה בלוח הזמנים שלך בתצוגה יומית או חודשית, צור אירועים, קשר אותם למשימות וקבל סקירה מלאה של התחייבויות הזמן שלך. מושלם לניהול מועדי אחרון ותיאום צוות.',
+    'landing.calendar.feature1': 'תצוגות יומן יומיות וחודשיות עם ניווט אינטואיטיבי',
+    'landing.calendar.feature2': 'צור ונהל אירועים עם תיאורים וזמנים מותאמים אישית',
+    'landing.calendar.feature3': 'קשר אירועים למשימות ופרויקטים לזרימת עבודה חלקה',
+    'landing.calendar.feature4': 'בלוקי זמן חזותיים המציגים את לוח הזמנים היומי במבט אחד',
+    'landing.calendar.feature5': 'אירועים לכל היום ותמיכה באירועים חוזרים',
+    'landing.calendar.feature6': 'גישה מהירה ללוח הזמנים של היום ומועדי אחרון קרובים',
   },
 } as const
 
