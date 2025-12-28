@@ -86,7 +86,7 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                 ))}
             </div>
 
-            <div className={cn("grid grid-cols-7 gap-1 lg:gap-2 auto-rows-fr relative min-h-[500px]", isLoading && "opacity-50 pointer-events-none")}>
+            <div className={cn("grid grid-cols-7 gap-1 lg:gap-2 relative", isLoading && "opacity-50 pointer-events-none")}>
                 {isLoading && (
                     <div className="absolute inset-0 flex items-center justify-center z-50">
                         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -105,12 +105,12 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                     // Find events on this day
                     const daysEvents = (data.events || [])
                         .filter(e => isSameDay(new Date(e.startTime), day))
-                        .slice(0, 2) // Limit to 2 events for display
+                        .slice(0, 1) // Limit to 1 event for display in small cards
 
-                    // Limit to 2 tasks for display (to make room for events)
-                    const visibleTasks = allDaysTasks.slice(0, 2)
-                    const remainingTasks = allDaysTasks.length - 2
-                    const totalRemaining = Math.max(0, remainingTasks) + Math.max(0, (data.events || []).filter(e => isSameDay(new Date(e.startTime), day)).length - 2)
+                    // Limit to 1 task for display (to make room for events)
+                    const visibleTasks = allDaysTasks.slice(0, 1)
+                    const remainingTasks = allDaysTasks.length - 1
+                    const totalRemaining = Math.max(0, remainingTasks) + Math.max(0, (data.events || []).filter(e => isSameDay(new Date(e.startTime), day)).length - 1)
 
                     const hoursWorked = dailyData?.totalDurationHours || 0
                     const isTargetMet = dailyData?.status === 'MET'
@@ -124,46 +124,56 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                         OTHER: "bg-orange-50 border-orange-200 text-orange-700",
                     }
 
+                    const hasEvents = (data.events || []).some(e => isSameDay(new Date(e.startTime), day))
+                    const hasTasks = allDaysTasks.length > 0
+                    const hasAnyContent = hasEvents || hasTasks
+
                     return (
                         <Card
                             key={day.toString()}
                             onClick={() => onDayClick?.(day)}
                             className={cn(
-                                "min-h-[100px] p-2 flex flex-col justify-between transition-colors hover:bg-muted/30 cursor-pointer overflow-hidden",
+                                "aspect-square p-1 md:p-1.5 flex flex-col justify-between transition-colors hover:bg-muted/30 cursor-pointer overflow-hidden",
                                 !isSameMonth(day, monthStart) && "bg-muted/10 text-muted-foreground",
                                 isToday(day) && "border-primary shadow-sm"
                             )}
                         >
                             <div className="flex justify-between items-start">
                                 <span className={cn(
-                                    "text-sm font-semibold h-7 w-7 flex items-center justify-center rounded-full",
+                                    "text-xs md:text-sm font-semibold h-5 w-5 md:h-6 md:w-6 flex items-center justify-center rounded-full",
                                     isToday(day) && "bg-primary text-primary-foreground"
                                 )}>
                                     {format(day, 'd')}
                                 </span>
+                                {/* Hours worked - hidden on mobile, shown on desktop */}
                                 {hoursWorked > 0 && (
                                     <span className={cn(
-                                        "text-xs font-bold px-1.5 py-0.5 rounded",
+                                        "hidden md:block text-[10px] font-bold px-1 py-0.5 rounded",
                                         isTargetMet ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
                                     )}>
                                         {formatHoursMinutes(hoursWorked)}
                                     </span>
                                 )}
+                                {/* Pink dot indicator on mobile if has events */}
+                                {hasEvents && (
+                                    <span className="md:hidden w-2 h-2 rounded-full bg-pink-500 shrink-0" />
+                                )}
                             </div>
 
-                            <div className="space-y-1 mt-2">
+                            {/* Content - hidden on mobile, shown on desktop */}
+                            <div className="hidden md:block space-y-0.5 mt-1">
                                 {/* Events */}
                                 {daysEvents.map((event) => (
                                     <div
                                         key={event.id}
                                         className={cn(
-                                            "text-[10px] truncate px-1 rounded border",
+                                            "text-[9px] truncate px-0.5 rounded border",
                                             eventTypeColors[event.type] || eventTypeColors.OTHER
                                         )}
                                         title={event.title}
                                     >
-                                        <span className="truncate flex items-center gap-1">
-                                            <span className="w-1 h-1 rounded-full bg-current shrink-0" />
+                                        <span className="truncate flex items-center gap-0.5">
+                                            <span className="w-0.5 h-0.5 rounded-full bg-current shrink-0" />
                                             {event.title}
                                         </span>
                                     </div>
@@ -174,32 +184,20 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                                     <div
                                         key={task.id}
                                         className={cn(
-                                            "text-[10px] truncate px-1 rounded border",
-                                            task.priority === 'HIGH' ? "bg-orange-50 border-orange-200 text-orange-700" :
-                                                "bg-background border-border text-muted-foreground"
+                                            "text-[9px] truncate px-0.5 rounded border",
+                                            task.priority === 'HIGH' ? "bg-pink-700 text-white border-pink-800" :
+                                            task.priority === 'MEDIUM' ? "bg-pink-500 text-white border-pink-600" :
+                                            "bg-pink-300 text-white border-pink-400"
                                         )}
                                         title={`${task.title} - ${task.assignees?.map((u) => u.name).join(', ') || 'Unassigned'}`}
                                     >
-                                        <div className="flex justify-between items-center gap-1">
-                                            <span className="truncate">{task.title}</span>
-                                            {task.assignees?.length > 0 && (
-                                                <span className="text-[8px] opacity-70 uppercase tracking-tighter flex gap-0.5">
-                                                    {task.assignees.slice(0, 2).map((u) => (
-                                                        <span key={u.email}>{u.name.split(' ')[0]}</span>
-                                                    ))}
-                                                    {task.assignees.length > 2 && <span>+</span>}
-                                                </span>
-                                            )}
-                                        </div>
+                                        <span className="truncate">{task.title}</span>
                                     </div>
                                 ))}
                                 {totalRemaining > 0 && (
-                                    <div className="text-[10px] text-muted-foreground font-medium pl-1">
-                                        +{totalRemaining} more...
+                                    <div className="text-[9px] text-muted-foreground font-medium">
+                                        +{totalRemaining}
                                     </div>
-                                )}
-                                {visibleTasks.length === 0 && daysEvents.length === 0 && hoursWorked === 0 && isSameMonth(day, monthStart) && !["Sat", "Sun"].includes(format(day, 'EEE')) && (
-                                    <div className="h-full"></div> // Spacer
                                 )}
                             </div>
                         </Card>

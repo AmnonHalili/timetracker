@@ -34,11 +34,6 @@ export function Sidebar() {
             label: t('nav.reports'),
             active: pathname === "/reports",
         },
-        {
-            href: "/insights",
-            label: t('nav.insights'),
-            active: pathname === "/insights",
-        },
         // Team route logic (assuming admin only later, but for now just showing it)
         {
             href: "/team",

@@ -56,7 +56,7 @@ interface TasksViewProps {
 
 export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWithActiveTimers = {} }: TasksViewProps) {
     const router = useRouter()
-    const { t } = useLanguage()
+    const { t, isRTL } = useLanguage()
     const [tasks, setTasks] = useState(initialTasks)
     const [addingSubtaskTo, setAddingSubtaskTo] = useState<string | null>(null)
     const [newSubtaskTitle, setNewSubtaskTitle] = useState("")
@@ -742,45 +742,46 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
     return (
         <Card>
             <CardHeader className="flex flex-col space-y-4 pb-4">
-                <div className="flex flex-row items-center justify-between">
-                    <CardTitle>{t('tasks.allTasks')} ({filteredTasks.length})</CardTitle>
-                    <div className="flex items-center gap-2">
-                        {/* Filters Button */}
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setIsFiltersOpen(true)}
-                            className="h-9 text-sm font-medium"
-                        >
-                            <Filter className="h-4 w-4 mr-2" />
-                            {t('tasks.filters')}
-                            {activeFiltersCount > 0 && (
-                                <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-xs">
-                                    {activeFiltersCount}
-                                </Badge>
-                            )}
-                        </Button>
-                        
-                        {/* Sort Dropdown */}
-                        <Select value={sortBy} onValueChange={setSortBy}>
-                            <SelectTrigger className="h-9 text-sm font-medium px-3">
-                                <div className="flex items-center gap-2">
-                                    <ArrowUpDown className="h-4 w-4" />
-                                    <SelectValue placeholder={t('tasks.sort')} />
-                                </div>
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="smart">{t('tasks.sort')}</SelectItem>
-                                <SelectItem value="deadline-near">By deadline: Closest → Farthest</SelectItem>
-                                <SelectItem value="deadline-far">By deadline: Farthest → Closest</SelectItem>
-                                <SelectItem value="priority-high">By priority: High → Low</SelectItem>
-                                <SelectItem value="priority-low">By priority: Low → High</SelectItem>
-                                <SelectItem value="created-new">By time: Newest → Oldest</SelectItem>
-                                <SelectItem value="created-old">By time: Oldest → Newest</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                {/* Filters and Sort - Above title */}
+                <div className={`flex items-center gap-2 w-full ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    {/* Filters Button */}
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsFiltersOpen(true)}
+                        className={`h-9 text-sm font-medium flex-1 md:flex-initial ${isRTL ? 'flex-row-reverse' : ''}`}
+                    >
+                        <Filter className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                        {t('tasks.filters')}
+                        {activeFiltersCount > 0 && (
+                            <Badge variant="secondary" className={`h-5 px-1.5 text-xs ${isRTL ? 'mr-2' : 'ml-2'}`}>
+                                {activeFiltersCount}
+                            </Badge>
+                        )}
+                    </Button>
+                    
+                    {/* Sort Dropdown */}
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                        <SelectTrigger className="h-9 text-sm font-medium px-3 flex-1 md:flex-initial">
+                            <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                                <ArrowUpDown className="h-4 w-4" />
+                                <SelectValue placeholder={t('tasks.sort')} />
+                            </div>
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="smart">{t('tasks.sort')}</SelectItem>
+                            <SelectItem value="deadline-near">By deadline: Closest → Farthest</SelectItem>
+                            <SelectItem value="deadline-far">By deadline: Farthest → Closest</SelectItem>
+                            <SelectItem value="priority-high">By priority: High → Low</SelectItem>
+                            <SelectItem value="priority-low">By priority: Low → High</SelectItem>
+                            <SelectItem value="created-new">By time: Newest → Oldest</SelectItem>
+                            <SelectItem value="created-old">By time: Oldest → Newest</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
+                
+                {/* Title */}
+                <CardTitle className={isRTL ? 'text-right' : 'text-left'}>{t('tasks.allTasks')} ({filteredTasks.length})</CardTitle>
                 
                 {/* Active Filter Chips */}
                 {activeFiltersCount > 0 && (
@@ -882,7 +883,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                         <p className="text-sm text-muted-foreground italic">No tasks found.</p>
                     ) : (
                         filteredTasks.map((task) => (
-                            <div key={task.id} className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-4 last:border-0 last:pb-0 gap-4">
+                            <div key={task.id} className="flex flex-row items-center border-b pb-4 last:border-0 last:pb-0 gap-4">
                                 <div className="flex items-start gap-3 flex-1 group">
                                     <Checkbox
                                         checked={task.status === 'DONE'}
@@ -894,6 +895,10 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                             <span className={`text-sm font-medium group-hover:text-primary transition-colors ${task.status === 'DONE' ? 'line-through text-muted-foreground' : ''}`}>
                                                 {task.title}
                                             </span>
+                                            {/* Priority badge next to task name */}
+                                            <Badge className={`text-[10px] h-6 px-2 flex items-center justify-center ${getPriorityColor(task.priority)}`}>
+                                                {task.priority}
+                                            </Badge>
                                             {task.checklist && task.checklist.length > 0 && (
                                                 <Badge variant="outline" className="text-[10px] h-5 px-2 text-muted-foreground border-muted-foreground/30">
                                                     {task.checklist.filter(i => i.isDone).length}/{task.checklist.length}
@@ -1035,19 +1040,17 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                         </div>
                                     </div>
                                 </div>
-
-                                <div className="flex items-center gap-2">
-                                    <Badge className={`text-[10px] h-6 px-2 flex items-center justify-center ${getPriorityColor(task.priority)}`}>
-                                        {task.priority}
-                                    </Badge>
-                                    {(isAdmin || (currentUserId && task.assignees.some(a => a.id === currentUserId))) && (
+                                
+                                {/* Menu button - centered on right */}
+                                {(isAdmin || (currentUserId && task.assignees.some(a => a.id === currentUserId))) && (
+                                    <div className="flex items-center shrink-0">
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button variant="ghost" size="icon" className="h-8 w-8">
                                                     <MoreVertical className="h-4 w-4" />
                                                 </Button>
                                             </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
+                                            <DropdownMenuContent align={isRTL ? "start" : "end"}>
                                                 <DropdownMenuItem onClick={() => {
                                                     setEditingTask(task)
                                                     setIsEditDialogOpen(true)
@@ -1064,8 +1067,8 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
-                                    )}
-                                </div>
+                                    </div>
+                                )}
                             </div>
                         ))
                     )}

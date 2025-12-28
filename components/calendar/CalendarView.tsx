@@ -133,7 +133,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                                 onClick={() => setView('month')}
                                 className="-ml-2"
                             >
-                                <ArrowLeft className="h-5 w-5" />
+                                <ArrowLeft className={`h-5 w-5 ${isRTL ? 'rotate-180' : ''}`} />
                             </Button>
                         )}
                     </div>
@@ -153,7 +153,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                         size="icon"
                         onClick={view === 'month' ? handleNextMonth : handleNextDay}
                     >
-                        {isRTL ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                        {isRTL ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
                     </Button>
                     <div className="w-[1px] h-6 bg-border" />
                     <Button variant="ghost" size="icon" onClick={handleToday}>
@@ -165,7 +165,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                         size="icon"
                         onClick={view === 'month' ? handlePrevMonth : handlePrevDay}
                     >
-                        {isRTL ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+                        {isRTL ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     </Button>
                 </div>
             </div>

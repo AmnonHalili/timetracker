@@ -39,11 +39,6 @@ export function MobileSidebar() {
             active: pathname === "/reports",
         },
         {
-            href: "/insights",
-            label: t('nav.insights'),
-            active: pathname === "/insights",
-        },
-        {
             href: "/team",
             label: t('nav.team'),
             active: pathname === "/team",

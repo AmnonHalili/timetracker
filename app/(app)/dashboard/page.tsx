@@ -187,9 +187,9 @@ export default async function DashboardPage() {
                             <StatsWidget extraHours={stats.monthlyOvertime} remainingHours={remainingHours} />
                         )}
 
-                        {/* Team Status (Admin Only) */}
+                        {/* Team Status (Admin Only) - Hidden on mobile, shown on desktop */}
                         {showTeamStatus && (
-                            <div className={showStats ? "pt-12" : ""}>
+                            <div className={`${showStats ? "pt-12" : ""} hidden lg:block`}>
                                 <TeamStatusWidget teamStatus={teamStatus} />
                             </div>
                         )}
