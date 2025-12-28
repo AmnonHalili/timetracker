@@ -187,18 +187,21 @@ export async function POST(req: Request) {
         <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Join ${projectName}</title>
+            <title>Join the team on Collabo</title>
             <style>
                 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f5; margin: 0; padding: 0; }
-                .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; margin-top: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-                .header { background-color: #ffffff; padding: 24px; text-align: center; border-bottom: 1px solid #e4e4e7; }
-                .header img { height: 60px; width: auto; }
-                .header h1 { color: #18181b; margin: 10px 0 0; font-size: 24px; font-weight: 600; }
-                .content { padding: 40px 32px; color: #3f3f46; line-height: 1.6; }
-                .content h2 { margin-top: 0; color: #18181b; font-size: 20px; }
-                .button { display: inline-block; background-color: #2563eb; color: #ffffff; padding: 12px 32px; text-decoration: none; border-radius: 6px; font-weight: 600; margin-top: 24px; margin-bottom: 24px; }
-                .button:hover { background-color: #1d4ed8; }
-                .footer { background-color: #f4f4f5; padding: 24px; text-align: center; font-size: 12px; color: #71717a; }
+                .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; margin-top: 40px; margin-bottom: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+                .header { background-color: #ffffff; padding: 32px 24px; text-align: center; border-bottom: 1px solid #f4f4f5; }
+                .header img { height: 48px; width: auto; }
+                .content { padding: 48px 40px; color: #3f3f46; line-height: 1.6; text-align: center; }
+                .content h1 { margin-top: 0; color: #18181b; font-size: 24px; font-weight: 700; letter-spacing: -0.025em; margin-bottom: 24px; }
+                .content p { margin-bottom: 24px; color: #52525b; font-size: 16px; }
+                .inviter-badge { background-color: #f4f4f5; border-radius: 9999px; padding: 8px 16px; font-size: 14px; color: #18181b; display: inline-block; margin-bottom: 24px; font-weight: 500; }
+                .button { display: inline-block; background-color: #000000; color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; margin-top: 8px; margin-bottom: 32px; transition: background-color 0.2s; }
+                .button:hover { background-color: #27272a; }
+                .link-text { font-size: 12px; color: #a1a1aa; word-break: break-all; margin-top: 24px; }
+                .footer { background-color: #fafafa; padding: 24px; text-align: center; font-size: 12px; color: #a1a1aa; border-top: 1px solid #f4f4f5; }
+                .footer a { color: #52525b; text-decoration: underline; }
             </style>
         </head>
         <body>
@@ -207,18 +210,24 @@ export async function POST(req: Request) {
                     <img src="${logoUrl}" alt="Collabo" />
                 </div>
                 <div class="content">
-                    <h2>You've Been Invited to Join Collabo!</h2>
-                    <p>Hello,</p>
-                    <p><strong>${inviterName}</strong> has invited you to join <strong>${projectName}</strong> on Collabo.</p>
-                    <p>Click the button below to complete your registration and set up your account:</p>
-                    <div style="text-align: center;">
-                        <a href="${invitationUrl}" class="button" style="color: #ffffff;">Accept Invitation</a>
+                    <div class="inviter-badge">
+                        👋 <strong>${inviterName}</strong> invited you
                     </div>
-                    <p>If the button doesn't work, copy and paste this link into your browser:</p>
-                    <p style="word-break: break-all; color: #2563eb;">${invitationUrl}</p>
-                    <p><strong>This invitation will expire in 48 hours.</strong></p>
-                    <p>If you didn't expect this invitation, you can safely ignore this email.</p>
-                    <p>Best regards,<br>The Collabo Team</p>
+                    <h1>Join ${projectName} on Collabo</h1>
+                    <p>You've been invited to join the team workspace. Accept the invitation to set up your account and get started.</p>
+                    
+                    <a href="${invitationUrl}" class="button" style="color: #ffffff;">
+                        Accept Invitation
+                    </a>
+
+                    <p class="link-text">
+                        Button not working? Copy and paste this link into your browser:<br>
+                        ${invitationUrl}
+                    </p>
+                    
+                    <p style="font-size: 13px; color: #71717a; margin-top: 32px;">
+                        This invitation will expire in 48 hours.
+                    </p>
                 </div>
                 <div class="footer">
                     <p>&copy; ${new Date().getFullYear()} Collabo. All rights reserved.</p>
