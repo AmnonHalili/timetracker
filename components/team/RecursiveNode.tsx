@@ -24,14 +24,6 @@ export function RecursiveNode({ node, allUsers, onAddClick, depth = 0, hideConne
 
     return (
         <div className="flex flex-col items-center">
-            {/* Connection Line from Parent to current Node */}
-            {depth > 0 && (
-                <div className={cn(
-                    "h-8 w-px mb-0 relative transition-colors",
-                    isCurrentUser ? "bg-primary" : "bg-border group-hover:bg-primary/50"
-                )} />
-            )}
-
             {/* User Card */}
             <div
                 id={`node-${node.id}`}
