@@ -1,7 +1,7 @@
 "use client"
 
 import { Card } from "@/components/ui/card"
-import { cn } from "@/lib/utils"
+import { cn, formatHoursMinutes } from "@/lib/utils"
 import {
     startOfMonth,
     endOfMonth,
@@ -144,9 +144,9 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                                 {hoursWorked > 0 && (
                                     <span className={cn(
                                         "text-xs font-bold px-1.5 py-0.5 rounded",
-                                        isTargetMet ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"
+                                        isTargetMet ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
                                     )}>
-                                        {hoursWorked.toFixed(1)}h
+                                        {formatHoursMinutes(hoursWorked)}
                                     </span>
                                 )}
                             </div>

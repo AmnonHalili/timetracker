@@ -5,6 +5,8 @@ import { ArrowRight, CheckCircle2, Clock, Users, BarChart3, ShieldCheck, Chevron
 import Link from "next/link"
 import { HierarchyDemo } from "@/components/landing/HierarchyDemo"
 import { TimeTrackerDemo } from "@/components/landing/TimeTrackerDemo"
+import { TasksDemo } from "@/components/landing/TasksDemo"
+import { CalendarDemo } from "@/components/landing/CalendarDemo"
 import { ThemeLogo } from "@/components/landing/ThemeLogo"
 import { useLanguage } from "@/lib/useLanguage"
 
@@ -146,7 +148,7 @@ export function LandingPageContent() {
                 <div className="flex transition-transform duration-500 ease-in-out" style={{ transform: isRTL ? `translateX(${currentSlide * 100}%)` : `translateX(-${currentSlide * 100}%)` }}>
                   {/* Slide 1: Full Section with Text and Hierarchy */}
                   <div className="min-w-full px-6 md:px-8">
-                    <div className={`grid md:grid-cols-2 gap-12 items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    <div className={`grid md:grid-cols-2 gap-12 items-stretch ${isRTL ? 'flex-row-reverse' : ''}`}>
                       <div className={`space-y-6 ${isRTL ? 'text-right' : 'text-left'}`}>
                         <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary font-semibold">
                           {t('landing.forManagersLeaders')}
@@ -169,8 +171,8 @@ export function LandingPageContent() {
                           </Link>
                         </div>
                       </div>
-                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-hidden bg-background mx-2" dir="ltr">
-                        <div className="w-full h-full bg-background flex items-center justify-center p-8 min-h-[400px]">
+                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-hidden bg-background mx-2 h-[500px]" dir="ltr">
+                        <div className="w-full h-full bg-background flex items-center justify-center p-8">
                           <div className="w-full h-full flex items-center justify-center">
                             <HierarchyDemo />
                           </div>
@@ -181,7 +183,7 @@ export function LandingPageContent() {
 
                   {/* Slide 2: Time Tracker Section */}
                   <div className="min-w-full px-6 md:px-8">
-                    <div className={`grid md:grid-cols-2 gap-12 items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    <div className={`grid md:grid-cols-2 gap-12 items-stretch ${isRTL ? 'flex-row-reverse' : ''}`}>
                       <div className={`space-y-6 ${isRTL ? 'text-right' : 'text-left'}`}>
                         <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary font-semibold">
                           {t('landing.timeTracker.title')}
@@ -199,8 +201,8 @@ export function LandingPageContent() {
                           <CheckItem text={t('landing.timeTracker.feature6')} />
                         </ul>
                       </div>
-                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-hidden bg-background mx-2">
-                        <div className="w-full h-full bg-gradient-to-br from-primary/10 via-primary/5 to-background rounded-lg flex items-center justify-center p-8 min-h-[400px] overflow-auto">
+                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-hidden bg-background mx-2 h-[500px]">
+                        <div className="w-full h-full bg-background rounded-lg flex items-center justify-center p-8 overflow-auto">
                           <TimeTrackerDemo />
                         </div>
                       </div>
@@ -209,7 +211,7 @@ export function LandingPageContent() {
 
                   {/* Slide 3: Tasks Section */}
                   <div className="min-w-full px-6 md:px-8">
-                    <div className={`grid md:grid-cols-2 gap-12 items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    <div className={`grid md:grid-cols-2 gap-12 items-stretch ${isRTL ? 'flex-row-reverse' : ''}`}>
                       <div className={`space-y-6 ${isRTL ? 'text-right' : 'text-left'}`}>
                         <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary font-semibold">
                           {t('landing.tasks.title')}
@@ -227,14 +229,9 @@ export function LandingPageContent() {
                           <CheckItem text={t('landing.tasks.feature6')} />
                         </ul>
                       </div>
-                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-visible bg-background mx-2">
-                        <div className="w-full h-full bg-gradient-to-br from-primary/10 via-primary/5 to-background rounded-lg flex items-center justify-center p-8 min-h-[400px] overflow-hidden">
-                          <div className="text-center space-y-4">
-                            <Users className="h-24 w-24 text-primary mx-auto opacity-50" />
-                            <p className="text-muted-foreground text-sm">
-                              {isRTL ? 'תצוגה מקדימה של מסך ניהול המשימות' : 'Tasks Management Preview'}
-                            </p>
-                          </div>
+                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-hidden bg-background mx-2 h-[500px]">
+                        <div className="w-full h-full bg-background rounded-lg flex items-center justify-center p-8 overflow-hidden">
+                          <TasksDemo />
                         </div>
                       </div>
                     </div>
@@ -242,7 +239,7 @@ export function LandingPageContent() {
 
                   {/* Slide 4: Calendar Section */}
                   <div className="min-w-full px-6 md:px-8">
-                    <div className={`grid md:grid-cols-2 gap-12 items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    <div className={`grid md:grid-cols-2 gap-12 items-stretch ${isRTL ? 'flex-row-reverse' : ''}`}>
                       <div className={`space-y-6 ${isRTL ? 'text-right' : 'text-left'}`}>
                         <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary font-semibold">
                           {t('landing.calendar.title')}
@@ -260,14 +257,9 @@ export function LandingPageContent() {
                           <CheckItem text={t('landing.calendar.feature6')} />
                         </ul>
                       </div>
-                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-visible bg-background mx-2">
-                        <div className="w-full h-full bg-gradient-to-br from-primary/10 via-primary/5 to-background rounded-lg flex items-center justify-center p-8 min-h-[400px] overflow-hidden">
-                          <div className="text-center space-y-4">
-                            <Calendar className="h-24 w-24 text-primary mx-auto opacity-50" />
-                            <p className="text-muted-foreground text-sm">
-                              {isRTL ? 'תצוגה מקדימה של מסך היומן' : 'Calendar Preview'}
-                            </p>
-                          </div>
+                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-hidden bg-background mx-2 h-[500px]">
+                        <div className="w-full h-full bg-background rounded-lg flex items-center justify-center p-8 overflow-hidden">
+                          <CalendarDemo />
                         </div>
                       </div>
                     </div>
