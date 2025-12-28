@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { useLanguage } from "@/lib/useLanguage"
 import { useSession } from "next-auth/react"
+import Image from "next/image"
 
 const AD_INTERVAL_HOURS = 5 // Show ad every 5 hours
 const STORAGE_KEY = "lastAdClosed" // When ad was last closed
@@ -106,20 +107,21 @@ export function AdBanner() {
                 >
                     <X className="h-4 w-4" />
                 </Button>
-                <div className={`${isRTL ? 'pr-8 text-right' : 'pl-8 text-left'}`}>
-                    <h3 className="font-semibold text-lg mb-2">Flaminga</h3>
-                    <p className="text-sm text-muted-foreground mb-3">
-                        Rent your dress here
-                    </p>
-                    <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                        <div className="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center shrink-0">
-                            <span className="text-2xl">🦩</span>
-                        </div>
-                        <div className="flex-1">
-                            <p className="text-xs text-muted-foreground">
-                                Discover beautiful dresses for rent
-                            </p>
-                        </div>
+                <div className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse pr-8' : 'pl-8'}`}>
+                    <div className="w-20 h-20 shrink-0 flex items-center justify-center">
+                        <Image
+                            src="/flamingalogo.png"
+                            alt="Flaminga Logo"
+                            width={80}
+                            height={80}
+                            className="w-full h-full object-contain"
+                        />
+                    </div>
+                    <div className={`flex-1 ${isRTL ? 'text-right' : 'text-left'}`}>
+                        <h3 className="font-bold text-2xl mb-1 text-pink-600 dark:text-pink-500">Flaminga</h3>
+                        <p className="text-sm text-pink-500 dark:text-pink-400">
+                            Rent your dress here
+                        </p>
                     </div>
                 </div>
             </div>
