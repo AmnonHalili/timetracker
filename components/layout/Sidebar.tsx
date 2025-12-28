@@ -98,7 +98,7 @@ export function Sidebar() {
     ]
 
     return (
-        <aside className="flex flex-col h-screen w-52 border-r border-l bg-background" aria-label="Main navigation">
+        <aside className="hidden md:flex flex-col h-screen w-52 border-r border-l bg-background shrink-0" aria-label="Main navigation">
             <div className="px-4 py-6 border-b flex items-center justify-center z-10 relative">
                 <Link href="/dashboard" className="flex flex-col items-center gap-2" aria-label="Collabo Home">
                     {isPinkTheme ? (
