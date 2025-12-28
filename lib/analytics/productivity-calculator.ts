@@ -161,7 +161,7 @@ export async function analyzeWorkPatterns(userId: string, days: number = 30): Pr
     let totalSessionLength = 0
     let longestSession = 0
     let totalBreaks = 0
-    let daysWithWork = new Set<string>()
+    const daysWithWork = new Set<string>()
 
     entries.forEach(entry => {
         const start = new Date(entry.startTime)
@@ -207,7 +207,7 @@ export async function analyzeWorkPatterns(userId: string, days: number = 30): Pr
         leastProductiveDay: minDay,
         averageSessionLength: Math.round(avgSessionLength),
         longestSession: Math.round(longestSession),
-        averageBreaksPerDay
+        averageBreaksPerDay: Math.round(avgBreaksPerDay)
     }
 }
 

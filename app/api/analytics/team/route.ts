@@ -47,7 +47,7 @@ export async function GET(req: Request) {
                 select: { id: true, managerId: true }
             })
 
-            const descendants = getAllDescendants(currentUser.id, allUsers as any)
+            const descendants = getAllDescendants(currentUser.id, allUsers as Array<{ id: string; managerId: string | null }>)
             teamMemberIds = [currentUser.id, ...descendants]
         }
 

@@ -3,9 +3,7 @@
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Clock, TrendingUp, Target, Coffee, Calendar, AlertTriangle, Loader2 } from "lucide-react"
-import { useSession } from "next-auth/react"
+import { Clock, TrendingUp, Target, Coffee, AlertTriangle, Loader2 } from "lucide-react"
 
 interface PersonalInsights {
     summary: {
@@ -44,7 +42,6 @@ interface PersonalInsights {
 }
 
 export default function InsightsPage() {
-    const { data: session } = useSession()
     const [insights, setInsights] = useState<PersonalInsights | null>(null)
     const [loading, setLoading] = useState(true)
     const [generating, setGenerating] = useState(false)
@@ -114,7 +111,7 @@ export default function InsightsPage() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <p className="text-sm text-muted-foreground">
-                            Start tracking your time, and we'll analyze your patterns to provide:
+                            We need some time tracking data to generate insights.
                         </p>
                         <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
                             <li>Your most productive hours</li>
@@ -222,7 +219,7 @@ export default function InsightsPage() {
                     </CardHeader>
                     <CardContent className="space-y-2">
                         <p className="text-sm text-red-700">
-                            You've worked {insights.burnout.consecutiveDays} consecutive days with {insights.burnout.overtimeHours.toFixed(1)}h overtime.
+                            You&apos;ve worked {insights.burnout.consecutiveDays} consecutive days with {insights.burnout.overtimeHours.toFixed(1)}h overtime.
                         </p>
                         <p className="text-sm text-red-600">
                             Consider taking a break or reducing your workload.
@@ -236,7 +233,7 @@ export default function InsightsPage() {
                     <CardHeader>
                         <CardTitle>⏰ Your Peak Hours</CardTitle>
                         <CardDescription>
-                            When you're most productive
+                            When you&apos;re most productive
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
