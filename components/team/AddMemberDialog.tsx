@@ -56,9 +56,7 @@ export function AddMemberDialog({
     const [open, setOpen] = useState(false)
     const defaultTriggerLabel = triggerLabel || t('team.addMember')
     const [loading, setLoading] = useState(false)
-    const [name, setName] = useState("")
     const [email, setEmail] = useState("")
-    const [password, setPassword] = useState("")
     const [role] = useState(defaultRole) // Changed from [role, setRole] to [role]
     const [jobTitle, setJobTitle] = useState("")
     const [managerId, setManagerId] = useState<string>(hideManagerSelect ? "unassigned" : "")
@@ -102,13 +100,11 @@ export function AddMemberDialog({
         setLoading(true)
 
         try {
-            const res = await fetch("/api/team/members", {
+            const res = await fetch("/api/team/invite", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    name,
                     email,
-                    password,
                     role,
                     jobTitle,
                     managerId: managerId === "unassigned" ? null : managerId,
@@ -120,20 +116,23 @@ export function AddMemberDialog({
                 const data = await res.json()
                 const errorMsg = data.error
                     ? `${data.message}: ${data.error}`
-                    : data.message || "Failed to add member"
+                    : data.message || "Failed to send invitation"
                 throw new Error(errorMsg)
             }
+
+            const data = await res.json()
 
             setOpen(false)
             router.refresh()
             if (onSuccess) onSuccess()
             // Reset form
-            setName("")
             setEmail("")
-            setPassword("")
             setJobTitle("")
             setManagerId(hideManagerSelect ? "unassigned" : "")
             setChiefType(null)
+
+            // Show success message
+            alert(`✅ Invitation sent to ${email}`)
         } catch (error) {
             alert(error)
         } finally {
@@ -164,27 +163,15 @@ export function AddMemberDialog({
                 <form onSubmit={handleSubmit}>
                     <DialogHeader className="text-right">
                         <DialogTitle className="text-right">
-                            {role === "ADMIN" ? t('team.addNewChief') : t('team.addTeamMember')}
+                            {role === "ADMIN" ? "Invite New Chief" : "Invite Team Member"}
                         </DialogTitle>
                         <DialogDescription className="text-right">
                             {role === "ADMIN"
-                                ? t('team.createChiefAccount')
-                                : t('team.createEmployeeAccount')}
+                                ? "Send an email invitation to a new chief. They will set their own password."
+                                : "Send an email invitation to a new team member. They will set their own password."}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="name" className="text-right">
-                                Name
-                            </Label>
-                            <Input
-                                id="name"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                className="col-span-3"
-                                required
-                            />
-                        </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="email" className="text-right">
                                 Email
@@ -195,19 +182,8 @@ export function AddMemberDialog({
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 className="col-span-3"
+                                placeholder="user@example.com"
                                 required
-                            />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="password" className="text-right">
-                                Initial Password
-                            </Label>
-                            <Input
-                                id="password"
-                                type="text"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="col-span-3"
                             />
                         </div>
 
@@ -337,7 +313,7 @@ export function AddMemberDialog({
                     <DialogFooter>
                         <Button type="submit" disabled={loading}>
                             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Create Account
+                            Send Invitation
                         </Button>
                     </DialogFooter>
                 </form>

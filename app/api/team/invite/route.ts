@@ -1,0 +1,259 @@
+import { authOptions } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
+import { getServerSession } from "next-auth"
+import { NextResponse } from "next/server"
+import nodemailer from "nodemailer"
+import crypto from "crypto"
+
+export async function POST(req: Request) {
+    const session = await getServerSession(authOptions)
+
+    if (!session || !["ADMIN", "MANAGER"].includes(session.user.role)) {
+        return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+    }
+
+    try {
+        const { email, role, managerId, jobTitle, chiefType } = await req.json()
+
+        if (!email) {
+            return NextResponse.json({ message: "Email is required" }, { status: 400 })
+        }
+
+        // Only ADMIN can invite ADMINs
+        if (role === "ADMIN" && session.user.role !== "ADMIN") {
+            return NextResponse.json({ message: "Only Admins can invite other Admins" }, { status: 403 })
+        }
+
+        const currentUser = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: {
+                projectId: true,
+                id: true,
+                name: true,
+                project: {
+                    select: {
+                        name: true
+                    }
+                }
+            }
+        })
+
+        if (!currentUser?.projectId) {
+            return NextResponse.json({ message: "Project not found" }, { status: 404 })
+        }
+
+        // Check if email already exists
+        const existingUser = await prisma.user.findUnique({
+            where: { email }
+        })
+
+        if (existingUser && existingUser.status === "ACTIVE") {
+            return NextResponse.json({ message: "User with this email already exists" }, { status: 400 })
+        }
+
+        // If user exists but is PENDING, we can resend invitation
+        if (existingUser && existingUser.status === "PENDING") {
+            // Check if previous token expired
+            if (existingUser.resetTokenExpiry && existingUser.resetTokenExpiry > new Date()) {
+                return NextResponse.json({
+                    message: "Invitation already sent to this email. Please wait for it to expire before resending."
+                }, { status: 400 })
+            }
+            // Token expired, we can update and resend
+        }
+
+        // Validate managerId if provided
+        if (managerId && managerId !== "unassigned") {
+            const manager = await prisma.user.findUnique({
+                where: { id: managerId, projectId: currentUser.projectId }
+            })
+            if (!manager) {
+                return NextResponse.json({ message: "Manager not found in this project" }, { status: 400 })
+            }
+        }
+
+        // Handle Chief creation logic for sharedChiefGroupId
+        let sharedChiefGroupId: string | null = null
+        let finalManagerId: string | null = managerId === "unassigned" || !managerId ? null : managerId
+
+        if (role === "ADMIN" && chiefType) {
+            if (chiefType === "partner") {
+                // Partner (Shared Chief) logic
+                let currentUserFull: { managerId: string | null; sharedChiefGroupId?: string | null } | null
+                try {
+                    currentUserFull = (await prisma.user.findUnique({
+                        where: { id: currentUser.id },
+                        select: { managerId: true, sharedChiefGroupId: true } as never
+                    })) as { managerId: string | null; sharedChiefGroupId?: string | null } | null
+                } catch {
+                    currentUserFull = await prisma.user.findUnique({
+                        where: { id: currentUser.id },
+                        select: { managerId: true }
+                    })
+                    currentUserFull = currentUserFull ? { ...currentUserFull, sharedChiefGroupId: null } : null
+                }
+
+                if (currentUserFull?.managerId) {
+                    return NextResponse.json({
+                        message: "Only top-level chiefs can add partners. You must be a root-level chief."
+                    }, { status: 400 })
+                }
+
+                // Use existing sharedChiefGroupId or create a new one
+                if (currentUserFull?.sharedChiefGroupId) {
+                    sharedChiefGroupId = currentUserFull.sharedChiefGroupId
+                } else {
+                    sharedChiefGroupId = `shared-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+
+                    try {
+                        await prisma.user.update({
+                            where: { id: currentUser.id },
+                            data: { sharedChiefGroupId } as Record<string, unknown>
+                        })
+                    } catch (updateError: unknown) {
+                        const error = updateError as { message?: string }
+                        if (error.message?.includes('sharedChiefGroupId')) {
+                            console.warn("sharedChiefGroupId field not available, skipping")
+                            sharedChiefGroupId = null
+                        } else {
+                            throw updateError
+                        }
+                    }
+                }
+
+                finalManagerId = null
+            } else if (chiefType === "independent") {
+                finalManagerId = null
+                sharedChiefGroupId = null
+            }
+        }
+
+        // Generate invitation token
+        const invitationToken = crypto.randomBytes(32).toString("hex")
+        const invitationTokenExpiry = new Date(Date.now() + 48 * 60 * 60 * 1000) // 48 hours
+
+        // Create or update user with PENDING status
+        let invitedUser
+        if (existingUser) {
+            // Update existing PENDING user
+            invitedUser = await prisma.user.update({
+                where: { id: existingUser.id },
+                data: {
+                    role: role || "EMPLOYEE",
+                    jobTitle: jobTitle || null,
+                    managerId: finalManagerId,
+                    resetToken: invitationToken,
+                    resetTokenExpiry: invitationTokenExpiry,
+                    sharedChiefGroupId: sharedChiefGroupId || undefined,
+                } as never
+            })
+        } else {
+            // Create new user
+            invitedUser = await prisma.user.create({
+                data: {
+                    email,
+                    name: email.split('@')[0], // Temporary name, will be updated on acceptance
+                    role: role || "EMPLOYEE",
+                    jobTitle: jobTitle || null,
+                    projectId: currentUser.projectId,
+                    managerId: finalManagerId,
+                    status: "PENDING",
+                    resetToken: invitationToken,
+                    resetTokenExpiry: invitationTokenExpiry,
+                    sharedChiefGroupId: sharedChiefGroupId || undefined,
+                } as never
+            })
+        }
+
+        // Send invitation email
+        const transporter = nodemailer.createTransport({
+            host: "smtp.gmail.com",
+            port: 587,
+            secure: false,
+            auth: {
+                user: process.env.GMAIL_USER,
+                pass: process.env.GMAIL_PASS,
+            },
+        })
+
+        const invitationUrl = `${process.env.NEXTAUTH_URL}/accept-invitation?token=${invitationToken}`
+        const logoUrl = `${process.env.NEXTAUTH_URL}/icon.png`
+        const projectName = currentUser.project?.name || "the team"
+        const inviterName = currentUser.name || "A team member"
+
+        const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Join ${projectName}</title>
+            <style>
+                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f5; margin: 0; padding: 0; }
+                .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; margin-top: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+                .header { background-color: #ffffff; padding: 24px; text-align: center; border-bottom: 1px solid #e4e4e7; }
+                .header img { height: 60px; width: auto; }
+                .header h1 { color: #18181b; margin: 10px 0 0; font-size: 24px; font-weight: 600; }
+                .content { padding: 40px 32px; color: #3f3f46; line-height: 1.6; }
+                .content h2 { margin-top: 0; color: #18181b; font-size: 20px; }
+                .button { display: inline-block; background-color: #2563eb; color: #ffffff; padding: 12px 32px; text-decoration: none; border-radius: 6px; font-weight: 600; margin-top: 24px; margin-bottom: 24px; }
+                .button:hover { background-color: #1d4ed8; }
+                .footer { background-color: #f4f4f5; padding: 24px; text-align: center; font-size: 12px; color: #71717a; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <img src="${logoUrl}" alt="Collabo" />
+                </div>
+                <div class="content">
+                    <h2>You've Been Invited to Join Collabo!</h2>
+                    <p>Hello,</p>
+                    <p><strong>${inviterName}</strong> has invited you to join <strong>${projectName}</strong> on Collabo.</p>
+                    <p>Click the button below to complete your registration and set up your account:</p>
+                    <div style="text-align: center;">
+                        <a href="${invitationUrl}" class="button" style="color: #ffffff;">Accept Invitation</a>
+                    </div>
+                    <p>If the button doesn't work, copy and paste this link into your browser:</p>
+                    <p style="word-break: break-all; color: #2563eb;">${invitationUrl}</p>
+                    <p><strong>This invitation will expire in 48 hours.</strong></p>
+                    <p>If you didn't expect this invitation, you can safely ignore this email.</p>
+                    <p>Best regards,<br>The Collabo Team</p>
+                </div>
+                <div class="footer">
+                    <p>&copy; ${new Date().getFullYear()} Collabo. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        `
+
+        try {
+            await transporter.verify()
+            await transporter.sendMail({
+                from: `"Collabo" <${process.env.GMAIL_USER}>`,
+                to: email,
+                subject: `You've been invited to join ${projectName}`,
+                html: htmlContent,
+            })
+        } catch (emailError) {
+            console.error("Failed to send invitation email:", emailError)
+            return NextResponse.json({
+                message: "User created but failed to send invitation email. Please try again."
+            }, { status: 500 })
+        }
+
+        return NextResponse.json({
+            success: true,
+            message: `Invitation sent to ${email}`,
+            user: { id: invitedUser.id, email: invitedUser.email }
+        })
+    } catch (error) {
+        console.error("[INVITE_ERROR]", error)
+        const errorMessage = error instanceof Error ? error.message : "Unknown error"
+        return NextResponse.json({
+            message: "Failed to send invitation",
+            error: errorMessage
+        }, { status: 500 })
+    }
+}

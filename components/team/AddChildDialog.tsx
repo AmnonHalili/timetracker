@@ -33,9 +33,7 @@ export function AddChildDialog({
     const [activeTab, setActiveTab] = useState<"existing" | "new">("existing")
 
     // New User State
-    const [newName, setNewName] = useState("")
     const [newEmail, setNewEmail] = useState("")
-    const [newPassword, setNewPassword] = useState("")
     const [newRole] = useState("EMPLOYEE")
     const [newJobTitle, setNewJobTitle] = useState("")
 
@@ -70,18 +68,16 @@ export function AddChildDialog({
 
     const handleCreateSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!newName || !newEmail || !newPassword) return
+        if (!newEmail) return
 
         setIsLoading(true)
         try {
-            // Re-use the existing create member API which handles managerId
-            const res = await fetch("/api/team/members", {
+            // Use the new invitation API
+            const res = await fetch("/api/team/invite", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    name: newName,
                     email: newEmail,
-                    password: newPassword,
                     role: newRole,
                     jobTitle: newJobTitle,
                     managerId: parentId // Assign directly to this parent
@@ -91,16 +87,14 @@ export function AddChildDialog({
             const data = await res.json()
             if (!res.ok) throw new Error(data.message)
 
-            toast.success("New user created and added to team")
+            toast.success(`Invitation sent to ${newEmail}`)
             onSuccess()
             onOpenChange(false)
             // Reset form
-            setNewName("")
             setNewEmail("")
-            setNewPassword("")
-            // Role reset not needed as it's state constant
+            setNewJobTitle("")
         } catch (error: unknown) {
-            toast.error(error instanceof Error ? error.message : "Failed to create user")
+            toast.error(error instanceof Error ? error.message : "Failed to send invitation")
         } finally {
             setIsLoading(false)
         }
@@ -131,7 +125,7 @@ export function AddChildDialog({
                         className={`flex-1 text-sm font-medium py-1.5 rounded-md transition-all ${activeTab === "new" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:bg-background/50"
                             }`}
                     >
-                        Create New
+                        Invite New
                     </button>
                 </div>
 
@@ -178,17 +172,7 @@ export function AddChildDialog({
                 ) : (
                     <form onSubmit={handleCreateSubmit} className="space-y-3">
                         <div className="space-y-1">
-                            <Label htmlFor="newName">Name</Label>
-                            <Input
-                                id="newName"
-                                value={newName}
-                                onChange={(e) => setNewName(e.target.value)}
-                                placeholder="John Doe"
-                                required
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <Label htmlFor="newEmail">Email</Label>
+                            <Label htmlFor="newEmail">Email *</Label>
                             <Input
                                 id="newEmail"
                                 type="email"
@@ -197,17 +181,9 @@ export function AddChildDialog({
                                 placeholder="john@example.com"
                                 required
                             />
-                        </div>
-                        <div className="space-y-1">
-                            <Label htmlFor="newPassword">Initial Password</Label>
-                            <Input
-                                id="newPassword"
-                                type="text"
-                                value={newPassword}
-                                onChange={(e) => setNewPassword(e.target.value)}
-                                placeholder="Secret123"
-                                required
-                            />
+                            <p className="text-xs text-muted-foreground">
+                                An invitation will be sent to this email
+                            </p>
                         </div>
 
                         <div className="space-y-1">
@@ -226,7 +202,7 @@ export function AddChildDialog({
                             </Button>
                             <Button type="submit" disabled={isLoading}>
                                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Create & Add
+                                Send Invitation
                             </Button>
                         </div>
                     </form>
