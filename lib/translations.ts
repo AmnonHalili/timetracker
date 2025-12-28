@@ -22,22 +22,23 @@ export const translations = {
     'common.employee': 'Employee',
     'common.noTeamMembers': 'No team members found.',
     'common.selectAll': 'Select All',
-    
+
     // Notifications
     'notifications.title': 'Notifications',
     'notifications.markAllRead': 'Mark all read',
     'notifications.noNotifications': 'No notifications',
     'notifications.unread': 'unread',
-    
+
     // Navigation
     'nav.dashboard': 'Time Tracker',
     'nav.tasks': 'Tasks',
     'nav.calendar': 'Calendar',
     'nav.reports': 'Reports',
+    'nav.insights': 'Insights',
     'nav.team': 'Team',
     'nav.settings': 'Settings',
     'nav.logout': 'Log out',
-    
+
     // Dashboard
     'dashboard.title': 'Dashboard',
     'dashboard.whatWorkingOn': 'What are you working on?',
@@ -48,7 +49,7 @@ export const translations = {
     'dashboard.manual': 'Manual',
     'dashboard.timer': 'Timer',
     'dashboard.add': 'Add',
-    
+
     // Settings
     'settings.title': 'Settings',
     'settings.manageAccount': 'Manage your account settings.',
@@ -57,7 +58,7 @@ export const translations = {
     'settings.security': 'Security',
     'settings.appearance': 'Appearance',
     'settings.workspace': 'Workspace',
-    
+
     // Profile
     'profile.title': 'Profile Information',
     'profile.description': 'Update your public profile details.',
@@ -67,7 +68,7 @@ export const translations = {
     'profile.changePicture': 'Change Picture',
     'profile.saveChanges': 'Save Changes',
     'profile.updated': 'Profile updated!',
-    
+
     // Work Preferences
     'preferences.title': 'Work Preferences',
     'preferences.description': 'Set your daily work goals and schedule.',
@@ -79,7 +80,7 @@ export const translations = {
     'preferences.savePreferences': 'Save Preferences',
     'preferences.updated': 'Preferences updated!',
     'preferences.contactManager': 'Your work schedule and targets are determined by your organization. Please contact your manager to request changes.',
-    
+
     // Language
     'language.title': 'Language',
     'language.description': 'Choose your preferred language for the interface.',
@@ -87,7 +88,7 @@ export const translations = {
     'language.descriptionText': 'This will change the language of the user interface. Some content may still appear in the original language.',
     'language.saveLanguage': 'Save Language',
     'language.saved': 'Language preference saved!',
-    
+
     // Security
     'security.title': 'Security',
     'security.description': 'Manage your password and account security.',
@@ -105,7 +106,7 @@ export const translations = {
     'security.transferAdminTo': 'Transfer Admin To',
     'security.selectUser': 'Select user',
     'security.deleting': 'Deleting...',
-    
+
     // Tasks
     'tasks.title': 'Tasks',
     'tasks.create': 'Create Task',
@@ -138,12 +139,12 @@ export const translations = {
     'tasks.priorityLow': 'LOW',
     'tasks.priorityMedium': 'MEDIUM',
     'tasks.priorityHigh': 'HIGH',
-    
+
     // Time Entries
     'timeEntries.today': 'Today',
     'timeEntries.yesterday': 'Yesterday',
     'timeEntries.noDescription': 'No description',
-    
+
     // Calendar
     'calendar.addEvent': 'Add Event',
     'calendar.today': 'Today',
@@ -169,7 +170,7 @@ export const translations = {
     'calendar.break': 'Break',
     'calendar.personal': 'Personal',
     'calendar.other': 'Other',
-    
+
     // Reports
     'reports.monthlyReports': 'Monthly Reports',
     'reports.viewDetailedHistory': 'View your detailed work history',
@@ -184,7 +185,7 @@ export const translations = {
     'reports.day': 'Day',
     'reports.date': 'Date',
     'reports.none': 'None',
-    
+
     // Team
     'team.teamManagement': 'Team Management',
     'team.project': 'Project',
@@ -211,19 +212,19 @@ export const translations = {
     'team.saveWorkSettings': 'Save Work Settings',
     'team.companyOwner': 'Company Owner',
     'team.noTeamMembersYet': 'No team members yet.',
-    
+
     // Hierarchy
     'hierarchy.organizationHierarchy': 'Organization Hierarchy',
     'hierarchy.overview': 'Overview',
     'hierarchy.findMe': 'Find Me',
     'hierarchy.addChief': 'Add Chief',
-    
+
     // Appearance
     'appearance.title': 'Appearance',
     'appearance.description': 'Customize the look and feel of the application. Choose between white, black, pink, or system theme.',
     'appearance.theme': 'Theme',
     'appearance.selectTheme': 'Select the theme for the dashboard.',
-    
+
     // Workspace
     'workspace.workspaceInformation': 'Workspace Information',
     'workspace.updateWorkspaceSettings': 'Update your workspace\'s display name and settings. These will apply to all members.',
@@ -237,7 +238,7 @@ export const translations = {
     'workspace.outputBased': 'Output Based (Effective)',
     'workspace.outputBasedDescription': 'Hours are calculated based on net working time. Breaks are deducted from the total.',
     'workspace.saveChanges': 'Save Changes',
-    
+
     // Days
     'days.sunday': 'Sunday',
     'days.monday': 'Monday',
@@ -246,7 +247,7 @@ export const translations = {
     'days.thursday': 'Thursday',
     'days.friday': 'Friday',
     'days.saturday': 'Saturday',
-    
+
     // Months
     'months.january': 'January',
     'months.february': 'February',
@@ -262,7 +263,7 @@ export const translations = {
     'months.december': 'December',
     'months.month': 'Month',
     'months.year': 'Year',
-    
+
     // Accessibility
     'accessibility.title': 'Accessibility',
     'accessibility.description': 'Customize your viewing experience',
@@ -277,7 +278,7 @@ export const translations = {
     'accessibility.highContrastDescription': 'Increase contrast for better visibility',
     'accessibility.reduceMotion': 'Reduce Motion',
     'accessibility.reduceMotionDescription': 'Minimize animations and transitions',
-    
+
     // Landing Page
     'landing.logIn': 'Log In',
     'landing.getStarted': 'Get Started',
@@ -303,7 +304,7 @@ export const translations = {
     'landing.createManagerAccount': 'Create a Manager Account',
     'landing.footerDescription': 'The modern solution for time and project management.',
     'landing.allRightsReserved': 'All rights reserved.',
-    
+
     // Time Tracker Section
     'landing.timeTracker.title': 'Smart Time Tracking',
     'landing.timeTracker.subtitle': 'Track Every Minute, Maximize Every Hour',
@@ -314,7 +315,7 @@ export const translations = {
     'landing.timeTracker.feature4': 'Visual progress indicators and daily summaries',
     'landing.timeTracker.feature5': 'Manual time entry for flexibility',
     'landing.timeTracker.feature6': 'Export reports for client billing and analysis',
-    
+
     // Tasks Section
     'landing.tasks.title': 'Task Management',
     'landing.tasks.subtitle': 'Organize, Assign, and Track with Precision',
@@ -325,7 +326,7 @@ export const translations = {
     'landing.tasks.feature4': 'Filter and sort tasks by project, assignee, status, and date',
     'landing.tasks.feature5': 'Link tasks to time entries for accurate project tracking',
     'landing.tasks.feature6': 'Create subtasks and dependencies for complex projects',
-    
+
     // Calendar Section
     'landing.calendar.title': 'Smart Calendar',
     'landing.calendar.subtitle': 'Plan, Schedule, and Never Miss a Deadline',
@@ -357,22 +358,23 @@ export const translations = {
     'common.employee': 'עובד',
     'common.noTeamMembers': 'לא נמצאו חברי צוות.',
     'common.selectAll': 'בחר הכל',
-    
+
     // Notifications
     'notifications.title': 'התראות',
     'notifications.markAllRead': 'סמן הכל כנקרא',
     'notifications.noNotifications': 'אין התראות',
     'notifications.unread': 'לא נקרא',
-    
+
     // Navigation
     'nav.dashboard': 'מעקב זמן',
     'nav.tasks': 'משימות',
     'nav.calendar': 'יומן',
     'nav.reports': 'דוחות',
+    'nav.insights': 'תובנות',
     'nav.team': 'צוות',
     'nav.settings': 'הגדרות',
     'nav.logout': 'התנתק',
-    
+
     // Dashboard
     'dashboard.title': 'לוח בקרה',
     'dashboard.whatWorkingOn': 'על מה אתה עובד?',
@@ -383,7 +385,7 @@ export const translations = {
     'dashboard.manual': 'ידני',
     'dashboard.timer': 'שעון',
     'dashboard.add': 'הוסף',
-    
+
     // Settings
     'settings.title': 'הגדרות',
     'settings.manageAccount': 'נהל את הגדרות החשבון שלך.',
@@ -392,7 +394,7 @@ export const translations = {
     'settings.security': 'אבטחה',
     'settings.appearance': 'מראה',
     'settings.workspace': 'סביבת עבודה',
-    
+
     // Profile
     'profile.title': 'פרטי פרופיל',
     'profile.description': 'עדכן את פרטי הפרופיל הציבורי שלך.',
@@ -402,7 +404,7 @@ export const translations = {
     'profile.changePicture': 'שנה תמונה',
     'profile.saveChanges': 'שמור שינויים',
     'profile.updated': 'הפרופיל עודכן!',
-    
+
     // Work Preferences
     'preferences.title': 'העדפות עבודה',
     'preferences.description': 'הגדר את יעדי העבודה היומיים והלוח זמנים שלך.',
@@ -414,7 +416,7 @@ export const translations = {
     'preferences.savePreferences': 'שמור העדפות',
     'preferences.updated': 'ההעדפות עודכנו!',
     'preferences.contactManager': 'לוח הזמנים והיעדים שלך נקבעים על ידי הארגון שלך. אנא פנה למנהל שלך כדי לבקש שינויים.',
-    
+
     // Language
     'language.title': 'שפה',
     'language.description': 'בחר את שפת הממשק המועדפת עליך.',
@@ -422,7 +424,7 @@ export const translations = {
     'language.descriptionText': 'זה ישנה את שפת ממשק המשתמש. חלק מהתוכן עשוי עדיין להופיע בשפה המקורית.',
     'language.saveLanguage': 'שמור שפה',
     'language.saved': 'העדפת השפה נשמרה!',
-    
+
     // Security
     'security.title': 'אבטחה',
     'security.description': 'נהל את הסיסמה ואבטחת החשבון שלך.',
@@ -440,7 +442,7 @@ export const translations = {
     'security.transferAdminTo': 'העבר מנהל ל',
     'security.selectUser': 'בחר משתמש',
     'security.deleting': 'מוחק...',
-    
+
     // Tasks
     'tasks.title': 'משימות',
     'tasks.create': 'צור משימה',
@@ -473,12 +475,12 @@ export const translations = {
     'tasks.priorityLow': 'נמוך',
     'tasks.priorityMedium': 'בינוני',
     'tasks.priorityHigh': 'גבוה',
-    
+
     // Time Entries
     'timeEntries.today': 'היום',
     'timeEntries.yesterday': 'אתמול',
     'timeEntries.noDescription': 'אין תיאור',
-    
+
     // Calendar
     'calendar.addEvent': 'הוסף אירוע',
     'calendar.today': 'היום',
@@ -504,7 +506,7 @@ export const translations = {
     'calendar.break': 'הפסקה',
     'calendar.personal': 'אישי',
     'calendar.other': 'אחר',
-    
+
     // Reports
     'reports.monthlyReports': 'דוחות חודשיים',
     'reports.viewDetailedHistory': 'צפה בהיסטוריית העבודה המפורטת שלך',
@@ -519,7 +521,7 @@ export const translations = {
     'reports.day': 'יום',
     'reports.date': 'תאריך',
     'reports.none': 'אין',
-    
+
     // Team
     'team.teamManagement': 'ניהול צוות',
     'team.project': 'פרויקט',
@@ -546,19 +548,19 @@ export const translations = {
     'team.saveWorkSettings': 'שמור הגדרות עבודה',
     'team.companyOwner': 'בעל חברה',
     'team.noTeamMembersYet': 'עדיין אין חברי צוות.',
-    
+
     // Hierarchy
     'hierarchy.organizationHierarchy': 'היררכיית הארגון',
     'hierarchy.overview': 'סקירה',
     'hierarchy.findMe': 'מצא אותי',
     'hierarchy.addChief': 'הוסף מנהל ראשי',
-    
+
     // Appearance
     'appearance.title': 'מראה',
     'appearance.description': 'התאם אישית את המראה והתחושה של האפליקציה. בחר בין נושא לבן, שחור, ורוד או מערכת.',
     'appearance.theme': 'נושא',
     'appearance.selectTheme': 'בחר את הנושא ללוח הבקרה.',
-    
+
     // Workspace
     'workspace.workspaceInformation': 'מידע על סביבת העבודה',
     'workspace.updateWorkspaceSettings': 'עדכן את שם התצוגה וההגדרות של סביבת העבודה שלך. אלה יחולו על כל החברים.',
@@ -572,7 +574,7 @@ export const translations = {
     'workspace.outputBased': 'מבוסס תפוקה (יעיל)',
     'workspace.outputBasedDescription': 'שעות מחושבות על בסיס זמן עבודה נטו. הפסקות מופחתות מהסכום הכולל.',
     'workspace.saveChanges': 'שמור שינויים',
-    
+
     // Days
     'days.sunday': 'ראשון',
     'days.monday': 'שני',
@@ -581,7 +583,7 @@ export const translations = {
     'days.thursday': 'חמישי',
     'days.friday': 'שישי',
     'days.saturday': 'שבת',
-    
+
     // Months
     'months.january': 'ינואר',
     'months.february': 'פברואר',
@@ -597,7 +599,7 @@ export const translations = {
     'months.december': 'דצמבר',
     'months.month': 'חודש',
     'months.year': 'שנה',
-    
+
     // Accessibility
     'accessibility.title': 'נגישות',
     'accessibility.description': 'התאם אישית את חוויית הצפייה שלך',
@@ -612,7 +614,7 @@ export const translations = {
     'accessibility.highContrastDescription': 'הגבר ניגודיות לנראות טובה יותר',
     'accessibility.reduceMotion': 'הפחת תנועה',
     'accessibility.reduceMotionDescription': 'מזער אנימציות ומעברים',
-    
+
     // Landing Page
     'landing.logIn': 'התחבר',
     'landing.getStarted': 'התחל',
@@ -638,7 +640,7 @@ export const translations = {
     'landing.createManagerAccount': 'צור חשבון מנהל',
     'landing.footerDescription': 'הפתרון המודרני לניהול זמן ופרויקטים.',
     'landing.allRightsReserved': 'כל הזכויות שמורות.',
-    
+
     // Time Tracker Section
     'landing.timeTracker.title': 'מעקב זמן חכם',
     'landing.timeTracker.subtitle': 'עקוב אחר כל דקה, מקסם כל שעה',
@@ -649,7 +651,7 @@ export const translations = {
     'landing.timeTracker.feature4': 'אינדיקטורי התקדמות חזותיים וסיכומים יומיים',
     'landing.timeTracker.feature5': 'הזנת זמן ידנית לגמישות',
     'landing.timeTracker.feature6': 'ייצוא דוחות לחיוב לקוחות וניתוח',
-    
+
     // Tasks Section
     'landing.tasks.title': 'ניהול משימות',
     'landing.tasks.subtitle': 'ארגן, הקצה ועקוב בדיוק',
@@ -660,7 +662,7 @@ export const translations = {
     'landing.tasks.feature4': 'סנן ומיין משימות לפי פרויקט, אחראי, סטטוס ותאריך',
     'landing.tasks.feature5': 'קשר משימות לרישומי זמן למעקב פרויקט מדויק',
     'landing.tasks.feature6': 'צור תת-משימות ותלויות לפרויקטים מורכבים',
-    
+
     // Calendar Section
     'landing.calendar.title': 'יומן חכם',
     'landing.calendar.subtitle': 'תכנן, תזמן ולעולם אל תפספס מועד אחרון',

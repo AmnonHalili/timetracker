@@ -61,6 +61,11 @@ model User {
   createdEvents     Event[]            @relation("CreatedEvents")
   eventParticipants EventParticipant[]
 
+  // Analytics
+  analyticsSnapshots AnalyticsSnapshot[]
+  insightSettings    UserInsightSettings?
+  recommendations    Recommendation[]
+
   // NextAuth
   accounts Account[]
   sessions Session[]
@@ -333,10 +338,100 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+
 model VerificationToken {
   identifier String
   token      String   @unique
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+// Analytics Models for AI Productivity Insights
+model AnalyticsSnapshot {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime @default(now())
+  
+  // Work Metrics
+  totalHours      Float
+  productiveHours Float
+  tasksCompleted  Int
+  breaksTaken     Int
+  
+  // Scores (0-100)
+  focusScore      Float
+  efficiencyScore Float
+  balanceScore    Float
+  
+  // Patterns
+  peakHourStart   Int?
+  peakHourEnd     Int?
+  longestSession  Int      // in minutes
+  averageSession  Int      // in minutes
+  
+  // Risk Indicators
+  burnoutRisk     Boolean  @default(false)
+  overtimeHours   Float    @default(0)
+  lateWorkHours   Float    @default(0)
+  weekendWork     Float    @default(0)
+  consecutiveDays Int      @default(0)
+  
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+}
+
+model UserInsightSettings {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Customizable thresholds
+  dailyHoursWarning  Float   @default(10)
+  weeklyHoursWarning Float   @default(50)
+  minBreaksPerDay    Int     @default(2)
+  maxConsecutiveDays Int     @default(7)
+  
+  // Preferences
+  enableWeeklyReport Boolean @default(true)
+  enableBurnoutAlerts Boolean @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Recommendation {
+  id        String             @id @default(cuid())
+  userId    String
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      RecommendationType
+  priority  RecommendationPriority
+  title     String
+  message   String
+  actionUrl String?
+  dismissed Boolean            @default(false)
+  createdAt DateTime           @default(now())
+  
+  @@index([userId])
+  @@index([dismissed])
+}
+
+enum RecommendationType {
+  SCHEDULE_OPTIMIZATION
+  BREAK_REMINDER
+  WORKLOAD_BALANCE
+  SKILL_DEVELOPMENT  
+  BURNOUT_PREVENTION
+  EFFICIENCY_TIP
+}
+
+enum RecommendationPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
 }

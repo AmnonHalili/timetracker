@@ -23,20 +23,20 @@ export function Sidebar() {
             const body = document.body
             const html = document.documentElement
             // Check both class and localStorage
-            const isPink = body.classList.contains("pink-theme") || 
-                          html.classList.contains("pink-theme") ||
-                          localStorage.getItem("theme") === "pink" ||
-                          localStorage.getItem("appTheme") === "pink"
-            const isWhite = body.classList.contains("white-theme") || 
-                           html.classList.contains("white-theme") ||
-                           localStorage.getItem("theme") === "white" ||
-                           localStorage.getItem("appTheme") === "white"
+            const isPink = body.classList.contains("pink-theme") ||
+                html.classList.contains("pink-theme") ||
+                localStorage.getItem("theme") === "pink" ||
+                localStorage.getItem("appTheme") === "pink"
+            const isWhite = body.classList.contains("white-theme") ||
+                html.classList.contains("white-theme") ||
+                localStorage.getItem("theme") === "white" ||
+                localStorage.getItem("appTheme") === "white"
             setIsPinkTheme(isPink)
             setIsWhiteTheme(isWhite)
         }
-        
+
         checkTheme()
-        
+
         // Watch for theme changes
         const observer = new MutationObserver(checkTheme)
         observer.observe(document.body, {
@@ -47,11 +47,11 @@ export function Sidebar() {
             attributes: true,
             attributeFilter: ['class']
         })
-        
+
         // Also listen to storage changes
         const handleStorageChange = () => checkTheme()
         window.addEventListener("storage", handleStorageChange)
-        
+
         return () => {
             observer.disconnect()
             window.removeEventListener("storage", handleStorageChange)
@@ -79,6 +79,11 @@ export function Sidebar() {
             label: t('nav.reports'),
             active: pathname === "/reports",
         },
+        {
+            href: "/insights",
+            label: t('nav.insights'),
+            active: pathname === "/insights",
+        },
         // Team route logic (assuming admin only later, but for now just showing it)
         {
             href: "/team",
@@ -98,51 +103,51 @@ export function Sidebar() {
                 <Link href="/dashboard" className="flex flex-col items-center gap-2" aria-label="Collabo Home">
                     {isPinkTheme ? (
                         <>
-                            <Image 
-                                src="/collabologopink.png" 
-                                alt="Collabo Logo" 
-                                width={80} 
-                                height={80} 
-                                className="h-16 w-auto dark:hidden" 
-                                priority 
+                            <Image
+                                src="/collabologopink.png"
+                                alt="Collabo Logo"
+                                width={80}
+                                height={80}
+                                className="h-16 w-auto dark:hidden"
+                                priority
                             />
-                            <Image 
-                                src="/collabologopink.png" 
-                                alt="Collabo Logo" 
-                                width={80} 
-                                height={80} 
-                                className="h-16 w-auto hidden dark:block" 
-                                priority 
+                            <Image
+                                src="/collabologopink.png"
+                                alt="Collabo Logo"
+                                width={80}
+                                height={80}
+                                className="h-16 w-auto hidden dark:block"
+                                priority
                             />
                         </>
                     ) : isWhiteTheme ? (
                         <>
-                            <Image 
-                                src="/collabologoblack.png" 
-                                alt="Collabo Logo" 
-                                width={80} 
-                                height={80} 
-                                className="h-16 w-auto" 
-                                priority 
+                            <Image
+                                src="/collabologoblack.png"
+                                alt="Collabo Logo"
+                                width={80}
+                                height={80}
+                                className="h-16 w-auto"
+                                priority
                             />
                         </>
                     ) : (
                         <>
-                            <Image 
-                                src="/collabologo.png" 
-                                alt="Collabo Logo" 
-                                width={80} 
-                                height={80} 
-                                className="h-16 w-auto dark:hidden" 
-                                priority 
+                            <Image
+                                src="/collabologo.png"
+                                alt="Collabo Logo"
+                                width={80}
+                                height={80}
+                                className="h-16 w-auto dark:hidden"
+                                priority
                             />
-                            <Image 
-                                src="/collabologowhitenoback.png" 
-                                alt="Collabo Logo" 
-                                width={80} 
-                                height={80} 
-                                className="h-16 w-auto hidden dark:block" 
-                                priority 
+                            <Image
+                                src="/collabologowhitenoback.png"
+                                alt="Collabo Logo"
+                                width={80}
+                                height={80}
+                                className="h-16 w-auto hidden dark:block"
+                                priority
                             />
                         </>
                     )}
