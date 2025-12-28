@@ -39,6 +39,9 @@ export const metadata: Metadata = {
       { url: "/collabologocutwhite.png", media: "(prefers-color-scheme: dark)", type: "image/png", sizes: "180x180" },
     ],
   },
+  verification: {
+    google: "pD0VM3NjqBMRzZegnSIGRHan7ruRQ0SzdQfrzRgSjmU",
+  },
 };
 
 export default function RootLayout({
