@@ -23,8 +23,9 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Collabo - Modern Team Collaboration",
-  description: "A minimalist work hours and task tracker with real-time collaboration built with Next.js, Prisma, and Neon.",
+  title: "Time Tracker & Task Manager for Small Teams | Collabo",
+  description: "The simplest time tracker and task manager for small businesses and freelancers. Track hours, manage projects, and collaborate without the complexity. Start for free.",
+  metadataBase: new URL('https://collabo-web.com'),
   icons: {
     icon: [
       { url: "/collabologocut.png", media: "(prefers-color-scheme: light)", type: "image/png", sizes: "32x32" },
