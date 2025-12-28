@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, startTransition } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Check, X, Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 interface RequestUser {
     id: string
@@ -14,6 +15,7 @@ interface RequestUser {
 }
 
 export function JoinRequestsWidget() {
+    const router = useRouter()
     const [requests, setRequests] = useState<RequestUser[]>([])
     const [loading, setLoading] = useState(true)
     const [processingId, setProcessingId] = useState<string | null>(null)
@@ -45,7 +47,21 @@ export function JoinRequestsWidget() {
                 body: JSON.stringify({ userId, action })
             })
 
-            if (!res.ok) throw new Error("Action failed")
+            if (!res.ok) {
+                const data = await res.json()
+                
+                // Check if this is a user limit error
+                if (res.status === 402 && data.error === "USER_LIMIT_EXCEEDED") {
+                    // Redirect to pricing page
+                    startTransition(() => {
+                        router.push("/pricing")
+                    })
+                    toast.error(data.message || "User limit exceeded. Please upgrade your plan to approve this join request.")
+                    return
+                }
+                
+                throw new Error(data.message || "Action failed")
+            }
 
             toast.success(action === "APPROVE" ? "Member approved" : "Request rejected")
             // Refresh list

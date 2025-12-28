@@ -40,6 +40,45 @@ export async function POST(req: Request) {
             }, { status: 400 })
         }
 
+        // Check user limit before activating account
+        if (user.projectId) {
+            const activeUserCount = await prisma.user.count({
+                where: {
+                    projectId: user.projectId,
+                    status: "ACTIVE"
+                }
+            })
+
+            // Determine required tier based on current user count
+            // Free: up to 5 users (0-5)
+            // Tier 1: 6-20 users
+            // Tier 2: 21-50 users
+            // Tier 3: 50+ users
+            let requiredTier: string | null = null
+            
+            if (activeUserCount >= 5) {
+                // Already at free limit (5 users), need Tier 1 for 6th user
+                if (activeUserCount < 20) {
+                    requiredTier = "tier1"
+                } else if (activeUserCount < 50) {
+                    requiredTier = "tier2"
+                } else {
+                    requiredTier = "tier3"
+                }
+            }
+
+            // If activating this user would exceed current plan limit, return error
+            if (requiredTier) {
+                return NextResponse.json({
+                    message: "User limit exceeded. Please contact your administrator to upgrade the plan before activating your account.",
+                    error: "USER_LIMIT_EXCEEDED",
+                    requiredTier,
+                    currentUserCount: activeUserCount,
+                    limit: activeUserCount < 20 ? 20 : activeUserCount < 50 ? 50 : null
+                }, { status: 402 }) // 402 Payment Required
+            }
+        }
+
         // Hash password
         const hashedPassword = await hash(password, 10)
 

@@ -18,6 +18,7 @@ import { Loader2, UserPlus, Check } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useLanguage } from "@/lib/useLanguage"
+import { startTransition } from "react"
 
 import {
     Select,
@@ -114,6 +115,18 @@ export function AddMemberDialog({
 
             if (!res.ok) {
                 const data = await res.json()
+                
+                // Check if this is a user limit error
+                if (res.status === 402 && data.error === "USER_LIMIT_EXCEEDED") {
+                    // Close dialog and redirect to pricing page
+                    setOpen(false)
+                    startTransition(() => {
+                        router.push("/pricing")
+                    })
+                    alert(data.message || "User limit exceeded. Please upgrade your plan to add more team members.")
+                    return
+                }
+                
                 const errorMsg = data.error
                     ? `${data.message}: ${data.error}`
                     : data.message || "Failed to send invitation"

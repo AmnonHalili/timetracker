@@ -9,6 +9,8 @@ import { User } from "@prisma/client"
 import { Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
+import { useRouter } from "next/navigation"
+import { startTransition } from "react"
 
 interface AddChildDialogProps {
     isOpen: boolean
@@ -27,6 +29,7 @@ export function AddChildDialog({
     availableUsers,
     onSuccess
 }: AddChildDialogProps) {
+    const router = useRouter()
     const [selectedUserId, setSelectedUserId] = useState<string>("")
     const [isLoading, setIsLoading] = useState(false)
 
@@ -85,7 +88,20 @@ export function AddChildDialog({
             })
 
             const data = await res.json()
-            if (!res.ok) throw new Error(data.message)
+            
+            // Check if this is a user limit error
+            if (!res.ok) {
+                if (res.status === 402 && data.error === "USER_LIMIT_EXCEEDED") {
+                    // Close dialog and redirect to pricing page
+                    onOpenChange(false)
+                    startTransition(() => {
+                        router.push("/pricing")
+                    })
+                    toast.error(data.message || "User limit exceeded. Please upgrade your plan to add more team members.")
+                    return
+                }
+                throw new Error(data.message)
+            }
 
             toast.success(`Invitation sent to ${newEmail}`)
             onSuccess()

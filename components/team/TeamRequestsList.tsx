@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, startTransition } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -34,7 +34,21 @@ export function TeamRequestsList({ initialRequests }: TeamRequestsListProps) {
                 body: JSON.stringify({ userId, action }),
             })
 
-            if (!res.ok) throw new Error("Failed to process request")
+            if (!res.ok) {
+                const data = await res.json()
+                
+                // Check if this is a user limit error
+                if (res.status === 402 && data.error === "USER_LIMIT_EXCEEDED") {
+                    // Redirect to pricing page
+                    startTransition(() => {
+                        router.push("/pricing")
+                    })
+                    toast.error(data.message || "User limit exceeded. Please upgrade your plan to approve this join request.")
+                    return
+                }
+                
+                throw new Error(data.message || "Failed to process request")
+            }
 
             // Remove from local state
             setRequests((prev) => prev.filter((r) => r.id !== userId))
