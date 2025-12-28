@@ -125,7 +125,6 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                     }
 
                     const hasEvents = (data.events || []).some(e => isSameDay(new Date(e.startTime), day))
-                    const hasTasks = allDaysTasks.length > 0
 
                     return (
                         <Card
