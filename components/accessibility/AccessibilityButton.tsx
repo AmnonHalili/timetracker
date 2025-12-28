@@ -30,18 +30,18 @@ export function AccessibilityButton() {
     // Apply preferences to the document
     const applyPreferences = (prefs: AccessibilityPreferences) => {
         const root = document.documentElement
-
+        
         // Font size
         root.classList.remove('font-size-normal', 'font-size-large', 'font-size-xlarge')
         root.classList.add(`font-size-${prefs.fontSize}`)
-
+        
         // High contrast
         if (prefs.highContrast) {
             root.classList.add('high-contrast')
         } else {
             root.classList.remove('high-contrast')
         }
-
+        
         // Reduce motion
         if (prefs.reduceMotion) {
             root.classList.add('reduce-motion')
@@ -82,15 +82,14 @@ export function AccessibilityButton() {
                 <Button
                     variant="outline"
                     size="icon"
-                    className={`fixed bottom-20 md:bottom-24 z-50 h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-shadow ${isRTL ? 'right-4 md:right-6' : 'left-4 md:left-6'
-                        }`}
+                    className="fixed bottom-4 left-4 z-50 h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-shadow"
                     aria-label={t('accessibility.options')}
                 >
                     <Accessibility className="h-5 w-5" aria-hidden="true" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent
-                className="w-80 p-4"
+            <PopoverContent 
+                className="w-80 p-4" 
                 align="end"
                 side="top"
             >
