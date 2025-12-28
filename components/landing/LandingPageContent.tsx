@@ -221,7 +221,7 @@ export function LandingPageContent() {
                   </div>
 
                   {/* Slide 2: Time Tracker Section */}
-                  <div className="min-w-full px-6 md:px-8">
+                  <div className="min-w-full px-12 md:px-24">
                     <div className={`grid md:grid-cols-2 gap-12 items-stretch ${isRTL ? 'flex-row-reverse' : ''}`}>
                       <div className={`space-y-6 ${isRTL ? 'text-right' : 'text-left'}`}>
                         <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary font-semibold">
@@ -249,7 +249,7 @@ export function LandingPageContent() {
                   </div>
 
                   {/* Slide 3: Tasks Section */}
-                  <div className="min-w-full px-6 md:px-8">
+                  <div className="min-w-full px-12 md:px-24">
                     <div className={`grid md:grid-cols-2 gap-12 items-stretch ${isRTL ? 'flex-row-reverse' : ''}`}>
                       <div className={`space-y-6 ${isRTL ? 'text-right' : 'text-left'}`}>
                         <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary font-semibold">
@@ -277,7 +277,7 @@ export function LandingPageContent() {
                   </div>
 
                   {/* Slide 4: Calendar Section */}
-                  <div className="min-w-full px-6 md:px-8">
+                  <div className="min-w-full px-12 md:px-24">
                     <div className={`grid md:grid-cols-2 gap-12 items-stretch ${isRTL ? 'flex-row-reverse' : ''}`}>
                       <div className={`space-y-6 ${isRTL ? 'text-right' : 'text-left'}`}>
                         <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary font-semibold">
