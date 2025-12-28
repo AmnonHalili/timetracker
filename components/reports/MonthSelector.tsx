@@ -22,7 +22,7 @@ export function MonthSelector({ year: propsYear, month: propsMonth }: MonthSelec
         const params = new URLSearchParams(searchParams)
         params.set("month", value)
         startTransition(() => {
-            router.push(`?${params.toString()}`)
+        router.push(`?${params.toString()}`)
         })
     }
 
@@ -30,7 +30,7 @@ export function MonthSelector({ year: propsYear, month: propsMonth }: MonthSelec
         const params = new URLSearchParams(searchParams)
         params.set("year", value)
         startTransition(() => {
-            router.push(`?${params.toString()}`)
+        router.push(`?${params.toString()}`)
         })
     }
 

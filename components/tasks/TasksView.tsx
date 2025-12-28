@@ -744,40 +744,40 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
             <CardHeader className="flex flex-col space-y-4 pb-4">
                 {/* Filters and Sort - Above title */}
                 <div className={`flex items-center gap-2 w-full ${isRTL ? 'flex-row-reverse' : ''}`}>
-                    {/* Filters Button */}
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setIsFiltersOpen(true)}
+                        {/* Filters Button */}
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsFiltersOpen(true)}
                         className={`h-9 text-sm font-medium flex-1 md:flex-initial ${isRTL ? 'flex-row-reverse' : ''}`}
-                    >
+                        >
                         <Filter className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
                         {t('tasks.filters')}
-                        {activeFiltersCount > 0 && (
+                            {activeFiltersCount > 0 && (
                             <Badge variant="secondary" className={`h-5 px-1.5 text-xs ${isRTL ? 'mr-2' : 'ml-2'}`}>
-                                {activeFiltersCount}
-                            </Badge>
-                        )}
-                    </Button>
-                    
-                    {/* Sort Dropdown */}
-                    <Select value={sortBy} onValueChange={setSortBy}>
+                                    {activeFiltersCount}
+                                </Badge>
+                            )}
+                        </Button>
+                        
+                        {/* Sort Dropdown */}
+                        <Select value={sortBy} onValueChange={setSortBy}>
                         <SelectTrigger className="h-9 text-sm font-medium px-3 w-auto">
                             <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                                <ArrowUpDown className="h-4 w-4" />
+                                    <ArrowUpDown className="h-4 w-4" />
                                 <SelectValue placeholder={t('tasks.sort')} />
-                            </div>
-                        </SelectTrigger>
-                        <SelectContent>
+                                </div>
+                            </SelectTrigger>
+                            <SelectContent>
                             <SelectItem value="smart">{t('tasks.sort')}</SelectItem>
-                            <SelectItem value="deadline-near">By deadline: Closest → Farthest</SelectItem>
-                            <SelectItem value="deadline-far">By deadline: Farthest → Closest</SelectItem>
-                            <SelectItem value="priority-high">By priority: High → Low</SelectItem>
-                            <SelectItem value="priority-low">By priority: Low → High</SelectItem>
-                            <SelectItem value="created-new">By time: Newest → Oldest</SelectItem>
-                            <SelectItem value="created-old">By time: Oldest → Newest</SelectItem>
-                        </SelectContent>
-                    </Select>
+                                <SelectItem value="deadline-near">By deadline: Closest → Farthest</SelectItem>
+                                <SelectItem value="deadline-far">By deadline: Farthest → Closest</SelectItem>
+                                <SelectItem value="priority-high">By priority: High → Low</SelectItem>
+                                <SelectItem value="priority-low">By priority: Low → High</SelectItem>
+                                <SelectItem value="created-new">By time: Newest → Oldest</SelectItem>
+                                <SelectItem value="created-old">By time: Oldest → Newest</SelectItem>
+                            </SelectContent>
+                        </Select>
                 </div>
                 
                 {/* Title */}
@@ -1040,9 +1040,9 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 {/* Menu button - centered on right */}
-                                {(isAdmin || (currentUserId && task.assignees.some(a => a.id === currentUserId))) && (
+                                    {(isAdmin || (currentUserId && task.assignees.some(a => a.id === currentUserId))) && (
                                     <div className="flex items-center shrink-0">
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
@@ -1068,7 +1068,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </div>
-                                )}
+                                    )}
                             </div>
                         ))
                     )}

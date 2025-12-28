@@ -44,17 +44,17 @@ export function TasksDemo() {
     }
   ]
 
-  // Priority colors matching the real screen (using pink theme as default)
+  // Priority colors matching the theme - using primary color with different opacities
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "HIGH":
-        return "bg-pink-700 hover:bg-pink-700 text-white"
+        return "bg-primary hover:bg-primary text-primary-foreground"
       case "MEDIUM":
-        return "bg-pink-500 hover:bg-pink-500 text-white"
+        return "bg-primary/80 hover:bg-primary/80 text-primary-foreground"
       case "LOW":
-        return "bg-pink-300 hover:bg-pink-300 text-white"
+        return "bg-primary/60 hover:bg-primary/60 text-primary-foreground"
       default:
-        return "bg-pink-300 hover:bg-pink-300 text-white"
+        return "bg-primary/60 hover:bg-primary/60 text-primary-foreground"
     }
   }
 

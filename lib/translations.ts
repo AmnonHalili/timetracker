@@ -443,6 +443,20 @@ export const translations = {
     'insights.learnMore': 'למד עוד',
     'insights.fullReport': 'דוח מלא',
 
+    // Auth / Login
+    'auth.welcomeBack': 'ברוך שובך',
+    'auth.signInToAccount': 'התחבר לחשבון שלך',
+    'auth.signInWithGoogle': 'התחבר עם Google',
+    'auth.orContinueWith': 'או המשך עם',
+    'auth.email': 'אימייל',
+    'auth.password': 'סיסמה',
+    'auth.forgotPassword': 'שכחת סיסמה?',
+    'auth.signIn': 'התחבר',
+    'auth.dontHaveAccount': 'אין לך חשבון?',
+    'auth.signUp': 'הירשם',
+    'auth.backToHome': 'חזרה לדף הבית',
+    'auth.errorOccurred': 'אירעה שגיאה במהלך ההתחברות',
+
     // Common
     'common.save': 'שמור',
     'common.cancel': 'ביטול',

@@ -10,9 +10,11 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertCircle, Loader2, ChevronLeft } from "lucide-react"
 import { GoogleLoginButton } from "@/components/auth/GoogleLoginButton"
+import { useLanguage } from "@/lib/useLanguage"
 
 export default function LoginPage() {
     const router = useRouter()
+    const { t, isRTL } = useLanguage()
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [error, setError] = useState("")
@@ -37,7 +39,7 @@ export default function LoginPage() {
                 router.refresh()
             }
         } catch {
-            setError("An error occurred during sign in")
+            setError(t('auth.errorOccurred'))
         } finally {
             setLoading(false)
         }
@@ -47,15 +49,15 @@ export default function LoginPage() {
         <div className="w-full max-w-md space-y-4">
             <Link
                 href="/"
-                className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors"
+                className={`inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors ${isRTL ? 'flex-row-reverse' : ''}`}
             >
-                <ChevronLeft className="mr-1 h-4 w-4" />
-                Back to Home
+                {t('auth.backToHome')}
+                <ChevronLeft className={`h-4 w-4 ${isRTL ? 'mr-1 rotate-180' : 'ml-1'}`} />
             </Link>
             <Card className="w-full">
                 <CardHeader>
-                    <CardTitle>Welcome Back</CardTitle>
-                    <CardDescription>Sign in to your account</CardDescription>
+                    <CardTitle className={isRTL ? 'text-right' : 'text-left'}>{t('auth.welcomeBack')}</CardTitle>
+                    <CardDescription className={isRTL ? 'text-right' : 'text-left'}>{t('auth.signInToAccount')}</CardDescription>
                 </CardHeader>
                 <div className="mb-4 px-6">
                     <GoogleLoginButton />
@@ -66,7 +68,7 @@ export default function LoginPage() {
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
                         <span className="bg-background px-2 text-muted-foreground">
-                            Or continue with
+                            {t('auth.orContinueWith')}
                         </span>
                     </div>
                 </div>
@@ -80,40 +82,42 @@ export default function LoginPage() {
                             </div>
                         )}
                         <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
+                            <Label htmlFor="email" className={isRTL ? 'text-right' : 'text-left'}>{t('auth.email')}</Label>
                             <Input
                                 id="email"
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
+                                dir="ltr"
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="password">Password</Label>
+                            <Label htmlFor="password" className={isRTL ? 'text-right' : 'text-left'}>{t('auth.password')}</Label>
                             <Input
                                 id="password"
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
+                                dir="ltr"
                             />
                         </div>
-                        <div className="flex items-center justify-end">
+                        <div className={`flex items-center ${isRTL ? 'justify-start' : 'justify-end'}`}>
                             <Link href="/forgot-password" className="text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md px-2 py-1">
-                                Forgot Password?
+                                {t('auth.forgotPassword')}
                             </Link>
                         </div>
                     </CardContent>
                     <CardFooter className="flex flex-col gap-4">
                         <Button type="submit" className="w-full" disabled={loading}>
-                            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
-                            Sign In
+                            {loading && <Loader2 className={`h-4 w-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} aria-hidden="true" />}
+                            {t('auth.signIn')}
                         </Button>
-                        <div className="text-center text-sm text-muted-foreground">
-                            Don&apos;t have an account?{" "}
+                        <div className={`text-sm text-muted-foreground ${isRTL ? 'text-right' : 'text-center'}`}>
+                            {t('auth.dontHaveAccount')}{" "}
                             <Link href="/register" className="text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md px-1">
-                                Sign up
+                                {t('auth.signUp')}
                             </Link>
                         </div>
                     </CardFooter>

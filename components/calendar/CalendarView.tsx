@@ -151,7 +151,10 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                     <Button
                         variant="ghost"
                         size="icon"
-                        onClick={view === 'month' ? handleNextMonth : handleNextDay}
+                        onClick={view === 'month' 
+                            ? (isRTL ? handleNextMonth : handlePrevMonth)
+                            : (isRTL ? handleNextDay : handlePrevDay)
+                        }
                     >
                         {isRTL ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
                     </Button>
@@ -163,7 +166,10 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                     <Button
                         variant="ghost"
                         size="icon"
-                        onClick={view === 'month' ? handlePrevMonth : handlePrevDay}
+                        onClick={view === 'month'
+                            ? (isRTL ? handlePrevMonth : handleNextMonth)
+                            : (isRTL ? handlePrevDay : handleNextDay)
+                        }
                     >
                         {isRTL ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     </Button>

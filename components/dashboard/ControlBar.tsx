@@ -212,7 +212,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                     // Update optimistic entry
                     setOptimisticEntry(prev => prev ? { ...prev, subtaskId: newSubtaskId } : null)
                     startTransition(() => {
-                        router.refresh()
+                    router.refresh()
                     })
                 }
             }
@@ -279,9 +279,9 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                     subtaskId: null // Clear subtask when task changes
                 })
             })
-            
+
             startTransition(() => {
-                router.refresh()
+            router.refresh()
             })
         } catch (error) {
             console.error("Failed to change task:", error)
@@ -362,7 +362,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                 })
             }
             startTransition(() => {
-                router.refresh()
+            router.refresh()
             })
         } catch (error) {
             console.error(error)
@@ -425,7 +425,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                 body: JSON.stringify({ action }),
             })
             startTransition(() => {
-                router.refresh()
+            router.refresh()
             })
         } catch (error) {
             console.error("Timer action failed", error)
@@ -647,7 +647,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                                                         }
                                                         
                                                         startTransition(() => {
-                                                            router.refresh()
+                                                        router.refresh()
                                                         })
                                                     } catch (error) {
                                                         console.error("Failed to update task status:", error)
@@ -745,7 +745,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                                             }
                                             
                                             startTransition(() => {
-                                                router.refresh()
+                                            router.refresh()
                                             })
                                         } catch (error) {
                                             console.error("Failed to update task status:", error)

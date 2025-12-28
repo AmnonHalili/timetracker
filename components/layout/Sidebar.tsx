@@ -53,46 +53,46 @@ export function Sidebar() {
                 <Link href="/dashboard" className="flex flex-col items-center gap-2" aria-label="Collabo Home">
                     {/* Pink Theme Logo */}
                     <div className="hidden [.pink-theme_&]:block">
-                        <Image
-                            src="/collabologopink.png"
-                            alt="Collabo Logo"
-                            width={80}
-                            height={80}
+                            <Image 
+                                src="/collabologopink.png" 
+                                alt="Collabo Logo" 
+                                width={80} 
+                                height={80} 
                             className="h-16 w-auto"
-                            priority
-                        />
+                                priority 
+                            />
                     </div>
 
                     {/* White Theme Logo */}
                     <div className="hidden [.white-theme_&]:block">
-                        <Image
-                            src="/collabologoblack.png"
-                            alt="Collabo Logo"
-                            width={80}
-                            height={80}
-                            className="h-16 w-auto"
-                            priority
-                        />
+                            <Image 
+                                src="/collabologoblack.png" 
+                                alt="Collabo Logo" 
+                                width={80} 
+                                height={80} 
+                                className="h-16 w-auto" 
+                                priority 
+                            />
                     </div>
 
                     {/* Default Logos (Blue/Dark) - Hide if pink or white theme is active */}
                     <div className="[.pink-theme_&]:hidden [.white-theme_&]:hidden">
-                        <Image
-                            src="/collabologo.png"
-                            alt="Collabo Logo"
-                            width={80}
-                            height={80}
-                            className="h-16 w-auto dark:hidden"
-                            priority
-                        />
-                        <Image
-                            src="/collabologowhitenoback.png"
-                            alt="Collabo Logo"
-                            width={80}
-                            height={80}
-                            className="h-16 w-auto hidden dark:block"
-                            priority
-                        />
+                            <Image 
+                                src="/collabologo.png" 
+                                alt="Collabo Logo" 
+                                width={80} 
+                                height={80} 
+                                className="h-16 w-auto dark:hidden" 
+                                priority 
+                            />
+                            <Image 
+                                src="/collabologowhitenoback.png" 
+                                alt="Collabo Logo" 
+                                width={80} 
+                                height={80} 
+                                className="h-16 w-auto hidden dark:block" 
+                                priority 
+                            />
                     </div>
                 </Link>
             </div>

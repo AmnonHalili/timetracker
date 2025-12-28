@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { ArrowRight, CheckCircle2, Clock, Users, BarChart3, ShieldCheck, ChevronLeft, ChevronRight } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { ArrowRight, CheckCircle2, Clock, Users, BarChart3, ShieldCheck, ChevronLeft, ChevronRight, Globe } from "lucide-react"
 import Link from "next/link"
 import { HierarchyDemo } from "@/components/landing/HierarchyDemo"
 import { TimeTrackerDemo } from "@/components/landing/TimeTrackerDemo"
@@ -9,6 +10,13 @@ import { TasksDemo } from "@/components/landing/TasksDemo"
 import { CalendarDemo } from "@/components/landing/CalendarDemo"
 import { ThemeLogo } from "@/components/landing/ThemeLogo"
 import { useLanguage } from "@/lib/useLanguage"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 function FeatureCard({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
   return (
@@ -32,9 +40,16 @@ function CheckItem({ text }: { text: string }) {
 }
 
 export function LandingPageContent() {
-  const { t, isRTL } = useLanguage()
+  const router = useRouter()
+  const { t, isRTL, language, setLanguage } = useLanguage()
   const [currentSlide, setCurrentSlide] = useState(0)
   const totalSlides = 4 // 1 for hierarchy demo, 1 for time tracker, 1 for tasks, 1 for calendar
+
+  const handleLanguageChange = (lang: 'en' | 'he') => {
+    setLanguage(lang)
+    // Refresh the page to apply language changes
+    router.refresh()
+  }
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % totalSlides)
@@ -56,6 +71,28 @@ export function LandingPageContent() {
               </Link>
             </div>
             <div className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+              {/* Language Switcher */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-9 w-9" aria-label={t('language.title')}>
+                    <Globe className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align={isRTL ? 'start' : 'end'}>
+                  <DropdownMenuItem 
+                    onClick={() => handleLanguageChange('en')}
+                    className={language === 'en' ? 'bg-muted' : ''}
+                  >
+                    English
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => handleLanguageChange('he')}
+                    className={language === 'he' ? 'bg-muted' : ''}
+                  >
+                    עברית
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Link href="/login" className="text-sm font-medium hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md px-2 py-1">
                 {t('landing.logIn')}
               </Link>
@@ -74,7 +111,8 @@ export function LandingPageContent() {
           <div className="container mx-auto px-4">
             <div className="flex flex-col items-center text-center">
               <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 text-center">
-                {t('landing.masterYourTime')}, <br className="hidden md:block" />
+                {t('landing.masterYourTime')}
+                <br />
                 <span className="text-primary">{t('landing.leadYourTeam')}</span>
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed text-center">
@@ -125,18 +163,18 @@ export function LandingPageContent() {
         {/* Project Management Spotlight */}
         <section className="py-24 overflow-x-hidden">
           <div className="container mx-auto px-0 md:px-4 relative">
-            {/* Navigation Arrows - Outside the content, on the sides of the screen */}
+            {/* Navigation Arrows - Outside the content, on the sides of the screen - Hidden on mobile */}
             <button
               onClick={nextSlide}
               aria-label="Previous slide"
-              className={`absolute top-1/2 -translate-y-1/2 z-10 transition-all hover:scale-110 ${isRTL ? 'right-full mr-4' : 'left-full ml-4'}`}
+              className={`hidden md:block absolute top-1/2 -translate-y-1/2 z-10 transition-all hover:scale-110 ${isRTL ? 'right-full mr-4' : 'left-full ml-4'}`}
             >
               {isRTL ? <ChevronLeft className="h-12 w-12 text-foreground" /> : <ChevronRight className="h-12 w-12 text-foreground" />}
             </button>
             <button
               onClick={prevSlide}
               aria-label="Next slide"
-              className={`absolute top-1/2 -translate-y-1/2 z-10 transition-all hover:scale-110 ${isRTL ? 'left-full ml-4' : 'right-full mr-4'}`}
+              className={`hidden md:block absolute top-1/2 -translate-y-1/2 z-10 transition-all hover:scale-110 ${isRTL ? 'left-full ml-4' : 'right-full mr-4'}`}
             >
               {isRTL ? <ChevronRight className="h-12 w-12 text-foreground" /> : <ChevronLeft className="h-12 w-12 text-foreground" />}
             </button>
@@ -171,7 +209,7 @@ export function LandingPageContent() {
                           </Link>
                         </div>
                       </div>
-                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-hidden bg-background mx-2 h-[500px]" dir="ltr">
+                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-hidden bg-background mx-auto md:mx-2 h-[500px]" dir="ltr">
                         <div className="w-full h-full bg-background flex items-center justify-center p-8">
                           <div className="w-full h-full flex items-center justify-center">
                             <HierarchyDemo />
@@ -201,7 +239,7 @@ export function LandingPageContent() {
                           <CheckItem text={t('landing.timeTracker.feature6')} />
                         </ul>
                       </div>
-                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-hidden bg-background mx-2 h-[500px]">
+                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-hidden bg-background mx-auto md:mx-2 h-[500px]">
                         <div className="w-full h-full bg-background rounded-lg flex items-center justify-center p-8 overflow-auto">
                           <TimeTrackerDemo />
                         </div>
@@ -229,7 +267,7 @@ export function LandingPageContent() {
                           <CheckItem text={t('landing.tasks.feature6')} />
                         </ul>
                       </div>
-                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-hidden bg-background mx-2 h-[500px]">
+                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-hidden bg-background mx-auto md:mx-2 h-[500px]">
                         <div className="w-full h-full bg-background rounded-lg flex items-center justify-center p-8 overflow-hidden">
                           <TasksDemo />
                         </div>
@@ -257,7 +295,7 @@ export function LandingPageContent() {
                           <CheckItem text={t('landing.calendar.feature6')} />
                         </ul>
                       </div>
-                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-hidden bg-background mx-2 h-[500px]">
+                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-hidden bg-background mx-auto md:mx-2 h-[500px]">
                         <div className="w-full h-full bg-background rounded-lg flex items-center justify-center p-8 overflow-hidden">
                           <CalendarDemo />
                         </div>
@@ -267,8 +305,8 @@ export function LandingPageContent() {
                 </div>
               </div>
 
-              {/* Slide Indicators */}
-              <div className="flex justify-center gap-2 mt-8">
+              {/* Slide Indicators - Hidden on mobile */}
+              <div className="hidden md:flex justify-center gap-2 mt-8">
                 {Array.from({ length: totalSlides }).map((_, index) => (
                   <button
                     key={index}

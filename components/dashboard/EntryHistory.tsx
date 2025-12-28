@@ -51,12 +51,12 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
 
     useEffect(() => {
         setLocalEntries(entries)
-
+        
         // When server entries arrive, check if we should remove the optimistic entry
         if (optimisticEntryId && onOptimisticEntryCleared) {
             // Check if the optimistic entry (temp ID) is still in the list
             const hasOptimisticEntry = entries.some(e => e.id === optimisticEntryId)
-
+            
             // If optimistic entry is gone, it means server data replaced it
             // Clear the callback to indicate we no longer need the optimistic entry
             if (!hasOptimisticEntry) {
@@ -84,7 +84,7 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
                 body: JSON.stringify({ id, ...updates }),
             })
             startTransition(() => {
-                router.refresh()
+            router.refresh()
             })
         } catch (e) {
             console.error("Failed to save", e)
@@ -116,7 +116,7 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
                 body: JSON.stringify({ id, description }),
             })
             startTransition(() => {
-                router.refresh()
+            router.refresh()
             })
         } catch (e) {
             console.error("Failed to save", e)
@@ -146,9 +146,9 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
         setLocalEntries(current => current.filter(e => e.id !== id))
         
         try {
-            await fetch(`/api/time-entries?id=${id}`, { method: "DELETE" })
+        await fetch(`/api/time-entries?id=${id}`, { method: "DELETE" })
             startTransition(() => {
-                router.refresh()
+        router.refresh()
             })
         } catch (error) {
             // Revert on error - restore the entry at its original position
@@ -288,7 +288,7 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
                                             )}
                                         </div>
                                     </div>
-                                    
+
                                     {/* Net Work and Menu button - centered vertically */}
                                     <div className={`flex items-center gap-6 shrink-0 ${isRTL ? 'flex-row-reverse' : ''}`}>
                                         {/* Menu button */}

@@ -103,9 +103,9 @@ export function CalendarDemo() {
   }
 
   const priorityColors: Record<string, string> = {
-    HIGH: "bg-pink-700 text-white",
-    MEDIUM: "bg-pink-500 text-white",
-    LOW: "bg-pink-300 text-white",
+    HIGH: "bg-primary text-primary-foreground",
+    MEDIUM: "bg-primary/80 text-primary-foreground",
+    LOW: "bg-primary/60 text-primary-foreground",
   }
 
   return (
