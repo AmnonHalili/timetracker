@@ -118,18 +118,33 @@ export function Sidebar() {
                 </div>
             </nav>
 
-            <Button
-                variant="ghost"
-                className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
-                onClick={async () => {
-                    // Stop active timer before logging out
-                    await stopActiveTimer()
-                    signOut({ callbackUrl: "/login" })
-                }}
-                aria-label={t('nav.logout')}
-            >
-                {t('nav.logout')}
-            </Button>
+            <div className="px-4 space-y-0 pt-4">
+                <Link
+                    href="/pricing"
+                    className={cn(
+                        "flex items-center px-4 py-3 text-sm font-medium rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                        pathname === "/pricing"
+                            ? "bg-muted text-primary"
+                            : "text-muted-foreground hover:bg-muted/50 hover:text-primary"
+                    )}
+                    prefetch={true}
+                >
+                    {t('nav.upgradeToPro')}
+                </Link>
+                <div className="border-t my-2"></div>
+                <Button
+                    variant="ghost"
+                    className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={async () => {
+                        // Stop active timer before logging out
+                        await stopActiveTimer()
+                        signOut({ callbackUrl: "/login" })
+                    }}
+                    aria-label={t('nav.logout')}
+                >
+                    {t('nav.logout')}
+                </Button>
+            </div>
         </aside>
     )
 }

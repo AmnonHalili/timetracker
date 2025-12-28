@@ -128,7 +128,21 @@ export function MobileSidebar() {
                         </div>
                     </nav>
 
-                    <div className="p-4 border-t">
+                    <div className="p-4 space-y-0">
+                        <Link
+                            href="/pricing"
+                            onClick={() => setOpen(false)}
+                            className={cn(
+                                "flex items-center px-4 py-3 text-base font-medium rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                                pathname === "/pricing"
+                                    ? "bg-muted text-primary"
+                                    : "text-muted-foreground hover:bg-muted/50 hover:text-primary"
+                            )}
+                            prefetch={true}
+                        >
+                            {t('nav.upgradeToPro')}
+                        </Link>
+                        <div className="border-t my-2"></div>
                         <Button
                             variant="ghost"
                             className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"

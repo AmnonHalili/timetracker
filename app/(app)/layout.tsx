@@ -3,6 +3,7 @@ import { Sidebar } from "@/components/layout/Sidebar"
 // Providers moved to root layout
 import { AccessibilityButton } from "@/components/accessibility/AccessibilityButton"
 import { AppHeader } from "@/components/layout/AppHeader"
+import { AdBanner } from "@/components/ads/AdBanner"
 
 export default function AppLayout({
     children,
@@ -25,6 +26,7 @@ export default function AppLayout({
                 </div>
             </main>
             <AccessibilityButton />
+            <AdBanner />
         </div>
     )
 }

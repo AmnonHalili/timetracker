@@ -38,6 +38,7 @@ export const translations = {
     'nav.team': 'Team',
     'nav.settings': 'Settings',
     'nav.logout': 'Log out',
+    'nav.upgradeToPro': 'Upgrade to Pro',
 
     // Dashboard
     'dashboard.title': 'Dashboard',
@@ -363,6 +364,65 @@ export const translations = {
     'landing.calendar.feature4': 'Visual time blocks showing your daily schedule at a glance',
     'landing.calendar.feature5': 'All-day events and recurring event support',
     'landing.calendar.feature6': 'Quick access to today\'s schedule and upcoming deadlines',
+
+    // Pricing
+    'pricing.title': 'Unlock Your Team\'s Full Potential',
+    'pricing.subtitle': 'Choose the perfect plan for your team size and needs - start free and upgrade as you grow',
+    'pricing.popular': 'Popular',
+    'pricing.currentPlan': 'Current Plan',
+    'pricing.upgrade': 'Upgrade',
+    'pricing.ads': 'Ads',
+    'pricing.noAds': 'No Ads',
+
+    // Features (appear in all plans)
+    'pricing.feature.basicFeatures': 'All basic features',
+    'pricing.feature.unlimitedTimeTracking': 'Unlimited time tracking',
+    'pricing.feature.taskManagement': 'Task and project management',
+    'pricing.feature.noAds': 'No ads',
+    'pricing.feature.upTo5Users': 'Support up to 5 users',
+    'pricing.feature.upTo20Users': 'Support up to 20 users',
+    'pricing.feature.upTo50Users': 'Support up to 50 users',
+    'pricing.feature.unlimitedUsers': 'Unlimited user support',
+    'pricing.feature.advancedReports': 'Advanced reports',
+    'pricing.feature.advancedTeamManagement': 'Advanced team management',
+    'pricing.feature.organizationalSupport': 'Full organizational support',
+
+    // Free Plan
+    'pricing.free.name': 'Free',
+    'pricing.free.price': '$0 / month',
+    'pricing.free.description': 'Perfect for getting started',
+    'pricing.free.users': 'Up to 5 participants',
+    'pricing.free.feature1': 'All basic features',
+    'pricing.free.feature2': 'Unlimited time tracking',
+    'pricing.free.feature3': 'Task and project management',
+
+    // Tier 1
+    'pricing.tier1.name': 'Tier 1',
+    'pricing.tier1.price': '$5 / month',
+    'pricing.tier1.description': 'For relatively small projects',
+    'pricing.tier1.users': '6-20 participants',
+    'pricing.tier1.feature1': 'All Free features',
+    'pricing.tier1.feature2': 'Support up to 20 users',
+    'pricing.tier1.feature3': 'Advanced reports',
+
+    // Tier 2
+    'pricing.tier2.name': 'Tier 2',
+    'pricing.tier2.price': '$12 / month',
+    'pricing.tier2.description': 'For medium-sized projects',
+    'pricing.tier2.users': '21-50 participants',
+    'pricing.tier2.feature1': 'All Tier 1 features',
+    'pricing.tier2.feature2': 'Support up to 50 users',
+    'pricing.tier2.feature3': 'Advanced team management',
+
+    // Tier 3
+    'pricing.tier3.name': 'Tier 3',
+    'pricing.tier3.price': '$25 / month',
+    'pricing.tier3.description': 'For large projects and organizations',
+    'pricing.tier3.users': '50+ participants',
+    'pricing.tier3.feature1': 'All Tier 2 features',
+    'pricing.tier3.feature2': 'Unlimited user support',
+    'pricing.tier3.feature3': 'Full organizational support',
+
     // Insights
     'insights.title': 'Productivity Insights',
     'insights.subtitle': 'Get personalized insights about your work patterns',
@@ -525,6 +585,7 @@ export const translations = {
     'nav.team': 'צוות',
     'nav.settings': 'הגדרות',
     'nav.logout': 'התנתק',
+    'nav.upgradeToPro': 'שדרג ל-Pro',
 
     // Dashboard
     'dashboard.title': 'לוח בקרה',
@@ -850,6 +911,64 @@ export const translations = {
     'landing.calendar.feature4': 'בלוקי זמן חזותיים המציגים את לוח הזמנים היומי במבט אחד',
     'landing.calendar.feature5': 'אירועים לכל היום ותמיכה באירועים חוזרים',
     'landing.calendar.feature6': 'גישה מהירה ללוח הזמנים של היום ומועדי אחרון קרובים',
+
+    // Pricing
+    'pricing.title': 'שחרר את הפוטנציאל המלא של הצוות שלך',
+    'pricing.subtitle': 'בחר את התוכנית המושלמת לגודל הצוות ולצרכים שלך - התחל בחינם ושדרג כשתתרחב',
+    'pricing.popular': 'פופולרי',
+    'pricing.currentPlan': 'תוכנית נוכחית',
+    'pricing.upgrade': 'שדרג',
+    'pricing.ads': 'פרסומות',
+    'pricing.noAds': 'ללא פרסומות',
+
+    // Features (appear in all plans)
+    'pricing.feature.basicFeatures': 'כל התכונות הבסיסיות',
+    'pricing.feature.unlimitedTimeTracking': 'מעקב זמן ללא הגבלה',
+    'pricing.feature.taskManagement': 'ניהול משימות ופרויקטים',
+    'pricing.feature.noAds': 'ללא פרסומות',
+    'pricing.feature.upTo5Users': 'תמיכה עד 5 משתמשים',
+    'pricing.feature.upTo20Users': 'תמיכה עד 20 משתמשים',
+    'pricing.feature.upTo50Users': 'תמיכה עד 50 משתמשים',
+    'pricing.feature.unlimitedUsers': 'תמיכה ללא הגבלה במשתמשים',
+    'pricing.feature.advancedReports': 'דוחות מתקדמים',
+    'pricing.feature.advancedTeamManagement': 'ניהול צוות מתקדם',
+    'pricing.feature.organizationalSupport': 'תמיכה ארגונית מלאה',
+
+    // Free Plan
+    'pricing.free.name': 'חינם',
+    'pricing.free.price': '₪0 / חודש',
+    'pricing.free.description': 'מושלם להתחלה',
+    'pricing.free.users': 'עד 5 משתתפים',
+    'pricing.free.feature1': 'כל התכונות הבסיסיות',
+    'pricing.free.feature2': 'מעקב זמן ללא הגבלה',
+    'pricing.free.feature3': 'ניהול משימות ופרויקטים',
+
+    // Tier 1
+    'pricing.tier1.name': 'מדרגה ראשונה',
+    'pricing.tier1.price': '₪20 / חודש',
+    'pricing.tier1.description': 'מתאים לפרויקטים קטנים יחסית',
+    'pricing.tier1.users': '6-20 משתתפים',
+    'pricing.tier1.feature1': 'כל התכונות של החינם',
+    'pricing.tier1.feature2': 'תמיכה עד 20 משתמשים',
+    'pricing.tier1.feature3': 'דוחות מתקדמים',
+
+    // Tier 2
+    'pricing.tier2.name': 'מדרגה שנייה',
+    'pricing.tier2.price': '₪50 / חודש',
+    'pricing.tier2.description': 'לפרויקטים בינוניים',
+    'pricing.tier2.users': '21-50 משתתפים',
+    'pricing.tier2.feature1': 'כל התכונות של מדרגה ראשונה',
+    'pricing.tier2.feature2': 'תמיכה עד 50 משתמשים',
+    'pricing.tier2.feature3': 'ניהול צוות מתקדם',
+
+    // Tier 3
+    'pricing.tier3.name': 'מדרגה שלישית',
+    'pricing.tier3.price': '₪100 / חודש',
+    'pricing.tier3.description': 'לפרויקטים גדולים או ארגונים',
+    'pricing.tier3.users': 'מעל 50 משתתפים',
+    'pricing.tier3.feature1': 'כל התכונות של מדרגה שנייה',
+    'pricing.tier3.feature2': 'תמיכה ללא הגבלה במשתמשים',
+    'pricing.tier3.feature3': 'תמיכה ארגונית מלאה',
   },
 } as const
 
