@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Play, Square, Timer as TimerIcon } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect, useState, startTransition } from "react"
 import { useRouter } from "next/navigation"
 
 interface TimerProps {
@@ -101,7 +101,9 @@ export function Timer({ activeEntry }: TimerProps) {
                 method: 'POST',
                 body: JSON.stringify({ action }),
             })
-            router.refresh() // Sync server components
+            startTransition(() => {
+                router.refresh() // Sync server components
+            })
         } catch (error) {
             console.error("Timer action failed", error)
             // Revert on error

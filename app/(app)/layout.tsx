@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { Sidebar } from "@/components/layout/Sidebar"
 // Providers moved to root layout
 import { AccessibilityButton } from "@/components/accessibility/AccessibilityButton"
@@ -14,7 +15,13 @@ export default function AppLayout({
             <main className="flex-1 overflow-y-scroll" id="main-content" role="main">
                 <AppHeader />
                 <div className="px-8 pb-8 pt-2">
-                    {children}
+                    <Suspense fallback={
+                        <div className="flex h-[50vh] w-full items-center justify-center">
+                            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                        </div>
+                    }>
+                        {children}
+                    </Suspense>
                 </div>
             </main>
             <AccessibilityButton />

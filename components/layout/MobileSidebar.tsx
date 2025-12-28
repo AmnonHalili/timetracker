@@ -113,6 +113,7 @@ export function MobileSidebar() {
                                 <Link
                                     key={route.href}
                                     href={route.href}
+                                    prefetch={true}
                                     onClick={() => setOpen(false)}
                                     className={cn(
                                         "flex items-center px-4 py-3 text-base font-medium rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",

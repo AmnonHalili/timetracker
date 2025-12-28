@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Pause, Square } from "lucide-react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, startTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useLanguage } from "@/lib/useLanguage"
@@ -211,7 +211,9 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                     })
                     // Update optimistic entry
                     setOptimisticEntry(prev => prev ? { ...prev, subtaskId: newSubtaskId } : null)
-                    router.refresh()
+                    startTransition(() => {
+                        router.refresh()
+                    })
                 }
             }
         } catch (error) {
@@ -225,6 +227,20 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
         
         setLoading(true)
         const now = new Date()
+        
+        // Optimistic update - update state immediately so subtasks appear instantly
+        const newTasks = newTaskIds.length > 0
+            ? tasks.filter(t => newTaskIds.includes(t.id))
+            : undefined
+        
+        // Update optimistic entry immediately with new tasks (subtasks will appear instantly)
+        setOptimisticEntry({
+            startTime: now,
+            breaks: [],
+            description: description || null,
+            tasks: newTasks,
+            subtaskId: null
+        })
         
         // Create stopped entry data for optimistic display
         if (optimisticEntry && onTimerStopped) {
@@ -263,25 +279,21 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                     subtaskId: null // Clear subtask when task changes
                 })
             })
-
-            // Update local state
-            setSelectedTaskIds(newTaskIds)
-            setSelectedSubtaskId(null)
             
-            // Update optimistic entry with new start time
-            setOptimisticEntry({
-                startTime: now,
-                breaks: [],
-                description: description || null,
-                tasks: newTaskIds.length > 0
-                    ? tasks.filter(t => newTaskIds.includes(t.id))
-                    : undefined,
-                subtaskId: null
+            startTransition(() => {
+                router.refresh()
             })
-            
-            router.refresh()
         } catch (error) {
             console.error("Failed to change task:", error)
+            // Revert optimistic update on error
+            setOptimisticEntry({
+                startTime: optimisticEntry.startTime,
+                breaks: optimisticEntry.breaks || [],
+                description: optimisticEntry.description || null,
+                tasks: optimisticEntry.tasks,
+                subtaskId: optimisticEntry.subtaskId || null
+            })
+            setSelectedTaskIds(oldTaskIds)
             alert("Failed to change task. Please try again.")
         } finally {
             setLoading(false)
@@ -349,7 +361,9 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                     }),
                 })
             }
-            router.refresh()
+            startTransition(() => {
+                router.refresh()
+            })
         } catch (error) {
             console.error(error)
             // Revert optimistic update on error
@@ -410,7 +424,9 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                 method: 'POST',
                 body: JSON.stringify({ action }),
             })
-            router.refresh()
+            startTransition(() => {
+                router.refresh()
+            })
         } catch (error) {
             console.error("Timer action failed", error)
             // Revert optimistic update on error
@@ -465,11 +481,16 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                                 if (optimisticEntry && activeEntry) {
                                     const taskIdsChanged = JSON.stringify(newTaskIds.sort()) !== JSON.stringify(selectedTaskIds.sort())
                                     if (taskIdsChanged) {
+                                        // Update state immediately for instant UI feedback (subtasks will appear immediately)
+                                        setSelectedTaskIds(newTaskIds)
+                                        setSelectedSubtaskId(null)
+                                        // Then handle the task change in background
                                         handleTaskChange(selectedTaskIds, newTaskIds)
-                                        return // Don't update state yet, will be updated after split
+                                        return
                                     }
                                 }
                                 
+                                // Update state immediately for instant UI feedback
                                 setSelectedTaskIds(newTaskIds)
                                 // Clear subtask selection when task changes
                                 setSelectedSubtaskId(null)
@@ -625,7 +646,9 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                                                             setSelectedSubtaskId(null)
                                                         }
                                                         
-                                                        router.refresh()
+                                                        startTransition(() => {
+                                                            router.refresh()
+                                                        })
                                                     } catch (error) {
                                                         console.error("Failed to update task status:", error)
                                                     }
@@ -721,7 +744,9 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                                                 setSelectedSubtaskId(null)
                                             }
                                             
-                                            router.refresh()
+                                            startTransition(() => {
+                                                router.refresh()
+                                            })
                                         } catch (error) {
                                             console.error("Failed to update task status:", error)
                                         }

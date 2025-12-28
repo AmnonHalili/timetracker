@@ -1,5 +1,6 @@
 "use client"
 
+import { startTransition } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useRouter, useSearchParams } from "next/navigation"
 
@@ -15,7 +16,9 @@ export function UserSelector({ users, currentUserId }: UserSelectorProps) {
     const handleUserChange = (value: string) => {
         const params = new URLSearchParams(searchParams)
         params.set("userId", value)
-        router.push(`?${params.toString()}`)
+        startTransition(() => {
+            router.push(`?${params.toString()}`)
+        })
     }
 
     if (users.length === 0) return null

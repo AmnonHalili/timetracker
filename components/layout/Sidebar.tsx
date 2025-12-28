@@ -103,6 +103,7 @@ export function Sidebar() {
                         <Link
                             key={route.href}
                             href={route.href}
+                            prefetch={true}
                             className={cn(
                                 "flex items-center px-4 py-3 text-sm font-medium rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                                 route.active

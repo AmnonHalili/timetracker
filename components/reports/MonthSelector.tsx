@@ -1,5 +1,6 @@
 "use client"
 
+import { startTransition } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useLanguage } from "@/lib/useLanguage"
@@ -20,13 +21,17 @@ export function MonthSelector({ year: propsYear, month: propsMonth }: MonthSelec
     const handleMonthChange = (value: string) => {
         const params = new URLSearchParams(searchParams)
         params.set("month", value)
-        router.push(`?${params.toString()}`)
+        startTransition(() => {
+            router.push(`?${params.toString()}`)
+        })
     }
 
     const handleYearChange = (value: string) => {
         const params = new URLSearchParams(searchParams)
         params.set("year", value)
-        router.push(`?${params.toString()}`)
+        startTransition(() => {
+            router.push(`?${params.toString()}`)
+        })
     }
 
     const months = Array.from({ length: 12 }, (_, i) => i)

@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, startTransition } from "react"
 import { useRouter } from "next/navigation"
 import { format, isToday, isYesterday } from "date-fns"
 import { Pencil, MoreVertical, Trash2 } from "lucide-react"
@@ -83,7 +83,9 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
                 method: "PATCH",
                 body: JSON.stringify({ id, ...updates }),
             })
-            router.refresh()
+            startTransition(() => {
+                router.refresh()
+            })
         } catch (e) {
             console.error("Failed to save", e)
         }
@@ -113,7 +115,9 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
                 method: "PATCH",
                 body: JSON.stringify({ id, description }),
             })
-            router.refresh()
+            startTransition(() => {
+                router.refresh()
+            })
         } catch (e) {
             console.error("Failed to save", e)
             // Revert on failure? For now just log
@@ -131,8 +135,36 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
 
     const handleDelete = async (id: string) => {
         if (!confirm(t('common.delete') + "?")) return
-        await fetch(`/api/time-entries?id=${id}`, { method: "DELETE" })
-        router.refresh()
+        
+        // Optimistic update - remove entry immediately from UI
+        const deletedEntry = localEntries.find(e => e.id === id)
+        const deletedIndex = localEntries.findIndex(e => e.id === id)
+        
+        if (!deletedEntry) return
+        
+        // Remove immediately for instant UI feedback
+        setLocalEntries(current => current.filter(e => e.id !== id))
+        
+        try {
+            await fetch(`/api/time-entries?id=${id}`, { method: "DELETE" })
+            startTransition(() => {
+                router.refresh()
+            })
+        } catch (error) {
+            // Revert on error - restore the entry at its original position
+            setLocalEntries(current => {
+                const newEntries = [...current]
+                // Restore at original position if possible, otherwise append
+                if (deletedIndex >= 0 && deletedIndex <= newEntries.length) {
+                    newEntries.splice(deletedIndex, 0, deletedEntry)
+                } else {
+                    newEntries.push(deletedEntry)
+                }
+                return newEntries
+            })
+            console.error("Failed to delete entry:", error)
+            alert(t('common.error') || "Failed to delete entry. Please try again.")
+        }
     }
 
     // Helper to calculate duration string

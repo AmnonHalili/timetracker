@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useState, useEffect } from "react"
+import { useState, useEffect, startTransition } from "react"
 import { useRouter } from "next/navigation"
 
 interface TimeEntry {
@@ -83,7 +83,9 @@ export function TodayList({ entries }: TodayListProps) {
                 method: "PATCH",
                 body: JSON.stringify({ id, description: tempDesc }),
             })
-            router.refresh()
+            startTransition(() => {
+                router.refresh()
+            })
         } catch {
             console.error("Failed to save")
             // Revert on failure request? mostly overkill for this simple app but good practice
@@ -106,7 +108,9 @@ export function TodayList({ entries }: TodayListProps) {
     const handleDelete = async (id: string) => {
         if (!confirm("Delete this entry?")) return
         await fetch(`/api/time-entries?id=${id}`, { method: "DELETE" })
-        router.refresh()
+        startTransition(() => {
+            router.refresh()
+        })
     }
 
     return (
