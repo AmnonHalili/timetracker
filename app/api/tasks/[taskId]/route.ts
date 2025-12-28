@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 import { getAllDescendants } from "@/lib/hierarchy-utils"
+import { createNotification } from "@/lib/create-notification"
 
 export async function GET(
     req: Request,
@@ -108,7 +109,7 @@ export async function PATCH(
         if (assignedToIds) {
             // Get previous assignees before update
             previousAssigneeIds = taskToCheck.assignees.map(u => u.id)
-            
+
             updateData.assignees = {
                 set: [], // Clear existing
                 connect: (assignedToIds as string[]).map(id => ({ id }))
@@ -132,7 +133,7 @@ export async function PATCH(
         // Create notifications for newly assigned users (excluding the creator)
         if (assignedToIds) {
             const newAssigneeIds = (assignedToIds as string[])
-            const newlyAssigned = newAssigneeIds.filter(id => 
+            const newlyAssigned = newAssigneeIds.filter(id =>
                 !previousAssigneeIds.includes(id) && id !== session.user.id
             )
 

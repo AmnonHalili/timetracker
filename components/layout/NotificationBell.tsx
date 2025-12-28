@@ -37,14 +37,14 @@ export function NotificationBell() {
                 setUnreadCount(data.filter((n: Notification) => !n.isRead).length)
             }
         } catch {
-            console.error("Failed to mark as read")
+            console.error("Failed to fetch notifications")
         }
     }
 
-    // Initial fetch and poll every minute
+    // Poll every 10 seconds for live-like updates
     useEffect(() => {
         fetchNotifications()
-        const interval = setInterval(fetchNotifications, 60000)
+        const interval = setInterval(fetchNotifications, 10000) // 10 seconds
         return () => clearInterval(interval)
     }, [])
 

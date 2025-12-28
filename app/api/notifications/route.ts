@@ -2,6 +2,8 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
+import { createNotification } from "@/lib/create-notification"
+import { NotificationType } from "@prisma/client"
 
 export async function GET() {
     const session = await getServerSession(authOptions)
@@ -14,6 +16,38 @@ export async function GET() {
     })
 
     return NextResponse.json(notifications)
+}
+
+export async function POST(req: Request) {
+    const session = await getServerSession(authOptions)
+    if (!session) return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+
+    try {
+        const { userId, title, message, link, type } = await req.json()
+
+        if (!userId || !title || !message) {
+            return NextResponse.json(
+                { message: "Missing required fields" },
+                { status: 400 }
+            )
+        }
+
+        const notification = await createNotification({
+            userId,
+            title,
+            message,
+            link,
+            type: type as NotificationType | undefined,
+        })
+
+        return NextResponse.json(notification, { status: 201 })
+    } catch (error) {
+        console.error("Error creating notification:", error)
+        return NextResponse.json(
+            { message: "Error creating notification" },
+            { status: 500 }
+        )
+    }
 }
 
 export async function PATCH(req: Request) {

@@ -2,6 +2,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
+import { createNotification } from "@/lib/create-notification"
 
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions)
@@ -40,7 +41,7 @@ export async function POST(req: Request) {
             }
         })
 
-        // Notify Admins
+        // Notify Admins with real-time delivery
         const admins = await prisma.user.findMany({
             where: {
                 projectId: project.id,
@@ -48,17 +49,15 @@ export async function POST(req: Request) {
             }
         })
 
-        if (admins.length > 0) {
-            await prisma.notification.createMany({
-                data: admins.map(admin => ({
-                    userId: admin.id,
-                    title: "New Join Request",
-                    message: `${user?.name} has requested to join your project.`,
-                    type: "INFO",
-                    link: "/team"
-                }))
+        await Promise.all(admins.map(admin =>
+            createNotification({
+                userId: admin.id,
+                title: "New Join Request",
+                message: `${user?.name} has requested to join your project.`,
+                type: "INFO",
+                link: "/team"
             })
-        }
+        ))
 
         return NextResponse.json({ success: true })
     } catch (error) {

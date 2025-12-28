@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { hash } from "bcryptjs"
 import { NextResponse } from "next/server"
 import { Role, Status } from "@prisma/client"
+import { createNotification } from "@/lib/create-notification"
 
 export async function POST(req: Request) {
     try {
@@ -118,17 +119,16 @@ export async function POST(req: Request) {
                 }
             })
 
-            if (admins.length > 0) {
-                await prisma.notification.createMany({
-                    data: admins.map(admin => ({
-                        userId: admin.id,
-                        title: "New Join Request",
-                        message: `${user.name} has requested to join your project.`,
-                        type: "INFO",
-                        link: "/team" // Redirect to the main team page where requests are shown
-                    }))
+            // Send real-time notifications to each admin
+            await Promise.all(admins.map(admin =>
+                createNotification({
+                    userId: admin.id,
+                    title: "New Join Request",
+                    message: `${user.name} has requested to join your project.`,
+                    type: "INFO",
+                    link: "/team"
                 })
-            }
+            ))
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
