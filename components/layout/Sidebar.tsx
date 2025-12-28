@@ -5,8 +5,6 @@ import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { useEffect, useState } from "react"
-
 import { signOut } from "next-auth/react"
 import { stopActiveTimer } from "@/lib/utils"
 import { useLanguage } from "@/lib/useLanguage"
@@ -14,49 +12,6 @@ import { useLanguage } from "@/lib/useLanguage"
 export function Sidebar() {
     const pathname = usePathname()
     const { t } = useLanguage()
-    const [isPinkTheme, setIsPinkTheme] = useState(false)
-    const [isWhiteTheme, setIsWhiteTheme] = useState(false)
-
-    useEffect(() => {
-        // Check which theme is active
-        const checkTheme = () => {
-            const body = document.body
-            const html = document.documentElement
-            // Check both class and localStorage
-            const isPink = body.classList.contains("pink-theme") ||
-                html.classList.contains("pink-theme") ||
-                localStorage.getItem("theme") === "pink" ||
-                localStorage.getItem("appTheme") === "pink"
-            const isWhite = body.classList.contains("white-theme") ||
-                html.classList.contains("white-theme") ||
-                localStorage.getItem("theme") === "white" ||
-                localStorage.getItem("appTheme") === "white"
-            setIsPinkTheme(isPink)
-            setIsWhiteTheme(isWhite)
-        }
-
-        checkTheme()
-
-        // Watch for theme changes
-        const observer = new MutationObserver(checkTheme)
-        observer.observe(document.body, {
-            attributes: true,
-            attributeFilter: ['class']
-        })
-        observer.observe(document.documentElement, {
-            attributes: true,
-            attributeFilter: ['class']
-        })
-
-        // Also listen to storage changes
-        const handleStorageChange = () => checkTheme()
-        window.addEventListener("storage", handleStorageChange)
-
-        return () => {
-            observer.disconnect()
-            window.removeEventListener("storage", handleStorageChange)
-        }
-    }, [])
 
     const routes = [
         {
@@ -101,56 +56,49 @@ export function Sidebar() {
         <aside className="hidden md:flex flex-col h-screen w-52 border-r border-l bg-background shrink-0" aria-label="Main navigation">
             <div className="px-4 py-6 border-b flex items-center justify-center z-10 relative">
                 <Link href="/dashboard" className="flex flex-col items-center gap-2" aria-label="Collabo Home">
-                    {isPinkTheme ? (
-                        <>
-                            <Image
-                                src="/collabologopink.png"
-                                alt="Collabo Logo"
-                                width={80}
-                                height={80}
-                                className="h-16 w-auto dark:hidden"
-                                priority
-                            />
-                            <Image
-                                src="/collabologopink.png"
-                                alt="Collabo Logo"
-                                width={80}
-                                height={80}
-                                className="h-16 w-auto hidden dark:block"
-                                priority
-                            />
-                        </>
-                    ) : isWhiteTheme ? (
-                        <>
-                            <Image
-                                src="/collabologoblack.png"
-                                alt="Collabo Logo"
-                                width={80}
-                                height={80}
-                                className="h-16 w-auto"
-                                priority
-                            />
-                        </>
-                    ) : (
-                        <>
-                            <Image
-                                src="/collabologo.png"
-                                alt="Collabo Logo"
-                                width={80}
-                                height={80}
-                                className="h-16 w-auto dark:hidden"
-                                priority
-                            />
-                            <Image
-                                src="/collabologowhitenoback.png"
-                                alt="Collabo Logo"
-                                width={80}
-                                height={80}
-                                className="h-16 w-auto hidden dark:block"
-                                priority
-                            />
-                        </>
-                    )}
+                    {/* Pink Theme Logo */}
+                    <div className="hidden [.pink-theme_&]:block">
+                        <Image
+                            src="/collabologopink.png"
+                            alt="Collabo Logo"
+                            width={80}
+                            height={80}
+                            className="h-16 w-auto"
+                            priority
+                        />
+                    </div>
+
+                    {/* White Theme Logo */}
+                    <div className="hidden [.white-theme_&]:block">
+                        <Image
+                            src="/collabologoblack.png"
+                            alt="Collabo Logo"
+                            width={80}
+                            height={80}
+                            className="h-16 w-auto"
+                            priority
+                        />
+                    </div>
+
+                    {/* Default Logos (Blue/Dark) - Hide if pink or white theme is active */}
+                    <div className="[.pink-theme_&]:hidden [.white-theme_&]:hidden">
+                        <Image
+                            src="/collabologo.png"
+                            alt="Collabo Logo"
+                            width={80}
+                            height={80}
+                            className="h-16 w-auto dark:hidden"
+                            priority
+                        />
+                        <Image
+                            src="/collabologowhitenoback.png"
+                            alt="Collabo Logo"
+                            width={80}
+                            height={80}
+                            className="h-16 w-auto hidden dark:block"
+                            priority
+                        />
+                    </div>
                 </Link>
             </div>
 
