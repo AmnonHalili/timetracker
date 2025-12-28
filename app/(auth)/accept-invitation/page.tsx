@@ -182,7 +182,7 @@ export default function AcceptInvitationPage() {
             <Card className="w-full max-w-md">
                 <CardHeader className="text-center space-y-4">
                     <div className="flex justify-center">
-                        <Image src="/icon.png" alt="Collabo" width={60} height={60} />
+                        <Image src="/collabologo.png" alt="Collabo" width={180} height={60} style={{ width: 'auto', height: '60px' }} />
                     </div>
                     <div>
                         <CardTitle className="text-2xl">Complete Your Registration</CardTitle>

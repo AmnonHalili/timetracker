@@ -177,7 +177,7 @@ export async function POST(req: Request) {
         })
 
         const invitationUrl = `${process.env.NEXTAUTH_URL}/accept-invitation?token=${invitationToken}`
-        const logoUrl = `${process.env.NEXTAUTH_URL}/icon.png`
+        const logoUrl = `${process.env.NEXTAUTH_URL}/collabologo.png`
         const projectName = currentUser.project?.name || "the team"
         const inviterName = currentUser.name || "A team member"
 
