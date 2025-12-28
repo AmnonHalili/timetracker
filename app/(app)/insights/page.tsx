@@ -42,6 +42,7 @@ interface PersonalInsights {
 }
 
 import { useLanguage } from "@/lib/useLanguage"
+import { TranslationKey } from "@/lib/translations"
 
 export default function InsightsPage() {
     const { t, dir } = useLanguage()
@@ -150,7 +151,7 @@ export default function InsightsPage() {
 
     const translateDay = (day: string) => {
         if (!day) return day
-        const key = `days.${day.toLowerCase()}` as any
+        const key = `days.${day.toLowerCase()}` as TranslationKey
         return t(key) !== key ? t(key) : day
     }
 
