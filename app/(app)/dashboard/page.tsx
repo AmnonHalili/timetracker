@@ -7,6 +7,7 @@ import { redirect } from "next/navigation"
 import { DashboardContent } from "@/components/dashboard/DashboardContent"
 import { StatsWidget } from "@/components/dashboard/StatsWidget"
 import { TeamStatusWidget } from "@/components/dashboard/TeamStatusWidget"
+import { InsightsWidget } from "@/components/analytics/InsightsWidget"
 
 import { User, TimeEntry, Task, TimeBreak } from "@prisma/client"
 
@@ -30,8 +31,8 @@ export default async function DashboardPage() {
         where: { id: session.user.id },
         include: {
             timeEntries: {
-                include: { 
-                    breaks: true, 
+                include: {
+                    breaks: true,
                     tasks: true,
                     subtask: true
                 }
@@ -174,6 +175,9 @@ export default async function DashboardPage() {
                         historyEntries={historyEntries}
                         tasks={tasks}
                     />
+
+                    {/* Insights Widget */}
+                    <InsightsWidget />
                 </div>
 
                 {/* Right Sidebar */}
@@ -196,6 +200,6 @@ export default async function DashboardPage() {
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     )
 }
