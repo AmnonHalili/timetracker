@@ -6,7 +6,7 @@ import { TimeEntry, TimeBreak } from "@prisma/client"
 
 export async function GET() {
     const session = await getServerSession(authOptions)
-    
+
     if (!session) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
@@ -40,7 +40,8 @@ export async function GET() {
             timeEntries: {
                 where: { endTime: null },
                 include: { breaks: { where: { endTime: null } } }
-            }
+            },
+            lastSeen: true
         }
     })
 
@@ -50,18 +51,28 @@ export async function GET() {
         email: string
         role: "ADMIN" | "EMPLOYEE" | "MANAGER"
         jobTitle: string | null
+        lastSeen: Date | null
         timeEntries: (TimeEntry & { breaks: TimeBreak[] })[]
     }
 
     const teamStatus = (projectUsers as unknown as ProjectUser[]).map((u) => {
         const activeEntry = u.timeEntries[0]
-        let status: 'WORKING' | 'BREAK' | 'OFFLINE' = 'OFFLINE'
+        let status: 'WORKING' | 'BREAK' | 'OFFLINE' | 'ONLINE' = 'OFFLINE'
         let lastActive: Date | undefined = undefined
 
+        // Check for active time entry first
         if (activeEntry) {
             const activeBreak = activeEntry.breaks && activeEntry.breaks.length > 0
             status = activeBreak ? 'BREAK' : 'WORKING'
             lastActive = activeEntry.startTime
+        }
+        // If not working, check for online presence (lastSeen within 90 seconds)
+        else if (u.lastSeen) {
+            const ninetySecondsAgo = new Date(Date.now() - 90000)
+            if (u.lastSeen > ninetySecondsAgo) {
+                status = 'ONLINE'
+                lastActive = u.lastSeen
+            }
         }
 
         return {

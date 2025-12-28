@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react"
 import { RecursiveNode } from "@/components/team/RecursiveNode"
+import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { AddChildDialog } from "@/components/team/AddChildDialog"
 import { User } from "@prisma/client"
 import { Loader2, UserPlus, Pencil, ZoomIn, ZoomOut, Network, ArrowRight, Crosshair } from "lucide-react"
@@ -57,7 +58,7 @@ export default function HierarchyPage() {
     const [isInitialized, setIsInitialized] = useState(false)
 
     // Online status tracking
-    const [onlineUserIds, setOnlineUserIds] = useState<string[]>([])
+
 
     // Calculate relative zoom percentage (baseZoom = 100%)
     const getRelativeZoomPercent = (zoom: number) => {
@@ -345,41 +346,8 @@ export default function HierarchyPage() {
         }
     }, [])
 
-    // Online status tracking - polling and heartbeat
-    useEffect(() => {
-        if (!session?.user?.id) return
-
-        const fetchOnlineUsers = async () => {
-            try {
-                const res = await fetch('/api/online-status')
-                if (res.ok) {
-                    const data = await res.json()
-                    setOnlineUserIds(data.onlineUsers || [])
-                }
-            } catch (error) {
-                console.error('Failed to fetch online users:', error)
-            }
-        }
-
-        const sendHeartbeat = async () => {
-            try {
-                await fetch('/api/online-status', { method: 'POST' })
-            } catch (error) {
-                console.error('Failed to send heartbeat:', error)
-            }
-        }
-
-        fetchOnlineUsers()
-        sendHeartbeat()
-
-        const fetchInterval = setInterval(fetchOnlineUsers, 30000)
-        const heartbeatInterval = setInterval(sendHeartbeat, 30000)
-
-        return () => {
-            clearInterval(fetchInterval)
-            clearInterval(heartbeatInterval)
-        }
-    }, [session])
+    // Online status tracking polling and heartbeart handled by hook
+    const { onlineUserIds } = useOnlineStatus()
 
     const handleAddClick = (parentId: string, parentName: string) => {
         setTargetParentId(parentId)

@@ -6,7 +6,7 @@ import { redirect } from "next/navigation"
 
 import { DashboardContent } from "@/components/dashboard/DashboardContent"
 import { StatsWidget } from "@/components/dashboard/StatsWidget"
-import { TeamStatusWidget } from "@/components/dashboard/TeamStatusWidget"
+import { LiveTeamStatusWidget } from "@/components/dashboard/LiveTeamStatusWidget"
 
 import { User, TimeEntry, Task, TimeBreak } from "@prisma/client"
 
@@ -190,7 +190,7 @@ export default async function DashboardPage() {
                         {/* Team Status (Admin Only) - Hidden on mobile, shown on desktop */}
                         {showTeamStatus && (
                             <div className={`${showStats ? "pt-12" : ""} hidden lg:block`}>
-                                <TeamStatusWidget teamStatus={teamStatus} />
+                                <LiveTeamStatusWidget initialStatus={teamStatus} />
                             </div>
                         )}
                     </div>

@@ -4,13 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { useLanguage } from "@/lib/useLanguage"
 
-interface TeamMemberStatus {
+export interface TeamMemberStatus {
     userId: string
     name: string | null
     email: string
     role: "ADMIN" | "EMPLOYEE"
     jobTitle: string | null
-    status: 'WORKING' | 'BREAK' | 'OFFLINE'
+    status: 'WORKING' | 'BREAK' | 'OFFLINE' | 'ONLINE'
     lastActive?: Date
 }
 
@@ -54,7 +54,8 @@ export function TeamStatusWidget({ teamStatus }: TeamStatusWidgetProps) {
                                         <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
                                             {member.status === 'OFFLINE' ? t('common.offline') : (
                                                 member.status === 'WORKING' ? t('common.workingSince') + ' ' + member.lastActive?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
-                                                    t('common.onBreak')
+                                                    member.status === 'BREAK' ? t('common.onBreak') :
+                                                        t('common.online')
                                             )}
                                         </p>
                                     </div>
@@ -74,6 +75,9 @@ function StatusIndicator({ status }: { status: TeamMemberStatus['status'] }) {
     }
     if (status === 'BREAK') {
         return <div className="h-3 w-3 rounded-full bg-yellow-400 border border-yellow-500" />
+    }
+    if (status === 'ONLINE') {
+        return <div className="h-3 w-3 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
     }
     return <div className="h-3 w-3 rounded-full bg-gray-300" />
 }
