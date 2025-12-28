@@ -12,6 +12,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { X, Loader2 } from "lucide-react"
+import { useLanguage } from "@/lib/useLanguage"
 
 interface Manager {
     id: string
@@ -39,10 +40,11 @@ interface SecondaryManagersFormProps {
     onSave: (managers: SecondaryManagerData[]) => Promise<void>
 }
 
-const PERMISSIONS = [
-    { id: 'VIEW_TIME', label: 'View Time Entries', description: 'Can view time tracking data' },
-    { id: 'EDIT_SETTINGS', label: 'Edit Work Settings', description: 'Can modify work days and targets' },
-    { id: 'MANAGE_TASKS', label: 'Manage Tasks', description: 'Can assign and manage tasks' }
+// Permissions will be translated in the component using useLanguage
+const PERMISSION_KEYS = [
+    { id: 'VIEW_TIME', labelKey: 'team.viewTimeEntries', descKey: 'team.viewTimeEntriesDesc' },
+    { id: 'EDIT_SETTINGS', labelKey: 'team.editWorkSettings', descKey: 'team.editWorkSettingsDesc' },
+    { id: 'MANAGE_TASKS', labelKey: 'team.manageTasks', descKey: 'team.manageTasksDesc' }
 ]
 
 export function SecondaryManagersForm({
@@ -51,6 +53,7 @@ export function SecondaryManagersForm({
     availableManagers,
     onSave
 }: SecondaryManagersFormProps) {
+    const { t, isRTL } = useLanguage()
     const [selectedManagers, setSelectedManagers] = useState<SecondaryManagerData[]>(
         currentSecondaryManagers.map(sm => ({
             managerId: sm.managerId,
@@ -109,16 +112,16 @@ export function SecondaryManagersForm({
         <div className="space-y-6">
             {/* Add Manager Section */}
             <div className="space-y-3">
-                <Label>Add Secondary Manager</Label>
+                <Label className={isRTL ? 'text-right' : 'text-left'}>{t('team.addSecondaryManager')}</Label>
                 <div className="flex gap-2">
                     <Select onValueChange={handleAddManager}>
                         <SelectTrigger className="flex-1">
-                            <SelectValue placeholder="Select a manager..." />
+                            <SelectValue placeholder={t('team.selectManager')} />
                         </SelectTrigger>
                         <SelectContent>
                             {availableToAdd.length === 0 ? (
-                                <div className="px-2 py-6 text-center text-sm text-muted-foreground">
-                                    No available managers
+                                <div className={`px-2 py-6 text-center text-sm text-muted-foreground ${isRTL ? 'text-right' : 'text-left'}`}>
+                                    {t('team.noAvailableManagers')}
                                 </div>
                             ) : (
                                 availableToAdd.map(manager => (
@@ -134,8 +137,8 @@ export function SecondaryManagersForm({
 
             {/* Selected Managers List */}
             {selectedManagers.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground text-sm">
-                    No secondary managers assigned. Add one above to get started.
+                <div className={`py-8 text-muted-foreground text-sm ${isRTL ? 'text-right' : 'text-center'}`}>
+                    {t('team.noSecondaryManagers')}
                 </div>
             ) : (
                 <div className="space-y-4">
@@ -154,10 +157,10 @@ export function SecondaryManagersForm({
                             </div>
 
                             <div className="space-y-2">
-                                <Label className="text-sm text-muted-foreground">Permissions</Label>
+                                <Label className={`text-sm text-muted-foreground ${isRTL ? 'text-right' : 'text-left'}`}>{t('team.permissions')}</Label>
                                 <div className="grid gap-3">
-                                    {PERMISSIONS.map(permission => (
-                                        <div key={permission.id} className="flex items-start space-x-3">
+                                    {PERMISSION_KEYS.map(permission => (
+                                        <div key={permission.id} className={`flex items-start ${isRTL ? 'flex-row-reverse space-x-reverse' : 'space-x-3'}`}>
                                             <Checkbox
                                                 id={`${manager.managerId}-${permission.id}`}
                                                 checked={manager.permissions.includes(permission.id)}
@@ -165,15 +168,15 @@ export function SecondaryManagersForm({
                                                     handleTogglePermission(manager.managerId, permission.id)
                                                 }
                                             />
-                                            <div className="grid gap-1 leading-none">
+                                            <div className={`grid gap-1 leading-none ${isRTL ? 'text-right' : 'text-left'}`}>
                                                 <label
                                                     htmlFor={`${manager.managerId}-${permission.id}`}
                                                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                                                 >
-                                                    {permission.label}
+                                                    {t(permission.labelKey as any)}
                                                 </label>
                                                 <p className="text-xs text-muted-foreground">
-                                                    {permission.description}
+                                                    {t(permission.descKey as any)}
                                                 </p>
                                             </div>
                                         </div>
@@ -185,10 +188,10 @@ export function SecondaryManagersForm({
                 </div>
             )}
 
-            <div className="flex justify-end pt-4 border-t">
+            <div className={`flex ${isRTL ? 'justify-start' : 'justify-end'} pt-4 border-t`}>
                 <Button onClick={handleSave} disabled={saving}>
-                    {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Save Secondary Managers
+                    {saving && <Loader2 className={`h-4 w-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} />}
+                    {t('team.saveSecondaryManagers')}
                 </Button>
             </div>
         </div>

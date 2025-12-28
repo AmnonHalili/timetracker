@@ -248,7 +248,12 @@ export default async function TeamPage() {
                 isManager={isManager}
             />
 
-            <TeamList users={teamMembers as never} currentUserId={session.user.id} currentUserRole={currentUser.role} />
+            <TeamList 
+                users={teamMembers as never} 
+                allUsers={allTeamMembers as never}
+                currentUserId={session.user.id} 
+                currentUserRole={currentUser.role} 
+            />
         </div>
     )
 }

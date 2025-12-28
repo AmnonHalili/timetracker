@@ -36,12 +36,17 @@ export async function DELETE(req: Request) {
             return NextResponse.json({ message: "Employee not found" }, { status: 404 })
         }
 
-        // Check if current user can manage this employee
+        // Allow removal if:
+        // 1. Current user is the manager being removed (self-removal)
+        // 2. Current user can manage this employee (primary manager or admin)
         const allUsers = await prisma.user.findMany({
             where: { projectId: currentUser.projectId }
         })
 
-        if (!canManageUser(currentUser, employee, allUsers)) {
+        const isSelfRemoval = session.user.id === managerId
+        const canManage = canManageUser(currentUser, employee, allUsers)
+
+        if (!isSelfRemoval && !canManage) {
             return NextResponse.json({ message: "Forbidden: You don't have permission to manage this user" }, { status: 403 })
         }
 
