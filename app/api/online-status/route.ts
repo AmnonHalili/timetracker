@@ -23,7 +23,7 @@ if (typeof window === 'undefined') {
 }
 
 // POST - Send heartbeat
-export async function POST(req: NextRequest) {
+export async function POST() {
     try {
         const session = await getServerSession(authOptions)
 
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
 }
 
 // GET - Retrieve online users
-export async function GET(req: NextRequest) {
+export async function GET() {
     try {
         const session = await getServerSession(authOptions)
 
@@ -54,13 +54,13 @@ export async function GET(req: NextRequest) {
         const now = Date.now()
         const onlineUserIds: string[] = []
 
-        for (const [userId, lastSeen] of onlineUsers.entries()) {
+        Array.from(onlineUsers.entries()).forEach(([userId, lastSeen]) => {
             if (now - lastSeen <= ONLINE_THRESHOLD) {
                 onlineUserIds.push(userId)
             } else {
                 onlineUsers.delete(userId)
             }
-        }
+        })
 
         return NextResponse.json({ onlineUsers: onlineUserIds })
     } catch (error) {

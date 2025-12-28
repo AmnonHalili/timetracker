@@ -70,9 +70,6 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
     }>>([])
     const [loadingSecondary, setLoadingSecondary] = useState(false)
 
-    // Primary manager editing state
-    const [editingMainManager, setEditingMainManager] = useState<string>("")
-
     // Role change dialog state
     const [roleDialogUser, setRoleDialogUser] = useState<User | null>(null)
     const [selectedRole, setSelectedRole] = useState<string>("")
@@ -101,7 +98,6 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
         setSelectedUser(user)
         setEditTarget(user.dailyTarget?.toString() || "")
         setEditDays(user.workDays || [])
-        setEditingMainManager(user.managerId || "none")
 
         // Fetch secondary managers
         setLoadingSecondary(true)
