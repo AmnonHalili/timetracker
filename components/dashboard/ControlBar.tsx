@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Pause, Square } from "lucide-react"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
@@ -809,20 +810,21 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                                     <Button
                                         size="sm"
                                         variant="outline"
-                                        className="border-input hover:bg-accent text-accent-foreground font-medium h-9 shadow-sm"
+                                        className="border-primary/30 bg-white text-muted-foreground hover:bg-white hover:text-muted-foreground font-medium h-9 shadow-sm"
                                         onClick={() => handleAction('pause')}
                                         disabled={loading}
                                     >
+                                        <Pause className="h-4 w-4 mr-2" />
                                         {t('dashboard.pause')}
                                     </Button>
                                 )}
                                 <Button
                                     size="sm"
-                                    variant="destructive"
-                                    className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-medium h-9 shadow-sm"
+                                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium h-9 shadow-sm"
                                     onClick={() => handleAction('stop')}
                                     disabled={loading || !isDataLoaded}
                                 >
+                                    <Square className="h-4 w-4 mr-2" />
                                     {t('dashboard.stop')}
                                 </Button>
                             </>

@@ -4,6 +4,7 @@ import { useState } from "react"
 import { ArrowRight, CheckCircle2, Clock, Users, BarChart3, ShieldCheck, ChevronLeft, ChevronRight, Calendar } from "lucide-react"
 import Link from "next/link"
 import { HierarchyDemo } from "@/components/landing/HierarchyDemo"
+import { TimeTrackerDemo } from "@/components/landing/TimeTrackerDemo"
 import { ThemeLogo } from "@/components/landing/ThemeLogo"
 import { useLanguage } from "@/lib/useLanguage"
 
@@ -168,8 +169,8 @@ export function LandingPageContent() {
                           </Link>
                         </div>
                       </div>
-                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-visible bg-background mx-2" dir="ltr">
-                        <div className="w-full h-full bg-background rounded-lg flex items-center justify-center p-8 min-h-[400px] overflow-hidden">
+                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-hidden bg-background mx-2" dir="ltr">
+                        <div className="w-full h-full bg-background flex items-center justify-center p-8 min-h-[400px]">
                           <div className="w-full h-full flex items-center justify-center">
                             <HierarchyDemo />
                           </div>
@@ -198,14 +199,9 @@ export function LandingPageContent() {
                           <CheckItem text={t('landing.timeTracker.feature6')} />
                         </ul>
                       </div>
-                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-visible bg-background mx-2">
-                        <div className="w-full h-full bg-gradient-to-br from-primary/10 via-primary/5 to-background rounded-lg flex items-center justify-center p-8 min-h-[400px] overflow-hidden">
-                          <div className="text-center space-y-4">
-                            <Clock className="h-24 w-24 text-primary mx-auto opacity-50" />
-                            <p className="text-muted-foreground text-sm">
-                              {isRTL ? 'תצוגה מקדימה של מסך מעקב הזמן' : 'Time Tracker Preview'}
-                            </p>
-                          </div>
+                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-hidden bg-background mx-2">
+                        <div className="w-full h-full bg-gradient-to-br from-primary/10 via-primary/5 to-background rounded-lg flex items-center justify-center p-8 min-h-[400px] overflow-auto">
+                          <TimeTrackerDemo />
                         </div>
                       </div>
                     </div>
