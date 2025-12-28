@@ -27,7 +27,7 @@ export async function POST(req: Request) {
         // Retrieve the subscription details from Stripe.
         const subscription = await stripe.subscriptions.retrieve(
             session.subscription as string
-        )
+        ) as any
 
         if (!session?.metadata?.userId) {
             return new Response("User id is required", { status: 400 })
@@ -60,7 +60,7 @@ export async function POST(req: Request) {
     if (event.type === "invoice.payment_succeeded") {
         const subscription = await stripe.subscriptions.retrieve(
             session.subscription as string
-        )
+        ) as any
 
         await prisma.user.update({
             where: {
