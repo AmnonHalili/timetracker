@@ -114,9 +114,6 @@ export default function InsightsPage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <p className="text-sm text-muted-foreground">
-                            {t('insights.needDataDesc')}
-                        </p>
                         <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
                             <li>{t('insights.feature1')}</li>
                             <li>{t('insights.feature2')}</li>

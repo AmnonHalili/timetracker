@@ -145,6 +145,7 @@ export const translations = {
     'timeEntries.yesterday': 'Yesterday',
     'timeEntries.noDescription': 'No description',
     'timeEntries.noEntries': 'You haven\'t added any time entries yet.',
+    'timeEntries.netWork': 'NET WORK',
 
     // Calendar
     'calendar.addEvent': 'Add Event',
@@ -584,6 +585,7 @@ export const translations = {
     'timeEntries.yesterday': 'אתמול',
     'timeEntries.noDescription': 'אין תיאור',
     'timeEntries.noEntries': 'עדיין לא הוספת רשומות זמן.',
+    'timeEntries.netWork': 'עבודה נטו',
 
     // Calendar
     'calendar.addEvent': 'הוסף אירוע',

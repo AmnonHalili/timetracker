@@ -762,7 +762,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                     
                     {/* Sort Dropdown */}
                     <Select value={sortBy} onValueChange={setSortBy}>
-                        <SelectTrigger className="h-9 text-sm font-medium px-3 flex-1 md:flex-initial">
+                        <SelectTrigger className="h-9 text-sm font-medium px-3 w-auto">
                             <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                                 <ArrowUpDown className="h-4 w-4" />
                                 <SelectValue placeholder={t('tasks.sort')} />

@@ -281,7 +281,7 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
                                         </div>
                                         
                                         <div className="text-right">
-                                            <div className="text-[10px] uppercase text-muted-foreground font-semibold tracking-wider">Net Work</div>
+                                            <div className="text-[10px] uppercase text-muted-foreground font-semibold tracking-wider">{t('timeEntries.netWork')}</div>
                                             <div className="font-mono font-bold text-primary">
                                                 {getDuration(entry.startTime, entry.endTime, entry.breaks)}
                                             </div>
