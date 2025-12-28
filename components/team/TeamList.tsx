@@ -29,7 +29,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { SecondaryManagersForm } from "./SecondaryManagersForm"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2, Trash2 } from "lucide-react"
 import { useLanguage } from "@/lib/useLanguage"
@@ -57,7 +57,14 @@ interface TeamListProps {
 export function TeamList({ users, currentUserId, currentUserRole }: TeamListProps) {
     const { t, isRTL } = useLanguage()
     const router = useRouter()
+    const [localUsers, setLocalUsers] = useState<User[]>(users)
     const [selectedUser, setSelectedUser] = useState<User | null>(null)
+
+    // Sync local users with prop users when props change (e.g. after router.refresh())
+    // but only if we are not currently deleting to avoid jitter
+    useEffect(() => {
+        setLocalUsers(users)
+    }, [users])
     const [editTarget, setEditTarget] = useState<string>("")
     const [editDays, setEditDays] = useState<number[]>([])
     const [saving, setSaving] = useState(false)
@@ -171,6 +178,10 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
                 }
                 throw new Error(data.message || "Failed to delete")
             }
+
+            // Optimistic update
+            setLocalUsers(prev => prev.filter(u => u.id !== deleteDialogUser.id))
+
             router.refresh()
             closeDeleteDialog()
         } catch (error) {
@@ -282,7 +293,7 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
 
 
 
-    if (users.length === 0) {
+    if (localUsers.length === 0) {
         return <div className="text-center text-muted-foreground py-8">{t('team.noTeamMembersYet')}</div>
     }
 
@@ -300,7 +311,7 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {users.map((user) => (
+                        {localUsers.map((user) => (
                             <TableRow
                                 key={user.id}
                                 className={`${currentUserRole !== 'EMPLOYEE' ? 'cursor-pointer hover:bg-muted/50' : ''}`}
