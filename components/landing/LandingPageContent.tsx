@@ -186,7 +186,7 @@ export function LandingPageContent() {
               <div className="overflow-hidden">
                 <div className="flex transition-transform duration-500 ease-in-out" style={{ transform: isRTL ? `translateX(${currentSlide * 100}%)` : `translateX(-${currentSlide * 100}%)` }}>
                   {/* Slide 1: Full Section with Text and Hierarchy */}
-                  <div className="min-w-full px-6 md:px-8">
+                  <div className="min-w-full px-12 md:px-24">
                     <div className={`grid md:grid-cols-2 gap-12 items-stretch ${isRTL ? 'flex-row-reverse' : ''}`}>
                       <div className={`space-y-6 ${isRTL ? 'text-right' : 'text-left'}`}>
                         <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary font-semibold">
