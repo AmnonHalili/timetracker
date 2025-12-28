@@ -24,7 +24,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
     // Handle page unload (browser close/refresh) - stop active timer if running
     useEffect(() => {
-        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+        const handleBeforeUnload = () => {
             // Stop active timer before page unloads
             stopActiveTimerOnUnload()
         }
