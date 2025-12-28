@@ -168,14 +168,14 @@ export function LandingPageContent() {
             <button
               onClick={nextSlide}
               aria-label="Previous slide"
-              className={`hidden md:block absolute top-1/2 -translate-y-1/2 z-10 transition-all hover:scale-110 ${isRTL ? 'left-4 xl:-left-16' : 'right-4 xl:-right-16'}`}
+              className={`hidden md:block absolute top-1/2 -translate-y-1/2 z-10 transition-all hover:scale-110 ${isRTL ? 'left-4 2xl:-left-16' : 'right-4 2xl:-right-16'}`}
             >
               {isRTL ? <ChevronLeft className="h-12 w-12 text-foreground" /> : <ChevronRight className="h-12 w-12 text-foreground" />}
             </button>
             <button
               onClick={prevSlide}
               aria-label="Next slide"
-              className={`hidden md:block absolute top-1/2 -translate-y-1/2 z-10 transition-all hover:scale-110 ${isRTL ? 'right-4 xl:-right-16' : 'left-4 xl:-left-16'}`}
+              className={`hidden md:block absolute top-1/2 -translate-y-1/2 z-10 transition-all hover:scale-110 ${isRTL ? 'right-4 2xl:-right-16' : 'left-4 2xl:-left-16'}`}
             >
               {isRTL ? <ChevronRight className="h-12 w-12 text-foreground" /> : <ChevronLeft className="h-12 w-12 text-foreground" />}
             </button>
