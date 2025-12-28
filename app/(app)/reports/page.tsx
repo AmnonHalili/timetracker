@@ -9,6 +9,7 @@ import { filterVisibleUsers } from "@/lib/hierarchy-utils"
 import { ReportsPageHeader } from "@/components/reports/ReportsPageHeader"
 import { ReportsControls } from "@/components/reports/ReportsControls"
 import { ReportsSummaryCards } from "@/components/reports/ReportsSummaryCards"
+import { AIInsightsNotification } from "@/components/reports/AIInsightsNotification"
 
 export default async function ReportsPage({
     searchParams,
@@ -138,6 +139,8 @@ export default async function ReportsPage({
                     currentMonth={currentMonth}
                 />
             </div>
+
+            <AIInsightsNotification />
 
             {report.days.length === 0 ? (
                 <div className="text-center py-12 bg-muted/20 rounded-lg border border-dashed">

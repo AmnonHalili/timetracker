@@ -450,12 +450,12 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                                 handleDescriptionUpdate(e.target.value)
                             }
                         }}
-                        className="bg-background border-input hover:bg-accent/50 focus:bg-background shadow-sm h-9 text-sm flex-1"
+                        className="bg-background border-input hover:bg-accent/50 focus:bg-background shadow-sm h-9 text-sm flex-1 min-w-0"
                         aria-label={t('dashboard.whatWorkingOn')}
                     />
 
                     {/* Task Selector */}
-                    <div className="w-[180px] shrink-0">
+                    <div className="w-[100px] md:w-[180px] shrink-0">
                         <Select
                             value={selectedTaskIds.length > 0 ? selectedTaskIds[0] : undefined}
                             onValueChange={(value) => {

@@ -183,10 +183,10 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
     const groupsList = Object.entries(groupedEntries)
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-2 md:space-y-8">
             {groupsList.map(([groupName, groupEntries]) => (
                 <div key={groupName} className="space-y-4">
-                    <h3 className="text-lg font-bold text-black px-1 sticky top-0 bg-background/95 backdrop-blur z-10 py-2 w-fit">
+                    <h3 className="text-lg font-bold text-black px-1 sticky top-0 bg-background/95 backdrop-blur z-10 py-0 md:py-2 w-fit">
                         {groupName}
                     </h3>
 
@@ -194,16 +194,17 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
                         {groupEntries.map((entry) => (
                             <div key={entry.id} className="relative group">
                                 {/* Entry Content */}
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border bg-card/50 hover:bg-card hover:shadow-sm transition-all focus-within:bg-card focus-within:shadow-sm focus-within:ring-1 focus-within:ring-primary/20">
-                                    <div className="space-y-1 min-w-0 flex-1">
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-mono text-sm font-medium text-foreground">
-                                                {getTimeRange(entry.startTime, entry.endTime)}
-                                            </span>
+                                <div className="flex flex-col gap-3 p-4 rounded-xl border bg-card/50 hover:bg-card hover:shadow-sm transition-all focus-within:bg-card focus-within:shadow-sm focus-within:ring-1 focus-within:ring-primary/20">
+                                    {/* Time Range */}
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-mono text-sm font-medium text-foreground">
+                                            {getTimeRange(entry.startTime, entry.endTime)}
+                                        </span>
+                                    </div>
 
-                                        </div>
-
-                                        <div className="flex flex-col gap-1">
+                                    {/* Description and Net Work - same line on mobile and desktop */}
+                                    <div className="flex items-center justify-between gap-4">
+                                        <div className="flex flex-col gap-1 flex-1 min-w-0">
                                             {inlineEditingId === entry.id ? (
                                                 <Input
                                                     value={tempDescription}
@@ -253,34 +254,35 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
                                                 </div>
                                             )}
                                         </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-6 shrink-0">
-                                        <div className="text-right">
-                                            <div className="text-[10px] uppercase text-muted-foreground font-semibold tracking-wider">Net Work</div>
-                                            <div className="font-mono font-bold text-primary">
-                                                {getDuration(entry.startTime, entry.endTime, entry.breaks)}
+                                        
+                                        {/* Net Work - same line as description on both mobile and desktop */}
+                                        <div className="flex items-center gap-6 shrink-0">
+                                            <div className="text-right">
+                                                <div className="text-[10px] uppercase text-muted-foreground font-semibold tracking-wider">Net Work</div>
+                                                <div className="font-mono font-bold text-primary">
+                                                    {getDuration(entry.startTime, entry.endTime, entry.breaks)}
+                                                </div>
                                             </div>
-                                        </div>
 
-                                        <div className="flex items-center gap-1">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
-                                                        <MoreVertical className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onClick={() => handleEditStart(entry)}>
-                                                        <Pencil className="mr-2 h-4 w-4" />
-                                                        {t('common.edit')}
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleDelete(entry.id)} className="text-destructive focus:text-destructive">
-                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                        {t('common.delete')}
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
+                                            <div className="flex items-center gap-1">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                                                            <MoreVertical className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem onClick={() => handleEditStart(entry)}>
+                                                            <Pencil className="mr-2 h-4 w-4" />
+                                                            {t('common.edit')}
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => handleDelete(entry.id)} className="text-destructive focus:text-destructive">
+                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                            {t('common.delete')}
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
