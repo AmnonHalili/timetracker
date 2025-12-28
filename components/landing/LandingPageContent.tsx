@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ArrowRight, CheckCircle2, Clock, Users, BarChart3, ShieldCheck, ChevronLeft, ChevronRight, Calendar } from "lucide-react"
+import { ArrowRight, CheckCircle2, Clock, Users, BarChart3, ShieldCheck, ChevronLeft, ChevronRight } from "lucide-react"
 import Link from "next/link"
 import { HierarchyDemo } from "@/components/landing/HierarchyDemo"
 import { TimeTrackerDemo } from "@/components/landing/TimeTrackerDemo"

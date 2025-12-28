@@ -2,70 +2,70 @@
 
 import { Card } from "@/components/ui/card"
 import { cn, formatHoursMinutes } from "@/lib/utils"
-import { format, isSameHour, eachHourOfInterval, isSameDay } from "date-fns"
+import { format, isSameHour, eachHourOfInterval } from "date-fns"
 import { useState } from "react"
 
 export function CalendarDemo() {
   // Demo data - simulating a calendar month view (simplified - showing first week)
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-  
+
   // Selected day state - starts with day 10 (today)
   const [selectedDayIndex, setSelectedDayIndex] = useState(3) // Day 10 (index 3)
-  
+
   // Assume daily target is 6 hours for demo
   const dailyTarget = 6
-  
+
   const demoDays = [
-    { 
-      date: new Date(2024, 0, 7), 
-      day: 7, 
-      isCurrentMonth: true, 
+    {
+      date: new Date(2024, 0, 7),
+      day: 7,
+      isCurrentMonth: true,
       tasks: [
         { title: "Review Design", priority: "HIGH" },
         { title: "Update UI", priority: "MEDIUM" }
-      ], 
+      ],
       hours: 4.5,
     },
-    { 
-      date: new Date(2024, 0, 8), 
-      day: 8, 
-      isCurrentMonth: true, 
-      tasks: [{ title: "Update Docs", priority: "MEDIUM" }], 
+    {
+      date: new Date(2024, 0, 8),
+      day: 8,
+      isCurrentMonth: true,
+      tasks: [{ title: "Update Docs", priority: "MEDIUM" }],
       hours: 6.0,
     },
-    { 
-      date: new Date(2024, 0, 9), 
-      day: 9, 
-      isCurrentMonth: true, 
-      tasks: [], 
+    {
+      date: new Date(2024, 0, 9),
+      day: 9,
+      isCurrentMonth: true,
+      tasks: [],
       hours: 5.5,
     },
-    { 
-      date: new Date(2024, 0, 10), 
-      day: 10, 
-      isCurrentMonth: true, 
-      tasks: [{ title: "Code Review", priority: "MEDIUM" }, { title: "Bug Fix", priority: "HIGH" }], 
+    {
+      date: new Date(2024, 0, 10),
+      day: 10,
+      isCurrentMonth: true,
+      tasks: [{ title: "Code Review", priority: "MEDIUM" }, { title: "Bug Fix", priority: "HIGH" }],
       hours: 7.0,
     },
-    { 
-      date: new Date(2024, 0, 11), 
-      day: 11, 
-      isCurrentMonth: true, 
-      tasks: [{ title: "Deploy App", priority: "HIGH" }], 
+    {
+      date: new Date(2024, 0, 11),
+      day: 11,
+      isCurrentMonth: true,
+      tasks: [{ title: "Deploy App", priority: "HIGH" }],
       hours: 4.0,
     },
-    { 
-      date: new Date(2024, 0, 12), 
-      day: 12, 
-      isCurrentMonth: true, 
-      tasks: [], 
+    {
+      date: new Date(2024, 0, 12),
+      day: 12,
+      isCurrentMonth: true,
+      tasks: [],
       hours: 3.5,
     },
-    { 
-      date: new Date(2024, 0, 13), 
-      day: 13, 
-      isCurrentMonth: true, 
-      tasks: [], 
+    {
+      date: new Date(2024, 0, 13),
+      day: 13,
+      isCurrentMonth: true,
+      tasks: [],
       hours: 0,
     },
   ]
@@ -73,7 +73,7 @@ export function CalendarDemo() {
   // Get selected day data
   const selectedDayData = demoDays[selectedDayIndex]
   const selectedDate = selectedDayData.date
-  
+
   const dayStart = new Date(selectedDate)
   dayStart.setHours(6, 0, 0, 0)
   const dayEnd = new Date(selectedDate)
@@ -180,7 +180,7 @@ export function CalendarDemo() {
         <h4 className="text-xs font-medium text-muted-foreground">
           {format(selectedDate, "EEEE, MMMM d")}
         </h4>
-        
+
         {/* Timeline */}
         <div className="border rounded-lg bg-background overflow-hidden max-h-[200px] overflow-y-auto">
           {hours.slice(0, 12).map((hour) => {
@@ -206,10 +206,10 @@ export function CalendarDemo() {
                     <div className="space-y-1">
                       {hourEvents.map((event, idx) => {
                         // Use priority color for tasks (pink), otherwise use event type color
-                        const colorClass = event.priority 
+                        const colorClass = event.priority
                           ? (priorityColors[event.priority] || priorityColors.MEDIUM)
                           : (eventTypeColors[event.type] || eventTypeColors.OTHER)
-                        
+
                         return (
                           <div
                             key={idx}
