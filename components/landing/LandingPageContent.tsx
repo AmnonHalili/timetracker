@@ -79,13 +79,13 @@ export function LandingPageContent() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align={isRTL ? 'start' : 'end'}>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => handleLanguageChange('en')}
                     className={language === 'en' ? 'bg-muted' : ''}
                   >
                     English
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => handleLanguageChange('he')}
                     className={language === 'he' ? 'bg-muted' : ''}
                   >
@@ -161,20 +161,21 @@ export function LandingPageContent() {
         </section>
 
         {/* Project Management Spotlight */}
-        <section className="py-24 overflow-x-hidden">
+        {/* Project Management Spotlight */}
+        <section className="py-24">
           <div className="container mx-auto px-0 md:px-4 relative">
-            {/* Navigation Arrows - Outside the content, on the sides of the screen - Hidden on mobile */}
+            {/* Navigation Arrows - Responsive positioning: Inside on laptop, Outside on large screens */}
             <button
               onClick={nextSlide}
               aria-label="Previous slide"
-              className={`hidden md:block absolute top-1/2 -translate-y-1/2 z-10 transition-all hover:scale-110 ${isRTL ? 'right-full mr-4' : 'left-full ml-4'}`}
+              className={`hidden md:block absolute top-1/2 -translate-y-1/2 z-10 transition-all hover:scale-110 ${isRTL ? 'left-4 xl:-left-16' : 'right-4 xl:-right-16'}`}
             >
               {isRTL ? <ChevronLeft className="h-12 w-12 text-foreground" /> : <ChevronRight className="h-12 w-12 text-foreground" />}
             </button>
             <button
               onClick={prevSlide}
               aria-label="Next slide"
-              className={`hidden md:block absolute top-1/2 -translate-y-1/2 z-10 transition-all hover:scale-110 ${isRTL ? 'left-full ml-4' : 'right-full mr-4'}`}
+              className={`hidden md:block absolute top-1/2 -translate-y-1/2 z-10 transition-all hover:scale-110 ${isRTL ? 'right-4 xl:-right-16' : 'left-4 xl:-left-16'}`}
             >
               {isRTL ? <ChevronRight className="h-12 w-12 text-foreground" /> : <ChevronLeft className="h-12 w-12 text-foreground" />}
             </button>
