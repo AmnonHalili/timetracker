@@ -87,8 +87,8 @@ export function NotificationBell() {
             }
         }}>
             <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative h-14 w-14 [&_svg]:h-7 [&_svg]:w-7" aria-label={`${t('notifications.title')}${unreadCount > 0 ? `, ${unreadCount} ${t('notifications.unread')}` : ''}`}>
-                    <Bell className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                <Button variant="ghost" size="icon" className="relative h-14 w-14" aria-label={`${t('notifications.title')}${unreadCount > 0 ? `, ${unreadCount} ${t('notifications.unread')}` : ''}`}>
+                    <Bell className="h-9 w-9 text-muted-foreground" aria-hidden="true" />
                     {unreadCount > 0 && (
                         <span className="absolute top-3.5 right-3.5 h-3 w-3 rounded-full bg-red-600 animate-pulse border-2 border-background" aria-hidden="true">
                             <span className="sr-only">{unreadCount} {t('notifications.unread')} {t('notifications.title')}</span>

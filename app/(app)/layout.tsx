@@ -20,7 +20,10 @@ export default function AppLayout({
                         <MobileSidebar />
                     </div>
                     {/* Mobile Logo (Centered) */}
-                    <div className="absolute left-1/2 -translate-x-1/2 md:hidden font-bold text-xl text-primary tracking-tight uppercase">
+                    <div
+                        className="absolute left-1/2 -translate-x-1/2 md:hidden font-bold text-xl text-primary tracking-tight uppercase"
+                        style={{ fontFamily: "'Gotham', var(--font-montserrat), sans-serif" }}
+                    >
                         COLLABO
                     </div>
                     <div className="flex items-center gap-2 ml-auto">
