@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-    const baseUrl = process.env.NEXTAUTH_URL || 'https://collabo-web.vercel.app'
+    const baseUrl = process.env.NEXTAUTH_URL || 'https://collabo-web.com'
     return [
         {
             url: baseUrl,

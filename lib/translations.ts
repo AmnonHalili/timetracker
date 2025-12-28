@@ -310,7 +310,7 @@ export const translations = {
     'landing.getStarted': 'Get Started',
     'landing.masterYourTime': 'Master Your Time',
     'landing.leadYourTeam': 'Lead Your Team',
-    'landing.description': 'The all-in-one platform for tracking work hours, managing projects, and leading teams. Simple enough for freelancers, powerful enough for high-growth teams.',
+    'landing.description': 'The simple time tracker for remote teams and task management for non-tech teams. Track work hours, manage projects, and lead teams. Perfect for freelancers and small businesses.',
     'landing.startYourProject': 'Start Your Project',
     'landing.smartTimeTracking': 'Smart Time Tracking',
     'landing.smartTimeTrackingDescription': 'Track hours with a precise timer or manual entry. See your daily progress and balance in real-time.',
@@ -328,13 +328,13 @@ export const translations = {
     'landing.assignTasks': 'Assign tasks and track completion status',
     'landing.monitorTeamHours': 'Monitor team hours and productivity',
     'landing.createManagerAccount': 'Create a Manager Account',
-    'landing.footerDescription': 'The modern solution for time and project management.',
+    'landing.footerDescription': 'The weekly timesheet app for freelancers and modern solution for project management.',
     'landing.allRightsReserved': 'All rights reserved.',
 
     // Time Tracker Section
     'landing.timeTracker.title': 'Smart Time Tracking',
     'landing.timeTracker.subtitle': 'Track Every Minute, Maximize Every Hour',
-    'landing.timeTracker.description': 'Our intelligent time tracker helps you understand exactly where your time goes. Whether you\'re working on multiple projects or managing a team, get real-time insights into productivity and efficiency.',
+    'landing.timeTracker.description': 'Our clock in clock out app for small business helps you understand exactly where your time goes. Whether you\'re working on multiple projects or managing a team, get real-time insights based on our simple time tracker for remote teams.',
     'landing.timeTracker.feature1': 'Real-time tracking with automatic session management',
     'landing.timeTracker.feature2': 'Break detection and pause/resume functionality',
     'landing.timeTracker.feature3': 'Task and project association for detailed reporting',
@@ -345,7 +345,7 @@ export const translations = {
     // Tasks Section
     'landing.tasks.title': 'Task Management',
     'landing.tasks.subtitle': 'Organize, Assign, and Track with Precision',
-    'landing.tasks.description': 'Streamline your workflow with our comprehensive task management system. Create tasks, assign them to team members, track progress in real-time, and never miss a deadline. Perfect for agile teams and project managers.',
+    'landing.tasks.description': 'Streamline your workflow with our task management for non-tech teams. Create tasks, assign them, and track progress without complexity. A lightweight Jira alternative for startups.',
     'landing.tasks.feature1': 'Create and organize tasks with custom categories and priorities',
     'landing.tasks.feature2': 'Assign tasks to team members with due dates and descriptions',
     'landing.tasks.feature3': 'Track task completion status and progress in real-time',

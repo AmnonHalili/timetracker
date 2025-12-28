@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 
 export default function robots(): MetadataRoute.Robots {
-    const baseUrl = process.env.NEXTAUTH_URL || 'https://collabo-web.vercel.app'
+    const baseUrl = process.env.NEXTAUTH_URL || 'https://collabo-web.com'
     return {
         rules: {
             userAgent: '*',
