@@ -168,7 +168,7 @@ export default async function DashboardPage() {
 
             <div className={`grid grid-cols-1 ${showSidebar ? "lg:grid-cols-[1fr_220px]" : ""} gap-8 items-start`}>
                 {/* Main Content Area */}
-                <div className="space-y-8 min-w-0">
+                <div className="space-y-0 md:space-y-8 min-w-0">
                     <DashboardContent
                         activeEntry={activeEntry || null}
                         historyEntries={historyEntries}

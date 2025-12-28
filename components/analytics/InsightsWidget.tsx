@@ -48,28 +48,11 @@ export function InsightsWidget() {
     }
 
     if (loading) {
-        return (
-            <div className="flex border rounded-lg p-3 bg-muted/20 items-center justify-between">
-                <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
-                <div className="h-4 bg-gray-200 rounded w-8 animate-pulse"></div>
-            </div>
-        )
+        return null
     }
 
     if (!insights?.hasData) {
-        return (
-            <div className="flex border rounded-lg p-3 bg-muted/20 items-center justify-between text-sm" dir={dir}>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                    <span>💡</span>
-                    <span>{t('insights.startTracking')}</span>
-                </div>
-                <Button size="sm" variant="ghost" className="h-6 text-xs" asChild>
-                    <Link href="/insights">
-                        {t('insights.learnMore')} <ArrowRight className={`h-3 w-3 ${dir === 'rtl' ? 'mr-1 rotate-180' : 'ml-1'}`} />
-                    </Link>
-                </Button>
-            </div>
-        )
+        return null
     }
 
     return (

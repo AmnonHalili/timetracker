@@ -121,10 +121,10 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
                 tasks={tasks}
                 onTimerStopped={handleTimerStopped}
             />
-            <div className="pt-2">
+            <div className="pt-0 md:pt-2">
                 <InsightsWidget />
             </div>
-            <div className="pt-4">
+            <div className="pt-2 md:pt-4">
                 <EntryHistory
                     entries={allEntries as never}
                     tasks={tasks}
