@@ -3,6 +3,7 @@
 import { SessionProvider } from "next-auth/react"
 import { ThemeProvider } from "next-themes"
 import { useEffect, useState } from "react"
+import { stopActiveTimerOnUnload } from "@/lib/utils"
 
 export function Providers({ children }: { children: React.ReactNode }) {
     const [initialTheme, setInitialTheme] = useState<string | undefined>(undefined)
@@ -17,6 +18,20 @@ export function Providers({ children }: { children: React.ReactNode }) {
             setInitialTheme(appTheme)
         } catch {
             setInitialTheme('blue')
+        }
+    }, [])
+
+    // Handle page unload (browser close/refresh) - stop active timer if running
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            // Stop active timer before page unloads
+            stopActiveTimerOnUnload()
+        }
+
+        window.addEventListener('beforeunload', handleBeforeUnload)
+
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload)
         }
     }, [])
 

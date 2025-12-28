@@ -48,3 +48,62 @@ export function formatTimeWithAMPM(date: Date): string {
   
   return `${formattedHours}:${formattedMinutes} ${period}`
 }
+
+/**
+ * Stops the active timer if one is running
+ * This is used before logout or when leaving the site to ensure time entries are saved
+ * @param keepalive - If true, uses fetch with keepalive for beforeunload events
+ * @returns Promise that resolves to true if timer was stopped, false if no active timer
+ */
+export async function stopActiveTimer(keepalive = false): Promise<boolean> {
+  try {
+    // Check if there's an active timer
+    const response = await fetch('/api/time-entries', { keepalive })
+    if (!response.ok) {
+      return false
+    }
+    
+    const data = await response.json()
+    const activeEntry = data.activeEntry
+    
+    // If there's an active timer, stop it
+    if (activeEntry) {
+      await fetch('/api/time-entries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'stop' }),
+        keepalive // Use keepalive to ensure request completes even if page unloads
+      })
+      return true
+    }
+    
+    return false
+  } catch (error) {
+    console.error('Failed to stop active timer:', error)
+    return false
+  }
+}
+
+/**
+ * Stops active timer for beforeunload events
+ * Uses keepalive flag to ensure the request completes even if page unloads
+ * This is fire-and-forget - we don't check if timer exists, just try to stop it
+ */
+export function stopActiveTimerOnUnload(): void {
+  if (typeof window === 'undefined') return
+  
+  try {
+    // Try to stop the timer - API will handle gracefully if no active timer exists
+    // Use keepalive to ensure the request completes even if the page unloads
+    fetch('/api/time-entries', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'stop' }),
+      keepalive: true // Critical: ensures request completes even if page unloads
+    }).catch(() => {
+      // Silently fail - we don't want to block page unload
+    })
+  } catch (error) {
+    // Silently fail - we don't want to block page unload
+  }
+}

@@ -11,6 +11,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { signOut, useSession } from "next-auth/react"
+import { stopActiveTimer } from "@/lib/utils"
 
 export function UserNav() {
     const { data: session } = useSession()
@@ -44,7 +45,11 @@ export function UserNav() {
                     </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/login" })}>
+                <DropdownMenuItem onClick={async () => {
+                    // Stop active timer before logging out
+                    await stopActiveTimer()
+                    signOut({ callbackUrl: "/login" })
+                }}>
                     Log out
                 </DropdownMenuItem>
             </DropdownMenuContent>

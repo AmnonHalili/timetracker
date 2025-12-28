@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
 
 import { signOut } from "next-auth/react"
+import { stopActiveTimer } from "@/lib/utils"
 
 export function Sidebar() {
     const pathname = usePathname()
@@ -169,7 +170,11 @@ export function Sidebar() {
             <Button
                 variant="ghost"
                 className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
-                onClick={() => signOut({ callbackUrl: "/login" })}
+                onClick={async () => {
+                    // Stop active timer before logging out
+                    await stopActiveTimer()
+                    signOut({ callbackUrl: "/login" })
+                }}
                 aria-label="Log out"
             >
                 Log out
