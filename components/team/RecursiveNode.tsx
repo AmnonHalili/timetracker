@@ -52,7 +52,7 @@ export function RecursiveNode({ node, allUsers, onAddClick, depth = 0, hideConne
                         </Avatar>
                         {/* Online Status Badge - only show for other users */}
                         {!isCurrentUser && (
-                            <div className="absolute -top-0.5 -right-0.5 z-10">
+                            <div className="absolute bottom-0 right-0 z-10">
                                 <div className={cn(
                                     "h-2.5 w-2.5 rounded-full border-2 border-white dark:border-gray-900 transition-colors",
                                     isOnline

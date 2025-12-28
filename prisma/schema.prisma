@@ -25,6 +25,7 @@ model User {
   image            String? // Base64 or URL
   resetToken       String?
   resetTokenExpiry DateTime?
+  lastSeen         DateTime? // Track online status
 
   timeEntries   TimeEntry[]
   tasks         Task[]

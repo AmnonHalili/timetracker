@@ -1,26 +1,10 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
 
-// In-memory store for online users
-// Key: userId, Value: last seen timestamp
-const onlineUsers = new Map<string, number>()
-
-// Cleanup interval - remove users who haven't pinged in 90 seconds
+// Cleanup interval - remove users who haven't pinged in 90 seconds (Database query handles this filter)
 const ONLINE_THRESHOLD = 90000 // 90 seconds
-const CLEANUP_INTERVAL = 30000 // 30 seconds
-
-// Periodic cleanup
-if (typeof window === 'undefined') {
-    setInterval(() => {
-        const now = Date.now()
-        Array.from(onlineUsers.entries()).forEach(([userId, lastSeen]) => {
-            if (now - lastSeen > ONLINE_THRESHOLD) {
-                onlineUsers.delete(userId)
-            }
-        })
-    }, CLEANUP_INTERVAL)
-}
 
 // POST - Send heartbeat
 export async function POST() {
@@ -31,8 +15,11 @@ export async function POST() {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
         }
 
-        // Update last seen timestamp
-        onlineUsers.set(session.user.id, Date.now())
+        // Update last seen timestamp in DB
+        await prisma.user.update({
+            where: { id: session.user.id },
+            data: { lastSeen: new Date() }
+        })
 
         return NextResponse.json({ success: true })
     } catch (error) {
@@ -41,7 +28,7 @@ export async function POST() {
     }
 }
 
-// GET - Retrieve online users
+// GET - Retrieve active users
 export async function GET() {
     try {
         const session = await getServerSession(authOptions)
@@ -50,17 +37,23 @@ export async function GET() {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
         }
 
-        // Clean up stale entries before returning
-        const now = Date.now()
-        const onlineUserIds: string[] = []
+        // Calculate threshold for active users
+        const threshold = new Date(Date.now() - ONLINE_THRESHOLD)
 
-        Array.from(onlineUsers.entries()).forEach(([userId, lastSeen]) => {
-            if (now - lastSeen <= ONLINE_THRESHOLD) {
-                onlineUserIds.push(userId)
-            } else {
-                onlineUsers.delete(userId)
+        // Fetch users active since threshold
+        // Optimizing: only select ID
+        const activeUsers = await prisma.user.findMany({
+            where: {
+                lastSeen: {
+                    gt: threshold
+                }
+            },
+            select: {
+                id: true
             }
         })
+
+        const onlineUserIds = activeUsers.map(user => user.id)
 
         return NextResponse.json({ onlineUsers: onlineUserIds })
     } catch (error) {
