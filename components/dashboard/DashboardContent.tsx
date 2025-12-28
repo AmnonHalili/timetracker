@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { ControlBar } from "./ControlBar"
 import { EntryHistory } from "./EntryHistory"
+import { InsightsWidget } from "@/components/analytics/InsightsWidget"
 
 interface TimeEntry {
     id: string
@@ -66,7 +67,7 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
                 }
             }
         }
-        
+
         // Create a temporary entry with a temporary ID
         const optimisticEntry: TimeEntry = {
             id: `temp-${Date.now()}`, // Temporary ID
@@ -120,6 +121,9 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
                 tasks={tasks}
                 onTimerStopped={handleTimerStopped}
             />
+            <div className="pt-2">
+                <InsightsWidget />
+            </div>
             <div className="pt-4">
                 <EntryHistory
                     entries={allEntries as never}
