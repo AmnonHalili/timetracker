@@ -62,6 +62,13 @@ model User {
   createdEvents     Event[]            @relation("CreatedEvents")
   eventParticipants EventParticipant[]
 
+  // Stripe Subscription
+  stripeCustomerId       String?   @unique
+  stripeSubscriptionId   String?   @unique
+  stripePriceId          String?
+  stripeCurrentPeriodEnd DateTime?
+  plan                   Plan      @default(FREE)
+
   // Analytics
   analyticsSnapshots AnalyticsSnapshot[]
   insightSettings    UserInsightSettings?
@@ -435,4 +442,11 @@ enum RecommendationPriority {
   MEDIUM
   HIGH
   URGENT
+}
+
+enum Plan {
+  FREE
+  TIER1
+  TIER2
+  TIER3
 }

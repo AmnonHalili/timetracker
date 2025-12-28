@@ -107,3 +107,7 @@ export function stopActiveTimerOnUnload(): void {
     // Silently fail - we don't want to block page unload
   }
 }
+
+export function absoluteUrl(path: string) {
+  return `${process.env.NEXTAUTH_URL}${path}`
+}

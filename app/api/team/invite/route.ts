@@ -30,6 +30,7 @@ export async function POST(req: Request) {
                 projectId: true,
                 id: true,
                 name: true,
+                plan: true, // Add plan selection
                 project: {
                     select: {
                         name: true
@@ -51,31 +52,22 @@ export async function POST(req: Request) {
         })
 
         // Determine required tier based on current user count
-        // Free: up to 5 users (0-5)
-        // Tier 1: 6-20 users
-        // Tier 2: 21-50 users
-        // Tier 3: 50+ users
-        let requiredTier: string | null = null
-        
-        if (activeUserCount >= 5) {
-            // Already at free limit (5 users), need Tier 1 for 6th user
-            if (activeUserCount < 20) {
-                requiredTier = "tier1"
-            } else if (activeUserCount < 50) {
-                requiredTier = "tier2"
-            } else {
-                requiredTier = "tier3"
-            }
-        }
+        // and check against the user's ACTUAL subscription plan
+        const userPlan = currentUser.plan || 'FREE' // Default to free if null
+
+        let planLimit = 5
+        if (userPlan === 'TIER1') planLimit = 20
+        if (userPlan === 'TIER2') planLimit = 50
+        if (userPlan === 'TIER3') planLimit = 999999
 
         // If user would exceed current plan limit, return error
-        if (requiredTier) {
+        if (activeUserCount >= planLimit) {
             return NextResponse.json({
                 message: "User limit exceeded. Please upgrade your plan to add more team members.",
                 error: "USER_LIMIT_EXCEEDED",
-                requiredTier,
+                currentPlan: userPlan,
                 currentUserCount: activeUserCount,
-                limit: activeUserCount < 20 ? 20 : activeUserCount < 50 ? 50 : null
+                limit: planLimit
             }, { status: 402 }) // 402 Payment Required
         }
 

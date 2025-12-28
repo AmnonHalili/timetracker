@@ -1,6 +1,7 @@
 "use client"
 
 import { useLanguage } from "@/lib/useLanguage"
+import React from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Check, X } from "lucide-react"
@@ -94,6 +95,35 @@ export function PricingContent() {
         },
     ]
 
+    const [isLoading, setIsLoading] = React.useState<string | null>(null)
+
+    const handleUpgrade = async (planId: string) => {
+        try {
+            setIsLoading(planId)
+            const response = await fetch("/api/stripe/checkout", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    planId: planId,
+                }),
+            })
+
+            if (!response.ok) {
+                throw new Error("Something went wrong")
+            }
+
+            const data = await response.json()
+            window.location.href = data.url
+        } catch (error) {
+            console.error("Error connecting to Stripe:", error)
+            // Ideally show a toast here
+        } finally {
+            setIsLoading(null)
+        }
+    }
+
     return (
         <div className="container mx-auto px-4 py-12">
             <div className="text-center mb-12">
@@ -143,7 +173,7 @@ export function PricingContent() {
                                 {allFeatures.map((feature) => {
                                     const included = getFeatureStatus(plan.id, feature.key)
                                     // For userSupport, use dynamic text per plan
-                                    const displayText = feature.key === 'userSupport' 
+                                    const displayText = feature.key === 'userSupport'
                                         ? getUserSupportText(plan.id)
                                         : feature.text
                                     return (
@@ -163,8 +193,14 @@ export function PricingContent() {
                             <Button
                                 className={`w-full mt-6 ${plan.id === 'free' ? 'variant-outline' : ''}`}
                                 variant={plan.popular ? 'default' : 'outline'}
+                                onClick={() => plan.id !== 'free' && handleUpgrade(plan.id)}
+                                disabled={isLoading === plan.id || plan.id === 'free'}
                             >
-                                {plan.id === 'free' ? t('pricing.currentPlan') : t('pricing.upgrade')}
+                                {isLoading === plan.id ? (
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                ) : (
+                                    plan.id === 'free' ? t('pricing.currentPlan') : t('pricing.upgrade')
+                                )}
                             </Button>
                         </CardContent>
                     </Card>
