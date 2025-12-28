@@ -27,6 +27,7 @@ export async function POST(req: Request) {
         // Retrieve the subscription details from Stripe.
         const subscription = await stripe.subscriptions.retrieve(
             session.subscription as string
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ) as any
 
         if (!session?.metadata?.userId) {
@@ -60,6 +61,7 @@ export async function POST(req: Request) {
     if (event.type === "invoice.payment_succeeded") {
         const subscription = await stripe.subscriptions.retrieve(
             session.subscription as string
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ) as any
 
         await prisma.user.update({
