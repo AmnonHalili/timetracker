@@ -392,6 +392,20 @@ export const translations = {
     'insights.startTracking': 'Start tracking time to see AI insights',
     'insights.learnMore': 'Learn More',
     'insights.fullReport': 'Full Report',
+
+    // Auth / Login
+    'auth.welcomeBack': 'Welcome back',
+    'auth.signInToAccount': 'Sign in to your account',
+    'auth.signInWithGoogle': 'Sign in with Google',
+    'auth.orContinueWith': 'Or continue with',
+    'auth.email': 'Email',
+    'auth.password': 'Password',
+    'auth.forgotPassword': 'Forgot password?',
+    'auth.signIn': 'Sign in',
+    'auth.dontHaveAccount': 'Don\'t have an account?',
+    'auth.signUp': 'Sign up',
+    'auth.backToHome': 'Back to home',
+    'auth.errorOccurred': 'An error occurred during sign in',
   },
   he: {
     // Insights
