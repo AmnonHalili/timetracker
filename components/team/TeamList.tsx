@@ -50,11 +50,12 @@ interface User {
 
 interface TeamListProps {
     users: User[]
+    allUsers?: User[] // All users in the project (for finding managers that might not be visible)
     currentUserId: string
     currentUserRole: string
 }
 
-export function TeamList({ users, currentUserId, currentUserRole }: TeamListProps) {
+export function TeamList({ users, allUsers, currentUserId, currentUserRole }: TeamListProps) {
     const { t, isRTL } = useLanguage()
     const router = useRouter()
     const [localUsers, setLocalUsers] = useState<User[]>(users)
@@ -248,7 +249,7 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
             // Remove managers that are no longer selected
             for (const current of secondaryManagers) {
                 if (!newManagerIds.includes(current.managerId)) {
-                    await fetch("/api/team/secondary-manager/remove", {
+                    const res = await fetch("/api/team/secondary-manager/remove", {
                         method: "DELETE",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
@@ -256,13 +257,17 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
                             managerId: current.managerId
                         })
                     })
+                    if (!res.ok) {
+                        const error = await res.json()
+                        throw new Error(error.message || "Failed to remove secondary manager")
+                    }
                 }
             }
 
             // Add or update managers
             for (const manager of managers) {
                 if (manager.permissions.length > 0) {
-                    await fetch("/api/team/secondary-manager/add", {
+                    const res = await fetch("/api/team/secondary-manager/add", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
@@ -271,14 +276,24 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
                             permissions: manager.permissions
                         })
                     })
+                    if (!res.ok) {
+                        const error = await res.json()
+                        throw new Error(error.message || "Failed to add/update secondary manager")
+                    }
                 }
             }
 
+            // Close dialog first
+            closeDialog()
+            
+            // Refresh the page to update the team list (this will re-filter users based on new secondary manager relationships)
             router.refresh()
-            alert("Secondary managers updated successfully")
+            
+            // Show success message
+            alert(t('team.secondaryManagersUpdated') || "Secondary managers updated successfully")
         } catch (error) {
             console.error("Error updating secondary managers:", error)
-            alert("Error updating secondary managers")
+            alert(error instanceof Error ? error.message : (t('team.errorUpdatingSecondaryManagers') || "Error updating secondary managers"))
             throw error
         }
     }
@@ -359,10 +374,10 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
 
             {/* Team Member Settings Dialog */}
             <Dialog open={!!selectedUser} onOpenChange={(open) => !open && closeDialog()}>
-                <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto [&>button]:left-4 [&>button]:right-auto">
-                    <DialogHeader className="text-right">
-                        <DialogTitle className="text-right">{t('team.teamMemberSettings')} - {selectedUser?.name}</DialogTitle>
-                        <DialogDescription className="text-right">
+                <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto [&>button]:left-4 [&>button]:right-auto" dir={isRTL ? 'rtl' : 'ltr'}>
+                    <DialogHeader className={isRTL ? 'text-right' : 'text-left'}>
+                        <DialogTitle className={isRTL ? 'text-right' : 'text-left'}>{t('team.teamMemberSettings')} - {selectedUser?.name}</DialogTitle>
+                        <DialogDescription className={isRTL ? 'text-right' : 'text-left'}>
                             {t('team.manageWorkSettings')}
                         </DialogDescription>
                     </DialogHeader>
@@ -375,8 +390,8 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
 
                         <TabsContent value="work" className="space-y-6 pt-4">
                             <div className="space-y-3">
-                                <Label>{t('preferences.workDays')}</Label>
-                                <p className="text-xs text-muted-foreground">
+                                <Label className={`block ${isRTL ? 'text-right' : 'text-left'}`}>{t('preferences.workDays')}</Label>
+                                <p className={`text-xs text-muted-foreground ${isRTL ? 'text-right' : 'text-left'}`}>
                                     {t('team.selectWorkDaysMember')}
                                 </p>
                                 <div className="grid grid-cols-2 gap-2">
@@ -397,22 +412,23 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="target">{t('team.dailyTargetHours')}</Label>
+                                <Label htmlFor="target" className={`block ${isRTL ? 'text-right' : 'text-left'}`}>{t('team.dailyTargetHours')}</Label>
                                 <Input
                                     id="target"
                                     type="number"
                                     step="0.5"
                                     value={editTarget}
                                     onChange={e => setEditTarget(e.target.value)}
+                                    dir="ltr"
                                 />
-                                <p className="text-xs text-muted-foreground">
+                                <p className={`text-xs text-muted-foreground ${isRTL ? 'text-right' : 'text-left'}`}>
                                     {t('team.dailyTargetDescription')}
                                 </p>
                             </div>
 
-                            <div className="flex justify-end pt-4 border-t">
+                            <div className={`flex pt-4 border-t ${isRTL ? 'justify-start' : 'justify-end'}`}>
                                 <Button onClick={saveEdit} disabled={saving}>
-                                    {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    {saving && <Loader2 className={`h-4 w-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} />}
                                     {t('team.saveWorkSettings')}
                                 </Button>
                             </div>
@@ -427,37 +443,53 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
                                 <div className="space-y-6">
                                     {/* Primary Manager(s) Section */}
                                     <div className="space-y-3">
-                                        <Label className="text-base font-semibold">Primary Manager(s)</Label>
+                                        <Label className={`text-base font-semibold ${isRTL ? 'text-right' : 'text-left'}`}>{t('team.primaryManagers')}</Label>
                                         <div className="p-4 border rounded-lg bg-muted/30">
                                             {(() => {
-                                                // Check if the user's manager is part of a shared chief group
+                                                // Use allUsers if available, otherwise fall back to users
+                                                const searchUsers = allUsers || users
+                                                
+                                                // Check if the user has a direct manager (managerId)
                                                 if (selectedUser.managerId) {
-                                                    const directManager = users.find(u => u.id === selectedUser.managerId)
+                                                    // Find the direct manager in all users (not just visible ones)
+                                                    const directManager = searchUsers.find(u => u.id === selectedUser.managerId)
 
-                                                    // If the direct manager has a sharedChiefGroupId, show all chiefs in that group
-                                                    if (directManager && directManager.role === 'ADMIN' && (directManager as User & { sharedChiefGroupId?: string }).sharedChiefGroupId) {
-                                                        const sharedGroupId = (directManager as User & { sharedChiefGroupId?: string }).sharedChiefGroupId
-                                                        const allSharedChiefs = users.filter(u =>
-                                                            u.role === 'ADMIN' &&
-                                                            (u as User & { sharedChiefGroupId?: string }).sharedChiefGroupId === sharedGroupId &&
-                                                            !u.managerId
+                                                    if (!directManager) {
+                                                        // Manager not found in project
+                                                        return (
+                                                            <p className={`text-sm text-muted-foreground ${isRTL ? 'text-right' : 'text-left'}`}>
+                                                                {t('team.managerNotFound')}
+                                                            </p>
                                                         )
+                                                    }
+
+                                                    // If the direct manager is an ADMIN with sharedChiefGroupId, show all chiefs in that group
+                                                    const directManagerWithExtras = directManager as User & { sharedChiefGroupId?: string | null }
+                                                    if (directManager.role === 'ADMIN' && directManagerWithExtras.sharedChiefGroupId) {
+                                                        const sharedGroupId = directManagerWithExtras.sharedChiefGroupId
+                                                        // Find all chiefs in the same shared group (all should be ADMINs with no manager)
+                                                        const allSharedChiefs = searchUsers.filter(u => {
+                                                            const uWithExtras = u as User & { sharedChiefGroupId?: string | null }
+                                                            return u.role === 'ADMIN' &&
+                                                                   uWithExtras.sharedChiefGroupId === sharedGroupId &&
+                                                                   !u.managerId
+                                                        })
 
                                                         if (allSharedChiefs.length > 0) {
                                                             return (
                                                                 <div className="space-y-2">
-                                                                    <p className="text-xs text-muted-foreground mb-3">
-                                                                        Reports to shared chief group:
+                                                                    <p className={`text-xs text-muted-foreground mb-3 ${isRTL ? 'text-right' : 'text-left'}`}>
+                                                                        {t('team.reportsToSharedGroup')}
                                                                     </p>
                                                                     {allSharedChiefs.map(chief => (
-                                                                        <div key={chief.id} className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50">
+                                                                        <div key={chief.id} className={`flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 ${isRTL ? 'flex-row-reverse' : ''}`}>
                                                                             <Avatar className="h-10 w-10">
                                                                                 <AvatarImage src={chief.image || undefined} alt={chief.name} />
                                                                                 <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                                                                                     {chief.name.substring(0, 2).toUpperCase()}
                                                                                 </AvatarFallback>
                                                                             </Avatar>
-                                                                            <div className="flex-1">
+                                                                            <div className={`flex-1 ${isRTL ? 'text-right' : 'text-left'}`}>
                                                                                 <h4 className="font-semibold">{chief.name}</h4>
                                                                                 <p className="text-sm text-muted-foreground">{chief.email}</p>
                                                                                 {chief.jobTitle && (
@@ -474,15 +506,15 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
                                                     }
 
                                                     // Otherwise, show the single direct manager
-                                                    return directManager ? (
-                                                        <div className="flex items-start gap-3">
+                                                    return (
+                                                        <div className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
                                                             <Avatar className="h-10 w-10">
                                                                 <AvatarImage src={directManager.image || undefined} alt={directManager.name} />
                                                                 <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                                                                     {directManager.name.substring(0, 2).toUpperCase()}
                                                                 </AvatarFallback>
                                                             </Avatar>
-                                                            <div className="flex-1">
+                                                            <div className={`flex-1 ${isRTL ? 'text-right' : 'text-left'}`}>
                                                                 <h4 className="font-semibold">{directManager.name}</h4>
                                                                 <p className="text-sm text-muted-foreground">{directManager.email}</p>
                                                                 {directManager.jobTitle && (
@@ -492,16 +524,13 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
                                                                 )}
                                                             </div>
                                                         </div>
-                                                    ) : (
-                                                        <p className="text-sm text-muted-foreground">
-                                                            Manager not found in current team
-                                                        </p>
                                                     )
                                                 }
 
+                                                // No managerId - user has no direct manager
                                                 return (
-                                                    <p className="text-sm text-muted-foreground">
-                                                        No primary manager assigned
+                                                    <p className={`text-sm text-muted-foreground ${isRTL ? 'text-right' : 'text-left'}`}>
+                                                        {t('team.noPrimaryManager')}
                                                     </p>
                                                 )
                                             })()}
@@ -510,7 +539,7 @@ export function TeamList({ users, currentUserId, currentUserRole }: TeamListProp
 
                                     {/* Secondary Managers Section */}
                                     <div className="space-y-3">
-                                        <Label className="text-base font-semibold">Secondary Managers</Label>
+                                        <Label className={`text-base font-semibold ${isRTL ? 'text-right' : 'text-left'}`}>{t('team.secondaryManagers')}</Label>
                                         <SecondaryManagersForm
                                             employeeId={selectedUser.id}
                                             currentSecondaryManagers={secondaryManagers}
