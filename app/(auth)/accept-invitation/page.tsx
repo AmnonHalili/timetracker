@@ -55,7 +55,7 @@ export default function AcceptInvitationPage() {
                     setError(data.message || "Invalid invitation link")
                     setValid(false)
                 }
-            } catch (err) {
+            } catch {
                 setError("Failed to validate invitation")
                 setValid(false)
             } finally {
@@ -106,7 +106,7 @@ export default function AcceptInvitationPage() {
             } else {
                 setError(data.message || "Failed to activate account")
             }
-        } catch (err) {
+        } catch {
             setError("An error occurred. Please try again.")
         } finally {
             setSubmitting(false)
