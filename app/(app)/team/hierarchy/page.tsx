@@ -214,6 +214,41 @@ export default function HierarchyPage() {
         setIsDragging(false)
     }
 
+    // Handle touch events for mobile panning
+    const handleTouchStart = (e: React.TouchEvent) => {
+        const touch = e.touches[0]
+        // Prevent if touching interactive elements? Maybe not needed for simple pan
+        // But let's mirror mouse logic safely
+        const target = e.target as HTMLElement
+        if (target.closest('button') || target.closest('a') || target.closest('input')) {
+            return
+        }
+
+        setIsDragging(true)
+        setDragStart({
+            x: touch.clientX - panPosition.x,
+            y: touch.clientY - panPosition.y
+        })
+    }
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (!isDragging) return
+        const touch = e.touches[0]
+
+        // Prevent default scrolling only if we are dragging the canvas
+        // This is crucial for "app-like" feel
+        if (e.cancelable) e.preventDefault()
+
+        setPanPosition({
+            x: touch.clientX - dragStart.x,
+            y: touch.clientY - dragStart.y
+        })
+    }
+
+    const handleTouchEnd = () => {
+        setIsDragging(false)
+    }
+
     const fetchHierarchy = async () => {
         setIsLoading(true)
         try {
@@ -466,92 +501,104 @@ export default function HierarchyPage() {
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseLeave}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
             onWheel={handleWheel}
         >
             {/* Header and Controls - Fixed at top */}
-            <div className="p-8 pb-4 relative z-20 bg-background/95 backdrop-blur-sm border-b">
-                <div className="flex justify-between items-center max-w-5xl mx-auto mb-8 relative">
-                    <h1 className="text-2xl font-bold text-center w-full">{t('hierarchy.organizationHierarchy')}</h1>
-                    {/* Zoom Controls - Left Side */}
-                    <div className="absolute left-0 top-0 flex items-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleZoomReset}
-                            className="bg-background/50 backdrop-blur-sm gap-2 h-8"
-                        >
-                            <Network className="h-4 w-4" />
-                            <span className="hidden sm:inline">{t('hierarchy.overview')}</span>
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleFindMe}
-                            className="bg-background/50 backdrop-blur-sm gap-2 h-8"
-                        >
-                            <Crosshair className="h-4 w-4" />
-                            <span className="hidden sm:inline">{t('hierarchy.findMe')}</span>
-                        </Button>
-                    </div>
-                    {/* Zoom Controls - Right Side - Visible to All */}
-                    <div className="absolute right-0 top-0 flex items-center gap-2">
-                        {hasProject && (
-                            <div className="flex items-center gap-1 bg-background/50 backdrop-blur-sm border rounded-md p-1">
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={handleZoomOut}
-                                    disabled={zoomLevel <= baseZoom}
-                                    className="h-8 w-8"
-                                    aria-label="Zoom out"
-                                >
-                                    <ZoomOut className="h-4 w-4" aria-hidden="true" />
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={handleZoomReset}
-                                    className="h-8 px-2 text-xs font-mono"
-                                    aria-label={`Reset zoom (current: ${getRelativeZoomPercent(zoomLevel)}%)`}
-                                >
-                                    {getRelativeZoomPercent(zoomLevel)}%
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={handleZoomIn}
-                                    disabled={zoomLevel >= maxZoom}
-                                    className="h-8 w-8"
-                                    aria-label="Zoom in"
-                                >
-                                    <ZoomIn className="h-4 w-4" aria-hidden="true" />
-                                </Button>
-                            </div>
-                        )}
-                        {/* Add Chief Button - Only for ADMIN */}
-                        {hasProject && session?.user?.role === "ADMIN" && (
-                            <AddMemberDialog
-                                triggerLabel={t('hierarchy.addChief')}
-                                defaultRole="ADMIN"
-                                lockRole={true}
-                                hideManagerSelect={true}
-                                onSuccess={fetchHierarchy}
-                                customTrigger={
-                                    <Button variant="outline" size="sm" className="gap-2 bg-background/50 backdrop-blur-sm">
-                                        <UserPlus className="h-4 w-4" />
-                                        <span className="hidden sm:inline">{t('hierarchy.addChief')}</span>
+            <div className="p-4 md:p-8 pb-4 relative z-20 bg-background/95 backdrop-blur-sm border-b">
+                <div className="relative max-w-5xl mx-auto mb-4 md:mb-8 flex flex-col md:block">
+                    {/* Title */}
+                    <h1 className="text-xl md:text-2xl font-bold text-center w-full mb-4 md:mb-0 order-1 md:order-none">{t('hierarchy.organizationHierarchy')}</h1>
+
+                    {/* Controls Row - Mobile: Flow, Desktop: Absolute Overlay */}
+                    <div className="flex items-center justify-between w-full order-2 md:absolute md:top-0 md:left-0 md:h-full pointer-events-none">
+
+                        {/* Left Controls Group */}
+                        <div className="flex items-center gap-2 pointer-events-auto">
+                            {/* Mobile Back Button */}
+                            <Button variant="ghost" size="icon" asChild className="md:hidden mr-1 text-muted-foreground">
+                                <Link href="/team" aria-label="Back to Team">
+                                    <ArrowRight className="h-5 w-5 rotate-180" />
+                                </Link>
+                            </Button>
+
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleZoomReset}
+                                className="bg-background/50 backdrop-blur-sm gap-2 h-8 px-2"
+                            >
+                                <Network className="h-4 w-4" />
+                                <span className="hidden sm:inline">{t('hierarchy.overview')}</span>
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleFindMe}
+                                className="bg-background/50 backdrop-blur-sm gap-2 h-8 px-2"
+                            >
+                                <Crosshair className="h-4 w-4" />
+                                <span className="hidden sm:inline">{t('hierarchy.findMe')}</span>
+                            </Button>
+                        </div>
+
+                        {/* Right Controls Group */}
+                        <div className="flex items-center gap-2 pointer-events-auto">
+                            {hasProject && (
+                                <div className="flex items-center gap-1 bg-background/50 backdrop-blur-sm border rounded-md p-1">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={handleZoomOut}
+                                        disabled={zoomLevel <= baseZoom}
+                                        className="h-7 w-7 md:h-8 md:w-8"
+                                        aria-label="Zoom out"
+                                    >
+                                        <ZoomOut className="h-4 w-4" />
                                     </Button>
-                                }
-                            />
-                        )}
+                                    <span className="text-[10px] md:text-xs font-mono w-8 text-center">
+                                        {getRelativeZoomPercent(zoomLevel)}%
+                                    </span>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={handleZoomIn}
+                                        disabled={zoomLevel >= maxZoom}
+                                        className="h-7 w-7 md:h-8 md:w-8"
+                                        aria-label="Zoom in"
+                                    >
+                                        <ZoomIn className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            )}
+
+                            {/* Add Chief Button - Only for ADMIN */}
+                            {hasProject && session?.user?.role === "ADMIN" && (
+                                <AddMemberDialog
+                                    triggerLabel={t('hierarchy.addChief')}
+                                    defaultRole="ADMIN"
+                                    lockRole={true}
+                                    hideManagerSelect={true}
+                                    onSuccess={fetchHierarchy}
+                                    customTrigger={
+                                        <Button variant="outline" size="sm" className="gap-2 bg-background/50 backdrop-blur-sm h-8 px-2">
+                                            <UserPlus className="h-4 w-4" />
+                                            <span className="hidden sm:inline">{t('hierarchy.addChief')}</span>
+                                        </Button>
+                                    }
+                                />
+                            )}
+                        </div>
                     </div>
-                    {/* Back Button - Far Right */}
-                    <div className="absolute right-0 top-0 flex items-center gap-2 z-30 -mr-16">
+
+                    {/* Desktop Back Button - Far Right */}
+                    <div className="hidden md:flex absolute right-0 top-0 items-center gap-2 z-30 -mr-16 h-full">
                         <Button
                             variant="ghost"
                             size="icon"
                             asChild
-                            className="mr-0"
                         >
                             <Link href="/team" aria-label="Back to Team">
                                 <ArrowRight className="h-5 w-5" />
