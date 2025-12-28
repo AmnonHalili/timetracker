@@ -120,7 +120,7 @@ export function AddMemberDialog({
                 throw new Error(errorMsg)
             }
 
-            const data = await res.json()
+            await res.json()
 
             setOpen(false)
             router.refresh()

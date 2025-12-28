@@ -126,7 +126,6 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
 
                     const hasEvents = (data.events || []).some(e => isSameDay(new Date(e.startTime), day))
                     const hasTasks = allDaysTasks.length > 0
-                    const hasAnyContent = hasEvents || hasTasks
 
                     return (
                         <Card
@@ -186,8 +185,8 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                                         className={cn(
                                             "text-[9px] truncate px-0.5 rounded border",
                                             task.priority === 'HIGH' ? "bg-pink-700 text-white border-pink-800" :
-                                            task.priority === 'MEDIUM' ? "bg-pink-500 text-white border-pink-600" :
-                                            "bg-pink-300 text-white border-pink-400"
+                                                task.priority === 'MEDIUM' ? "bg-pink-500 text-white border-pink-600" :
+                                                    "bg-pink-300 text-white border-pink-400"
                                         )}
                                         title={`${task.title} - ${task.assignees?.map((u) => u.name).join(', ') || 'Unassigned'}`}
                                     >
