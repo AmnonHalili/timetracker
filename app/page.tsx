@@ -9,6 +9,8 @@ export const dynamic = "force-dynamic"
 export default async function Home() {
   try {
     const session = await getServerSession(authOptions)
+    console.log("[HOME_PAGE] Session check:", session ? "FOUND" : "NULL", session?.user?.email)
+
     if (session) {
       redirect("/dashboard")
     }
