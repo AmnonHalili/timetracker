@@ -42,11 +42,11 @@ export async function GET() {
         // Get current user's project
         const currentUser = await prisma.user.findUnique({
             where: { id: session.user.id },
-            select: { projectId: true }
+            select: { projectId: true, email: true }
         })
 
         if (!currentUser?.projectId) {
-            // If no project, they can only see themselves (or no one)
+            console.log(`[OnlineStatus] User ${currentUser?.email} has no project.`)
             return NextResponse.json({ onlineUsers: [session.user.id] })
         }
 
@@ -62,7 +62,9 @@ export async function GET() {
                 }
             },
             select: {
-                id: true
+                id: true,
+                email: true,
+                lastSeen: true
             }
         })
 

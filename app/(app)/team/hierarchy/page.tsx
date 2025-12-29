@@ -811,6 +811,7 @@ export default function HierarchyPage() {
                                                                         onAddClick={handleAddClick}
                                                                         depth={1}
                                                                         hideConnectorLines={true}
+                                                                        onlineUserIds={onlineUserIds}
                                                                     />
                                                                 </div>
                                                             )
@@ -850,6 +851,7 @@ export default function HierarchyPage() {
                                                     allUsers={users}
                                                     onAddClick={handleAddClick}
                                                     depth={0}
+                                                    onlineUserIds={onlineUserIds}
                                                 />
                                             </div>
                                         )
