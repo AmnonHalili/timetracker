@@ -782,11 +782,11 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                             <div className="flex flex-col gap-1">
                                 <label htmlFor="manual-start-time" className="text-[10px] text-muted-foreground font-medium">
                                     {t('dashboard.startTime')}
-                                </label>
-                                <Input
-                                    id="manual-start-time"
-                                    type="time"
-                                    value={manualStart}
+                            </label>
+                            <Input
+                                id="manual-start-time"
+                                type="time"
+                                value={manualStart}
                                     onChange={(e) => {
                                         setManualStart(e.target.value)
                                         // Check if end time is before start time
@@ -797,18 +797,18 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                                         }
                                     }}
                                     className={`w-[95px] h-9 text-sm bg-background border-input shadow-sm ${timeError ? 'border-destructive' : ''}`}
-                                    aria-label="Start time"
-                                />
+                                aria-label="Start time"
+                            />
                             </div>
                             <span className="text-muted-foreground mb-2" aria-hidden="true">-</span>
                             <div className="flex flex-col gap-1">
                                 <label htmlFor="manual-end-time" className="text-[10px] text-muted-foreground font-medium">
                                     {t('dashboard.endTime')}
-                                </label>
-                                <Input
-                                    id="manual-end-time"
-                                    type="time"
-                                    value={manualEnd}
+                            </label>
+                            <Input
+                                id="manual-end-time"
+                                type="time"
+                                value={manualEnd}
                                     onChange={(e) => {
                                         setManualEnd(e.target.value)
                                         // Check if end time is before start time
@@ -819,8 +819,8 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                                         }
                                     }}
                                     className={`w-[95px] h-9 text-sm bg-background border-input shadow-sm ${timeError ? 'border-destructive' : ''}`}
-                                    aria-label="End time"
-                                />
+                                aria-label="End time"
+                            />
                             </div>
                             {timeError && (
                                 <div className="absolute -bottom-5 left-0">

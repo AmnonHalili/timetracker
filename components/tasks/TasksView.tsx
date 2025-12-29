@@ -818,7 +818,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
         <Card>
             <CardHeader className="flex flex-col space-y-4 pb-4">
                 {/* Filters and Sort - Above title */}
-                <div className={`flex items-center gap-2 w-full ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <div className={`flex items-center gap-2 w-full ${isRTL ? 'flex-row-reverse justify-start' : 'justify-end'}`}>
                         {/* Filters Button */}
                         <Button
                             variant="outline"
@@ -989,23 +989,23 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                         </div>
 
                                         {/* Task Title - Third line with Checkbox */}
-                                        <div className="flex items-center gap-2 cursor-pointer" onClick={() => openTaskDetail(task)}>
+                                        <div className="flex items-center gap-2">
                                             <Checkbox
                                                 checked={task.status === 'DONE'}
-                                                onCheckedChange={(checked) => {
-                                                    handleCheckboxChange(task.id, task.status, checked as boolean)
-                                                }}
-                                                onClick={(e) => e.stopPropagation()}
+                                                onCheckedChange={(checked) => handleCheckboxChange(task.id, task.status, checked as boolean)}
                                                 className="h-4 w-4"
+                                                onClick={(e) => e.stopPropagation()}
                                             />
-                                            <span className={`text-sm font-medium group-hover:text-primary transition-colors ${task.status === 'DONE' ? 'line-through text-muted-foreground' : ''}`}>
-                                                {task.title}
-                                            </span>
-                                            {task.checklist && task.checklist.length > 0 && (
-                                                <Badge variant="outline" className="text-[10px] h-5 px-2 text-muted-foreground border-muted-foreground/30">
-                                                    {task.checklist.filter(i => i.isDone).length}/{task.checklist.length}
-                                                </Badge>
-                                            )}
+                                            <div className="flex items-center gap-2 cursor-pointer flex-1" onClick={() => openTaskDetail(task)}>
+                                                <span className={`text-sm font-medium group-hover:text-primary transition-colors ${task.status === 'DONE' ? 'line-through text-muted-foreground' : ''}`}>
+                                                    {task.title}
+                                                </span>
+                                                {task.checklist && task.checklist.length > 0 && (
+                                                    <Badge variant="outline" className="text-[10px] h-5 px-2 text-muted-foreground border-muted-foreground/30">
+                                                        {task.checklist.filter(i => i.isDone).length}/{task.checklist.length}
+                                                    </Badge>
+                                                )}
+                                            </div>
                                         </div>
 
                                         <div className="flex items-center gap-4 text-xs text-muted-foreground pl-1">
