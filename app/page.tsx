@@ -7,16 +7,16 @@ import { LandingPageContent } from "@/components/landing/LandingPageContent"
 export const dynamic = "force-dynamic"
 
 export default async function Home() {
+  let session = null;
   try {
-    const session = await getServerSession(authOptions)
-    console.log("[HOME_PAGE] Session check:", session ? "FOUND" : "NULL", session?.user?.email)
-
-    if (session) {
-      redirect("/dashboard")
-    }
+    session = await getServerSession(authOptions)
   } catch (error) {
     console.error("Failed to retrieve session:", error)
     // Fallback: render landing page if auth/DB fails
+  }
+
+  if (session) {
+    redirect("/dashboard")
   }
 
   return (

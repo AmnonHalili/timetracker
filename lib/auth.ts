@@ -6,7 +6,6 @@ import { prisma } from "@/lib/prisma"
 import { compare } from "bcryptjs"
 
 export const authOptions: NextAuthOptions = {
-    debug: true,
     adapter: PrismaAdapter(prisma),
     pages: {
         signIn: "/login",
