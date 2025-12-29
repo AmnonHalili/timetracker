@@ -98,10 +98,8 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
 
     // Manager edit dialog state
     const [showManagerDialog, setShowManagerDialog] = useState(false)
-    
+
     // Primary Manager edit state (for saving when clicking main Save button)
-    const [pendingManagerId, setPendingManagerId] = useState<string | null | undefined>(undefined)
-    const [pendingChiefType, setPendingChiefType] = useState<'partner' | 'independent' | null | undefined>(undefined)
     const [savingAll, setSavingAll] = useState(false)
 
     // Chief type edit state
@@ -150,8 +148,6 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
         setSelectedUser(user)
         setEditTarget(user.dailyTarget?.toString() || "")
         setEditDays(user.workDays || [])
-        setPendingManagerId(undefined)
-        setPendingChiefType(undefined)
         setPendingSecondaryManagers([])
 
         // Fetch secondary managers
@@ -186,8 +182,6 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
         setShowManagerDialog(false)
         setShowChiefTypeDialog(false)
         setSelectedChiefType(null)
-        setPendingManagerId(undefined)
-        setPendingChiefType(undefined)
         setPendingSecondaryManagers([])
     }
 
@@ -343,13 +337,13 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
         if (!selectedUser) return
 
         setSavingAll(true)
-        
+
         try {
             // Save Primary Manager if changed
             if (pendingManagerId !== undefined || pendingChiefType !== undefined) {
                 const managerId = pendingManagerId !== undefined ? pendingManagerId : selectedUser.managerId
                 const chiefType = pendingChiefType !== undefined ? pendingChiefType : null
-                
+
                 // Validate chief type if required
                 if (!managerId && selectedUser.role === "ADMIN" && chiefType === null) {
                     // Check if we need chief type - only if current user is top-level admin
@@ -719,7 +713,7 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
                             ) : null}
                         </TabsContent>
                     </Tabs>
-                    
+
                     {/* Save Button */}
                     {selectedUser && (
                         <DialogFooter>
@@ -789,10 +783,6 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
                     employee={selectedUser as any}
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     managers={users.filter(u => u.id !== selectedUser.id && (u.role === 'ADMIN' || u.role === 'MANAGER')) as any}
-                    onManagerChange={(managerId, chiefType) => {
-                        setPendingManagerId(managerId)
-                        setPendingChiefType(chiefType)
-                    }}
                 />
             )}
 

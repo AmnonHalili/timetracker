@@ -44,6 +44,7 @@ export function AssignManagerDialog({ open, onOpenChange, employee, managers, on
 
     // Check if current user is top-level admin (has no manager)
     const isTopLevelAdmin = session?.user?.role === "ADMIN" && !session?.user?.managerId
+    const [saving, setSaving] = useState(false)
 
     // Update state when dialog opens or employee changes
     useEffect(() => {
@@ -56,32 +57,63 @@ export function AssignManagerDialog({ open, onOpenChange, employee, managers, on
         }
     }, [open, employee])
 
-    // Handle showing chief type selection
+    // Show chief type selection logic
     useEffect(() => {
         if (!employee) return
 
-        // Show chief type selection when:
-        // 1. User selects "No Manager" (selectedManagerId is "none" or null)
-        // 2. Current user is a top-level admin (can create chiefs)
-        // 3. Target employee is an ADMIN (can be a chief)
         const isNoManager = selectedManagerId === "none" || selectedManagerId === null
         const shouldShow = isNoManager && isTopLevelAdmin && employee.role === "ADMIN"
         setShowChiefType(shouldShow)
-        
-        // Reset chief type when hiding the selection
+
         if (!shouldShow) {
             setChiefType(null)
         }
     }, [selectedManagerId, employee, isTopLevelAdmin])
 
-    // Notify parent component of changes instead of saving directly
-    useEffect(() => {
-        if (onManagerChange && employee) {
-            const managerId = selectedManagerId === "none" ? null : selectedManagerId
-            const finalChiefType = showChiefType ? chiefType : null
-            onManagerChange(managerId, finalChiefType)
+    const handleSave = async () => {
+        if (!employee) return
+
+        // Validate chief type if required
+        if (showChiefType && !chiefType) {
+            alert("Please select how this chief should be added (Partner or Independent)")
+            return
         }
-    }, [selectedManagerId, chiefType, showChiefType, employee, onManagerChange])
+
+        setSaving(true)
+        try {
+            const res = await fetch("/api/team/assign-manager", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    employeeId: employee.id,
+                    managerId: selectedManagerId === "none" ? null : selectedManagerId,
+                    chiefType: showChiefType ? chiefType : undefined
+                }),
+            })
+
+            if (!res.ok) {
+                const data = await res.json()
+                throw new Error(data.message || "Failed to assign manager")
+            }
+
+            const router = window.location // fallback if hook unavailable or just use router.refresh
+            // Actually router is imported. 
+            // We need to refresh parent
+
+            if (onManagerChange) {
+                // If we still want to notify parent for some reason, but we primarily save here
+                onManagerChange(null, null) // clearer
+            }
+
+            onOpenChange(false)
+            // We need to trigger a refresh
+            window.location.reload()
+        } catch (error) {
+            alert(error instanceof Error ? error.message : "Error assigning manager")
+        } finally {
+            setSaving(false)
+        }
+    }
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -101,10 +133,6 @@ export function AssignManagerDialog({ open, onOpenChange, employee, managers, on
                             onValueChange={(value) => {
                                 const newManagerId = value === "none" ? null : value
                                 setSelectedManagerId(newManagerId)
-                                // Reset chief type when changing manager selection
-                                if (newManagerId !== null) {
-                                    setChiefType(null)
-                                }
                             }}
                         >
                             <SelectTrigger id="manager">
@@ -181,7 +209,7 @@ export function AssignManagerDialog({ open, onOpenChange, employee, managers, on
                                                 Partner – Shared Leadership
                                             </h4>
                                             <p className="text-sm text-muted-foreground mb-2">
-                                                This chief will act as a shared manager together with you. Both chiefs behave as a single logical entity.
+                                                This chief will act as a shared manager.
                                             </p>
                                         </div>
                                     </div>
@@ -213,7 +241,7 @@ export function AssignManagerDialog({ open, onOpenChange, employee, managers, on
                                                 Independent Chief – Separate Branch
                                             </h4>
                                             <p className="text-sm text-muted-foreground mb-2">
-                                                This chief will be a separate top-level manager with their own hierarchy.
+                                                This chief will be a separate top-level manager.
                                             </p>
                                         </div>
                                     </div>
@@ -222,6 +250,16 @@ export function AssignManagerDialog({ open, onOpenChange, employee, managers, on
                         </div>
                     )}
                 </div>
+
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+                        Cancel
+                    </Button>
+                    <Button onClick={handleSave} disabled={saving}>
+                        {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save Changes
+                    </Button>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     )
