@@ -36,9 +36,19 @@ interface ControlBarProps {
         tasks?: Array<{ id: string; title: string }>
         subtaskId?: string | null
     }) => void
+    onEntryMerged?: (mergedEntry: {
+        id: string
+        startTime: Date | string
+        endTime: Date | string | null
+        description?: string | null
+        isManual?: boolean
+        breaks?: Array<{ startTime: Date | string; endTime: Date | string | null }>
+        tasks?: Array<{ id: string; title: string }>
+        subtask?: { id: string; title: string } | null
+    }) => void
 }
 
-export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarProps) {
+export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }: ControlBarProps) {
     const router = useRouter()
     const { t } = useLanguage()
     // Optimistic state for immediate UI updates
@@ -91,6 +101,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
             setIsDataLoaded(true)
         } else {
             // Server says no active entry, clear optimistic state
+            // But don't clear selectedTaskIds - keep it so subtask selector remains visible
             setOptimisticEntry(null)
             setIsDataLoaded(false)
         }
@@ -107,15 +118,18 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
         }
 
         if (optimisticEntry?.tasks) {
+            // When timer is running, sync task selection with active entry
             setSelectedTaskIds(optimisticEntry.tasks.map(t => t.id))
-        } else if (!optimisticEntry) {
-            setSelectedTaskIds([])
-            setSelectedSubtaskId(null)
         }
+        // Don't clear selectedTaskIds when optimisticEntry is null (after stop)
+        // This keeps the subtask selector visible so user can select a new subtask
         
         if (optimisticEntry?.subtaskId !== undefined) {
+            // When timer is running, sync subtask selection with active entry
             setSelectedSubtaskId(optimisticEntry.subtaskId)
         } else if (!optimisticEntry) {
+            // Only clear subtask selection when timer stops, not task selection
+            // This allows user to select a different subtask for the same task
             setSelectedSubtaskId(null)
         }
     }, [optimisticEntry])
@@ -341,7 +355,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                 start.setHours(parseInt(startH), parseInt(startM), 0, 0)
                 end.setHours(parseInt(endH), parseInt(endM), 0, 0)
 
-                await fetch('/api/time-entries', {
+                const manualResponse = await fetch('/api/time-entries', {
                     method: 'POST',
                     body: JSON.stringify({
                         action: 'manual',
@@ -350,12 +364,23 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                         subtaskId: selectedSubtaskId || null
                     }),
                 })
+                const manualData = await manualResponse.json()
+                
                 setManualStart("")
                 setManualEnd("")
                 setTimeError("")
                 setDescription("")
                 setSelectedTaskIds([])
                 setSelectedSubtaskId(null)
+                
+                // If merged, update UI immediately
+                if (manualData.merged && manualData.entry && onEntryMerged) {
+                    onEntryMerged(manualData.entry)
+                } else {
+                    startTransition(() => {
+                        router.refresh()
+                    })
+                }
             } else {
                 // Timer Start
                 await fetch('/api/time-entries', {
@@ -407,7 +432,8 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
 
             setOptimisticEntry(null)
             setDescription("")
-            setSelectedTaskIds([])
+            // Keep selectedTaskIds so subtask selector remains visible
+            // Only clear selectedSubtaskId to allow selecting a new subtask
             setSelectedSubtaskId(null)
         } else if (action === 'pause' && optimisticEntry) {
             setOptimisticEntry({
@@ -427,13 +453,29 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
         }
 
         try {
-            await fetch('/api/time-entries', {
+            const response = await fetch('/api/time-entries', {
                 method: 'POST',
                 body: JSON.stringify({ action }),
             })
-            startTransition(() => {
-            router.refresh()
-            })
+            const data = await response.json()
+            
+            // If entries were merged, update UI immediately without full refresh
+            if (data.merged && action === 'stop' && data.entry && onEntryMerged) {
+                // Clear optimistic entry immediately since it was merged
+                setOptimisticEntry(null)
+                setDescription("")
+                // Keep selectedTaskIds so subtask selector remains visible
+                // Only clear selectedSubtaskId to allow selecting a new subtask
+                setSelectedSubtaskId(null)
+                
+                // Update UI immediately with merged entry
+                onEntryMerged(data.entry)
+            } else {
+                // Normal case - refresh in background
+                startTransition(() => {
+                    router.refresh()
+                })
+            }
         } catch (error) {
             console.error("Timer action failed", error)
             // Revert optimistic update on error
@@ -643,24 +685,30 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                                                             }
                                                             onTimerStopped(stoppedEntry)
                                                             
-                                                            await fetch('/api/time-entries', {
+                                                            const stopResponse = await fetch('/api/time-entries', {
                                                                 method: 'POST',
                                                                 headers: { 'Content-Type': 'application/json' },
                                                                 body: JSON.stringify({
                                                                     action: 'stop'
                                                                 })
                                                             })
+                                                            const stopData = await stopResponse.json()
                                                             
                                                             // Clear optimistic entry
                                                             setOptimisticEntry(null)
                                                             setDescription("")
                                                             setSelectedTaskIds([])
                                                             setSelectedSubtaskId(null)
+                                                            
+                                                            // If merged, update UI immediately
+                                                            if (stopData.merged && stopData.entry && onEntryMerged) {
+                                                                onEntryMerged(stopData.entry)
+                                                            } else {
+                                                                startTransition(() => {
+                                                                    router.refresh()
+                                                                })
+                                                            }
                                                         }
-                                                        
-                                                        startTransition(() => {
-                                                        router.refresh()
-                                                        })
                                                     } catch (error) {
                                                         console.error("Failed to update task status:", error)
                                                     }
@@ -741,24 +789,30 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                                                 }
                                                 onTimerStopped(stoppedEntry)
                                                 
-                                                await fetch('/api/time-entries', {
+                                                const stopResponse = await fetch('/api/time-entries', {
                                                     method: 'POST',
                                                     headers: { 'Content-Type': 'application/json' },
                                                     body: JSON.stringify({
                                                         action: 'stop'
                                                     })
                                                 })
+                                                const stopData = await stopResponse.json()
                                                 
                                                 // Clear optimistic entry
                                                 setOptimisticEntry(null)
                                                 setDescription("")
                                                 setSelectedTaskIds([])
                                                 setSelectedSubtaskId(null)
+                                                
+                                                // If merged, update UI immediately
+                                                if (stopData.merged && stopData.entry && onEntryMerged) {
+                                                    onEntryMerged(stopData.entry)
+                                                } else {
+                                                    startTransition(() => {
+                                                        router.refresh()
+                                                    })
+                                                }
                                             }
-                                            
-                                            startTransition(() => {
-                                            router.refresh()
-                                            })
                                         } catch (error) {
                                             console.error("Failed to update task status:", error)
                                         }

@@ -97,13 +97,20 @@ export function Timer({ activeEntry }: TimerProps) {
         }
 
         try {
-            await fetch('/api/time-entries', {
+            const response = await fetch('/api/time-entries', {
                 method: 'POST',
                 body: JSON.stringify({ action }),
             })
-            startTransition(() => {
-                router.refresh() // Sync server components
-            })
+            const data = await response.json()
+            
+            // If entries were merged, immediately refresh to show merged entry
+            if (data.merged && action === 'stop') {
+                router.refresh()
+            } else {
+                startTransition(() => {
+                    router.refresh() // Sync server components
+                })
+            }
         } catch (error) {
             console.error("Timer action failed", error)
             // Revert on error

@@ -140,6 +140,9 @@ export async function POST(req: Request) {
             const activeTaskIds = active.tasks.map(t => t.id).sort()
             const activeSubtaskId = active.subtaskId
 
+            // Get active entry description for matching
+            const activeDescription = active.description?.trim() || null
+
             // Find existing entries for the same day with the same context
             const existingEntries = await prisma.timeEntry.findMany({
                 where: {
@@ -156,6 +159,7 @@ export async function POST(req: Request) {
                     id: true,
                     startTime: true,
                     endTime: true,
+                    description: true,
                     tasks: {
                         select: {
                             id: true
@@ -171,15 +175,22 @@ export async function POST(req: Request) {
                 }
             })
 
-            // Find matching entry by task context
-            // Match if: same task IDs (or both have no tasks) and same subtaskId
+            // Find matching entry by task context and description
+            // Match if: same task IDs (or both have no tasks), same subtaskId, and same description
             const matchingEntry = existingEntries.find(entry => {
                 const entryTaskIds = entry.tasks.map(t => t.id).sort()
                 const taskIdsMatch = 
                     (activeTaskIds.length === 0 && entryTaskIds.length === 0) ||
                     (activeTaskIds.length === entryTaskIds.length && 
                      activeTaskIds.every((id, idx) => id === entryTaskIds[idx]))
-                return taskIdsMatch
+                
+                // Match by description - both must be null/empty or both must be the same
+                const entryDesc = entry.description?.trim() || null
+                const descriptionMatch = 
+                    (!activeDescription && !entryDesc) ||
+                    (activeDescription && entryDesc && activeDescription === entryDesc)
+                
+                return taskIdsMatch && descriptionMatch
             })
 
             if (matchingEntry) {
@@ -205,6 +216,30 @@ export async function POST(req: Request) {
                     })
                 }
 
+                // Add gap between sessions as a break to ensure correct net work calculation
+                // If sessions don't overlap, add the gap as a break
+                if (existingEnd && startTime > existingEnd) {
+                    // There's a gap between existing end and new start - add it as a break
+                    await prisma.timeBreak.create({
+                        data: {
+                            timeEntryId: matchingEntry.id,
+                            startTime: existingEnd,
+                            endTime: startTime,
+                            reason: 'gap_between_sessions'
+                        }
+                    })
+                } else if (existingStart && endTime < existingStart) {
+                    // New session ends before existing starts - add gap as break
+                    await prisma.timeBreak.create({
+                        data: {
+                            timeEntryId: matchingEntry.id,
+                            startTime: endTime,
+                            endTime: existingStart,
+                            reason: 'gap_between_sessions'
+                        }
+                    })
+                }
+
                 // Update matching entry with merged times
                 const merged = await prisma.timeEntry.update({
                     where: { id: matchingEntry.id },
@@ -223,7 +258,13 @@ export async function POST(req: Request) {
                         updatedAt: true,
                         subtaskId: true,
                         breaks: true,
-                        tasks: true
+                        tasks: true,
+                        subtask: {
+                            select: {
+                                id: true,
+                                title: true
+                            }
+                        }
                     }
                 })
 
@@ -344,6 +385,7 @@ export async function POST(req: Request) {
             // Get task IDs for context matching
             const entryTaskIds = (taskIds || []).sort()
             const entrySubtaskId = subtaskId || null
+            const entryDescription = description?.trim() || null
 
             // Find existing entries for the same day with the same context
             const existingEntries = await prisma.timeEntry.findMany({
@@ -360,6 +402,7 @@ export async function POST(req: Request) {
                     id: true,
                     startTime: true,
                     endTime: true,
+                    description: true,
                     tasks: {
                         select: {
                             id: true
@@ -375,14 +418,21 @@ export async function POST(req: Request) {
                 }
             })
 
-            // Find matching entry by task context
+            // Find matching entry by task context and description
             const matchingEntry = existingEntries.find(entry => {
                 const existingTaskIds = entry.tasks.map(t => t.id).sort()
                 const taskIdsMatch = 
                     (entryTaskIds.length === 0 && existingTaskIds.length === 0) ||
                     (entryTaskIds.length === existingTaskIds.length && 
                      entryTaskIds.every((id, idx) => id === existingTaskIds[idx]))
-                return taskIdsMatch
+                
+                // Match by description - both must be null/empty or both must be the same
+                const existingDesc = entry.description?.trim() || null
+                const descriptionMatch = 
+                    (!entryDescription && !existingDesc) ||
+                    (entryDescription && existingDesc && entryDescription === existingDesc)
+                
+                return taskIdsMatch && descriptionMatch
             })
 
             if (matchingEntry) {
@@ -394,6 +444,29 @@ export async function POST(req: Request) {
                 const mergedStart = existingStart < startTime ? existingStart : startTime
                 // Use latest end time
                 const mergedEnd = existingEnd && existingEnd > endTime ? existingEnd : endTime
+
+                // Add gap between sessions as a break to ensure correct net work calculation
+                if (existingEnd && startTime > existingEnd) {
+                    // There's a gap between existing end and new start - add it as a break
+                    await prisma.timeBreak.create({
+                        data: {
+                            timeEntryId: matchingEntry.id,
+                            startTime: existingEnd,
+                            endTime: startTime,
+                            reason: 'gap_between_sessions'
+                        }
+                    })
+                } else if (existingStart && endTime < existingStart) {
+                    // New session ends before existing starts - add gap as break
+                    await prisma.timeBreak.create({
+                        data: {
+                            timeEntryId: matchingEntry.id,
+                            startTime: endTime,
+                            endTime: existingStart,
+                            reason: 'gap_between_sessions'
+                        }
+                    })
+                }
 
                 // Update matching entry with merged times
                 const merged = await prisma.timeEntry.update({
@@ -415,7 +488,13 @@ export async function POST(req: Request) {
                         updatedAt: true,
                         subtaskId: true,
                         breaks: true,
-                        tasks: true
+                        tasks: true,
+                        subtask: {
+                            select: {
+                                id: true,
+                                title: true
+                            }
+                        }
                     }
                 })
 
