@@ -345,7 +345,20 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
         setSavingAll(true)
 
         try {
-            // Save Primary Manager if changed
+            // 1. Save Work Settings
+            // Check if there are changes to avoid unnecessary calls? For now just save.
+            const workSettingsRes = await fetch("/api/team/work-settings", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    userId: selectedUser.id,
+                    dailyTarget: editTarget === "" ? null : parseFloat(editTarget),
+                    workDays: editDays
+                }),
+            })
+            if (!workSettingsRes.ok) throw new Error("Failed to update work settings")
+
+            // 2. Save Primary Manager if changed
             if (pendingManagerId !== undefined || pendingChiefType !== undefined) {
                 const managerId = pendingManagerId !== undefined ? pendingManagerId : selectedUser.managerId
                 const chiefType = pendingChiefType !== undefined ? pendingChiefType : null
@@ -378,7 +391,7 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
                 }
             }
 
-            // Save Secondary Managers
+            // 3. Save Secondary Managers
             const managersToSave = pendingSecondaryManagers.length > 0 ? pendingSecondaryManagers : secondaryManagers
             const newManagerIds = managersToSave.map(m => m.managerId)
 
@@ -548,21 +561,25 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
                                 <Input
                                     id="target"
                                     type="number"
+                                    min={0}
                                     step="0.5"
                                     value={editTarget}
-                                    onChange={e => setEditTarget(e.target.value)}
+                                    onChange={e => {
+                                        const val = e.target.value
+                                        if (!val || parseFloat(val) >= 0) {
+                                            setEditTarget(val)
+                                        }
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === '-' || e.key === 'Minus') {
+                                            e.preventDefault()
+                                        }
+                                    }}
                                     dir="ltr"
                                 />
                                 <p className={`text-xs text-muted-foreground ${isRTL ? 'text-right' : 'text-left'}`}>
                                     {t('team.dailyTargetDescription')}
                                 </p>
-                            </div>
-
-                            <div className={`flex pt-4 border-t ${isRTL ? 'justify-start' : 'justify-end'}`}>
-                                <Button onClick={saveEdit} disabled={saving}>
-                                    {saving && <Loader2 className={`h-4 w-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} />}
-                                    {t('team.saveWorkSettings')}
-                                </Button>
                             </div>
                         </TabsContent>
 
