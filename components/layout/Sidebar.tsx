@@ -120,7 +120,7 @@ export function Sidebar() {
                             aria-current={route.active ? "page" : undefined}
                         >
                             {route.label}
-                            {/* @ts-ignore - badge is added dynamically to the route object */}
+
                             {route.badge && (
                                 <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
                             )}

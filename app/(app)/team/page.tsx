@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { TeamList } from "@/components/team/TeamList"
 import { TeamOnboardingWidget } from "@/components/dashboard/TeamOnboardingWidget"
-import { filterVisibleUsers, filterHierarchyGroup } from "@/lib/hierarchy-utils"
+import { filterHierarchyGroup } from "@/lib/hierarchy-utils"
 import { TeamRequestsList } from "@/components/team/TeamRequestsList"
 import { TeamPageHeader } from "@/components/team/TeamPageHeader"
 
@@ -89,7 +89,7 @@ export default async function TeamPage() {
         // Try to fetch with sharedChiefGroupId
         // Only include ACTIVE users (those who have accepted invitation and signed in)
         allTeamMembers = await prisma.user.findMany({
-            where: { 
+            where: {
                 projectId: currentUser.projectId,
                 status: "ACTIVE" // Only show users who have accepted invitation and signed in
             },
@@ -113,7 +113,7 @@ export default async function TeamPage() {
         // If field doesn't exist, fetch without it and add null
         // Only include ACTIVE users (those who have accepted invitation and signed in)
         const fetchedUsers = await prisma.user.findMany({
-            where: { 
+            where: {
                 projectId: currentUser.projectId,
                 status: "ACTIVE" // Only show users who have accepted invitation and signed in
             },
@@ -255,11 +255,11 @@ export default async function TeamPage() {
                 isManager={isManager}
             />
 
-            <TeamList 
-                users={teamMembers as never} 
+            <TeamList
+                users={teamMembers as never}
                 allUsers={allTeamMembers as never}
-                currentUserId={session.user.id} 
-                currentUserRole={currentUser.role} 
+                currentUserId={session.user.id}
+                currentUserRole={currentUser.role}
             />
         </div>
     )

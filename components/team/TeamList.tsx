@@ -132,7 +132,8 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
         if (allUsers) {
             const currentUserData = allUsers.find(u => u.id === currentUserId)
             if (currentUserData) {
-                const canManage = canManageUser(currentUserData as any, user as any, allUsers)
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const canManage = canManageUser(currentUserData as any, user as any, allUsers as any)
                 if (!canManage) {
                     // User cannot manage this person - don't open dialog
                     toast.error("You don't have permission to manage this user")
