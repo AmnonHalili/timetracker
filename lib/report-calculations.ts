@@ -1,5 +1,9 @@
-import { TimeEntry } from "@prisma/client"
+import { TimeEntry, TimeBreak } from "@prisma/client"
 import { eachDayOfInterval, endOfMonth, format, isSameDay, startOfMonth, getDay } from "date-fns"
+
+type TimeEntryWithBreaks = TimeEntry & {
+    breaks?: TimeBreak[]
+}
 
 export type DailyReport = {
     date: Date
@@ -10,6 +14,9 @@ export type DailyReport = {
     totalDurationHours: number
     status: 'MET' | 'MISSED' | 'OFF' | 'PENDING'
     hasManualEntries: boolean
+    locationStatus?: string | null // "verified", "unavailable", "outside_area", "not_required"
+    locationRequired?: boolean
+    breaksFromLocation?: number // Number of breaks caused by leaving work area
 }
 
 export type MonthlyReport = {
@@ -19,7 +26,7 @@ export type MonthlyReport = {
 }
 
 export function getMonthlyReport(
-    entries: TimeEntry[],
+    entries: TimeEntryWithBreaks[],
     currentDate: Date,
     dailyTarget: number,
     workDays: number[],
@@ -99,6 +106,19 @@ export function getMonthlyReport(
 
         // Check for manual entries
         const hasManualEntries = dayEntries.some(e => e.isManual)
+
+        // Get location status from entries (use the first entry's status for the day)
+        const firstEntry = dayEntries[0]
+        const locationStatus = firstEntry?.locationStatus || null
+        const locationRequired = firstEntry?.locationRequired || false
+        
+        // Count breaks caused by leaving work area
+        const breaksFromLocation = dayEntries.reduce((count, entry) => {
+            if (entry.breaks) {
+                return count + entry.breaks.filter(b => b.reason === 'left_work_area').length
+            }
+            return count
+        }, 0)
 
         return {
             date: day,

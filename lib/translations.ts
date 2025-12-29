@@ -37,6 +37,7 @@ export const translations = {
 
     // Navigation
     'nav.dashboard': 'Time Tracker',
+    'nav.timePunch': 'Time Punch',
     'nav.tasks': 'Tasks',
     'nav.calendar': 'Calendar',
     'nav.reports': 'Reports',
@@ -190,6 +191,13 @@ export const translations = {
     'reports.period': 'Period',
     'reports.user': 'User',
     'reports.allUsers': 'All Users',
+    'workspace.workMode': 'Work Mode',
+    'workspace.remoteWork': 'Remote Work',
+    'workspace.remoteWorkDescription': 'No location verification required. Perfect for remote teams and work-from-home.',
+    'workspace.remoteWorkEnabled': 'Remote work enabled',
+    'workspace.remoteWorkDisabled': 'Remote work disabled',
+    'workspace.locationBasedWork': 'Location-Based Work',
+    'workspace.locationBasedWorkDescription': 'Set a work location for GPS verification. Employees must be within the area to start work.',
     'reports.targetHours': 'Target Hours',
     'reports.totalWorked': 'Total Worked',
     'reports.totalHours': 'Total Hours',
@@ -596,6 +604,7 @@ export const translations = {
 
     // Navigation
     'nav.dashboard': 'מעקב זמן',
+    'nav.timePunch': 'נוכחות',
     'nav.tasks': 'משימות',
     'nav.calendar': 'יומן',
     'nav.reports': 'דוחות',
@@ -749,6 +758,13 @@ export const translations = {
     'reports.period': 'תקופה',
     'reports.user': 'משתמש',
     'reports.allUsers': 'כל המשתמשים',
+    'workspace.workMode': 'מצב עבודה',
+    'workspace.remoteWork': 'עבודה מרחוק',
+    'workspace.remoteWorkDescription': 'ללא אימות מיקום. מושלם לצוותים מרחוק ועבודה מהבית.',
+    'workspace.remoteWorkEnabled': 'עבודה מרחוק הופעלה',
+    'workspace.remoteWorkDisabled': 'עבודה מרחוק בוטלה',
+    'workspace.locationBasedWork': 'עבודה מבוססת מיקום',
+    'workspace.locationBasedWorkDescription': 'הגדר מיקום עבודה לאימות GPS. העובדים חייבים להיות בתוך האזור כדי להתחיל לעבוד.',
     'reports.targetHours': 'שעות יעד',
     'reports.totalWorked': 'סה"כ עבד',
     'reports.totalHours': 'סה"כ שעות',

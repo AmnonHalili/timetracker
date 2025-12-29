@@ -7,6 +7,7 @@ import { redirect } from "next/navigation"
 import { DashboardContent } from "@/components/dashboard/DashboardContent"
 import { StatsWidget } from "@/components/dashboard/StatsWidget"
 import { LiveTeamStatusWidget } from "@/components/dashboard/LiveTeamStatusWidget"
+import { TimePunchHeader } from "@/components/dashboard/TimePunchHeader"
 
 import { User, TimeEntry, Task, TimeBreak } from "@prisma/client"
 
@@ -37,7 +38,14 @@ export default async function DashboardPage() {
                 }
             },
             project: {
-                select: { workMode: true }
+                select: { 
+                    workMode: true,
+                    workLocationLatitude: true,
+                    workLocationLongitude: true,
+                    workLocationRadius: true,
+                    workLocationAddress: true,
+                    isRemoteWork: true,
+                }
             }
         },
     })) as unknown as DashboardUser
@@ -169,6 +177,21 @@ export default async function DashboardPage() {
             <div className={`grid grid-cols-1 ${showSidebar ? "lg:grid-cols-[1fr_220px]" : ""} gap-8 items-start`}>
                 {/* Main Content Area */}
                 <div className="space-y-0 md:space-y-8 min-w-0">
+                    <TimePunchHeader
+                        workLocation={
+                            user.project?.isRemoteWork
+                                ? null // Remote work - no location required
+                                : user.project?.workLocationLatitude && user.project?.workLocationLongitude
+                                ? {
+                                    latitude: user.project.workLocationLatitude,
+                                    longitude: user.project.workLocationLongitude,
+                                    radius: user.project.workLocationRadius || 150,
+                                    address: user.project.workLocationAddress,
+                                }
+                                : null
+                        }
+                        activeEntry={activeEntry || null}
+                    />
                     <DashboardContent
                         activeEntry={activeEntry || null}
                         historyEntries={historyEntries}

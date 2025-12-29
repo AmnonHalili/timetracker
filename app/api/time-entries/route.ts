@@ -2,6 +2,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
+import { calculateDistance } from "@/lib/gps-utils"
 
 // GET: Fetch currently running entry + recent history
 export async function GET() {
@@ -37,12 +38,13 @@ export async function POST(req: Request) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
-    const { action, manualData, taskIds, description, subtaskId }: {
+    const { action, manualData, taskIds, description, subtaskId, location }: {
         action: 'start' | 'stop' | 'pause' | 'resume' | 'manual',
         manualData?: Record<string, unknown>,
         taskIds?: string[],
         description?: string,
-        subtaskId?: string | null
+        subtaskId?: string | null,
+        location?: { latitude: number; longitude: number } | null
     } = await req.json()
 
     try {
@@ -56,6 +58,51 @@ export async function POST(req: Request) {
                 return NextResponse.json({ message: "Timer already running" }, { status: 400 })
             }
 
+            // Check if work location is required
+            const user = await prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: { projectId: true },
+            })
+
+            let locationRequired = false
+            let locationStatus = "not_required"
+            let startLocationVerified = false
+
+            if (user?.projectId) {
+                const project = await prisma.project.findUnique({
+                    where: { id: user.projectId },
+                    select: {
+                        workLocationLatitude: true,
+                        workLocationLongitude: true,
+                        workLocationRadius: true,
+                        isRemoteWork: true,
+                    },
+                })
+
+                // Only require location if not remote work and location is set
+                if (!project?.isRemoteWork && project?.workLocationLatitude && project?.workLocationLongitude) {
+                    locationRequired = true
+                    if (location) {
+                        // Verify location using Haversine formula
+                        const distance = calculateDistance(
+                            location.latitude,
+                            location.longitude,
+                            project.workLocationLatitude,
+                            project.workLocationLongitude
+                        )
+
+                        if (distance <= (project.workLocationRadius || 150)) {
+                            locationStatus = "verified"
+                            startLocationVerified = true
+                        } else {
+                            locationStatus = "outside_area"
+                        }
+                    } else {
+                        locationStatus = "unavailable"
+                    }
+                }
+            }
+
             const newEntry = await prisma.timeEntry.create({
                 data: {
                     userId: session.user.id,
@@ -66,6 +113,11 @@ export async function POST(req: Request) {
                         connect: taskIds.map(id => ({ id }))
                     } : undefined,
                     subtaskId: subtaskId || null,
+                    locationRequired,
+                    startLocationLat: location?.latitude || null,
+                    startLocationLng: location?.longitude || null,
+                    startLocationVerified,
+                    locationStatus,
                 }
             })
 
@@ -92,9 +144,49 @@ export async function POST(req: Request) {
                 })
             }
 
+            // Update location if provided
+            let endLocationVerified = false
+            if (location && active.locationRequired) {
+                const user = await prisma.user.findUnique({
+                    where: { id: session.user.id },
+                    select: { projectId: true },
+                })
+
+                if (user?.projectId) {
+                    const project = await prisma.project.findUnique({
+                        where: { id: user.projectId },
+                        select: {
+                            workLocationLatitude: true,
+                            workLocationLongitude: true,
+                            workLocationRadius: true,
+                            isRemoteWork: true,
+                        },
+                    })
+
+                    // Only verify location if not remote work and location is set
+                    if (!project?.isRemoteWork && project?.workLocationLatitude && project?.workLocationLongitude) {
+                        const distance = calculateDistance(
+                            location.latitude,
+                            location.longitude,
+                            project.workLocationLatitude,
+                            project.workLocationLongitude
+                        )
+
+                        if (distance <= (project.workLocationRadius || 150)) {
+                            endLocationVerified = true
+                        }
+                    }
+                }
+            }
+
             const updated = await prisma.timeEntry.update({
                 where: { id: active.id },
-                data: { endTime: new Date() }
+                data: {
+                    endTime: new Date(),
+                    endLocationLat: location?.latitude || null,
+                    endLocationLng: location?.longitude || null,
+                    endLocationVerified,
+                }
             })
 
             return NextResponse.json({ entry: updated })

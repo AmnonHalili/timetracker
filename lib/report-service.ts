@@ -19,7 +19,10 @@ export async function getReportData(userId: string, year: number, month: number)
                 },
                 orderBy: {
                     startTime: 'asc'
-                }
+                },
+                include: {
+                    breaks: true,
+                },
             },
         },
     })

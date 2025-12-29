@@ -6,6 +6,7 @@ import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { ProfileForm, SecurityForm, LanguageForm } from "@/components/settings/SettingsForms"
 import { AppearanceForm } from "@/components/settings/AppearanceForm"
 import { CompanyForm } from "@/components/settings/CompanyForm"
+import { WorkLocationForm } from "@/components/settings/WorkLocationForm"
 import { SettingsHeader } from "@/components/settings/SettingsHeader"
 import { SettingsTabs } from "@/components/settings/SettingsTabs"
 
@@ -58,7 +59,16 @@ export default async function SettingsPage() {
                     }
                 },
                 project: {
-                    select: { name: true, workMode: true, joinCode: true }
+                    select: { 
+                        name: true, 
+                        workMode: true, 
+                        joinCode: true,
+                        workLocationLatitude: true,
+                        workLocationLongitude: true,
+                        workLocationRadius: true,
+                        workLocationAddress: true,
+                        isRemoteWork: true,
+                    }
                 }
             }
         })
@@ -80,7 +90,16 @@ export default async function SettingsPage() {
                 projectId: true,
                 // Basic fields only
                 project: {
-                    select: { name: true, workMode: true, joinCode: true }
+                    select: { 
+                        name: true, 
+                        workMode: true, 
+                        joinCode: true,
+                        workLocationLatitude: true,
+                        workLocationLongitude: true,
+                        workLocationRadius: true,
+                        workLocationAddress: true,
+                        isRemoteWork: true,
+                    }
                 }
             }
         })
@@ -132,12 +151,26 @@ export default async function SettingsPage() {
 
 
                 {user.role === "ADMIN" && user.projectId && (
-                    <TabsContent value="workspace" className="mt-6">
+                    <TabsContent value="workspace" className="mt-6 space-y-6">
                         <CompanyForm
                             initialName={user.project?.name || ""}
                             initialWorkMode={user.project?.workMode}
                             projectId={user.projectId}
                             joinCode={user.project?.joinCode || "No Code"}
+                        />
+                        <WorkLocationForm
+                            projectId={user.projectId}
+                            initialLocation={
+                                user.project?.workLocationLatitude && user.project?.workLocationLongitude
+                                    ? {
+                                        latitude: user.project.workLocationLatitude,
+                                        longitude: user.project.workLocationLongitude,
+                                        radius: user.project.workLocationRadius || 150,
+                                        address: user.project.workLocationAddress || undefined,
+                                    }
+                                    : null
+                            }
+                            initialIsRemoteWork={user.project?.isRemoteWork || false}
                         />
                     </TabsContent>
                 )}

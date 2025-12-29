@@ -8,12 +8,14 @@ import { Label } from "@/components/ui/label"
 import { Loader2, ArrowRight } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { WorkLocationSetup } from "@/components/work-location/WorkLocationSetup"
 
 export function TeamOnboardingWidget() {
     const router = useRouter()
     const [isLoading, setIsLoading] = useState(false)
-    const [mode, setMode] = useState<'none' | 'join' | 'create'>('none')
+    const [mode, setMode] = useState<'none' | 'join' | 'create' | 'location'>('none')
     const [projectName, setProjectName] = useState("")
+    const [createdProjectId, setCreatedProjectId] = useState<string | null>(null)
 
     const handleJoinTeam = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -64,13 +66,52 @@ export function TeamOnboardingWidget() {
             }
 
             toast.success("Team created successfully!")
-            router.refresh()
-            setMode('none')
+            setCreatedProjectId(data.projectId)
+            setMode('location') // Move to location setup step
         } catch {
             toast.error("An error occurred")
         } finally {
             setIsLoading(false)
         }
+    }
+
+    const handleLocationSave = async (location: {
+        latitude: number
+        longitude: number
+        radius: number
+        address?: string
+    } | null) => {
+        if (!createdProjectId) return
+
+        setIsLoading(true)
+        try {
+            const response = await fetch(`/api/projects/${createdProjectId}/work-location`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(location),
+            })
+
+            if (!response.ok) {
+                throw new Error("Failed to save work location")
+            }
+
+            toast.success(location ? "Work location saved!" : "Skipped work location setup")
+            router.refresh()
+            setMode('none')
+            setCreatedProjectId(null)
+        } catch (error) {
+            console.error("Error saving work location:", error)
+            toast.error("Failed to save work location, but team was created successfully")
+            router.refresh()
+            setMode('none')
+            setCreatedProjectId(null)
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const handleLocationSkip = () => {
+        handleLocationSave(null)
     }
 
     if (mode === 'none') {
@@ -90,6 +131,26 @@ export function TeamOnboardingWidget() {
                     Create a Team
                 </Button>
             </div>
+        )
+    }
+
+    if (mode === 'location') {
+        return (
+            <Card className="w-full bg-muted/30 border-2 border-primary/10">
+                <CardContent className="p-6">
+                    <div className="mb-4 flex items-center gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => setMode('none')}>
+                            <ArrowRight className="h-4 w-4 rotate-180" />
+                        </Button>
+                        <h3 className="text-lg font-semibold">Set Work Location (Optional)</h3>
+                    </div>
+                    <WorkLocationSetup
+                        onSave={handleLocationSave}
+                        onSkip={handleLocationSkip}
+                        isOptional={true}
+                    />
+                </CardContent>
+            </Card>
         )
     }
 
