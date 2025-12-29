@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { NextRequest, NextResponse } from "next/server"
 import { EventType, RecurrenceType } from "@prisma/client"
+import { createNotification } from "@/lib/create-notification"
 
 // PATCH - Update event
 export async function PATCH(
@@ -47,6 +48,8 @@ export async function PATCH(
             recurrenceEnd
         } = body
 
+        // ... existing code ...
+
         const updatedEvent = await prisma.event.update({
             where: { id: eventId },
             data: {
@@ -74,6 +77,34 @@ export async function PATCH(
                 reminders: true
             }
         })
+
+        // Check if time changed and notify participants
+        const timeChanged =
+            (startTime && new Date(startTime).getTime() !== existingEvent.startTime.getTime()) ||
+            (endTime && new Date(endTime).getTime() !== existingEvent.endTime.getTime())
+
+        if (timeChanged) {
+            const formattedDate = new Date(updatedEvent.startTime).toLocaleString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric'
+            })
+
+            // Notify all participants except the editor
+            const notifications = updatedEvent.participants
+                .filter(p => p.user.id !== session.user.id)
+                .map(p => createNotification({
+                    userId: p.user.id,
+                    title: "📅 Event Rescheduled",
+                    message: `The event "${updatedEvent.title}" has been rescheduled to ${formattedDate}.`,
+                    link: "/calendar",
+                    type: "INFO"
+                }))
+
+            await Promise.allSettled(notifications)
+        }
 
         return NextResponse.json(updatedEvent)
     } catch (error) {
