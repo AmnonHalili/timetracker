@@ -24,7 +24,7 @@ export type MonthlyReport = {
 
 export function getMonthlyReport(
     entries: TimeEntryWithBreaks[],
-    workdays: Workday[],
+    workdays: Pick<Workday, 'workdayStartTime' | 'workdayEndTime'>[],
     currentDate: Date,
     dailyTarget: number,
     workDays: number[],
@@ -66,11 +66,11 @@ export function getMonthlyReport(
         const activeWorkday = dayWorkdays.find(w => !w.workdayEndTime)
         // If no active workday, use the most recent completed one (first in array since sorted desc)
         const dayWorkday = activeWorkday || dayWorkdays[0]
-        
+
         // Get start/end times from workday (Start Day / End Day button presses)
         let workdayStartTime: Date | null = null
         let workdayEndTime: Date | null = null
-        
+
         if (dayWorkday) {
             workdayStartTime = new Date(dayWorkday.workdayStartTime)
             // Only set endTime if workdayEndTime exists (user pressed End Day)
@@ -80,12 +80,12 @@ export function getMonthlyReport(
         // Calculate total duration from workday (Start Day to End Day)
         // This is the total workday duration, not the sum of task entries
         let dailyDuration = 0
-        
+
         if (workdayStartTime) {
             // If workday hasn't ended yet (workdayEndTime is null), calculate up to now
             // Otherwise, use the workdayEndTime
             const endTime = workdayEndTime || (isSameDay(day, today) ? new Date() : null)
-            
+
             if (endTime) {
                 dailyDuration = (endTime.getTime() - workdayStartTime.getTime()) / (1000 * 60 * 60)
             }
