@@ -143,20 +143,10 @@ export async function POST(req: Request) {
                 } else {
                     sharedChiefGroupId = `shared-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
 
-                    try {
-                        await prisma.user.update({
-                            where: { id: currentUser.id },
-                            data: { sharedChiefGroupId } as Record<string, unknown>
-                        })
-                    } catch (updateError: unknown) {
-                        const error = updateError as { message?: string }
-                        if (error.message?.includes('sharedChiefGroupId')) {
-                            console.warn("sharedChiefGroupId field not available, skipping")
-                            sharedChiefGroupId = null
-                        } else {
-                            throw updateError
-                        }
-                    }
+                    await prisma.user.update({
+                        where: { id: currentUser.id },
+                        data: { sharedChiefGroupId } as Record<string, unknown>
+                    })
                 }
 
                 finalManagerId = null

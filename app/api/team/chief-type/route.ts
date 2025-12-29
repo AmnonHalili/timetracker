@@ -96,14 +96,10 @@ export async function PATCH(req: Request) {
                 // Create a new shared group ID
                 sharedChiefGroupId = `shared_${currentUser.id}_${Date.now()}`
                 // Also update current user to have this shared group ID
-                try {
-                    await prisma.user.update({
-                        where: { id: currentUser.id },
-                        data: { sharedChiefGroupId } as never
-                    })
-                } catch {
-                    // If field doesn't exist, skip
-                }
+                await prisma.user.update({
+                    where: { id: currentUser.id },
+                    data: { sharedChiefGroupId } as never
+                })
             }
         } else if (chiefType === "independent") {
             // Independent Chief - no shared group
@@ -111,14 +107,10 @@ export async function PATCH(req: Request) {
         }
 
         // Update target user
-        try {
-            await prisma.user.update({
-                where: { id: userId },
-                data: { sharedChiefGroupId } as never
-            })
-        } catch {
-            // If field doesn't exist, skip
-        }
+        await prisma.user.update({
+            where: { id: userId },
+            data: { sharedChiefGroupId } as never
+        })
 
         return NextResponse.json({ success: true, sharedChiefGroupId })
     } catch (error) {
