@@ -14,19 +14,21 @@ export function TeamOnboardingWidget() {
     const router = useRouter()
     const [isLoading, setIsLoading] = useState(false)
     const [mode, setMode] = useState<'none' | 'join' | 'create' | 'location'>('none')
-    const [projectName, setProjectName] = useState("")
+    const [projectName, setProjectName] = useState("") // For creating team
+    const [joinCode, setJoinCode] = useState("") // For joining team
     const [createdProjectId, setCreatedProjectId] = useState<string | null>(null)
 
     const handleJoinTeam = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!projectName.trim()) return
+        const code = joinCode.trim().toUpperCase()
+        if (!code) return
 
         setIsLoading(true)
         try {
             const res = await fetch("/api/team/join", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ projectName })
+                body: JSON.stringify({ joinCode: code })
             })
 
             const data = await res.json()
@@ -37,7 +39,8 @@ export function TeamOnboardingWidget() {
             }
 
             toast.success("Request sent to team admins")
-            setProjectName("")
+
+            setJoinCode("")
             setMode('none')
         } catch {
             toast.error("An error occurred")
@@ -157,20 +160,21 @@ export function TeamOnboardingWidget() {
     return (
         <Card className="w-full bg-muted/30 border-2 border-primary/10">
             <CardContent className="p-6 flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={() => { setMode('none'); setProjectName("") }}>
+                <Button variant="ghost" size="icon" onClick={() => { setMode('none'); setProjectName(""); setJoinCode("") }}>
                     <ArrowRight className="h-4 w-4 rotate-180" />
                 </Button>
 
                 <div className="flex-1">
                     {mode === 'join' ? (
                         <form onSubmit={handleJoinTeam} className="flex gap-4 items-center">
-                            <Label className="whitespace-nowrap font-medium text-lg">Join Team:</Label>
+                            <Label className="whitespace-nowrap font-medium text-lg">Team Code:</Label>
                             <Input
                                 autoFocus
-                                placeholder="Search for team name..."
-                                value={projectName}
-                                onChange={(e) => setProjectName(e.target.value)}
-                                className="h-10 text-lg"
+                                placeholder="Enter team code..."
+                                value={joinCode}
+                                onChange={(e) => setJoinCode(e.target.value)}
+                                className="h-10 text-lg uppercase"
+                                maxLength={8}
                             />
                             <Button type="submit" disabled={isLoading} size="lg">
                                 {isLoading ? <Loader2 className="animate-spin" /> : "Send Request"}
