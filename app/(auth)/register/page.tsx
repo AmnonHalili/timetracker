@@ -94,7 +94,11 @@ function RegisterForm() {
                     <CardDescription>Enter your details to register</CardDescription>
                 </CardHeader>
                 <div className="mb-4 px-6">
-                    <GoogleLoginButton text={t('auth.signUpWithGoogle')} />
+                    <GoogleLoginButton
+                        text={t('auth.signUpWithGoogle')}
+                        role={role}
+                        projectInfo={projectName}
+                    />
                 </div>
                 <div className="relative mb-4 px-6">
                     <div className="absolute inset-0 flex items-center px-6">
