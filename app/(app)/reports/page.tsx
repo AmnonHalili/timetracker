@@ -111,7 +111,8 @@ export default async function ReportsPage({
         projectUsers = sortedUsers
 
         // If userId param is present, verify it belongs to the visible scope
-        if (searchParams.userId) {
+        // Note: "all" is handled separately for export, but we still show a single user's report on screen
+        if (searchParams.userId && searchParams.userId !== "all") {
             const requestedUser = projectUsers.find(u => u.id === searchParams.userId)
             if (requestedUser) {
                 targetUserId = searchParams.userId
@@ -135,6 +136,7 @@ export default async function ReportsPage({
                 <ReportsControls
                     projectUsers={projectUsers}
                     targetUserId={targetUserId}
+                    loggedInUserId={session.user.id}
                     currentYear={currentYear}
                     currentMonth={currentMonth}
                 />

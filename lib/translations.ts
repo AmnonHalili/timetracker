@@ -186,9 +186,10 @@ export const translations = {
     // Reports
     'reports.monthlyReports': 'Monthly Reports',
     'reports.viewDetailedHistory': 'View your detailed work history',
-    'reports.exportCSV': 'Export CSV',
+    'reports.exportCSV': 'Export Excel',
     'reports.period': 'Period',
     'reports.user': 'User',
+    'reports.allUsers': 'All Users',
     'reports.targetHours': 'Target Hours',
     'reports.totalWorked': 'Total Worked',
     'reports.totalHours': 'Total Hours',
@@ -742,9 +743,10 @@ export const translations = {
     // Reports
     'reports.monthlyReports': 'דוחות חודשיים',
     'reports.viewDetailedHistory': 'צפה בהיסטוריית העבודה המפורטת שלך',
-    'reports.exportCSV': 'ייצא CSV',
+    'reports.exportCSV': 'ייצא Excel',
     'reports.period': 'תקופה',
     'reports.user': 'משתמש',
+    'reports.allUsers': 'כל המשתמשים',
     'reports.targetHours': 'שעות יעד',
     'reports.totalWorked': 'סה"כ עבד',
     'reports.totalHours': 'סה"כ שעות',

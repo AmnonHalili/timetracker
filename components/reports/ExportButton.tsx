@@ -10,9 +10,10 @@ interface ExportButtonProps {
     userId: string
     year: number
     month: number
+    projectUsers?: { id: string; name: string | null; email: string }[]
 }
 
-export function ExportButton({ userId, year, month }: ExportButtonProps) {
+export function ExportButton({ userId, year, month, projectUsers = [] }: ExportButtonProps) {
     const searchParams = useSearchParams()
     const { t } = useLanguage()
     const [loading, setLoading] = useState(false)
@@ -24,7 +25,12 @@ export function ExportButton({ userId, year, month }: ExportButtonProps) {
         // Use props if provided, otherwise fallback to params or current date
         if (!params.has("month")) params.set("month", month.toString())
         if (!params.has("year")) params.set("year", year.toString())
-        if (!params.has("userId")) params.set("userId", userId)
+        // Handle "all" users export
+        if (userId === "all") {
+            params.set("userId", "all")
+        } else {
+            params.set("userId", userId)
+        }
 
         try {
             const res = await fetch(`/api/reports/export?${params.toString()}`)
@@ -37,7 +43,7 @@ export function ExportButton({ userId, year, month }: ExportButtonProps) {
 
             // Try to get filename from header
             const contentDisposition = res.headers.get("Content-Disposition")
-            let filename = "report.csv"
+            let filename = "report.xlsx"
             if (contentDisposition) {
                 const match = contentDisposition.match(/filename="(.+)"/)
                 if (match) filename = match[1]
