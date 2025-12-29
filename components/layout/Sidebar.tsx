@@ -15,9 +15,11 @@ export function Sidebar() {
     const { data: session } = useSession()
 
     // Check if user is a top-level admin with incomplete profile
+    // Only show badge if NOT on settings page
     const showSettingsBadge = session?.user?.role === 'ADMIN' &&
         !session?.user?.managerId &&
-        (!session?.user?.workDays?.length || !session?.user?.dailyTarget)
+        (!session?.user?.workDays?.length || !session?.user?.dailyTarget) &&
+        pathname !== '/settings'
 
     const routes = [
         {
@@ -122,7 +124,7 @@ export function Sidebar() {
                             {route.label}
 
                             {route.badge && (
-                                <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                                <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
                             )}
                         </Link>
                     ))}

@@ -41,6 +41,7 @@ interface ProfileFormProps {
         dailyTarget?: number | null
         workDays?: number[]
         workMode?: 'OUTPUT_BASED' | 'TIME_BASED' | 'PROJECT_BASED'
+        managerId?: string | null
     }
 }
 
@@ -74,6 +75,11 @@ function ProfileForm({ user }: ProfileFormProps) {
         // For other cases (members with a team), return empty string (no default)
         return ""
     }
+
+    // Calculate if we should show the badge for work preferences
+    const showPreferencesBadge = user.role === 'ADMIN' &&
+        !user.managerId &&
+        (!user.workDays?.length || !user.dailyTarget)
 
     const [jobTitle, setJobTitle] = useState(getDefaultJobTitle())
 
@@ -153,13 +159,14 @@ function ProfileForm({ user }: ProfileFormProps) {
 
     return (
         <div className="space-y-6" dir={dir}>
-            {/* Profile Information Card */}
+            {/* ... (Profile Information Card remains unchanged) ... */}
             <Card>
                 <CardHeader>
                     <CardTitle>{t('profile.title')}</CardTitle>
                     <CardDescription>{t('profile.description')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                    {/* ... (Profile Form content) ... */}
                     <div className="flex flex-col items-center gap-4">
                         <div
                             className="w-24 h-24 rounded-full bg-muted border-2 border-dashed border-muted-foreground/25 flex items-center justify-center overflow-hidden relative group cursor-pointer"
@@ -216,7 +223,12 @@ function ProfileForm({ user }: ProfileFormProps) {
             {/* Work Preferences Card */}
             <Card>
                 <CardHeader>
-                    <CardTitle>{t('preferences.title')}</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                        {t('preferences.title')}
+                        {showPreferencesBadge && (
+                            <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                        )}
+                    </CardTitle>
                     <CardDescription>
                         {canEditPreferences
                             ? t('preferences.description')
