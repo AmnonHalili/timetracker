@@ -13,10 +13,13 @@ import { useRouter, useSearchParams } from "next/navigation"
 
 import { Suspense } from "react"
 import { validatePassword } from "@/lib/password-validation"
+import { GoogleLoginButton } from "@/components/auth/GoogleLoginButton"
+import { useLanguage } from "@/lib/useLanguage"
 
 function RegisterForm() {
     const router = useRouter()
     const searchParams = useSearchParams()
+    const { t } = useLanguage()
     const initialRole = searchParams.get("role") === "manager" ? "ADMIN" : "EMPLOYEE"
 
     const [name, setName] = useState("")
@@ -90,6 +93,19 @@ function RegisterForm() {
                     <CardTitle>Create an Account</CardTitle>
                     <CardDescription>Enter your details to register</CardDescription>
                 </CardHeader>
+                <div className="mb-4 px-6">
+                    <GoogleLoginButton text={t('auth.signUpWithGoogle')} />
+                </div>
+                <div className="relative mb-4 px-6">
+                    <div className="absolute inset-0 flex items-center px-6">
+                        <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">
+                            {t('auth.orContinueWith')}
+                        </span>
+                    </div>
+                </div>
                 <form onSubmit={handleSubmit}>
                     <CardContent className="space-y-4">
                         {error && (
