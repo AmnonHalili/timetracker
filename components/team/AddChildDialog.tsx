@@ -79,6 +79,7 @@ export function AddChildDialog({
             const res = await fetch("/api/team/invite", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: 'include',
                 body: JSON.stringify({
                     email: newEmail,
                     role: newRole,
@@ -88,7 +89,7 @@ export function AddChildDialog({
             })
 
             const data = await res.json()
-            
+
             // Check if this is a user limit error
             if (!res.ok) {
                 if (res.status === 402 && data.error === "USER_LIMIT_EXCEEDED") {

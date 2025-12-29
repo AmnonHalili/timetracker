@@ -104,6 +104,7 @@ export function AddMemberDialog({
             const res = await fetch("/api/team/invite", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: 'include',
                 body: JSON.stringify({
                     email,
                     role,
@@ -115,7 +116,7 @@ export function AddMemberDialog({
 
             if (!res.ok) {
                 const data = await res.json()
-                
+
                 // Check if this is a user limit error
                 if (res.status === 402 && data.error === "USER_LIMIT_EXCEEDED") {
                     // Close dialog and redirect to pricing page
@@ -126,7 +127,7 @@ export function AddMemberDialog({
                     alert(data.message || "User limit exceeded. Please upgrade your plan to add more team members.")
                     return
                 }
-                
+
                 const errorMsg = data.error
                     ? `${data.message}: ${data.error}`
                     : data.message || "Failed to send invitation"
