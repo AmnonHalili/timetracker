@@ -90,7 +90,14 @@ export function watchLocation(
     errorCallback?: (error: GeolocationPositionError) => void
 ): number | null {
     if (!navigator.geolocation) {
-        errorCallback?.(new Error("Geolocation is not supported") as GeolocationPositionError)
+        const error = {
+            code: 2, // POSITION_UNAVAILABLE
+            message: "Geolocation is not supported",
+            PERMISSION_DENIED: 1,
+            POSITION_UNAVAILABLE: 2,
+            TIMEOUT: 3,
+        } as GeolocationPositionError
+        errorCallback?.(error)
         return null
     }
 
