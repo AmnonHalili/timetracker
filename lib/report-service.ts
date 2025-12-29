@@ -41,6 +41,22 @@ export async function getReportData(userId: string, year: number, month: number)
                     breaks: true,
                 },
             },
+            workdays: {
+                where: {
+                    workdayStartTime: {
+                        gte: start,
+                        lte: end,
+                    },
+                },
+                orderBy: {
+                    workdayStartTime: 'desc' // Most recent first
+                },
+                select: {
+                    id: true,
+                    workdayStartTime: true,
+                    workdayEndTime: true,
+                },
+            },
         },
     })
 
@@ -60,6 +76,7 @@ export async function getReportData(userId: string, year: number, month: number)
 
     const report = getMonthlyReport(
         user.timeEntries,
+        user.workdays || [],
         reportDate,
         user.dailyTarget ?? 0,
         user.workDays,

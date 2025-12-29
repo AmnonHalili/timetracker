@@ -1,4 +1,4 @@
-import { TimeEntry, TimeBreak } from "@prisma/client"
+import { TimeEntry, TimeBreak, Workday } from "@prisma/client"
 import { eachDayOfInterval, endOfMonth, format, isSameDay, startOfMonth, getDay } from "date-fns"
 
 type TimeEntryWithBreaks = TimeEntry & {
@@ -14,9 +14,6 @@ export type DailyReport = {
     totalDurationHours: number
     status: 'MET' | 'MISSED' | 'OFF' | 'PENDING'
     hasManualEntries: boolean
-    locationStatus?: string | null // "verified", "unavailable", "outside_area", "not_required"
-    locationRequired?: boolean
-    breaksFromLocation?: number // Number of breaks caused by leaving work area
 }
 
 export type MonthlyReport = {
@@ -27,6 +24,7 @@ export type MonthlyReport = {
 
 export function getMonthlyReport(
     entries: TimeEntryWithBreaks[],
+    workdays: Workday[],
     currentDate: Date,
     dailyTarget: number,
     workDays: number[],
@@ -60,30 +58,37 @@ export function getMonthlyReport(
     const days: DailyReport[] = daysInMonth.map((day) => {
         const isWorkDay = workDays.includes(getDay(day))
 
-        // Find entries for this day
-        const dayEntries = entries.filter(e => isSameDay(new Date(e.startTime), day))
+        // Find workday for this day (Start Day / End Day times)
+        // Prefer active workday (workdayEndTime is null) over completed ones
+        // If multiple workdays exist, use the most recent one (workdays are sorted desc by workdayStartTime)
+        const dayWorkdays = workdays.filter(w => isSameDay(new Date(w.workdayStartTime), day))
+        // First try to find active workday (not ended yet)
+        const activeWorkday = dayWorkdays.find(w => !w.workdayEndTime)
+        // If no active workday, use the most recent completed one (first in array since sorted desc)
+        const dayWorkday = activeWorkday || dayWorkdays[0]
+        
+        // Get start/end times from workday (Start Day / End Day button presses)
+        let workdayStartTime: Date | null = null
+        let workdayEndTime: Date | null = null
+        
+        if (dayWorkday) {
+            workdayStartTime = new Date(dayWorkday.workdayStartTime)
+            // Only set endTime if workdayEndTime exists (user pressed End Day)
+            workdayEndTime = dayWorkday.workdayEndTime ? new Date(dayWorkday.workdayEndTime) : null
+        }
 
+        // Calculate total duration from workday (Start Day to End Day)
+        // This is the total workday duration, not the sum of task entries
         let dailyDuration = 0
-        let firstStart: Date | null = null
-        let lastEnd: Date | null = null
-
-        if (dayEntries.length > 0) {
-            //Sort by start time
-            dayEntries.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
-            firstStart = new Date(dayEntries[0].startTime)
-
-            const lastEntry = dayEntries[dayEntries.length - 1]
-            lastEnd = lastEntry.endTime ? new Date(lastEntry.endTime) : null // If running, null
-
-            dayEntries.forEach(e => {
-                const start = new Date(e.startTime)
-                const end = e.endTime ? new Date(e.endTime) : (isSameDay(day, today) ? new Date() : start)
-                // If entry is running today, calc up to now. If running on past day (forgot to close), maybe cap at end of day? 
-                // For simplicity, let's use 'now' if it's today, otherwise it's weird data (0 duration).
-
-                const duration = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
-                dailyDuration += duration
-            })
+        
+        if (workdayStartTime) {
+            // If workday hasn't ended yet (workdayEndTime is null), calculate up to now
+            // Otherwise, use the workdayEndTime
+            const endTime = workdayEndTime || (isSameDay(day, today) ? new Date() : null)
+            
+            if (endTime) {
+                dailyDuration = (endTime.getTime() - workdayStartTime.getTime()) / (1000 * 60 * 60)
+            }
         }
 
         totalMonthlyHours += dailyDuration
@@ -104,15 +109,16 @@ export function getMonthlyReport(
             }
         }
 
-        // Check for manual entries
+        // Check for manual entries (from time entries, not workday)
+        const dayEntries = entries.filter(e => isSameDay(new Date(e.startTime), day))
         const hasManualEntries = dayEntries.some(e => e.isManual)
 
         return {
             date: day,
             dayName: format(day, 'EEEE'),
             isWorkDay,
-            startTime: firstStart,
-            endTime: lastEnd,
+            startTime: workdayStartTime, // From Start Day button
+            endTime: workdayEndTime, // From End Day button
             totalDurationHours: dailyDuration,
             status,
             hasManualEntries

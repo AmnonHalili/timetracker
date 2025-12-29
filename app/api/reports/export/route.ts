@@ -136,7 +136,7 @@ export async function GET(req: Request) {
                 const startTime = day.startTime ? format(day.startTime, "HH:mm") : "-"
                 const endTime = day.endTime 
                     ? format(day.endTime, "HH:mm") 
-                    : (day.startTime ? "Running..." : "-")
+                    : (day.startTime ? "---" : "-")
                 const totalHours = formatHoursMinutes(day.totalDurationHours)
 
                 const row = worksheet.addRow([date, dayName, startTime, endTime, totalHours])
