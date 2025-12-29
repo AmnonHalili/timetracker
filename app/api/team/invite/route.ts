@@ -8,7 +8,14 @@ import crypto from "crypto"
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions)
 
+    console.log("[API] Invite Team Member - Debug logs:")
+    console.log("[API] Session exists:", !!session)
+    console.log("[API] User ID:", session?.user?.id)
+    console.log("[API] User Role:", session?.user?.role)
+    console.log("[API] User Email:", session?.user?.email)
+
     if (!session || !["ADMIN", "MANAGER"].includes(session.user.role)) {
+        console.log("[API] Authorization Failed. Reason:", !session ? "No Session" : `Invalid Role: ${session.user.role}`)
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
