@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { hash } from "bcryptjs"
+import { validatePassword } from "@/lib/password-validation"
 
 export async function POST(req: Request) {
     try {
         const { token, newPassword } = await req.json()
+
+        const validation = validatePassword(newPassword)
+        if (!validation.isValid) {
+            return NextResponse.json({ message: validation.message }, { status: 400 })
+        }
 
         const user = await prisma.user.findFirst({
             where: {

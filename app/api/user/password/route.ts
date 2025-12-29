@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 import { compare, hash } from "bcryptjs"
+import { validatePassword } from "@/lib/password-validation"
 
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions)
@@ -18,8 +19,9 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: "Missing fields" }, { status: 400 })
         }
 
-        if (newPassword.length < 6) {
-            return NextResponse.json({ message: "Password must be at least 6 characters" }, { status: 400 })
+        const validation = validatePassword(newPassword)
+        if (!validation.isValid) {
+            return NextResponse.json({ message: validation.message }, { status: 400 })
         }
 
         // Get user with password

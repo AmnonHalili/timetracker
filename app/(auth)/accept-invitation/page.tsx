@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
+import { validatePassword } from "@/lib/password-validation"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -76,8 +77,9 @@ function AcceptInvitationContent() {
             return
         }
 
-        if (password.length < 8) {
-            setError("Password must be at least 8 characters long")
+        const validation = validatePassword(password)
+        if (!validation.isValid) {
+            setError(validation.message || "Invalid password")
             return
         }
 

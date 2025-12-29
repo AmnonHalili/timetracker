@@ -12,6 +12,7 @@ import { signIn } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 
 import { Suspense } from "react"
+import { validatePassword } from "@/lib/password-validation"
 
 function RegisterForm() {
     const router = useRouter()
@@ -29,6 +30,13 @@ function RegisterForm() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError("")
+
+        const validation = validatePassword(password)
+        if (!validation.isValid) {
+            setError(validation.message || "Invalid password")
+            return
+        }
+
         setLoading(true)
 
         try {

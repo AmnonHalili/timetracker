@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { AlertCircle, Loader2, CheckCircle2 } from "lucide-react"
 
 import { Suspense } from "react"
+import { validatePassword } from "@/lib/password-validation"
 
 function ResetPasswordForm() {
     const router = useRouter()
@@ -48,6 +49,12 @@ function ResetPasswordForm() {
 
         if (password !== confirmPassword) {
             setError("Passwords do not match")
+            return
+        }
+
+        const validation = validatePassword(password)
+        if (!validation.isValid) {
+            setError(validation.message || "Invalid password")
             return
         }
 

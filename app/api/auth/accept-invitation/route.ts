@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { hash } from "bcryptjs"
 import { NextResponse } from "next/server"
+import { validatePassword } from "@/lib/password-validation"
 
 export async function POST(req: Request) {
     try {
@@ -13,9 +14,10 @@ export async function POST(req: Request) {
         }
 
         // Validate password strength
-        if (password.length < 8) {
+        const validation = validatePassword(password)
+        if (!validation.isValid) {
             return NextResponse.json({
-                message: "Password must be at least 8 characters long"
+                message: validation.message
             }, { status: 400 })
         }
 
@@ -55,7 +57,7 @@ export async function POST(req: Request) {
             // Tier 2: 21-50 users
             // Tier 3: 50+ users
             let requiredTier: string | null = null
-            
+
             if (activeUserCount >= 5) {
                 // Already at free limit (5 users), need Tier 1 for 6th user
                 if (activeUserCount < 20) {

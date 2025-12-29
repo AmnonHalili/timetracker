@@ -3,6 +3,7 @@ import { hash } from "bcryptjs"
 import { NextResponse } from "next/server"
 import { Role, Status } from "@prisma/client"
 import { createNotification } from "@/lib/create-notification"
+import { validatePassword } from "@/lib/password-validation"
 
 export async function POST(req: Request) {
     try {
@@ -11,6 +12,14 @@ export async function POST(req: Request) {
         if (!email || !password || !name) {
             return NextResponse.json(
                 { message: "Missing required fields" },
+                { status: 400 }
+            )
+        }
+
+        const validation = validatePassword(password)
+        if (!validation.isValid) {
+            return NextResponse.json(
+                { message: validation.message },
                 { status: 400 }
             )
         }
