@@ -186,14 +186,7 @@ export default async function DashboardPage() {
                         createdAt: true,
                         updatedAt: true,
                         subtaskId: true,
-                        locationRequired: true,
-                        startLocationLat: true,
-                        startLocationLng: true,
-                        startLocationVerified: true,
-                        endLocationLat: true,
-                        endLocationLng: true,
-                        endLocationVerified: true,
-                        locationStatus: true,
+                        // location fields deprecated/moved to Workday
                         breaks: {
                             where: { endTime: null },
                             select: {
