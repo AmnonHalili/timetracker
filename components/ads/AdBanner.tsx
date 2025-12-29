@@ -96,7 +96,7 @@ export function AdBanner() {
     }
 
     return (
-        <Card className={`fixed bottom-4 z-50 w-80 shadow-lg ${isRTL ? 'left-4' : 'right-4'}`}>
+        <Card className={`fixed bottom-4 z-50 w-80 shadow-lg ${isRTL ? 'right-4 md:right-6' : 'left-4 md:left-6'}`}>
             <div className="relative p-4">
                 <Button
                     variant="ghost"

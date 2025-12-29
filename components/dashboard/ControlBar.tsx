@@ -51,6 +51,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
     const [isManualMode, setIsManualMode] = useState(false)
     const [manualStart, setManualStart] = useState("")
     const [manualEnd, setManualEnd] = useState("")
+    const [timeError, setTimeError] = useState("")
     const [isDataLoaded, setIsDataLoaded] = useState(!!activeEntry) // Track if server data has loaded - true if we already have activeEntry
 
     // Sync optimistic state with server state when it arrives
@@ -346,6 +347,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                 })
                 setManualStart("")
                 setManualEnd("")
+                setTimeError("")
                 setDescription("")
                 setSelectedTaskIds([])
                 setSelectedSubtaskId(null)
@@ -442,7 +444,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
 
 
             {/* Right Side: Unified Tracker */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-muted/30 p-3 rounded-xl">
+            <div className={`flex flex-col md:flex-row ${!optimisticEntry && isManualMode ? 'items-end' : 'items-center'} justify-between gap-4 bg-muted/30 p-3 rounded-xl`}>
 
                 {/* Inputs Area */}
                 <div className="flex flex-1 items-center gap-3 w-full">
@@ -762,34 +764,61 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                 </div>
 
                 {/* Controls Area */}
-                <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
+                <div className={`flex ${!optimisticEntry && isManualMode ? 'items-end' : 'items-center'} gap-4 w-full md:w-auto justify-between md:justify-end`}>
 
                     {/* Timer / Manual Inputs */}
                     {!optimisticEntry && isManualMode ? (
-                        <div className="flex items-center gap-2">
-                            <label htmlFor="manual-start-time" className="sr-only">
-                                Start time
-                            </label>
-                            <Input
-                                id="manual-start-time"
-                                type="time"
-                                value={manualStart}
-                                onChange={(e) => setManualStart(e.target.value)}
-                                className="w-[95px] h-9 text-sm bg-background border-input shadow-sm"
-                                aria-label="Start time"
-                            />
-                            <span className="text-muted-foreground" aria-hidden="true">-</span>
-                            <label htmlFor="manual-end-time" className="sr-only">
-                                End time
-                            </label>
-                            <Input
-                                id="manual-end-time"
-                                type="time"
-                                value={manualEnd}
-                                onChange={(e) => setManualEnd(e.target.value)}
-                                className="w-[95px] h-9 text-sm bg-background border-input shadow-sm"
-                                aria-label="End time"
-                            />
+                        <div className="relative flex items-end gap-2">
+                            <div className="flex flex-col gap-1">
+                                <label htmlFor="manual-start-time" className="text-[10px] text-muted-foreground font-medium">
+                                    {t('dashboard.startTime')}
+                                </label>
+                                <Input
+                                    id="manual-start-time"
+                                    type="time"
+                                    value={manualStart}
+                                    onChange={(e) => {
+                                        setManualStart(e.target.value)
+                                        // Check if end time is before start time
+                                        if (e.target.value && manualEnd && e.target.value >= manualEnd) {
+                                            setTimeError(t('dashboard.endTimeBeforeStart'))
+                                        } else {
+                                            setTimeError("")
+                                        }
+                                    }}
+                                    className={`w-[95px] h-9 text-sm bg-background border-input shadow-sm ${timeError ? 'border-destructive' : ''}`}
+                                    aria-label="Start time"
+                                />
+                            </div>
+                            <span className="text-muted-foreground mb-2" aria-hidden="true">-</span>
+                            <div className="flex flex-col gap-1">
+                                <label htmlFor="manual-end-time" className="text-[10px] text-muted-foreground font-medium">
+                                    {t('dashboard.endTime')}
+                                </label>
+                                <Input
+                                    id="manual-end-time"
+                                    type="time"
+                                    value={manualEnd}
+                                    onChange={(e) => {
+                                        setManualEnd(e.target.value)
+                                        // Check if end time is before start time
+                                        if (manualStart && e.target.value && manualStart >= e.target.value) {
+                                            setTimeError(t('dashboard.endTimeBeforeStart'))
+                                        } else {
+                                            setTimeError("")
+                                        }
+                                    }}
+                                    className={`w-[95px] h-9 text-sm bg-background border-input shadow-sm ${timeError ? 'border-destructive' : ''}`}
+                                    aria-label="End time"
+                                />
+                            </div>
+                            {timeError && (
+                                <div className="absolute -bottom-5 left-0">
+                                    <p className="text-[10px] text-destructive px-1 whitespace-nowrap">
+                                        {timeError}
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <div className="font-mono text-2xl font-bold text-primary tabular-nums tracking-wider px-2 min-w-[120px] text-center mr-6">
@@ -805,7 +834,15 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                                 <Button
                                     size="sm"
                                     variant="outline"
-                                    onClick={() => setIsManualMode(!isManualMode)}
+                                    onClick={() => {
+                                        setIsManualMode(!isManualMode)
+                                        if (isManualMode) {
+                                            // Clearing manual mode - reset fields
+                                            setManualStart("")
+                                            setManualEnd("")
+                                            setTimeError("")
+                                        }
+                                    }}
                                     className={`h-9 px-3 text-xs font-medium border-dashed ${isManualMode ? 'bg-primary/10 text-primary border-primary/20' : 'text-muted-foreground border-border'}`}
                                 >
                                     {isManualMode ? t('dashboard.timer') : t('dashboard.manual')}
@@ -813,7 +850,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                                 <Button
                                     size="sm"
                                     onClick={handleStart}
-                                    disabled={loading || (isManualMode && (!manualStart || !manualEnd))}
+                                    disabled={loading || (isManualMode && (!manualStart || !manualEnd || !!timeError))}
                                     className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium min-w-[80px] h-9 shadow-sm"
                                 >
                                     {isManualMode ? t('dashboard.add') : t('dashboard.start')}

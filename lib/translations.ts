@@ -23,6 +23,11 @@ export const translations = {
     'common.employee': 'Employee',
     'common.noTeamMembers': 'No team members found.',
     'common.selectAll': 'Select All',
+    'common.cookies.message': 'We use cookies to enhance your experience, analyze site traffic, and assist in our marketing efforts. By clicking "Accept", you agree to our use of cookies. Read our',
+    'common.cookies.privacyPolicy': 'Privacy Policy',
+    'common.cookies.learnMore': 'to learn more.',
+    'common.cookies.accept': 'Accept',
+    'common.cookies.decline': 'Decline',
 
     // Notifications
     'notifications.title': 'Notifications',
@@ -51,6 +56,9 @@ export const translations = {
     'dashboard.manual': 'Manual',
     'dashboard.timer': 'Timer',
     'dashboard.add': 'Add',
+    'dashboard.startTime': 'Start time',
+    'dashboard.endTime': 'End time',
+    'dashboard.endTimeBeforeStart': 'End time must be after start time',
 
     // Settings
     'settings.title': 'Settings',
@@ -571,6 +579,11 @@ export const translations = {
     'common.employee': 'עובד',
     'common.noTeamMembers': 'לא נמצאו חברי צוות.',
     'common.selectAll': 'בחר הכל',
+    'common.cookies.message': 'אנו משתמשים בעוגיות כדי לשפר את החוויה שלך, לנתח תנועה באתר ולסייע במאמצי השיווק שלנו. בלחיצה על "קבל", אתה מסכים לשימוש שלנו בעוגיות. קרא את',
+    'common.cookies.privacyPolicy': 'מדיניות הפרטיות',
+    'common.cookies.learnMore': 'שלנו כדי ללמוד עוד.',
+    'common.cookies.accept': 'קבל',
+    'common.cookies.decline': 'דחה',
 
     // Notifications
     'notifications.title': 'התראות',
@@ -599,6 +612,9 @@ export const translations = {
     'dashboard.manual': 'ידני',
     'dashboard.timer': 'שעון',
     'dashboard.add': 'הוסף',
+    'dashboard.startTime': 'זמן התחלה',
+    'dashboard.endTime': 'זמן סיום',
+    'dashboard.endTimeBeforeStart': 'זמן הסיום חייב להיות אחרי זמן ההתחלה',
 
     // Settings
     'settings.title': 'הגדרות',

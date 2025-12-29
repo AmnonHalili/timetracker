@@ -200,19 +200,41 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
     const groupedEntries = localEntries.reduce((groups, entry) => {
         const date = new Date(entry.startTime)
         let key = format(date, 'yyyy-MM-dd')
+        let sortKey = format(date, 'yyyy-MM-dd') // Keep original date for sorting
 
-        if (isToday(date)) key = t('timeEntries.today')
-        else if (isYesterday(date)) key = t('timeEntries.yesterday')
-        else key = format(date, 'dd/MM/yyyy')
+        if (isToday(date)) {
+            key = t('timeEntries.today')
+            sortKey = '0000-00-00' // Today comes first
+        } else if (isYesterday(date)) {
+            key = t('timeEntries.yesterday')
+            sortKey = '0000-00-01' // Yesterday comes second
+        } else {
+            key = format(date, 'dd/MM/yyyy')
+            sortKey = format(date, 'yyyy-MM-dd') // Use date for sorting
+        }
 
         if (!groups[key]) {
-            groups[key] = []
+            groups[key] = { entries: [], sortKey }
         }
-        groups[key].push(entry)
+        groups[key].entries.push(entry)
         return groups
-    }, {} as Record<string, TimeEntry[]>)
+    }, {} as Record<string, { entries: TimeEntry[], sortKey: string }>)
 
+    // Sort groups: Today first, Yesterday second, then by date (newest first)
     const groupsList = Object.entries(groupedEntries)
+        .sort(([, a], [, b]) => {
+            // Today always comes first
+            if (a.sortKey === '0000-00-00') return -1
+            if (b.sortKey === '0000-00-00') return 1
+            // Yesterday comes second
+            if (a.sortKey === '0000-00-01') return -1
+            if (b.sortKey === '0000-00-01') return 1
+            // For other dates, sort by date descending (newest first)
+            if (a.sortKey > b.sortKey) return -1
+            if (a.sortKey < b.sortKey) return 1
+            return 0
+        })
+        .map(([key, value]) => [key, value.entries] as [string, TimeEntry[]])
 
     return (
         <div className="space-y-2 md:space-y-8">
