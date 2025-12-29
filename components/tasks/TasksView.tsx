@@ -73,11 +73,13 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
         startTime: Date | string
         endTime: Date | string | null
         description: string | null
+        subtaskId: string | null
+        subtask?: { id: string; title: string } | null
         user: { id: string; name: string | null }
     }>>([])
     const [editingTask, setEditingTask] = useState<TasksViewProps['initialTasks'][0] | null>(null)
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-    
+
     // Filters and Sort state
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
     const [filters, setFilters] = useState<{
@@ -100,7 +102,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
     // Sync local state when server data changes (e.g., after task creation)
     useEffect(() => {
         setTasks(initialTasks)
-        
+
         // Sync subtasks from server data
         const subtasksMap: Record<string, Array<{ id: string; title: string; isDone: boolean }>> = {}
         initialTasks.forEach(task => {
@@ -169,23 +171,23 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
     const applyFilters = (task: TasksViewProps['initialTasks'][0]) => {
         // Status filter
         if (filters.status.length > 0) {
-            const taskStatus = task.status === 'DONE' ? 'DONE' : 
-                             (tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0 ? 'IN_PROGRESS' : 'TODO')
+            const taskStatus = task.status === 'DONE' ? 'DONE' :
+                (tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0 ? 'IN_PROGRESS' : 'TODO')
             const isOverdue = task.deadline && isPast(new Date(task.deadline)) && !isToday(new Date(task.deadline)) && task.status !== 'DONE'
             const statusToCheck = isOverdue ? 'OVERDUE' : taskStatus
-            
+
             if (!filters.status.includes(statusToCheck) && !filters.status.includes(taskStatus)) {
                 return false
             }
         }
-        
+
         // Deadline filter
         if (filters.deadline.length > 0 && task.deadline) {
             const deadline = new Date(task.deadline)
             const today = new Date()
             today.setHours(0, 0, 0, 0)
             const weekEnd = endOfWeek(today, { weekStartsOn: 0 })
-            
+
             let matchesDeadline = false
             if (filters.deadline.includes('today') && isToday(deadline)) {
                 matchesDeadline = true
@@ -203,7 +205,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
             // If filtering by deadline but task has no deadline, exclude it
             return false
         }
-        
+
         // Priority filter
         if (filters.priority.length > 0) {
             const priorityMap: Record<string, string[]> = {
@@ -219,26 +221,26 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                 return false
             }
         }
-        
+
         // Assigned to me filter
         if (filters.assignedToMe && currentUserId) {
             if (!task.assignees || !task.assignees.some(a => a.id === currentUserId)) {
                 return false
             }
         }
-        
+
         // Users filter
         if (filters.users.length > 0) {
             if (!task.assignees || !task.assignees.some(a => filters.users.includes(a.id))) {
                 return false
             }
         }
-        
+
         // Created by me filter (we'll skip this for now as we don't have creatorId)
-        
+
         return true
     }
-    
+
     // Apply sorting
     const applySort = (a: TasksViewProps['initialTasks'][0], b: TasksViewProps['initialTasks'][0]) => {
         switch (sortBy) {
@@ -257,7 +259,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                 } else if (!a.createdAt && b.createdAt) {
                     return 1 // b is newer
                 }
-                
+
                 // Then by deadline today + high priority
                 const aDeadline = a.deadline ? new Date(a.deadline) : null
                 const bDeadline = b.deadline ? new Date(b.deadline) : null
@@ -265,7 +267,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                 const bIsToday = bDeadline && isToday(bDeadline)
                 const aIsHigh = a.priority === 'HIGH'
                 const bIsHigh = b.priority === 'HIGH'
-                
+
                 // Priority: today + high > today > high > others
                 if (aIsToday && aIsHigh && !(bIsToday && bIsHigh)) return -1
                 if (bIsToday && bIsHigh && !(aIsToday && aIsHigh)) return 1
@@ -317,21 +319,21 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                 return 0
         }
     }
-    
+
     // Filter and sort tasks
     const filteredTasks = tasks
         .filter(applyFilters)
         .sort(applySort)
-    
+
     // Count active filters
-    const activeFiltersCount = 
+    const activeFiltersCount =
         filters.status.length +
         filters.deadline.length +
         filters.priority.length +
         filters.users.length +
         (filters.createdByMe ? 1 : 0) +
         (filters.assignedToMe ? 1 : 0)
-    
+
     const clearAllFilters = () => {
         setFilters({
             status: [],
@@ -342,7 +344,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
             users: [],
         })
     }
-    
+
     const getFilterLabel = (type: string, value: string) => {
         if (type === 'status') {
             const labels: Record<string, string> = {
@@ -465,10 +467,10 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
 
         // Store the deleted task for potential revert
         const deletedTask = tasks.find(t => t.id === id)
-        
+
         // Optimistic update: Remove immediately from UI
         setTasks(prev => prev.filter(t => t.id !== id))
-        
+
         // Also remove from local subtasks if any
         setLocalSubtasks(prev => {
             const newSubtasks = { ...prev }
@@ -505,7 +507,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
     const openTaskDetail = async (task: TasksViewProps['initialTasks'][0]) => {
         // Set the task first
         setSelectedTask(task)
-        
+
         try {
             // Fetch time entries first, then open dialog
             const res = await fetch(`/api/tasks/${task.id}/time-entries`)
@@ -530,10 +532,10 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
 
         const tempId = `temp-${Date.now()}-${Math.random()}`
         const titleToSave = trimmedTitle
-        
+
         // Clear input IMMEDIATELY - keep input field open for rapid entry
         setNewSubtaskTitle("")
-        
+
         // Optimistic update: Add immediately with temporary ID - synchronous, no await
         setLocalSubtasks(prev => ({
             ...prev,
@@ -546,34 +548,34 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ taskId: taskId, title: titleToSave })
         })
-        .then(async (res) => {
-            if (!res.ok) {
-                const error = await res.json()
-                throw new Error(error.error 
-                    ? `${error.message}: ${error.error}` 
-                    : error.message || "Failed to create subtask")
-            }
-            return res.json()
-        })
-        .then((newSubtask) => {
-            // Replace temporary subtask with real one from server
-            setLocalSubtasks(prev => ({
-                ...prev,
-                [taskId]: (prev[taskId] || []).map(s => 
-                    s.id === tempId ? { id: newSubtask.id, title: newSubtask.title, isDone: newSubtask.isDone || false } : s
-                )
-            }))
-            router.refresh()
-        })
-        .catch((error) => {
-            console.error("Failed to add subtask:", error)
-            // Revert optimistic update on error
-            setLocalSubtasks(prev => ({
-                ...prev,
-                [taskId]: (prev[taskId] || []).filter(s => s.id !== tempId)
-            }))
-            alert(error instanceof Error ? error.message : "Failed to add subtask")
-        })
+            .then(async (res) => {
+                if (!res.ok) {
+                    const error = await res.json()
+                    throw new Error(error.error
+                        ? `${error.message}: ${error.error}`
+                        : error.message || "Failed to create subtask")
+                }
+                return res.json()
+            })
+            .then((newSubtask) => {
+                // Replace temporary subtask with real one from server
+                setLocalSubtasks(prev => ({
+                    ...prev,
+                    [taskId]: (prev[taskId] || []).map(s =>
+                        s.id === tempId ? { id: newSubtask.id, title: newSubtask.title, isDone: newSubtask.isDone || false } : s
+                    )
+                }))
+                router.refresh()
+            })
+            .catch((error) => {
+                console.error("Failed to add subtask:", error)
+                // Revert optimistic update on error
+                setLocalSubtasks(prev => ({
+                    ...prev,
+                    [taskId]: (prev[taskId] || []).filter(s => s.id !== tempId)
+                }))
+                alert(error instanceof Error ? error.message : "Failed to add subtask")
+            })
     }
 
     const handleToggleSubtask = (taskId: string, subtaskId: string, currentDone: boolean) => {
@@ -587,19 +589,19 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
             if (!subtaskExists) {
                 return prev
             }
-            const updatedSubtasks = taskSubtasks.map(s => 
+            const updatedSubtasks = taskSubtasks.map(s =>
                 s.id === subtaskId ? { ...s, isDone: newDoneState } : s
             )
-            
+
             // Check if all subtasks are now done
             const allDone = updatedSubtasks.length > 0 && updatedSubtasks.every(s => s.isDone)
             // Check if any subtask is not done
             const anyNotDone = updatedSubtasks.some(s => !s.isDone)
-            
+
             // Update main task status based on subtasks
             if (allDone) {
                 // All subtasks are done - mark main task as DONE
-                setTasks(prev => prev.map(t => 
+                setTasks(prev => prev.map(t =>
                     t.id === taskId && t.status !== 'DONE' ? { ...t, status: 'DONE' } : t
                 ))
                 // Update task status in background
@@ -609,7 +611,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                 }).catch(err => console.error("Failed to update task status:", err))
             } else if (anyNotDone) {
                 // At least one subtask is not done - unmark main task if it was DONE
-                setTasks(prev => prev.map(t => 
+                setTasks(prev => prev.map(t =>
                     t.id === taskId && t.status === 'DONE' ? { ...t, status: 'TODO' } : t
                 ))
                 // Update task status in background
@@ -618,7 +620,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                     body: JSON.stringify({ id: taskId, status: 'TODO' }),
                 }).catch(err => console.error("Failed to update task status:", err))
             }
-            
+
             return {
                 ...prev,
                 [taskId]: updatedSubtasks
@@ -635,36 +637,36 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ id: subtaskId, isDone: newDoneState })
         })
-        .then(async (res) => {
-            if (!res.ok) {
-                throw new Error("Failed to update subtask")
-            }
-            // Refresh in background after successful update
-            router.refresh()
-        })
-        .catch((error) => {
-            console.error("Failed to toggle subtask:", error)
-            // Revert on error only if subtask still exists
-            setLocalSubtasks(prev => {
-                const taskSubtasks = prev[taskId] || []
-                const subtaskExists = taskSubtasks.some(s => s.id === subtaskId)
-                if (!subtaskExists) {
-                    return prev // Don't revert if it was deleted
+            .then(async (res) => {
+                if (!res.ok) {
+                    throw new Error("Failed to update subtask")
                 }
-                return {
-                    ...prev,
-                    [taskId]: taskSubtasks.map(s => 
-                        s.id === subtaskId ? { ...s, isDone: currentDone } : s
-                    )
-                }
+                // Refresh in background after successful update
+                router.refresh()
             })
-        })
-        .finally(() => {
-            // Remove from pending operations after a short delay
-            setTimeout(() => {
-                pendingOperations.current.delete(operationKey)
-            }, 500)
-        })
+            .catch((error) => {
+                console.error("Failed to toggle subtask:", error)
+                // Revert on error only if subtask still exists
+                setLocalSubtasks(prev => {
+                    const taskSubtasks = prev[taskId] || []
+                    const subtaskExists = taskSubtasks.some(s => s.id === subtaskId)
+                    if (!subtaskExists) {
+                        return prev // Don't revert if it was deleted
+                    }
+                    return {
+                        ...prev,
+                        [taskId]: taskSubtasks.map(s =>
+                            s.id === subtaskId ? { ...s, isDone: currentDone } : s
+                        )
+                    }
+                })
+            })
+            .finally(() => {
+                // Remove from pending operations after a short delay
+                setTimeout(() => {
+                    pendingOperations.current.delete(operationKey)
+                }, 500)
+            })
     }
 
     const handleEditSubtask = async (taskId: string, subtaskId: string, newTitle: string) => {
@@ -819,45 +821,45 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
             <CardHeader className="flex flex-col space-y-4 pb-4">
                 {/* Filters and Sort - Above title */}
                 <div className={`flex items-center gap-2 w-full ${isRTL ? 'flex-row-reverse justify-start' : 'justify-end'}`}>
-                        {/* Filters Button */}
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setIsFiltersOpen(true)}
+                    {/* Filters Button */}
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsFiltersOpen(true)}
                         className={`h-9 text-sm font-medium flex-1 md:flex-initial ${isRTL ? 'flex-row-reverse' : ''}`}
-                        >
+                    >
                         <Filter className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
                         {t('tasks.filters')}
-                            {activeFiltersCount > 0 && (
+                        {activeFiltersCount > 0 && (
                             <Badge variant="secondary" className={`h-5 px-1.5 text-xs ${isRTL ? 'mr-2' : 'ml-2'}`}>
-                                    {activeFiltersCount}
-                                </Badge>
-                            )}
-                        </Button>
-                        
-                        {/* Sort Dropdown */}
-                        <Select value={sortBy} onValueChange={setSortBy}>
+                                {activeFiltersCount}
+                            </Badge>
+                        )}
+                    </Button>
+
+                    {/* Sort Dropdown */}
+                    <Select value={sortBy} onValueChange={setSortBy}>
                         <SelectTrigger className="h-9 text-sm font-medium px-3 w-auto">
                             <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                                    <ArrowUpDown className="h-4 w-4" />
+                                <ArrowUpDown className="h-4 w-4" />
                                 <SelectValue placeholder={t('tasks.sort')} />
-                                </div>
-                            </SelectTrigger>
-                            <SelectContent>
+                            </div>
+                        </SelectTrigger>
+                        <SelectContent>
                             <SelectItem value="smart">{t('tasks.sort')}</SelectItem>
-                                <SelectItem value="deadline-near">By deadline: Closest → Farthest</SelectItem>
-                                <SelectItem value="deadline-far">By deadline: Farthest → Closest</SelectItem>
-                                <SelectItem value="priority-high">By priority: High → Low</SelectItem>
-                                <SelectItem value="priority-low">By priority: Low → High</SelectItem>
-                                <SelectItem value="created-new">By time: Newest → Oldest</SelectItem>
-                                <SelectItem value="created-old">By time: Oldest → Newest</SelectItem>
-                            </SelectContent>
-                        </Select>
+                            <SelectItem value="deadline-near">By deadline: Closest → Farthest</SelectItem>
+                            <SelectItem value="deadline-far">By deadline: Farthest → Closest</SelectItem>
+                            <SelectItem value="priority-high">By priority: High → Low</SelectItem>
+                            <SelectItem value="priority-low">By priority: Low → High</SelectItem>
+                            <SelectItem value="created-new">By time: Newest → Oldest</SelectItem>
+                            <SelectItem value="created-old">By time: Oldest → Newest</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
-                
+
                 {/* Title */}
                 <CardTitle className={isRTL ? 'text-right' : 'text-left'}>{t('tasks.allTasks')} ({filteredTasks.length})</CardTitle>
-                
+
                 {/* Active Filter Chips */}
                 {activeFiltersCount > 0 && (
                     <div className="flex flex-wrap gap-1.5 items-center">
@@ -973,8 +975,8 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                         {/* Status: To Do / In Progress - Second line with Priority */}
                                         <div className="pl-1 flex items-center gap-2">
                                             <span className="text-xs text-muted-foreground">
-                                                {t('tasks.status')}: {task.status === 'DONE' 
-                                                    ? t('tasks.statusDone') 
+                                                {t('tasks.status')}: {task.status === 'DONE'
+                                                    ? t('tasks.statusDone')
                                                     : (() => {
                                                         const activeUsers = tasksWithActiveTimers[task.id]
                                                         return activeUsers && activeUsers.length > 0
@@ -1035,7 +1037,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                                 </Button>
                                                             </DropdownMenuTrigger>
                                                             <DropdownMenuContent align={isRTL ? "start" : "end"}>
-                                                                <DropdownMenuItem 
+                                                                <DropdownMenuItem
                                                                     onClick={(e) => {
                                                                         e.stopPropagation()
                                                                         handleStartWorking(task.id, subtask.id)
@@ -1044,7 +1046,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                                     <Play className="h-4 w-4 mr-2" />
                                                                     {t('tasks.startWorking')}
                                                                 </DropdownMenuItem>
-                                                                <DropdownMenuItem 
+                                                                <DropdownMenuItem
                                                                     onClick={(e) => {
                                                                         e.stopPropagation()
                                                                         setEditingSubtask({ taskId: task.id, subtaskId: subtask.id })
@@ -1054,7 +1056,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                                     <Pencil className="h-4 w-4 mr-2" />
                                                                     {t('tasks.edit')}
                                                                 </DropdownMenuItem>
-                                                                <DropdownMenuItem 
+                                                                <DropdownMenuItem
                                                                     onClick={(e) => {
                                                                         e.stopPropagation()
                                                                         handleDeleteSubtask(task.id, subtask.id)
@@ -1172,7 +1174,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                     className="h-7 text-xs text-muted-foreground hover:text-foreground w-fit"
                                                 >
                                                     <Plus className="h-3 w-3 mr-1" />
-                                                        {t('tasks.addSubTask')}
+                                                    {t('tasks.addSubTask')}
                                                 </Button>
                                             )}
                                         </div>
@@ -1180,7 +1182,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                 </div>
 
                                 {/* Menu button - centered on right */}
-                                    {(isAdmin || (currentUserId && task.assignees.some(a => a.id === currentUserId))) && (
+                                {(isAdmin || (currentUserId && task.assignees.some(a => a.id === currentUserId))) && (
                                     <div className="flex items-center shrink-0">
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
@@ -1202,7 +1204,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                     <Pencil className="h-4 w-4 mr-2" />
                                                     {t('tasks.edit')}
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem 
+                                                <DropdownMenuItem
                                                     onClick={() => handleDelete(task.id)}
                                                     className="text-destructive focus:text-destructive"
                                                 >
@@ -1212,7 +1214,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </div>
-                                    )}
+                                )}
                             </div>
                         ))
                     )}
@@ -1242,7 +1244,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                 }}
                 currentUserId={currentUserId}
             />
-            
+
             {/* Filters Dialog */}
             <Dialog open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
                 <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
