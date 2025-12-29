@@ -60,7 +60,7 @@ export function AddMemberDialog({
     const [email, setEmail] = useState("")
     const [role] = useState(defaultRole) // Changed from [role, setRole] to [role]
     const [jobTitle, setJobTitle] = useState("")
-    const [managerId, setManagerId] = useState<string>(hideManagerSelect ? "unassigned" : "")
+    const [managerId, setManagerId] = useState<string>("")
     const [managers, setManagers] = useState<SimpleUser[]>([])
     // Chief type selection: 'partner' | 'independent' | null
     const [chiefType, setChiefType] = useState<'partner' | 'independent' | null>(null)
@@ -92,10 +92,10 @@ export function AddMemberDialog({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        // If adding a chief (ADMIN role) without a manager, require chief type selection
-        const isTopLevelChief = managerId === "unassigned" || !managerId
-        if (role === "ADMIN" && isTopLevelChief && !chiefType) {
-            alert("Please select how this chief should be added (Partner or Independent)")
+        // If adding a chief (ADMIN role) without a manager, require manager selection
+        // Top-level chiefs should only be added from hierarchy tree
+        if (role === "ADMIN" && !managerId) {
+            alert("Please select a manager for this user. To add a top-level chief, use the hierarchy tree.")
             return
         }
 
@@ -110,8 +110,8 @@ export function AddMemberDialog({
                     email,
                     role,
                     jobTitle,
-                    managerId: managerId === "unassigned" ? null : managerId,
-                    chiefType: role === "ADMIN" && (managerId === "unassigned" || !managerId) ? chiefType : undefined
+                    managerId: managerId || null,
+                    chiefType: undefined // Chief type selection only available in hierarchy tree
                 }),
             })
 
@@ -143,7 +143,7 @@ export function AddMemberDialog({
             // Reset form
             setEmail("")
             setJobTitle("")
-            setManagerId(hideManagerSelect ? "unassigned" : "")
+            setManagerId("")
             setChiefType(null)
 
             // Show success message
@@ -208,12 +208,11 @@ export function AddMemberDialog({
                                     Reports To
                                 </Label>
                                 <div className="col-span-3">
-                                    <Select onValueChange={setManagerId} value={managerId}>
+                                    <Select onValueChange={setManagerId} value={managerId || undefined} required={role === "ADMIN"}>
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Select Manager (Optional)" />
+                                            <SelectValue placeholder={role === "ADMIN" ? "Select Manager (Required)" : "Select Manager (Optional)"} />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="unassigned">No Manager (Top Level)</SelectItem>
                                             {managers.map((user) => (
                                                 <SelectItem key={user.id} value={user.id}>
                                                     {user.name} {user.jobTitle ? `- ${user.jobTitle}` : ""}
@@ -239,8 +238,9 @@ export function AddMemberDialog({
                             />
                         </div>
 
-                        {/* Chief Type Selection - Shown when adding a chief without a manager */}
-                        {role === "ADMIN" && (managerId === "unassigned" || !managerId) && (
+                        {/* Chief Type Selection - Should not be shown in AddMemberDialog */}
+                        {/* Top-level chiefs should only be added from hierarchy tree */}
+                        {false && role === "ADMIN" && !managerId && (
                             <div className="space-y-4 pt-2">
                                 <div>
                                     <Label className="text-base font-semibold">

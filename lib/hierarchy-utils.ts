@@ -149,6 +149,47 @@ export function canManageUser(currentUser: User, targetUser: User, allUsers?: Us
 }
 
 /**
+ * Filter users to show only those in the user's hierarchy group:
+ * - The user's manager
+ * - Siblings (users at the same level under the same manager)
+ * - Direct reports (users one level below)
+ * This is for display purposes only - permissions are checked separately
+ * @param users - All users
+ * @param currentUser - User requesting data
+ * @returns Filtered array of users in the hierarchy group
+ */
+export function filterHierarchyGroup<T extends { id: string, managerId: string | null }>(
+    users: T[],
+    currentUser: { id: string, managerId: string | null }
+): T[] {
+    const visibleIds = new Set<string>([currentUser.id])
+    
+    // Find current user in the list
+    const currentUserData = users.find(u => u.id === currentUser.id)
+    if (!currentUserData) {
+        return users.filter(u => u.id === currentUser.id)
+    }
+    
+    // 1. Add the manager (if exists)
+    if (currentUserData.managerId) {
+        visibleIds.add(currentUserData.managerId)
+    }
+    
+    // 2. Add siblings (users at the same level under the same manager)
+    const siblings = users.filter(u => 
+        u.id !== currentUser.id && 
+        u.managerId === currentUserData.managerId
+    )
+    siblings.forEach(sibling => visibleIds.add(sibling.id))
+    
+    // 3. Add direct reports (users one level below - only direct, not all descendants)
+    const directReports = users.filter(u => u.managerId === currentUser.id)
+    directReports.forEach(report => visibleIds.add(report.id))
+    
+    return users.filter(u => visibleIds.has(u.id))
+}
+
+/**
  * Filter users to only those visible to current user based on hierarchy
  * @param users - All users
  * @param currentUser - User requesting data (must include sharedChiefGroupId if applicable)

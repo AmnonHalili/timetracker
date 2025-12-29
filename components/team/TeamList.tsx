@@ -36,6 +36,8 @@ import { Loader2, Trash2, Edit, Check } from "lucide-react"
 import { useLanguage } from "@/lib/useLanguage"
 import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
+import { canManageUser } from "@/lib/hierarchy-utils"
+import { toast } from "sonner"
 
 interface User {
     id: string
@@ -115,6 +117,29 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
     const openDialog = async (user: User) => {
         // Employees cannot edit settings
         if (currentUserRole === 'EMPLOYEE') return
+
+        // Allow opening dialog for yourself
+        if (user.id === currentUserId) {
+            setSelectedUser(user)
+            setEditTarget(user.dailyTarget?.toString() || "")
+            setEditDays(user.workDays || [])
+            setLoadingSecondary(false)
+            return
+        }
+
+        // Check if current user can manage this user (permissions check)
+        // Only allow opening dialog for users in hierarchy or below
+        if (allUsers) {
+            const currentUserData = allUsers.find(u => u.id === currentUserId)
+            if (currentUserData) {
+                const canManage = canManageUser(currentUserData as any, user as any, allUsers)
+                if (!canManage) {
+                    // User cannot manage this person - don't open dialog
+                    toast.error("You don't have permission to manage this user")
+                    return
+                }
+            }
+        }
 
         setSelectedUser(user)
         setEditTarget(user.dailyTarget?.toString() || "")

@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { TeamList } from "@/components/team/TeamList"
 import { TeamOnboardingWidget } from "@/components/dashboard/TeamOnboardingWidget"
-import { filterVisibleUsers } from "@/lib/hierarchy-utils"
+import { filterVisibleUsers, filterHierarchyGroup } from "@/lib/hierarchy-utils"
 import { TeamRequestsList } from "@/components/team/TeamRequestsList"
 import { TeamPageHeader } from "@/components/team/TeamPageHeader"
 
@@ -221,23 +221,22 @@ export default async function TeamPage() {
         })
     }
 
-    // Fetch secondary manager relationships for visibility filtering
-    const secondaryRelations = await prisma.secondaryManager.findMany({
-        where: {
-            OR: [
-                { managerId: currentUser.id }, // Where current user is the secondary manager
-                { employeeId: currentUser.id }  // Where current user is the employee
-            ]
-        },
-        select: {
-            employeeId: true,
-            managerId: true,
-            permissions: true
-        }
+    // Get current user's managerId for hierarchy group filtering
+    const currentUserWithManager = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { id: true, managerId: true }
     })
 
+    // Filter to show only users in the hierarchy group:
+    // - The user's manager
+    // - Siblings (users at the same level under the same manager)
+    // - Direct reports (users one level below)
+    const hierarchyGroupMembers = currentUserWithManager
+        ? filterHierarchyGroup(allTeamMembers, currentUserWithManager)
+        : allTeamMembers
+
     const teamMembers = sortByHierarchy(
-        filterVisibleUsers(allTeamMembers, currentUser, secondaryRelations),
+        hierarchyGroupMembers,
         session.user.id
     )
 
