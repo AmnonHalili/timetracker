@@ -39,7 +39,37 @@ export async function GET() {
             jobTitle: true,
             timeEntries: {
                 where: { endTime: null },
-                include: { breaks: { where: { endTime: null } } }
+                select: {
+                    id: true,
+                    userId: true,
+                    startTime: true,
+                    endTime: true,
+                    description: true,
+                    isManual: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    subtaskId: true,
+                    locationRequired: true,
+                    startLocationLat: true,
+                    startLocationLng: true,
+                    startLocationVerified: true,
+                    endLocationLat: true,
+                    endLocationLng: true,
+                    endLocationVerified: true,
+                    locationStatus: true,
+                    breaks: {
+                        where: { endTime: null },
+                        select: {
+                            id: true,
+                            timeEntryId: true,
+                            startTime: true,
+                            endTime: true,
+                            reason: true,
+                            locationLat: true,
+                            locationLng: true
+                        }
+                    }
+                }
             },
             lastSeen: true
         }

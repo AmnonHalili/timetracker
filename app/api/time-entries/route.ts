@@ -15,7 +15,27 @@ export async function GET() {
     try {
         const entries = await prisma.timeEntry.findMany({
             where: { userId: session.user.id },
-            include: { breaks: true, tasks: true }, // Updated relation
+            select: {
+                id: true,
+                userId: true,
+                startTime: true,
+                endTime: true,
+                description: true,
+                isManual: true,
+                createdAt: true,
+                updatedAt: true,
+                subtaskId: true,
+                locationRequired: true,
+                startLocationLat: true,
+                startLocationLng: true,
+                startLocationVerified: true,
+                endLocationLat: true,
+                endLocationLng: true,
+                endLocationVerified: true,
+                locationStatus: true,
+                breaks: true,
+                tasks: true
+            },
             orderBy: { createdAt: 'desc' }, // Updated orderBy
             take: 50, // Limit to recent 50 for dashboard performance
         })
@@ -51,7 +71,13 @@ export async function POST(req: Request) {
         // 1. START TIMER
         if (action === "start") {
             const active = await prisma.timeEntry.findFirst({
-                where: { userId: session.user.id, endTime: null }
+                where: { userId: session.user.id, endTime: null },
+                select: {
+                    id: true,
+                    userId: true,
+                    startTime: true,
+                    endTime: true
+                }
             })
 
             if (active) {
@@ -128,7 +154,26 @@ export async function POST(req: Request) {
         if (action === "stop") {
             const active = await prisma.timeEntry.findFirst({
                 where: { userId: session.user.id, endTime: null },
-                include: { breaks: true }
+                select: {
+                    id: true,
+                    userId: true,
+                    startTime: true,
+                    endTime: true,
+                    description: true,
+                    isManual: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    subtaskId: true,
+                    locationRequired: true,
+                    startLocationLat: true,
+                    startLocationLng: true,
+                    startLocationVerified: true,
+                    endLocationLat: true,
+                    endLocationLng: true,
+                    endLocationVerified: true,
+                    locationStatus: true,
+                    breaks: true
+                }
             })
 
             if (!active) {
@@ -196,7 +241,26 @@ export async function POST(req: Request) {
         if (action === "pause") {
             const active = await prisma.timeEntry.findFirst({
                 where: { userId: session.user.id, endTime: null },
-                include: { breaks: true }
+                select: {
+                    id: true,
+                    userId: true,
+                    startTime: true,
+                    endTime: true,
+                    description: true,
+                    isManual: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    subtaskId: true,
+                    locationRequired: true,
+                    startLocationLat: true,
+                    startLocationLng: true,
+                    startLocationVerified: true,
+                    endLocationLat: true,
+                    endLocationLng: true,
+                    endLocationVerified: true,
+                    locationStatus: true,
+                    breaks: true
+                }
             })
 
             if (!active) {
@@ -223,7 +287,26 @@ export async function POST(req: Request) {
         if (action === "resume") {
             const active = await prisma.timeEntry.findFirst({
                 where: { userId: session.user.id, endTime: null },
-                include: { breaks: true }
+                select: {
+                    id: true,
+                    userId: true,
+                    startTime: true,
+                    endTime: true,
+                    description: true,
+                    isManual: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    subtaskId: true,
+                    locationRequired: true,
+                    startLocationLat: true,
+                    startLocationLng: true,
+                    startLocationVerified: true,
+                    endLocationLat: true,
+                    endLocationLng: true,
+                    endLocationVerified: true,
+                    locationStatus: true,
+                    breaks: true
+                }
             })
 
             if (!active) {

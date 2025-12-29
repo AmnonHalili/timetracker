@@ -9,7 +9,15 @@ export async function getReportData(userId: string, year: number, month: number)
 
     const user = await prisma.user.findUnique({
         where: { id: userId },
-        include: {
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            jobTitle: true,
+            dailyTarget: true,
+            workDays: true,
+            createdAt: true,
             timeEntries: {
                 where: {
                     startTime: {
@@ -20,7 +28,24 @@ export async function getReportData(userId: string, year: number, month: number)
                 orderBy: {
                     startTime: 'asc'
                 },
-                include: {
+                select: {
+                    id: true,
+                    userId: true,
+                    startTime: true,
+                    endTime: true,
+                    description: true,
+                    isManual: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    subtaskId: true,
+                    locationRequired: true,
+                    startLocationLat: true,
+                    startLocationLng: true,
+                    startLocationVerified: true,
+                    endLocationLat: true,
+                    endLocationLng: true,
+                    endLocationVerified: true,
+                    locationStatus: true,
                     breaks: true,
                 },
             },

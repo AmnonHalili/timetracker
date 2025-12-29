@@ -23,7 +23,26 @@ export async function POST(req: Request) {
                 userId: session.user.id,
                 endTime: null,
             },
-            include: { breaks: true },
+            select: {
+                id: true,
+                userId: true,
+                startTime: true,
+                endTime: true,
+                description: true,
+                isManual: true,
+                createdAt: true,
+                updatedAt: true,
+                subtaskId: true,
+                locationRequired: true,
+                startLocationLat: true,
+                startLocationLng: true,
+                startLocationVerified: true,
+                endLocationLat: true,
+                endLocationLng: true,
+                endLocationVerified: true,
+                locationStatus: true,
+                breaks: true
+            },
         })
 
         if (!activeEntry) {
@@ -81,7 +100,26 @@ export async function PATCH() {
                 userId: session.user.id,
                 endTime: null,
             },
-            include: { breaks: true },
+            select: {
+                id: true,
+                userId: true,
+                startTime: true,
+                endTime: true,
+                description: true,
+                isManual: true,
+                createdAt: true,
+                updatedAt: true,
+                subtaskId: true,
+                locationRequired: true,
+                startLocationLat: true,
+                startLocationLng: true,
+                startLocationVerified: true,
+                endLocationLat: true,
+                endLocationLng: true,
+                endLocationVerified: true,
+                locationStatus: true,
+                breaks: true
+            },
         })
 
         if (!activeEntry) {

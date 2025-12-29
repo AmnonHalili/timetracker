@@ -153,7 +153,24 @@ async function getTodayBreakCount(userId: string): Promise<number> {
                 lt: tomorrow
             }
         },
-        include: {
+        select: {
+            id: true,
+            userId: true,
+            startTime: true,
+            endTime: true,
+            description: true,
+            isManual: true,
+            createdAt: true,
+            updatedAt: true,
+            subtaskId: true,
+            locationRequired: true,
+            startLocationLat: true,
+            startLocationLng: true,
+            startLocationVerified: true,
+            endLocationLat: true,
+            endLocationLng: true,
+            endLocationVerified: true,
+            locationStatus: true,
             breaks: true
         }
     })

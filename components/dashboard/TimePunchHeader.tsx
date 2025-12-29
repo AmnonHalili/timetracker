@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, startTransition } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Play, Square, MapPin, AlertCircle, CheckCircle2, XCircle } from "lucide-react"
@@ -130,8 +130,13 @@ export function TimePunchHeader({ workLocation, activeEntry }: TimePunchHeaderPr
 
     const handleStartDay = async () => {
         if (!workLocation) {
-            // No location required
+            // No location required - Optimistic update: update UI immediately
+            const optimisticStartTime = new Date()
+            setIsWorking(true)
+            setWorkingSince(optimisticStartTime)
             setIsProcessing(true)
+
+            // API call happens in background - doesn't block UI
             try {
                 const response = await fetch("/api/time-entries", {
                     method: "POST",
@@ -148,9 +153,15 @@ export function TimePunchHeader({ workLocation, activeEntry }: TimePunchHeaderPr
                 }
 
                 toast.success("Work session started!")
-                router.refresh()
+                // Use startTransition to avoid blocking UI
+                startTransition(() => {
+                    router.refresh()
+                })
             } catch (error) {
                 console.error("Error starting work session:", error)
+                // Revert optimistic update on error
+                setIsWorking(false)
+                setWorkingSince(null)
                 toast.error(error instanceof Error ? error.message : "Failed to start work session")
             } finally {
                 setIsProcessing(false)
@@ -158,7 +169,7 @@ export function TimePunchHeader({ workLocation, activeEntry }: TimePunchHeaderPr
             return
         }
 
-        // Location required - check GPS
+        // Location required - check GPS first (this is necessary, can't be optimistic)
         setIsProcessing(true)
         try {
             const location = await getCurrentLocation()
@@ -171,7 +182,13 @@ export function TimePunchHeader({ workLocation, activeEntry }: TimePunchHeaderPr
                 return
             }
 
+            // Optimistic update: update UI immediately after location check
+            const optimisticStartTime = new Date()
+            setIsWorking(true)
+            setWorkingSince(optimisticStartTime)
             setLocationStatus("verified")
+
+            // API call happens in background
             const response = await fetch("/api/time-entries", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -187,10 +204,19 @@ export function TimePunchHeader({ workLocation, activeEntry }: TimePunchHeaderPr
             }
 
             toast.success("Work session started!")
-            router.refresh()
+            // Use startTransition to avoid blocking UI
+            startTransition(() => {
+                router.refresh()
+            })
         } catch (error) {
             console.error("Error getting location:", error)
             setLocationStatus("unavailable")
+            
+            // Optimistic update even if location failed
+            const optimisticStartTime = new Date()
+            setIsWorking(true)
+            setWorkingSince(optimisticStartTime)
+            
             // Allow start but flag as unavailable
             const response = await fetch("/api/time-entries", {
                 method: "POST",
@@ -203,8 +229,13 @@ export function TimePunchHeader({ workLocation, activeEntry }: TimePunchHeaderPr
 
             if (response.ok) {
                 toast.warning("Location unavailable, but work session started")
-                router.refresh()
+                startTransition(() => {
+                    router.refresh()
+                })
             } else {
+                // Revert optimistic update on error
+                setIsWorking(false)
+                setWorkingSince(null)
                 toast.error("Failed to start work session")
             }
         } finally {
@@ -213,7 +244,12 @@ export function TimePunchHeader({ workLocation, activeEntry }: TimePunchHeaderPr
     }
 
     const handleEndDay = async () => {
+        // Optimistic update: update UI immediately
+        setIsWorking(false)
+        setWorkingSince(null)
         setIsProcessing(true)
+
+        // API call happens in background
         try {
             let location: Location | undefined
             if (workLocation) {
@@ -240,9 +276,17 @@ export function TimePunchHeader({ workLocation, activeEntry }: TimePunchHeaderPr
             }
 
             toast.success("Work session ended!")
-            router.refresh()
+            // Use startTransition to avoid blocking UI
+            startTransition(() => {
+                router.refresh()
+            })
         } catch (error) {
             console.error("Error ending work session:", error)
+            // Revert optimistic update on error - but we need to check if there's still an active entry
+            // For now, just refresh to get the actual state
+            startTransition(() => {
+                router.refresh()
+            })
             toast.error(error instanceof Error ? error.message : "Failed to end work session")
         } finally {
             setIsProcessing(false)
@@ -328,7 +372,7 @@ export function TimePunchHeader({ workLocation, activeEntry }: TimePunchHeaderPr
                         {/* Action Button */}
                         <Button
                             onClick={isWorking ? handleEndDay : handleStartDay}
-                            disabled={isProcessing || (workLocation && locationStatus === "outside_area" && !isWorking) || undefined}
+                            disabled={isProcessing || (workLocation && locationStatus === "outside_area" && !isWorking)}
                             size="lg"
                             className={`
                                 min-w-[140px] h-12 text-base font-bold
@@ -340,20 +384,24 @@ export function TimePunchHeader({ workLocation, activeEntry }: TimePunchHeaderPr
                                 ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}
                             `}
                         >
-                            {isProcessing ? (
-                                <div className="flex items-center gap-2">
-                                    <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                    Processing...
-                                </div>
-                            ) : isWorking ? (
+                            {isWorking ? (
                                 <>
                                     <Square className="mr-2 h-5 w-5" />
                                     End Day
                                 </>
                             ) : (
                                 <>
-                                    <Play className="mr-2 h-5 w-5" />
-                                    Start Day
+                                    {isProcessing ? (
+                                        <div className="flex items-center gap-2">
+                                            <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                            Processing...
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <Play className="mr-2 h-5 w-5" />
+                                            Start Day
+                                        </>
+                                    )}
                                 </>
                             )}
                         </Button>
