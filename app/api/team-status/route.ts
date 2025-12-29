@@ -20,8 +20,8 @@ export async function GET() {
         return NextResponse.json({ message: "User not found" }, { status: 404 })
     }
 
-    // Only admins can see team status
-    if (user.role !== "ADMIN" || !user.projectId) {
+    // Allow all project members to see team status
+    if (!user.projectId) {
         return NextResponse.json([])
     }
 

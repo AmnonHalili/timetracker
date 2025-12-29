@@ -77,7 +77,7 @@ function StatusIndicator({ status }: { status: TeamMemberStatus['status'] }) {
         return <div className="h-3 w-3 rounded-full bg-yellow-400 border border-yellow-500" />
     }
     if (status === 'ONLINE') {
-        return <div className="h-3 w-3 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+        return <div className="h-3 w-3 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
     }
     return <div className="h-3 w-3 rounded-full bg-gray-300" />
 }
