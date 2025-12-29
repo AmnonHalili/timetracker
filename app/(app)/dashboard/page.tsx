@@ -51,8 +51,7 @@ export default async function DashboardPage() {
             jobTitle: true,
             dailyTarget: true,
             workDays: true,
-            dailyTarget: true,
-            workDays: true,
+
             createdAt: true,
             projectId: true, // Required for team status logic
             pendingProjectId: true, // Required for pending banner
