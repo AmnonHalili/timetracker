@@ -3,6 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
+import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useSession, signOut } from "next-auth/react"
@@ -14,12 +15,28 @@ export function Sidebar() {
     const { t } = useLanguage()
     const { data: session } = useSession()
 
+    const [isDismissed, setIsDismissed] = useState(true) // Default to true to prevent flash
+
+    useEffect(() => {
+        // Check local storage on mount
+        const dismissed = localStorage.getItem('settings_badge_dismissed') === 'true'
+        setIsDismissed(dismissed)
+    }, [])
+
+    useEffect(() => {
+        if (pathname === '/settings') {
+            localStorage.setItem('settings_badge_dismissed', 'true')
+            setIsDismissed(true)
+        }
+    }, [pathname])
+
     // Check if user is a top-level admin with incomplete profile
-    // Only show badge if NOT on settings page
+    // Only show badge if NOT on settings page AND not remembered as seen
     const showSettingsBadge = session?.user?.role === 'ADMIN' &&
         !session?.user?.managerId &&
         (!session?.user?.workDays?.length || !session?.user?.dailyTarget) &&
-        pathname !== '/settings'
+        pathname !== '/settings' &&
+        !isDismissed
 
     const routes = [
         {
