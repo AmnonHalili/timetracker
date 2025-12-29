@@ -3,7 +3,7 @@ import { getReportData } from "@/lib/report-service"
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { format } from "date-fns"
+import { format, getDay } from "date-fns"
 
 export async function GET(req: Request) {
     const session = await getServerSession(authOptions)
@@ -54,60 +54,124 @@ export async function GET(req: Request) {
 
     const { report, user } = data
 
-    // Generate CSV
-    const headers = ["Date", "Day", "Employee", "Start Time", "End Time", "Duration (Hrs)", "Status", "Is Manual", "Notes"]
-    const rows = report.days.map(day => {
-        const date = format(day.date, "yyyy-MM-dd")
-        const dayName = day.dayName
-        const employeeName = user.name || user.email
-        const startTime = day.startTime ? format(day.startTime, "HH:mm") : ""
-        const endTime = day.endTime ? format(day.endTime, "HH:mm") : ""
-        const duration = day.totalDurationHours.toFixed(2)
-        const status = day.status
-        const isManual = day.hasManualEntries ? "Yes" : "No"
+    // Format hours to display as hours and minutes (same as in ReportTable)
+    const formatHoursMinutes = (hours: number): string => {
+        if (hours <= 0) return "-"
+        const totalMinutes = Math.round(hours * 60)
+        if (totalMinutes < 60) {
+            return `${totalMinutes}m`
+        }
+        const h = Math.floor(totalMinutes / 60)
+        const m = totalMinutes % 60
+        if (m === 0) {
+            return `${h}h`
+        }
+        return `${h}h ${m}m`
+    }
 
-        // Notes could be complex if multiple entries have descriptions. joining them.
-        // We'll need to fetch the raw entries for this day to get descriptions if 'day' object doesn't have them aggregated.
-        // Ideally 'getReportData' returns raw entries too or 'DailyReport' has them. 
-        // Currently 'DailyReport' doesn't have descriptions.
-        // For V1, let's leave notes empty or generic. Or better, update 'DailyReport' later.
-        // Wait, 'user.timeEntries' IS available in the scope of 'getReportData' but strictly speaking 'report.days' is the processed view.
-        // Let's iterate the raw 'user.timeEntries' again for descriptions? Or just omit notes for now to keep it simple as agreed? 
-        // User asked for "Professional". Professional usually implies notes.
-        // Let's filter 'user.timeEntries' for this day here.
+    // Get day name (same logic as ReportTable)
+    const getDayName = (date: Date): string => {
+        const dayOfWeek = getDay(date)
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+        return dayNames[dayOfWeek]
+    }
 
-        const dayEntries = user.timeEntries.filter(e => {
-            const eDate = new Date(e.startTime)
-            return eDate.getDate() === day.date.getDate() &&
-                eDate.getMonth() === day.date.getMonth() &&
-                eDate.getFullYear() === day.date.getFullYear()
-        })
+    // Escape HTML special characters
+    const escapeHtml = (val: string | null | undefined): string => {
+        if (!val) return ""
+        return String(val)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;")
+    }
 
-        const notes = dayEntries.map(e => e.description).filter(Boolean).join("; ")
+    // Generate HTML table - matching exactly what's shown on screen
+    const headers = ["Date", "Day", "Start Time", "End Time", "Total Hours"]
+    
+    // Build table rows - exactly like ReportTable component
+    const tableRows = report.days.map(day => {
+        const date = format(day.date, "dd/MM/yyyy")
+        const dayName = getDayName(day.date)
+        const startTime = day.startTime ? format(day.startTime, "HH:mm") : "-"
+        const endTime = day.endTime 
+            ? format(day.endTime, "HH:mm") 
+            : (day.startTime ? "Running..." : "-")
+        const totalHours = formatHoursMinutes(day.totalDurationHours)
 
-        // Escape specific chars for CSV
-        const escape = (val: string) => `"${val.replace(/"/g, '""')}"`
+        return `    <tr${!day.isWorkDay ? ' style="background-color: #f5f5f5;"' : ''}>
+        <td style="font-weight: 500;">${escapeHtml(date)}</td>
+        <td>${escapeHtml(dayName)}</td>
+        <td>${escapeHtml(startTime)}</td>
+        <td>${escapeHtml(endTime)}</td>
+        <td style="font-family: monospace; text-align: right;">${escapeHtml(totalHours)}</td>
+    </tr>`
+    }).join("\n")
 
-        return [
-            date,
-            dayName,
-            escape(employeeName),
-            startTime,
-            endTime,
-            duration,
-            status,
-            isManual,
-            escape(notes)
-        ].join(",")
-    })
+    // Build HTML table with clean, professional styling for Word
+    const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 11pt;
+            border: 1px solid #e0e0e0;
+        }
+        th {
+            background-color: #f8f9fa;
+            color: #1a1a1a;
+            font-weight: 600;
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 2px solid #e0e0e0;
+            border-right: 1px solid #e0e0e0;
+        }
+        th:last-child {
+            border-right: none;
+        }
+        td {
+            padding: 10px 16px;
+            border-bottom: 1px solid #e0e0e0;
+            border-right: 1px solid #e0e0e0;
+            color: #333;
+        }
+        td:last-child {
+            border-right: none;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <table>
+        <thead>
+            <tr>
+${headers.map(h => `                <th>${escapeHtml(h)}</th>`).join("\n")}
+            </tr>
+        </thead>
+        <tbody>
+${tableRows}
+        </tbody>
+    </table>
+</body>
+</html>`
 
-    const csvContent = [headers.join(","), ...rows].join("\n")
-    const BOM = "\uFEFF" // Add BOM for Excel to open UTF-8 correctly
-
-    return new NextResponse(BOM + csvContent, {
+    return new NextResponse(htmlContent, {
         headers: {
-            "Content-Type": "text/csv; charset=utf-8",
-            "Content-Disposition": `attachment; filename="report-${user.name}-${month}-${year}.csv"`
+            "Content-Type": "application/vnd.ms-word; charset=utf-8",
+            "Content-Disposition": `attachment; filename="report-${user.name}-${month}-${year}.doc"`
         }
     })
 }
