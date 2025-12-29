@@ -194,7 +194,7 @@ export function AddMemberDialog({
                                 id="email"
                                 type="email"
                                 value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                onChange={(e) => setEmail(e.target.value.toLowerCase())}
                                 className="col-span-3"
                                 placeholder="user@example.com"
                                 required

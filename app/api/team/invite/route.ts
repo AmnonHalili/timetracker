@@ -20,7 +20,9 @@ export async function POST(req: Request) {
     }
 
     try {
-        const { email, role, managerId, jobTitle, chiefType } = await req.json()
+        const body = await req.json()
+        const email = body.email ? body.email.toLowerCase() : ""
+        const { role, managerId, jobTitle, chiefType } = body
 
         if (!email) {
             return NextResponse.json({ message: "Email is required" }, { status: 400 })

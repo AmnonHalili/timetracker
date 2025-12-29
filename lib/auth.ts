@@ -32,8 +32,10 @@ export const authOptions: NextAuthOptions = {
                     throw new Error("Missing credentials")
                 }
 
+                const normalizedEmail = credentials.email.toLowerCase()
+
                 const user = await prisma.user.findUnique({
-                    where: { email: credentials.email },
+                    where: { email: normalizedEmail },
                 })
 
                 if (!user) {
