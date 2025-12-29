@@ -107,6 +107,10 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
     const [selectedChiefType, setSelectedChiefType] = useState<'partner' | 'independent' | null>(null)
     const [savingChiefType, setSavingChiefType] = useState(false)
 
+    // Pending changes from AssignManagerDialog
+    const [pendingManagerId, setPendingManagerId] = useState<string | undefined>(undefined)
+    const [pendingChiefType, setPendingChiefType] = useState<'partner' | 'independent' | null | undefined>(undefined)
+
     const daysOfWeek = [
         { value: 0, label: t('days.sunday') },
         { value: 1, label: t('days.monday') },
@@ -183,6 +187,8 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
         setShowChiefTypeDialog(false)
         setSelectedChiefType(null)
         setPendingSecondaryManagers([])
+        setPendingManagerId(undefined)
+        setPendingChiefType(undefined)
     }
 
     const handleSaveChiefType = async () => {
@@ -782,7 +788,13 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     employee={selectedUser as any}
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     managers={users.filter(u => u.id !== selectedUser.id && (u.role === 'ADMIN' || u.role === 'MANAGER')) as any}
+                    onManagerChange={(managerId, chiefType) => {
+                        setPendingManagerId(managerId === null ? "none" : managerId)
+                        setPendingChiefType(chiefType)
+                        setShowManagerDialog(false)
+                    }}
                 />
             )}
 
