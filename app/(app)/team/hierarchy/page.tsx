@@ -346,8 +346,8 @@ export default function HierarchyPage() {
         }
     }, [])
 
-    // Online status tracking polling and heartbeart handled by hook
-    const { onlineUserIds } = useOnlineStatus()
+    // Online status tracking polling only (heartbeat is global)
+    const { onlineUserIds } = useOnlineStatus({ enableHeartbeat: false, enablePolling: true })
 
     const handleAddClick = (parentId: string, parentName: string) => {
         setTargetParentId(parentId)

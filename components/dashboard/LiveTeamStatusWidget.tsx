@@ -10,8 +10,10 @@ interface LiveTeamStatusWidgetProps {
 
 export function LiveTeamStatusWidget({ initialStatus = [] }: LiveTeamStatusWidgetProps) {
     const [teamStatus, setTeamStatus] = useState(initialStatus)
-    // We import useOnlineStatus just to trigger the heartbeat/polling mechanism globally if this widget is active
-    useOnlineStatus()
+    // Heartbeat is now handled globally by AppLayout -> HeartbeatTracker
+    // We don't need to poll generic online status here as this widget fetches detailed team status separately
+    // useOnlineStatus() - removed
+
 
     useEffect(() => {
         const fetchStatus = async () => {

@@ -5,13 +5,19 @@ import { useEffect, useState } from "react"
 
 const POLLING_INTERVAL = 30000 // 30 seconds
 
-export function useOnlineStatus() {
+export function useOnlineStatus({
+    enableHeartbeat = true,
+    enablePolling = true
+}: {
+    enableHeartbeat?: boolean;
+    enablePolling?: boolean
+} = {}) {
     const { data: session } = useSession()
     const [onlineUserIds, setOnlineUserIds] = useState<string[]>([])
 
     // Poll for online users
     useEffect(() => {
-        if (!session?.user?.id) return
+        if (!session?.user?.id || !enablePolling) return
 
         const fetchOnlineUsers = async () => {
             try {
@@ -32,11 +38,11 @@ export function useOnlineStatus() {
         const intervalId = setInterval(fetchOnlineUsers, POLLING_INTERVAL)
 
         return () => clearInterval(intervalId)
-    }, [session])
+    }, [session, enablePolling])
 
     // Send heartbeat
     useEffect(() => {
-        if (!session?.user?.id) return
+        if (!session?.user?.id || !enableHeartbeat) return
 
         const sendHeartbeat = async () => {
             try {
@@ -53,7 +59,7 @@ export function useOnlineStatus() {
         const intervalId = setInterval(sendHeartbeat, POLLING_INTERVAL)
 
         return () => clearInterval(intervalId)
-    }, [session])
+    }, [session, enableHeartbeat])
 
     return { onlineUserIds }
 }

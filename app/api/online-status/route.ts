@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
+export const dynamic = 'force-dynamic'
+
 // Cleanup interval - remove users who haven't pinged in 90 seconds (Database query handles this filter)
 const ONLINE_THRESHOLD = 90000 // 90 seconds
 
@@ -37,13 +39,24 @@ export async function GET() {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
         }
 
+        // Get current user's project
+        const currentUser = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { projectId: true }
+        })
+
+        if (!currentUser?.projectId) {
+            // If no project, they can only see themselves (or no one)
+            return NextResponse.json({ onlineUsers: [session.user.id] })
+        }
+
         // Calculate threshold for active users
         const threshold = new Date(Date.now() - ONLINE_THRESHOLD)
 
-        // Fetch users active since threshold
-        // Optimizing: only select ID
+        // Fetch users active since threshold AND in the same project
         const activeUsers = await prisma.user.findMany({
             where: {
+                projectId: currentUser.projectId,
                 lastSeen: {
                     gt: threshold
                 }

@@ -5,6 +5,8 @@ import { AccessibilityButton } from "@/components/accessibility/AccessibilityBut
 import { AppHeader } from "@/components/layout/AppHeader"
 import { AdBanner } from "@/components/ads/AdBanner"
 
+import { HeartbeatTracker } from "@/components/auth/HeartbeatTracker"
+
 export default function AppLayout({
     children,
 }: {
@@ -12,6 +14,7 @@ export default function AppLayout({
 }) {
     return (
         <div className="flex h-screen overflow-hidden bg-background">
+            <HeartbeatTracker />
             <Sidebar />
             <main className="flex-1 overflow-y-scroll" id="main-content" role="main">
                 <AppHeader />
