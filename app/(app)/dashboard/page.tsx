@@ -51,7 +51,11 @@ export default async function DashboardPage() {
             jobTitle: true,
             dailyTarget: true,
             workDays: true,
+            dailyTarget: true,
+            workDays: true,
             createdAt: true,
+            projectId: true, // Required for team status logic
+            pendingProjectId: true, // Required for pending banner
             timeEntries: {
                 select: {
                     id: true,
@@ -160,8 +164,8 @@ export default async function DashboardPage() {
         lastActive?: Date;
     }> = []
 
-    // Only fetch team status if admin
-    if (user.role === "ADMIN" && user.projectId) {
+    // Fetch team status for all project members
+    if (user.projectId) {
         const projectUsers = await prisma.user.findMany({
             where: {
                 projectId: user.projectId,
@@ -238,7 +242,7 @@ export default async function DashboardPage() {
 
     // Determine if sidebar (Stats / Team Status) should be shown
     const showStats = user.dailyTarget !== null
-    const showTeamStatus = user.role === "ADMIN" && user.projectId
+    const showTeamStatus = !!user.projectId
     const showSidebar = showStats || showTeamStatus
 
     return (
@@ -255,7 +259,7 @@ export default async function DashboardPage() {
                 </div>
             )}
 
-            <div className={`grid grid-cols-1 ${showSidebar ? "lg:grid-cols-[1fr_220px]" : ""} gap-8 items-start`}>
+            <div className={`grid grid-cols-1 ${showSidebar ? "md:grid-cols-[1fr_220px]" : ""} gap-8 items-start`}>
                 {/* Main Content Area */}
                 <div className="space-y-0 md:space-y-8 min-w-0">
                     <TimePunchHeader
@@ -281,9 +285,9 @@ export default async function DashboardPage() {
 
                 {/* Right Sidebar */}
                 {showSidebar && (
-                    <div className="lg:sticky lg:top-8 space-y-8">
+                    <div className="md:sticky md:top-8 space-y-8">
                         {/* Spacer for Private Workspace Alignment */}
-                        {isPrivateWorkspace && <div className="hidden lg:block h-[40px]" />}
+                        {isPrivateWorkspace && <div className="hidden md:block h-[40px]" />}
 
                         {/* Stats Widget (Conditionally visible) */}
                         {showStats && (
@@ -292,7 +296,7 @@ export default async function DashboardPage() {
 
                         {/* Team Status (Admin Only) - Hidden on mobile, shown on desktop */}
                         {showTeamStatus && (
-                            <div className={`${showStats ? "pt-12" : ""} hidden lg:block`}>
+                            <div className={`${showStats ? "pt-12" : ""} hidden md:block`}>
                                 <LiveTeamStatusWidget initialStatus={teamStatus} />
                             </div>
                         )}

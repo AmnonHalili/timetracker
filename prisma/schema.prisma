@@ -1,93 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 model User {
-  id               String    @id @default(cuid())
-  email            String    @unique
-  emailVerified    DateTime?
-  password         String?
-  name             String
-  role             Role      @default(EMPLOYEE)
-  jobTitle         String? // Custom role title e.g. CEO, HR Manager
-  status           Status    @default(PENDING)
-  dailyTarget      Float? // No default, starts empty
-  workDays         Int[] // [0,1,2,3,4] for Sun-Thu
-  workMode         WorkMode  @default(TIME_BASED)
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  image            String? // Base64 or URL
-  resetToken       String?
-  resetTokenExpiry DateTime?
-  lastSeen         DateTime? // Track online status
-
-  timeEntries   TimeEntry[]
-  workdays      Workday[]
-  tasks         Task[]
-  notifications Notification[]
-
-  // Group membership
-  groupId       String?
-  group         Group?  @relation("GroupMembers", fields: [groupId], references: [id], onDelete: SetNull)
-  managedGroups Group[] @relation("GroupManager")
-
-  // Dynamic Hierarchy
-  managerId     String?
-  manager       User?   @relation("UserHierarchy", fields: [managerId], references: [id], onDelete: SetNull)
-  directReports User[]  @relation("UserHierarchy")
-
-  // Shared Chiefs: Chiefs with the same sharedChiefGroupId are partners
-  // They share the same employees and permissions
-  sharedChiefGroupId String?
-
-  // Deprecated: Kept to prevent data loss in Vercel build
-  secondaryManagerId String?
-
-  // Secondary Manager Relations (Matrix Management)
-  secondaryManagers     SecondaryManager[] @relation("SecondaryManagers")
-  secondaryManagedUsers SecondaryManager[] @relation("SecondaryManagedUsers")
-
-  projectId String?
-  project   Project? @relation(fields: [projectId], references: [id])
-
-  // Join Requests
-  pendingProjectId String?
-
-  // Events
-  createdEvents     Event[]            @relation("CreatedEvents")
-  eventParticipants EventParticipant[]
-
-  // Stripe Subscription
-  stripeCustomerId       String?   @unique
-  stripeSubscriptionId   String?   @unique
-  stripePriceId          String?
+  id                     String               @id @default(cuid())
+  email                  String               @unique
+  emailVerified          DateTime?
+  password               String?
+  name                   String
+  role                   Role                 @default(EMPLOYEE)
+  jobTitle               String?
+  status                 Status               @default(PENDING)
+  dailyTarget            Float?
+  workDays               Int[]
+  workMode               WorkMode             @default(TIME_BASED)
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+  image                  String?
+  resetToken             String?
+  resetTokenExpiry       DateTime?
+  groupId                String?
+  managerId              String?
+  projectId              String?
+  pendingProjectId       String?
+  secondaryManagerId     String?
+  sharedChiefGroupId     String?
+  lastSeen               DateTime?
+  plan                   Plan                 @default(FREE)
   stripeCurrentPeriodEnd DateTime?
-  plan                   Plan      @default(FREE)
-
-  // Analytics
-  analyticsSnapshots AnalyticsSnapshot[]
-  insightSettings    UserInsightSettings?
-  recommendations    Recommendation[]
-
-  // NextAuth
-  accounts Account[]
-  sessions Session[]
+  stripeCustomerId       String?              @unique
+  stripePriceId          String?
+  stripeSubscriptionId   String?              @unique
+  accounts               Account[]
+  analyticsSnapshots     AnalyticsSnapshot[]
+  createdEvents          Event[]              @relation("CreatedEvents")
+  eventParticipants      EventParticipant[]
+  managedGroups          Group[]              @relation("GroupManager")
+  notifications          Notification[]
+  recommendations        Recommendation[]
+  secondaryManagers      SecondaryManager[]   @relation("SecondaryManagers")
+  secondaryManagedUsers  SecondaryManager[]   @relation("SecondaryManagedUsers")
+  sessions               Session[]
+  timeEntries            TimeEntry[]
+  group                  Group?               @relation("GroupMembers", fields: [groupId], references: [id])
+  manager                User?                @relation("UserHierarchy", fields: [managerId], references: [id])
+  directReports          User[]               @relation("UserHierarchy")
+  project                Project?             @relation(fields: [projectId], references: [id])
+  insightSettings        UserInsightSettings?
+  workdays               Workday[]
+  tasks                  Task[]               @relation("TaskToUser")
 }
 
 model SecondaryManager {
   id          String   @id @default(cuid())
   employeeId  String
-  employee    User     @relation("SecondaryManagers", fields: [employeeId], references: [id], onDelete: Cascade)
   managerId   String
-  manager     User     @relation("SecondaryManagedUsers", fields: [managerId], references: [id], onDelete: Cascade)
-  permissions String[] // e.g., ["VIEW_TIME", "EDIT_SETTINGS", "APPROVE_TIME", "MANAGE_TASKS"]
+  permissions String[]
   createdAt   DateTime @default(now())
+  employee    User     @relation("SecondaryManagers", fields: [employeeId], references: [id], onDelete: Cascade)
+  manager     User     @relation("SecondaryManagedUsers", fields: [managerId], references: [id], onDelete: Cascade)
 
   @@unique([employeeId, managerId])
   @@index([employeeId])
@@ -95,23 +72,21 @@ model SecondaryManager {
 }
 
 model Project {
-  id        String   @id @default(cuid())
-  name      String
-  joinCode  String   @unique @default(cuid()) // Will change default in logic, but need a default for migration or make optional first. Actually let's make it mandatory but we will handle migration or just reset db since it's dev. Better: String @unique
-  logo      String? // URL or Base64
-  workMode  WorkMode @default(TIME_BASED)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  users     User[]
-  groups    Group[]
-  events    Event[]
-
-  // Work Location (Optional GPS verification)
+  id                    String   @id @default(cuid())
+  name                  String
+  joinCode              String   @unique @default(cuid())
+  logo                  String?
+  workMode              WorkMode @default(TIME_BASED)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  workLocationAddress   String?
   workLocationLatitude  Float?
   workLocationLongitude Float?
-  workLocationRadius    Float?  @default(150) // in meters, default 150m
-  workLocationAddress   String? // Optional human-readable address
-  isRemoteWork          Boolean @default(true) // If true, no location verification required (for remote teams)
+  workLocationRadius    Float?   @default(150)
+  isRemoteWork          Boolean  @default(true)
+  events                Event[]
+  groups                Group[]
+  users                 User[]
 }
 
 model Group {
@@ -120,106 +95,246 @@ model Group {
   description String?
   color       String   @default("#3B82F6")
   projectId   String
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   managerId   String?
-  manager     User?    @relation("GroupManager", fields: [managerId], references: [id], onDelete: SetNull)
-  members     User[]   @relation("GroupMembers")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  manager     User?    @relation("GroupManager", fields: [managerId], references: [id])
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  members     User[]   @relation("GroupMembers")
 }
 
 model Workday {
-  id          String    @id @default(cuid())
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workdayStartTime DateTime
-  workdayEndTime   DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  // GPS Location tracking (optional)
-  locationRequired      Boolean @default(false) // Whether location was required
-  startLocationLat      Float? // GPS coordinates at start
+  id                    String    @id @default(cuid())
+  userId                String
+  workdayStartTime      DateTime
+  workdayEndTime        DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  locationRequired      Boolean   @default(false)
+  startLocationLat      Float?
   startLocationLng      Float?
-  startLocationVerified Boolean @default(false) // Whether location was verified at start
-  endLocationLat        Float? // GPS coordinates at end
+  startLocationVerified Boolean   @default(false)
+  endLocationLat        Float?
   endLocationLng        Float?
-  endLocationVerified   Boolean @default(false) // Whether location was verified at end
-  locationStatus        String? // "verified", "unavailable", "outside_area", "not_required"
+  endLocationVerified   Boolean   @default(false)
+  locationStatus        String?
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, workdayStartTime])
   @@index([userId])
 }
 
 model TimeEntry {
-  id          String      @id @default(cuid())
+  id          String       @id @default(cuid())
   userId      String
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   startTime   DateTime
   endTime     DateTime?
   description String?
-  isManual    Boolean     @default(false)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  isManual    Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  subtaskId   String?
   breaks      TimeBreak[]
-
-  tasks     Task[]
-  subtaskId String?
-  subtask   SubTaskItem? @relation(fields: [subtaskId], references: [id], onDelete: SetNull)
-
-  // Note: TimeEntry is now independent from Workday - it only tracks task-focused work time
+  subtask     SubTaskItem? @relation(fields: [subtaskId], references: [id])
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks       Task[]       @relation("TaskToTimeEntry")
 }
 
 model TimeBreak {
   id          String    @id @default(cuid())
   timeEntryId String
-  timeEntry   TimeEntry @relation(fields: [timeEntryId], references: [id], onDelete: Cascade)
   startTime   DateTime
   endTime     DateTime?
-  reason      String? // e.g., "left_work_area", "manual", "lunch"
-  locationLat Float? // GPS coordinates when break started
+  locationLat Float?
   locationLng Float?
+  reason      String?
+  timeEntry   TimeEntry @relation(fields: [timeEntryId], references: [id], onDelete: Cascade)
 }
 
 model Task {
-  id          String       @id @default(cuid())
+  id          String          @id @default(cuid())
   title       String
   description String?
-  status      TaskStatus   @default(TODO)
-  priority    TaskPriority @default(MEDIUM)
+  status      TaskStatus      @default(TODO)
+  priority    TaskPriority    @default(MEDIUM)
   deadline    DateTime?
-
-  // Deprecated but kept for now to avoid data loss during rapid proto
-  isCompleted Boolean @default(false)
-
-  // assignedToId String // Removed for Many-to-Many
-  // assignedTo   User         @relation(fields: [assignedToId], references: [id], onDelete: Cascade) // Removed
-  assignees User[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  timeEntries TimeEntry[]
+  isCompleted Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
   checklist   ChecklistItem[]
   subtasks    SubTaskItem[]
+  timeEntries TimeEntry[]     @relation("TaskToTimeEntry")
+  assignees   User[]          @relation("TaskToUser")
 }
 
 model ChecklistItem {
   id        String   @id @default(cuid())
   taskId    String
-  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   text      String
   isDone    Boolean  @default(false)
   createdAt DateTime @default(now())
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
 }
 
 model SubTaskItem {
   id          String      @id @default(cuid())
   taskId      String
-  task        Task        @relation(fields: [taskId], references: [id], onDelete: Cascade)
   title       String
   isDone      Boolean     @default(false)
   createdAt   DateTime    @default(now())
+  task        Task        @relation(fields: [taskId], references: [id], onDelete: Cascade)
   timeEntries TimeEntry[]
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  link      String?
+  type      NotificationType @default(INFO)
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Event {
+  id            String             @id @default(cuid())
+  title         String
+  description   String?
+  startTime     DateTime
+  endTime       DateTime
+  allDay        Boolean            @default(false)
+  location      String?
+  type          EventType          @default(MEETING)
+  recurrence    RecurrenceType?
+  recurrenceEnd DateTime?
+  createdById   String
+  projectId     String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  createdBy     User               @relation("CreatedEvents", fields: [createdById], references: [id], onDelete: Cascade)
+  project       Project?           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  participants  EventParticipant[]
+  reminders     EventReminder[]
+
+  @@index([createdById])
+  @@index([projectId])
+  @@index([startTime])
+}
+
+model EventParticipant {
+  id      String            @id @default(cuid())
+  eventId String
+  userId  String
+  status  ParticipantStatus @default(PENDING)
+  event   Event             @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user    User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([userId])
+}
+
+model EventReminder {
+  id            String  @id @default(cuid())
+  eventId       String
+  minutesBefore Int
+  sent          Boolean @default(false)
+  event         Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model AnalyticsSnapshot {
+  id              String   @id @default(cuid())
+  userId          String
+  date            DateTime @default(now())
+  totalHours      Float
+  productiveHours Float
+  tasksCompleted  Int
+  breaksTaken     Int
+  focusScore      Float
+  efficiencyScore Float
+  balanceScore    Float
+  peakHourStart   Int?
+  peakHourEnd     Int?
+  longestSession  Int
+  averageSession  Int
+  burnoutRisk     Boolean  @default(false)
+  overtimeHours   Float    @default(0)
+  lateWorkHours   Float    @default(0)
+  weekendWork     Float    @default(0)
+  consecutiveDays Int      @default(0)
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+}
+
+model UserInsightSettings {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  dailyHoursWarning   Float    @default(10)
+  weeklyHoursWarning  Float    @default(50)
+  minBreaksPerDay     Int      @default(2)
+  maxConsecutiveDays  Int      @default(7)
+  enableWeeklyReport  Boolean  @default(true)
+  enableBurnoutAlerts Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Recommendation {
+  id        String                 @id @default(cuid())
+  userId    String
+  type      RecommendationType
+  priority  RecommendationPriority
+  title     String
+  message   String
+  actionUrl String?
+  dismissed Boolean                @default(false)
+  createdAt DateTime               @default(now())
+  user      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([dismissed])
 }
 
 enum TaskStatus {
@@ -247,18 +362,6 @@ enum Status {
   REJECTED
 }
 
-model Notification {
-  id        String           @id @default(cuid())
-  userId    String
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title     String
-  message   String
-  link      String? // URL to redirect to
-  type      NotificationType @default(INFO)
-  isRead    Boolean          @default(false)
-  createdAt DateTime         @default(now())
-}
-
 enum NotificationType {
   INFO
   WARNING
@@ -267,56 +370,18 @@ enum NotificationType {
 }
 
 enum WorkMode {
-  OUTPUT_BASED // Net work (Total - Breaks)
-  TIME_BASED // Time at work (Total including Breaks)
-  PROJECT_BASED // Deprecated: Kept for build backward compatibility
-}
-
-model Event {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  startTime   DateTime
-  endTime     DateTime
-  allDay      Boolean  @default(false)
-  location    String?
-
-  // Type of event
-  type EventType @default(MEETING)
-
-  // Optional recurrence
-  recurrence    RecurrenceType?
-  recurrenceEnd DateTime?
-
-  // Relations
-  createdBy   User   @relation("CreatedEvents", fields: [createdById], references: [id], onDelete: Cascade)
-  createdById String
-
-  // Optional project relation
-  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  projectId String?
-
-  // Participant tracking
-  participants EventParticipant[]
-
-  // Reminders
-  reminders EventReminder[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([createdById])
-  @@index([projectId])
-  @@index([startTime])
+  OUTPUT_BASED
+  TIME_BASED
+  PROJECT_BASED
 }
 
 enum EventType {
-  MEETING // פגישה
-  APPOINTMENT // תור
-  TASK_TIME // זמן מוקצב למשימה
-  BREAK // הפסקה
-  PERSONAL // אישי
-  OTHER // אחר
+  MEETING
+  APPOINTMENT
+  TASK_TIME
+  BREAK
+  PERSONAL
+  OTHER
 }
 
 enum RecurrenceType {
@@ -325,142 +390,11 @@ enum RecurrenceType {
   MONTHLY
 }
 
-model EventParticipant {
-  id      String            @id @default(cuid())
-  event   Event             @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  eventId String
-  user    User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId  String
-  status  ParticipantStatus @default(PENDING)
-
-  @@unique([eventId, userId])
-  @@index([userId])
-}
-
 enum ParticipantStatus {
   PENDING
   ACCEPTED
   DECLINED
   TENTATIVE
-}
-
-model EventReminder {
-  id            String  @id @default(cuid())
-  event         Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  eventId       String
-  minutesBefore Int // כמה דקות לפני להזכיר
-  sent          Boolean @default(false)
-
-  @@index([eventId])
-}
-
-// NextAuth Models
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-}
-
-// Analytics Models for AI Productivity Insights
-model AnalyticsSnapshot {
-  id     String   @id @default(cuid())
-  userId String
-  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date   DateTime @default(now())
-
-  // Work Metrics
-  totalHours      Float
-  productiveHours Float
-  tasksCompleted  Int
-  breaksTaken     Int
-
-  // Scores (0-100)
-  focusScore      Float
-  efficiencyScore Float
-  balanceScore    Float
-
-  // Patterns
-  peakHourStart  Int?
-  peakHourEnd    Int?
-  longestSession Int // in minutes
-  averageSession Int // in minutes
-
-  // Risk Indicators
-  burnoutRisk     Boolean @default(false)
-  overtimeHours   Float   @default(0)
-  lateWorkHours   Float   @default(0)
-  weekendWork     Float   @default(0)
-  consecutiveDays Int     @default(0)
-
-  createdAt DateTime @default(now())
-
-  @@unique([userId, date])
-  @@index([userId])
-  @@index([date])
-}
-
-model UserInsightSettings {
-  id     String @id @default(cuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Customizable thresholds
-  dailyHoursWarning  Float @default(10)
-  weeklyHoursWarning Float @default(50)
-  minBreaksPerDay    Int   @default(2)
-  maxConsecutiveDays Int   @default(7)
-
-  // Preferences
-  enableWeeklyReport  Boolean @default(true)
-  enableBurnoutAlerts Boolean @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Recommendation {
-  id        String                 @id @default(cuid())
-  userId    String
-  user      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      RecommendationType
-  priority  RecommendationPriority
-  title     String
-  message   String
-  actionUrl String?
-  dismissed Boolean                @default(false)
-  createdAt DateTime               @default(now())
-
-  @@index([userId])
-  @@index([dismissed])
 }
 
 enum RecommendationType {
