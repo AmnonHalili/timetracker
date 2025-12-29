@@ -88,7 +88,7 @@ export function TimePunchHeader({ workLocation, activeEntry }: TimePunchHeaderPr
                     setCurrentLocation(location)
                     const withinArea = isWithinWorkArea(location, workLocation)
                     setIsOutsideArea(!withinArea)
-                    
+
                     if (!withinArea && !isOutsideArea) {
                         // Just left the area
                         setShowOutsideDialog(true)
@@ -224,7 +224,7 @@ export function TimePunchHeader({ workLocation, activeEntry }: TimePunchHeaderPr
                     console.error("Error getting location for end:", error)
                 }
             }
-            
+
             const response = await fetch("/api/time-entries", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -328,12 +328,12 @@ export function TimePunchHeader({ workLocation, activeEntry }: TimePunchHeaderPr
                         {/* Action Button */}
                         <Button
                             onClick={isWorking ? handleEndDay : handleStartDay}
-                            disabled={isProcessing || (workLocation && locationStatus === "outside_area" && !isWorking)}
+                            disabled={isProcessing || (workLocation && locationStatus === "outside_area" && !isWorking) || undefined}
                             size="lg"
                             className={`
                                 min-w-[140px] h-12 text-base font-bold
-                                ${isWorking 
-                                    ? "bg-red-600 hover:bg-red-700 text-white" 
+                                ${isWorking
+                                    ? "bg-red-600 hover:bg-red-700 text-white"
                                     : "bg-green-600 hover:bg-green-700 text-white"
                                 }
                                 transition-all duration-200
@@ -375,7 +375,7 @@ export function TimePunchHeader({ workLocation, activeEntry }: TimePunchHeaderPr
                         <AlertDialogTitle>Outside Work Area</AlertDialogTitle>
                         <AlertDialogDescription>
                             You are outside the allowed work area ({workLocation?.radius}m radius).
-                            {isWorking 
+                            {isWorking
                                 ? " Your work session will be marked as a break until you return."
                                 : " You must be within the work area to start your day."
                             }
