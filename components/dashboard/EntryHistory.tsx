@@ -312,8 +312,16 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
                                     </div>
 
                                     {/* Net Work and Menu button - centered vertically */}
-                                    <div className={`flex items-center gap-6 shrink-0 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                                        {/* Menu button */}
+                                    <div className={`flex items-center gap-6 shrink-0 ${isRTL ? 'flex-row-reverse' : 'flex-row'}`}>
+                                        {/* Net Work - first in LTR, second in RTL */}
+                                        <div className={`${isRTL ? 'text-left' : 'text-right'}`}>
+                                            <div className="text-[10px] uppercase text-muted-foreground font-semibold tracking-wider">{t('timeEntries.netWork')}</div>
+                                            <div className="font-mono font-bold text-primary">
+                                                {getDuration(entry.startTime, entry.endTime, entry.breaks)}
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Menu button - second in LTR, first in RTL */}
                                         <div className="flex items-center shrink-0">
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
@@ -332,13 +340,6 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
-                                        </div>
-                                        
-                                        <div className="text-right">
-                                            <div className="text-[10px] uppercase text-muted-foreground font-semibold tracking-wider">{t('timeEntries.netWork')}</div>
-                                            <div className="font-mono font-bold text-primary">
-                                                {getDuration(entry.startTime, entry.endTime, entry.breaks)}
-                                            </div>
                                         </div>
                                     </div>
                                 </div>
