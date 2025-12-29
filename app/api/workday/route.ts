@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 import { calculateDistance } from "@/lib/gps-utils"
-import { startOfDay, endOfDay, isSameDay } from "date-fns"
+import { startOfDay, endOfDay } from "date-fns"
 
 // GET: Fetch active workday for today
 export async function GET() {
@@ -21,22 +21,22 @@ export async function GET() {
         let activeWorkday
         try {
             activeWorkday = await prisma.workday.findFirst({
-            where: {
-                userId: session.user.id,
-                workdayStartTime: {
-                    gte: dayStart,
-                    lte: dayEnd,
+                where: {
+                    userId: session.user.id,
+                    workdayStartTime: {
+                        gte: dayStart,
+                        lte: dayEnd,
+                    },
+                    workdayEndTime: null, // Active workday
                 },
-                workdayEndTime: null, // Active workday
-            },
-            select: {
-                id: true,
-                userId: true,
-                workdayStartTime: true,
-                workdayEndTime: true,
-                locationStatus: true,
-                locationRequired: true,
-            },
+                select: {
+                    id: true,
+                    userId: true,
+                    workdayStartTime: true,
+                    workdayEndTime: true,
+                    locationStatus: true,
+                    locationRequired: true,
+                },
             })
         } catch (modelError) {
             // Workday model doesn't exist yet - return null
@@ -74,17 +74,17 @@ export async function POST(req: Request) {
             let activeWorkday
             try {
                 activeWorkday = await prisma.workday.findFirst({
-                where: {
-                    userId: session.user.id,
-                    workdayStartTime: {
-                        gte: dayStart,
-                        lte: dayEnd,
+                    where: {
+                        userId: session.user.id,
+                        workdayStartTime: {
+                            gte: dayStart,
+                            lte: dayEnd,
+                        },
+                        workdayEndTime: null,
                     },
-                    workdayEndTime: null,
-                },
-                select: {
-                    id: true,
-                },
+                    select: {
+                        id: true,
+                    },
                 })
             } catch (modelError) {
                 // Workday model doesn't exist yet

@@ -269,7 +269,7 @@ export function AddMemberDialog({
                         </div>
 
                         {/* Chief Type Selection - Shown when adding a chief without a manager */}
-                        {role === "ADMIN" && (managerId === "unassigned" || !managerId) && (
+                        {showChiefType && (
                             <div className="space-y-4 pt-2">
                                 <div>
                                     <Label className="text-base font-semibold">
