@@ -13,7 +13,7 @@ interface ExportButtonProps {
     projectUsers?: { id: string; name: string | null; email: string }[]
 }
 
-export function ExportButton({ userId, year, month, projectUsers = [] }: ExportButtonProps) {
+export function ExportButton({ userId, year, month }: ExportButtonProps) {
     const searchParams = useSearchParams()
     const { t } = useLanguage()
     const [loading, setLoading] = useState(false)
