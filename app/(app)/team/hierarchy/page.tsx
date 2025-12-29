@@ -542,22 +542,7 @@ export default function HierarchyPage() {
                                 </div>
                             )}
 
-                            {/* Add Chief Button - Only for ADMIN */}
-                            {hasProject && session?.user?.role === "ADMIN" && (
-                                <AddMemberDialog
-                                    triggerLabel={t('hierarchy.addChief')}
-                                    defaultRole="ADMIN"
-                                    lockRole={true}
-                                    hideManagerSelect={true}
-                                    onSuccess={fetchHierarchy}
-                                    customTrigger={
-                                        <Button variant="outline" size="sm" className="gap-2 bg-background/50 backdrop-blur-sm h-8 px-2">
-                                            <UserPlus className="h-4 w-4" />
-                                            <span className="hidden sm:inline">{t('hierarchy.addChief')}</span>
-                                        </Button>
-                                    }
-                                />
-                            )}
+                            {/* Add Chief Button - Moved to Add Member Dialog */}
                         </div>
                     </div>
 
