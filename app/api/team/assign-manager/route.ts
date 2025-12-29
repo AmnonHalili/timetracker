@@ -20,7 +20,7 @@ export async function PATCH(req: Request) {
     }
 
     try {
-        const { employeeId, managerId } = await req.json()
+        const { employeeId, managerId, chiefType } = await req.json()
 
         if (!employeeId) {
             return NextResponse.json({ message: "Employee ID is required" }, { status: 400 })
@@ -78,10 +78,20 @@ export async function PATCH(req: Request) {
             }
         }
 
+        // Prepare update data
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const updateData: any = { managerId: managerId || null }
+
+        // Logic for Chief Type (when removing manager from an ADMIN)
+        if (!managerId && employee.role === "ADMIN" && chiefType) {
+            // Effectively just setting managerId to null (which is already done).
+            // We allow this flow to proceed.
+        }
+
         // Update the assignment
         const updatedUser = await prisma.user.update({
             where: { id: employeeId },
-            data: { managerId: managerId || null },
+            data: updateData,
             select: { id: true, name: true, managerId: true }
         })
 
@@ -94,4 +104,3 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ message: "Failed to assign manager" }, { status: 500 })
     }
 }
-
