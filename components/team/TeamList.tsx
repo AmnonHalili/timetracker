@@ -96,7 +96,7 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
 
     // Manager edit dialog state
     const [showManagerDialog, setShowManagerDialog] = useState(false)
-
+    
     // Chief type edit state
     const [showChiefTypeDialog, setShowChiefTypeDialog] = useState(false)
     const [selectedChiefType, setSelectedChiefType] = useState<'partner' | 'independent' | null>(null)
@@ -126,7 +126,7 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
             const res = await fetch(`/api/team/hierarchy`)
             if (res.ok) {
                 const data = await res.json()
-                const foundUser = data.users.find((u: User & {
+                const foundUser = data.users.find((u: User & { 
                     secondaryManagers: Array<{ managerId: string; permissions: string[] }>
                     sharedChiefGroupId?: string | null
                 }) => u.id === user.id)
@@ -340,10 +340,10 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
 
             // Close dialog first
             closeDialog()
-
+            
             // Refresh the page to update the team list (this will re-filter users based on new secondary manager relationships)
             router.refresh()
-
+            
             // Show success message
             alert(t('team.secondaryManagersUpdated') || "Secondary managers updated successfully")
         } catch (error) {
@@ -516,7 +516,7 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
                                             {(() => {
                                                 // Use allUsers if available, otherwise fall back to users
                                                 const searchUsers = allUsers || users
-
+                                                
                                                 // Check if the user has a direct manager (managerId)
                                                 if (selectedUser.managerId) {
                                                     // Find the direct manager in all users (not just visible ones)
@@ -539,8 +539,8 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
                                                         const allSharedChiefs = searchUsers.filter(u => {
                                                             const uWithExtras = u as User & { sharedChiefGroupId?: string | null }
                                                             return u.role === 'ADMIN' &&
-                                                                uWithExtras.sharedChiefGroupId === sharedGroupId &&
-                                                                !u.managerId
+                                                                   uWithExtras.sharedChiefGroupId === sharedGroupId &&
+                                                                   !u.managerId
                                                         })
 
                                                         if (allSharedChiefs.length > 0) {
@@ -596,8 +596,9 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
                                                 }
 
                                                 // No managerId - user has no direct manager
+                                                const selectedUserWithExtras = selectedUser as User & { sharedChiefGroupId?: string | null }
                                                 const isTopLevelChief = selectedUser.role === 'ADMIN' && !selectedUser.managerId
-
+                                                
                                                 return (
                                                     <div className="space-y-3">
                                                         <p className={`text-sm text-muted-foreground ${isRTL ? 'text-right' : 'text-left'}`}>
@@ -698,10 +699,8 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
                             openDialog(selectedUser)
                         }
                     }}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     employee={selectedUser as any}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    managers={users.filter(u => u.id !== selectedUser.id && (u.role === 'ADMIN' || u.role === 'MANAGER')) as any}
+                    managers={users.filter(u => u.id !== selectedUser.id && (u.role === 'ADMIN' || u.role === 'MANAGER'))}
                 />
             )}
 
