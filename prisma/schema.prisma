@@ -28,6 +28,7 @@ model User {
   lastSeen         DateTime? // Track online status
 
   timeEntries   TimeEntry[]
+  workdays      Workday[]
   tasks         Task[]
   notifications Notification[]
 
@@ -127,6 +128,29 @@ model Group {
   updatedAt   DateTime @updatedAt
 }
 
+model Workday {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workdayStartTime DateTime
+  workdayEndTime   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // GPS Location tracking (optional)
+  locationRequired      Boolean @default(false) // Whether location was required
+  startLocationLat      Float? // GPS coordinates at start
+  startLocationLng      Float?
+  startLocationVerified Boolean @default(false) // Whether location was verified at start
+  endLocationLat        Float? // GPS coordinates at end
+  endLocationLng        Float?
+  endLocationVerified   Boolean @default(false) // Whether location was verified at end
+  locationStatus        String? // "verified", "unavailable", "outside_area", "not_required"
+
+  @@index([userId, workdayStartTime])
+  @@index([userId])
+}
+
 model TimeEntry {
   id          String      @id @default(cuid())
   userId      String
@@ -143,15 +167,7 @@ model TimeEntry {
   subtaskId String?
   subtask   SubTaskItem? @relation(fields: [subtaskId], references: [id], onDelete: SetNull)
 
-  // GPS Location tracking (optional)
-  locationRequired      Boolean @default(false) // Whether location was required for this entry
-  startLocationLat      Float? // GPS coordinates at start
-  startLocationLng      Float?
-  startLocationVerified Boolean @default(false) // Whether location was verified at start
-  endLocationLat        Float? // GPS coordinates at end
-  endLocationLng        Float?
-  endLocationVerified   Boolean @default(false) // Whether location was verified at end
-  locationStatus        String? // "verified", "unavailable", "outside_area", "not_required"
+  // Note: TimeEntry is now independent from Workday - it only tracks task-focused work time
 }
 
 model TimeBreak {

@@ -9,7 +9,8 @@ import { StatsWidget } from "@/components/dashboard/StatsWidget"
 import { LiveTeamStatusWidget } from "@/components/dashboard/LiveTeamStatusWidget"
 import { TimePunchHeader } from "@/components/dashboard/TimePunchHeader"
 
-import { User, TimeEntry, Task, TimeBreak } from "@prisma/client"
+import { User, TimeEntry, Task, TimeBreak, Workday } from "@prisma/client"
+import { startOfDay, endOfDay } from "date-fns"
 
 type DashboardUser = User & {
     timeEntries: (TimeEntry & {
@@ -17,6 +18,7 @@ type DashboardUser = User & {
         tasks: Task[]
         subtask?: { id: string; title: string } | null
     })[]
+    workdays?: Workday[]
     pendingProjectId?: string | null
     project?: {
         workMode: "OUTPUT_BASED" | "TIME_BASED" | "PROJECT_BASED"
@@ -35,9 +37,21 @@ export default async function DashboardPage() {
         redirect("/login")
     }
 
+    const today = new Date()
+    const dayStart = startOfDay(today)
+    const dayEnd = endOfDay(today)
+
     const user = (await prisma.user.findUnique({
         where: { id: session.user.id },
-        include: {
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            jobTitle: true,
+            dailyTarget: true,
+            workDays: true,
+            createdAt: true,
             timeEntries: {
                 select: {
                     id: true,
@@ -49,14 +63,6 @@ export default async function DashboardPage() {
                     createdAt: true,
                     updatedAt: true,
                     subtaskId: true,
-                    locationRequired: true,
-                    startLocationLat: true,
-                    startLocationLng: true,
-                    startLocationVerified: true,
-                    endLocationLat: true,
-                    endLocationLng: true,
-                    endLocationVerified: true,
-                    locationStatus: true,
                     breaks: true,
                     tasks: true,
                     subtask: true
@@ -74,6 +80,33 @@ export default async function DashboardPage() {
             }
         },
     })) as unknown as DashboardUser
+
+    // Fetch workdays separately to avoid Prisma client issues until migration is run
+    let activeWorkday = null
+    try {
+        const workdays = await prisma.workday.findMany({
+            where: {
+                userId: session.user.id,
+                workdayStartTime: {
+                    gte: dayStart,
+                    lte: dayEnd,
+                },
+            },
+            select: {
+                id: true,
+                workdayStartTime: true,
+                workdayEndTime: true,
+            },
+            orderBy: {
+                workdayStartTime: 'desc',
+            },
+            take: 1,
+        })
+        activeWorkday = workdays.find(w => !w.workdayEndTime) || null
+    } catch (error) {
+        // If Workday model doesn't exist yet, workday will be null
+        console.warn("Workday model not available yet:", error)
+    }
 
     if (!user) return <div>User not found</div>
 
@@ -244,7 +277,7 @@ export default async function DashboardPage() {
                                     }
                                     : null
                         }
-                        activeEntry={activeEntry || null}
+                        activeWorkday={activeWorkday}
                     />
                     <DashboardContent
                         activeEntry={activeEntry || null}

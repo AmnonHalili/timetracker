@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Pause, Square } from "lucide-react"
 
-import { useState, useEffect, startTransition } from "react"
+import { useState, useEffect, startTransition, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useLanguage } from "@/lib/useLanguage"
@@ -53,6 +53,8 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
     const [manualEnd, setManualEnd] = useState("")
     const [timeError, setTimeError] = useState("")
     const [isDataLoaded, setIsDataLoaded] = useState(!!activeEntry) // Track if server data has loaded - true if we already have activeEntry
+    const inputRef = useRef<HTMLInputElement>(null)
+    const isInputFocusedRef = useRef(false)
 
     // Sync optimistic state with server state when it arrives
     // Preserve optimistic startTime to prevent jumping while allowing smooth updates
@@ -95,6 +97,9 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
     }, [activeEntry])
 
     useEffect(() => {
+        // Don't update description if user is currently typing
+        if (isInputFocusedRef.current) return
+        
         if (optimisticEntry?.description) {
             setDescription(optimisticEntry.description)
         } else if (!optimisticEntry) {
@@ -452,18 +457,23 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped }: ControlBarPro
                         {t('dashboard.whatWorkingOn')}
                     </label>
                     <Input
+                        ref={inputRef}
                         id="work-description"
                         placeholder={t('dashboard.whatWorkingOn')}
                         value={description}
-                        onChange={(e) => {
-                            setDescription(e.target.value)
-                            // Update description on active entry if timer is running
+                        onFocus={() => {
+                            isInputFocusedRef.current = true
+                        }}
+                        onBlur={(e) => {
+                            isInputFocusedRef.current = false
+                            // Save description when input loses focus
                             if (optimisticEntry && activeEntry) {
                                 handleDescriptionUpdate(e.target.value)
                             }
                         }}
-                        onBlur={(e) => {
-                            // Save description when input loses focus
+                        onChange={(e) => {
+                            setDescription(e.target.value)
+                            // Update description on active entry if timer is running
                             if (optimisticEntry && activeEntry) {
                                 handleDescriptionUpdate(e.target.value)
                             }

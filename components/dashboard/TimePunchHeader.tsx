@@ -21,15 +21,15 @@ import {
 
 interface TimePunchHeaderProps {
     workLocation: WorkLocation | null
-    activeEntry: {
+    activeWorkday: {
         id: string
-        startTime: Date | string
+        workdayStartTime: Date | string
     } | null
 }
 
 type LocationStatus = "verified" | "unavailable" | "outside_area" | "not_required" | "checking"
 
-export function TimePunchHeader({ workLocation, activeEntry }: TimePunchHeaderProps) {
+export function TimePunchHeader({ workLocation, activeWorkday }: TimePunchHeaderProps) {
     const router = useRouter()
     const [currentTime, setCurrentTime] = useState(new Date())
     const [locationStatus, setLocationStatus] = useState<LocationStatus>(
@@ -40,9 +40,9 @@ export function TimePunchHeader({ workLocation, activeEntry }: TimePunchHeaderPr
     const [showOutsideDialog, setShowOutsideDialog] = useState(false)
     const [watchId, setWatchId] = useState<number | null>(null)
     const [isOutsideArea, setIsOutsideArea] = useState(false)
-    const [isWorking, setIsWorking] = useState(!!activeEntry)
+    const [isWorking, setIsWorking] = useState(!!activeWorkday)
     const [workingSince, setWorkingSince] = useState<Date | null>(
-        activeEntry ? new Date(activeEntry.startTime) : null
+        activeWorkday ? new Date(activeWorkday.workdayStartTime) : null
     )
 
     // Update current time every second
@@ -53,11 +53,11 @@ export function TimePunchHeader({ workLocation, activeEntry }: TimePunchHeaderPr
         return () => clearInterval(interval)
     }, [])
 
-    // Update working state when activeEntry changes
+    // Update working state when activeWorkday changes
     useEffect(() => {
-        setIsWorking(!!activeEntry)
-        setWorkingSince(activeEntry ? new Date(activeEntry.startTime) : null)
-    }, [activeEntry])
+        setIsWorking(!!activeWorkday)
+        setWorkingSince(activeWorkday ? new Date(activeWorkday.workdayStartTime) : null)
+    }, [activeWorkday])
 
     // Check location when work location is set
     useEffect(() => {
@@ -138,7 +138,7 @@ export function TimePunchHeader({ workLocation, activeEntry }: TimePunchHeaderPr
 
             // API call happens in background - doesn't block UI
             try {
-                const response = await fetch("/api/time-entries", {
+                const response = await fetch("/api/workday", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
@@ -189,7 +189,7 @@ export function TimePunchHeader({ workLocation, activeEntry }: TimePunchHeaderPr
             setLocationStatus("verified")
 
             // API call happens in background
-            const response = await fetch("/api/time-entries", {
+            const response = await fetch("/api/workday", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -218,7 +218,7 @@ export function TimePunchHeader({ workLocation, activeEntry }: TimePunchHeaderPr
             setWorkingSince(optimisticStartTime)
 
             // Allow start but flag as unavailable
-            const response = await fetch("/api/time-entries", {
+            const response = await fetch("/api/workday", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -261,11 +261,11 @@ export function TimePunchHeader({ workLocation, activeEntry }: TimePunchHeaderPr
                 }
             }
 
-            const response = await fetch("/api/time-entries", {
+            const response = await fetch("/api/workday", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    action: "stop",
+                    action: "end",
                     location: location || null,
                 }),
             })

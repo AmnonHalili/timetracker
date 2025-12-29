@@ -33,14 +33,6 @@ export async function POST(req: Request) {
                 createdAt: true,
                 updatedAt: true,
                 subtaskId: true,
-                locationRequired: true,
-                startLocationLat: true,
-                startLocationLng: true,
-                startLocationVerified: true,
-                endLocationLat: true,
-                endLocationLng: true,
-                endLocationVerified: true,
-                locationStatus: true,
                 breaks: true
             },
         })
@@ -110,14 +102,6 @@ export async function PATCH() {
                 createdAt: true,
                 updatedAt: true,
                 subtaskId: true,
-                locationRequired: true,
-                startLocationLat: true,
-                startLocationLng: true,
-                startLocationVerified: true,
-                endLocationLat: true,
-                endLocationLng: true,
-                endLocationVerified: true,
-                locationStatus: true,
                 breaks: true
             },
         })
