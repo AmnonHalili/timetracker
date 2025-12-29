@@ -135,14 +135,7 @@ export default async function TasksPage() {
             createdAt: true,
             updatedAt: true,
             subtaskId: true,
-            locationRequired: true,
-            startLocationLat: true,
-            startLocationLng: true,
-            startLocationVerified: true,
-            endLocationLat: true,
-            endLocationLng: true,
-            endLocationVerified: true,
-            locationStatus: true,
+            // location fields removed
             tasks: {
                 select: { id: true }
             },
