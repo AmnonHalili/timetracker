@@ -19,6 +19,7 @@ import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useLanguage } from "@/lib/useLanguage"
 import { startTransition } from "react"
+import { useSession } from "next-auth/react"
 
 import {
     Select,
@@ -53,8 +54,13 @@ export function AddMemberDialog({
     customTrigger
 }: AddMemberDialogProps) {
     const { t } = useLanguage()
+    const { data: session } = useSession()
     const router = useRouter()
     const [open, setOpen] = useState(false)
+
+    // Check if current user is top-level admin (has no manager)
+    const isTopLevelAdmin = session?.user?.role === "ADMIN" && !session?.user?.managerId
+
     const defaultTriggerLabel = triggerLabel || t('team.addMember')
     const [loading, setLoading] = useState(false)
     const [email, setEmail] = useState("")
@@ -220,21 +226,21 @@ export function AddMemberDialog({
                                     Reports To
                                 </Label>
                                 <div className="col-span-3">
-                                    <Select 
+                                    <Select
                                         onValueChange={(value) => {
                                             setManagerId(value)
                                             // Show chief type selection if ADMIN and no manager selected
                                             if (role === "ADMIN") {
                                                 setShowChiefType(value === "unassigned" || !value)
                                             }
-                                        }} 
+                                        }}
                                         value={managerId || undefined}
                                     >
                                         <SelectTrigger>
                                             <SelectValue placeholder={role === "ADMIN" ? "Select Manager (Optional)" : "Select Manager (Optional)"} />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {role === "ADMIN" && (
+                                            {role === "ADMIN" && isTopLevelAdmin && (
                                                 <SelectItem value="unassigned">No Manager (Top Level)</SelectItem>
                                             )}
                                             {managers.map((user) => (
