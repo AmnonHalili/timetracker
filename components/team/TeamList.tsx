@@ -98,6 +98,11 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
 
     // Manager edit dialog state
     const [showManagerDialog, setShowManagerDialog] = useState(false)
+    
+    // Primary Manager edit state (for saving when clicking main Save button)
+    const [pendingManagerId, setPendingManagerId] = useState<string | null | undefined>(undefined)
+    const [pendingChiefType, setPendingChiefType] = useState<'partner' | 'independent' | null | undefined>(undefined)
+    const [savingAll, setSavingAll] = useState(false)
 
     // Chief type edit state
     const [showChiefTypeDialog, setShowChiefTypeDialog] = useState(false)
@@ -145,6 +150,9 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
         setSelectedUser(user)
         setEditTarget(user.dailyTarget?.toString() || "")
         setEditDays(user.workDays || [])
+        setPendingManagerId(undefined)
+        setPendingChiefType(undefined)
+        setPendingSecondaryManagers([])
 
         // Fetch secondary managers
         setLoadingSecondary(true)
@@ -178,6 +186,9 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
         setShowManagerDialog(false)
         setShowChiefTypeDialog(false)
         setSelectedChiefType(null)
+        setPendingManagerId(undefined)
+        setPendingChiefType(undefined)
+        setPendingSecondaryManagers([])
     }
 
     const handleSaveChiefType = async () => {
@@ -320,12 +331,56 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
         }
     }
 
+    // Store pending secondary managers changes (will be saved when clicking main Save button)
+    const [pendingSecondaryManagers, setPendingSecondaryManagers] = useState<Array<{ managerId: string; permissions: string[] }>>([])
+
     const handleSaveSecondaryManagers = async (managers: Array<{ managerId: string; permissions: string[] }>) => {
+        // Just update the state, don't save yet
+        setPendingSecondaryManagers(managers)
+    }
+
+    const handleSaveAll = async () => {
         if (!selectedUser) return
 
+        setSavingAll(true)
+        
         try {
-            // Get current secondary managers to determine what to add/remove
-            const newManagerIds = managers.map(m => m.managerId)
+            // Save Primary Manager if changed
+            if (pendingManagerId !== undefined || pendingChiefType !== undefined) {
+                const managerId = pendingManagerId !== undefined ? pendingManagerId : selectedUser.managerId
+                const chiefType = pendingChiefType !== undefined ? pendingChiefType : null
+                
+                // Validate chief type if required
+                if (!managerId && selectedUser.role === "ADMIN" && chiefType === null) {
+                    // Check if we need chief type - only if current user is top-level admin
+                    const currentUserData = allUsers?.find(u => u.id === currentUserId)
+                    const isTopLevelAdmin = currentUserData?.role === "ADMIN" && !currentUserData?.managerId
+                    if (isTopLevelAdmin) {
+                        toast.error("Please select Chief Type (Partner or Independent) when removing manager from an ADMIN")
+                        setSavingAll(false)
+                        return
+                    }
+                }
+
+                const res = await fetch("/api/team/assign-manager", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        employeeId: selectedUser.id,
+                        managerId: managerId,
+                        chiefType: chiefType || undefined
+                    }),
+                })
+
+                if (!res.ok) {
+                    const data = await res.json()
+                    throw new Error(data.message || "Failed to assign manager")
+                }
+            }
+
+            // Save Secondary Managers
+            const managersToSave = pendingSecondaryManagers.length > 0 ? pendingSecondaryManagers : secondaryManagers
+            const newManagerIds = managersToSave.map(m => m.managerId)
 
             // Remove managers that are no longer selected
             for (const current of secondaryManagers) {
@@ -346,7 +401,7 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
             }
 
             // Add or update managers
-            for (const manager of managers) {
+            for (const manager of managersToSave) {
                 if (manager.permissions.length > 0) {
                     const res = await fetch("/api/team/secondary-manager/add", {
                         method: "POST",
@@ -364,18 +419,14 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
                 }
             }
 
-            // Close dialog first
+            // Close dialog and refresh
             closeDialog()
-
-            // Refresh the page to update the team list (this will re-filter users based on new secondary manager relationships)
             router.refresh()
-
-            // Show success message
-            alert(t('team.secondaryManagersUpdated') || "Secondary managers updated successfully")
+            toast.success("Settings saved successfully")
         } catch (error) {
-            console.error("Error updating secondary managers:", error)
-            alert(error instanceof Error ? error.message : (t('team.errorUpdatingSecondaryManagers') || "Error updating secondary managers"))
-            throw error
+            toast.error(error instanceof Error ? error.message : "Error saving settings")
+        } finally {
+            setSavingAll(false)
         }
     }
 
@@ -661,12 +712,26 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
                                             currentSecondaryManagers={secondaryManagers}
                                             availableManagers={users.filter(u => u.role === 'ADMIN' || u.role === 'MANAGER')}
                                             onSave={handleSaveSecondaryManagers}
+                                            hideSaveButton={true}
                                         />
                                     </div>
                                 </div>
                             ) : null}
                         </TabsContent>
                     </Tabs>
+                    
+                    {/* Save Button */}
+                    {selectedUser && (
+                        <DialogFooter>
+                            <Button variant="outline" onClick={closeDialog}>
+                                {t('common.cancel')}
+                            </Button>
+                            <Button onClick={handleSaveAll} disabled={savingAll}>
+                                {savingAll && <Loader2 className={`h-4 w-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} />}
+                                {t('common.save')}
+                            </Button>
+                        </DialogFooter>
+                    )}
                 </DialogContent>
             </Dialog>
 
@@ -719,15 +784,15 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
                     open={showManagerDialog}
                     onOpenChange={(open) => {
                         setShowManagerDialog(open)
-                        if (!open && selectedUser) {
-                            // Refresh user data after manager change
-                            openDialog(selectedUser)
-                        }
                     }}
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     employee={selectedUser as any}
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     managers={users.filter(u => u.id !== selectedUser.id && (u.role === 'ADMIN' || u.role === 'MANAGER')) as any}
+                    onManagerChange={(managerId, chiefType) => {
+                        setPendingManagerId(managerId)
+                        setPendingChiefType(chiefType)
+                    }}
                 />
             )}
 

@@ -39,6 +39,7 @@ interface SecondaryManagersFormProps {
     }>
     availableManagers: Manager[]
     onSave: (managers: SecondaryManagerData[]) => Promise<void>
+    hideSaveButton?: boolean
 }
 
 // Permissions will be translated in the component using useLanguage
@@ -52,7 +53,8 @@ export function SecondaryManagersForm({
     employeeId,
     currentSecondaryManagers,
     availableManagers,
-    onSave
+    onSave,
+    hideSaveButton = false
 }: SecondaryManagersFormProps) {
     const { t, isRTL } = useLanguage()
     const [selectedManagers, setSelectedManagers] = useState<SecondaryManagerData[]>(
@@ -137,11 +139,7 @@ export function SecondaryManagersForm({
             </div>
 
             {/* Selected Managers List */}
-            {selectedManagers.length === 0 ? (
-                <div className={`py-8 text-muted-foreground text-sm ${isRTL ? 'text-right' : 'text-center'}`}>
-                    {t('team.noSecondaryManagers')}
-                </div>
-            ) : (
+            {selectedManagers.length > 0 && (
                 <div className="space-y-4">
                     {selectedManagers.map(manager => (
                         <div key={manager.managerId} className="border rounded-lg p-4 space-y-3">
@@ -189,12 +187,14 @@ export function SecondaryManagersForm({
                 </div>
             )}
 
-            <div className={`flex ${isRTL ? 'justify-start' : 'justify-end'} pt-4 border-t`}>
-                <Button onClick={handleSave} disabled={saving}>
-                    {saving && <Loader2 className={`h-4 w-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} />}
-                    {t('team.saveSecondaryManagers')}
-                </Button>
-            </div>
+            {!hideSaveButton && (
+                <div className={`flex ${isRTL ? 'justify-start' : 'justify-end'} pt-4 border-t`}>
+                    <Button onClick={handleSave} disabled={saving}>
+                        {saving && <Loader2 className={`h-4 w-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} />}
+                        {t('team.saveSecondaryManagers')}
+                    </Button>
+                </div>
+            )}
         </div>
     )
 }

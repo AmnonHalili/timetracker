@@ -84,8 +84,63 @@ export async function PATCH(req: Request) {
 
         // Logic for Chief Type (when removing manager from an ADMIN)
         if (!managerId && employee.role === "ADMIN" && chiefType) {
-            // Effectively just setting managerId to null (which is already done).
-            // We allow this flow to proceed.
+            // Handle chief type assignment
+            let sharedChiefGroupId: string | null = null
+            
+            if (chiefType === "partner") {
+                // Partner (Shared Chief) logic
+                // Check if current user is also a top-level chief
+                if (currentUser.managerId) {
+                    return NextResponse.json({
+                        message: "Only top-level chiefs can add partners. You must be a root-level chief."
+                    }, { status: 400 })
+                }
+                
+                // Get current user's sharedChiefGroupId (with error handling)
+                let currentUserWithExtras: { sharedChiefGroupId?: string | null } = {}
+                try {
+                    const fullCurrentUser = await prisma.user.findUnique({
+                        where: { id: currentUser.id },
+                        select: { sharedChiefGroupId: true }
+                    })
+                    currentUserWithExtras = fullCurrentUser || {}
+                } catch {
+                    // If field doesn't exist, continue with null
+                }
+                
+                if (currentUserWithExtras.sharedChiefGroupId) {
+                    sharedChiefGroupId = currentUserWithExtras.sharedChiefGroupId
+                } else {
+                    // Create a new shared group ID
+                    sharedChiefGroupId = `shared_${currentUser.id}_${Date.now()}`
+                    // Also update current user to have this shared group ID
+                    try {
+                        await prisma.user.update({
+                            where: { id: currentUser.id },
+                            data: { sharedChiefGroupId } as never
+                        })
+                    } catch {
+                        // If field doesn't exist, skip
+                    }
+                }
+            } else if (chiefType === "independent") {
+                // Independent Chief - no shared group
+                sharedChiefGroupId = null
+            }
+            
+            // Add sharedChiefGroupId to update data
+            try {
+                updateData.sharedChiefGroupId = sharedChiefGroupId
+            } catch {
+                // If field doesn't exist, skip
+            }
+        } else if (managerId) {
+            // If assigning a manager, clear sharedChiefGroupId
+            try {
+                updateData.sharedChiefGroupId = null
+            } catch {
+                // If field doesn't exist, skip
+            }
         }
 
         // Update the assignment

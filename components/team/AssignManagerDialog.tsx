@@ -31,13 +31,12 @@ interface AssignManagerDialogProps {
     onOpenChange: (open: boolean) => void
     employee: User | null
     managers: User[]
+    onManagerChange?: (managerId: string | null, chiefType: 'partner' | 'independent' | null) => void
 }
 
-export function AssignManagerDialog({ open, onOpenChange, employee, managers }: AssignManagerDialogProps) {
-    const router = useRouter()
+export function AssignManagerDialog({ open, onOpenChange, employee, managers, onManagerChange }: AssignManagerDialogProps) {
     const { data: session } = useSession()
     const [selectedManagerId, setSelectedManagerId] = useState<string | null>(employee?.managerId || null)
-    const [saving, setSaving] = useState(false)
 
     // Chief type selection state
     const [showChiefType, setShowChiefType] = useState(false)
@@ -61,50 +60,28 @@ export function AssignManagerDialog({ open, onOpenChange, employee, managers }: 
     useEffect(() => {
         if (!employee) return
 
-        // Only relevant if target user is ADMIN or becoming ADMIN (but here we just change manager)
-        // Assuming employee.role is "ADMIN" if they can be a chief
-        if (employee.role === "ADMIN") {
-            const isNoManager = selectedManagerId === "none" || !selectedManagerId
-            setShowChiefType(isNoManager && isTopLevelAdmin)
-        } else {
-            setShowChiefType(false)
+        // Show chief type selection when:
+        // 1. User selects "No Manager" (selectedManagerId is "none" or null)
+        // 2. Current user is a top-level admin (can create chiefs)
+        // 3. Target employee is an ADMIN (can be a chief)
+        const isNoManager = selectedManagerId === "none" || selectedManagerId === null
+        const shouldShow = isNoManager && isTopLevelAdmin && employee.role === "ADMIN"
+        setShowChiefType(shouldShow)
+        
+        // Reset chief type when hiding the selection
+        if (!shouldShow) {
+            setChiefType(null)
         }
     }, [selectedManagerId, employee, isTopLevelAdmin])
 
-    const handleSave = async () => {
-        if (!employee) return
-
-        // Validate chief type if required
-        if (showChiefType && !chiefType) {
-            alert("Please select how this chief should be managed (Partner or Independent)")
-            return
+    // Notify parent component of changes instead of saving directly
+    useEffect(() => {
+        if (onManagerChange && employee) {
+            const managerId = selectedManagerId === "none" ? null : selectedManagerId
+            const finalChiefType = showChiefType ? chiefType : null
+            onManagerChange(managerId, finalChiefType)
         }
-
-        setSaving(true)
-        try {
-            const res = await fetch("/api/team/assign-manager", {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    employeeId: employee.id,
-                    managerId: selectedManagerId === "none" ? null : selectedManagerId,
-                    chiefType: showChiefType ? chiefType : undefined
-                }),
-            })
-
-            if (!res.ok) {
-                const data = await res.json()
-                throw new Error(data.message || "Failed to assign manager")
-            }
-
-            router.refresh()
-            onOpenChange(false)
-        } catch (error) {
-            alert(error instanceof Error ? error.message : "Error assigning manager")
-        } finally {
-            setSaving(false)
-        }
-    }
+    }, [selectedManagerId, chiefType, showChiefType, employee, onManagerChange])
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -121,7 +98,14 @@ export function AssignManagerDialog({ open, onOpenChange, employee, managers }: 
                         <Label htmlFor="manager">Manager</Label>
                         <Select
                             value={selectedManagerId || "none"}
-                            onValueChange={(value) => setSelectedManagerId(value === "none" ? null : value)}
+                            onValueChange={(value) => {
+                                const newManagerId = value === "none" ? null : value
+                                setSelectedManagerId(newManagerId)
+                                // Reset chief type when changing manager selection
+                                if (newManagerId !== null) {
+                                    setChiefType(null)
+                                }
+                            }}
                         >
                             <SelectTrigger id="manager">
                                 <SelectValue placeholder="Select manager" />
@@ -238,16 +222,6 @@ export function AssignManagerDialog({ open, onOpenChange, employee, managers }: 
                         </div>
                     )}
                 </div>
-
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-                        Cancel
-                    </Button>
-                    <Button onClick={handleSave} disabled={saving}>
-                        {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Save Changes
-                    </Button>
-                </DialogFooter>
             </DialogContent>
         </Dialog>
     )
