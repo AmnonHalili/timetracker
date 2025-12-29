@@ -123,17 +123,35 @@ export const authOptions: NextAuthOptions = {
     callbacks: {
         async jwt({ token, user, trigger, session }) {
             // Debug Log
-            console.log("[AUTH] JWT Callback Triggered", { trigger, hasUser: !!user, hasSession: !!session })
+            // console.log("[AUTH] JWT Callback Triggered", { trigger, hasUser: !!user, hasSession: !!session })
 
             if (trigger === "update" && session) {
                 console.log("[AUTH] Session Update Triggered", session.user)
                 return { ...token, ...session.user }
             }
+
             if (user) {
+                // Initial sign in
                 console.log("[AUTH] User Login", { id: user.id, email: user.email, role: user.role })
                 token.id = user.id
                 token.role = user.role
                 token.status = user.status
+            } else if (token.id) {
+                // Subsequent request: fetch fresh role from DB to ensure sync
+                // This fixes the "Stale Admin Role" issue
+                try {
+                    const freshUser = await prisma.user.findUnique({
+                        where: { id: token.id as string },
+                        select: { role: true, status: true }
+                    })
+                    if (freshUser) {
+                        token.role = freshUser.role
+                        token.status = freshUser.status
+                        // console.log("[AUTH] Refreshed Role from DB:", freshUser.role)
+                    }
+                } catch (error) {
+                    console.error("[AUTH] Error refreshing user role:", error)
+                }
             }
             return token
         },
