@@ -20,57 +20,96 @@ export default async function SettingsPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let user: any = null
 
-    // Fetch full user details including new schema fields
-    user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-            jobTitle: true,
-            dailyTarget: true,
-            workDays: true,
-            workMode: true,
-            role: true,
-            projectId: true,
-            managerId: true,
-            manager: {
-                select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                    image: true,
-                    jobTitle: true
-                }
-            },
-            secondaryManagers: {
-                include: {
-                    manager: {
-                        select: {
-                            id: true,
-                            name: true,
-                            email: true,
-                            image: true,
-                            jobTitle: true
+    try {
+        // Try to fetch full user details including new schema fields
+        user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                image: true,
+                jobTitle: true,
+                dailyTarget: true,
+                workDays: true,
+                workMode: true,
+                role: true,
+                projectId: true,
+                managerId: true,
+                manager: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        image: true,
+                        jobTitle: true
+                    }
+                },
+                secondaryManagers: {
+                    include: {
+                        manager: {
+                            select: {
+                                id: true,
+                                name: true,
+                                email: true,
+                                image: true,
+                                jobTitle: true
+                            }
                         }
                     }
-                }
-            },
-            project: {
-                select: {
-                    name: true,
-                    workMode: true,
-                    joinCode: true,
-                    workLocationLatitude: true,
-                    workLocationLongitude: true,
-                    workLocationRadius: true,
-                    workLocationAddress: true,
-                    isRemoteWork: true,
+                },
+                project: {
+                    select: { 
+                        name: true, 
+                        workMode: true, 
+                        joinCode: true,
+                        workLocationLatitude: true,
+                        workLocationLongitude: true,
+                        workLocationRadius: true,
+                        workLocationAddress: true,
+                        isRemoteWork: true,
+                    }
                 }
             }
+        })
+    } catch (e) {
+        console.warn("Failed to fetch full user details, falling back to basic query:", e)
+        // Fallback for stale Prisma client
+        user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                image: true,
+                jobTitle: true,
+                dailyTarget: true,
+                workDays: true,
+                workMode: true,
+                role: true,
+                projectId: true,
+                // Basic fields only
+                project: {
+                    select: { 
+                        name: true, 
+                        workMode: true, 
+                        joinCode: true,
+                        workLocationLatitude: true,
+                        workLocationLongitude: true,
+                        workLocationRadius: true,
+                        workLocationAddress: true,
+                        isRemoteWork: true,
+                    }
+                }
+            }
+        })
+        // Add null/empty values for missing fields
+        if (user) {
+            user.manager = null
+            user.secondaryManagers = []
+            user.managerId = null
         }
-    })
+    }
 
     if (!user) return null
 
