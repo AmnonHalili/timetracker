@@ -2,8 +2,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
-import { TasksView } from "@/components/tasks/TasksView"
-import { TasksPageHeader } from "@/components/tasks/TasksPageHeader"
+import { TasksPageWithOptimisticUpdate } from "@/components/tasks/TasksPageWithOptimisticUpdate"
 
 export default async function TasksPage() {
     const session = await getServerSession(authOptions)
@@ -162,20 +161,12 @@ export default async function TasksPage() {
     })
 
     return (
-        <div className="container mx-auto space-y-8">
-            <TasksPageHeader
-                isAdmin={isAdmin || isManager}
-                users={users}
-                currentUserId={session.user.id}
-            />
-
-            <TasksView
-                initialTasks={tasks}
-                users={users}
-                isAdmin={isAdmin || isManager}
-                currentUserId={session.user.id}
-                tasksWithActiveTimers={Object.fromEntries(tasksWithActiveTimers)}
-            />
-        </div>
+        <TasksPageWithOptimisticUpdate
+            isAdmin={isAdmin || isManager}
+            users={users}
+            currentUserId={session.user.id}
+            initialTasks={tasks}
+            tasksWithActiveTimers={Object.fromEntries(tasksWithActiveTimers)}
+        />
     )
 }

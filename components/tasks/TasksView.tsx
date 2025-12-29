@@ -3,7 +3,7 @@
 
 import { useRouter } from "next/navigation"
 import { useState, useEffect, useRef } from "react"
-import { Trash2, Calendar, Plus, MoreVertical, Pencil } from "lucide-react"
+import { Trash2, Calendar, Plus, MoreVertical, Pencil, Play } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -60,6 +60,8 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
     const [tasks, setTasks] = useState(initialTasks)
     const [addingSubtaskTo, setAddingSubtaskTo] = useState<string | null>(null)
     const [newSubtaskTitle, setNewSubtaskTitle] = useState("")
+    const [editingSubtask, setEditingSubtask] = useState<{ taskId: string; subtaskId: string } | null>(null)
+    const [editingSubtaskTitle, setEditingSubtaskTitle] = useState("")
     const [currentTheme, setCurrentTheme] = useState<'pink' | 'white' | 'black' | 'blue'>('blue')
     const [localSubtasks, setLocalSubtasks] = useState<Record<string, Array<{ id: string; title: string; isDone: boolean }>>>({})
     const subtaskInputRef = useRef<HTMLInputElement | null>(null)
@@ -665,6 +667,79 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
         })
     }
 
+    const handleEditSubtask = async (taskId: string, subtaskId: string, newTitle: string) => {
+        const trimmedTitle = newTitle.trim()
+        if (!trimmedTitle) {
+            setEditingSubtask(null)
+            return
+        }
+
+        // Store previous state for potential revert
+        const previousSubtasks = localSubtasks[taskId] || []
+        const previousSubtask = previousSubtasks.find(s => s.id === subtaskId)
+
+        // Optimistic update
+        setLocalSubtasks(prev => ({
+            ...prev,
+            [taskId]: (prev[taskId] || []).map(s =>
+                s.id === subtaskId ? { ...s, title: trimmedTitle } : s
+            )
+        }))
+
+        setEditingSubtask(null)
+
+        try {
+            const res = await fetch("/api/tasks/subtasks", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: subtaskId, title: trimmedTitle })
+            })
+
+            if (!res.ok) {
+                throw new Error("Failed to update subtask")
+            }
+
+            router.refresh()
+        } catch (error) {
+            console.error("Failed to update subtask:", error)
+            // Revert on error
+            if (previousSubtask) {
+                setLocalSubtasks(prev => ({
+                    ...prev,
+                    [taskId]: (prev[taskId] || []).map(s =>
+                        s.id === subtaskId ? previousSubtask : s
+                    )
+                }))
+            }
+        }
+    }
+
+    const handleStartWorking = async (taskId: string, subtaskId?: string) => {
+        try {
+            // Start timer with the task
+            const response = await fetch('/api/time-entries', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'start',
+                    taskIds: [taskId],
+                    subtaskId: subtaskId || null
+                })
+            })
+
+            if (!response.ok) {
+                const data = await response.json()
+                throw new Error(data.message || 'Failed to start timer')
+            }
+
+            // Navigate to dashboard (time tracker screen)
+            router.push('/dashboard')
+        } catch (error) {
+            console.error('Failed to start working:', error)
+            alert(error instanceof Error ? error.message : 'Failed to start timer')
+        }
+    }
+
     const handleDeleteSubtask = async (taskId: string, subtaskId: string) => {
         // Skip if operation is already pending
         if (pendingOperations.current.has(subtaskId)) {
@@ -891,22 +966,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                         className="mt-1"
                                     />
                                     <div className="space-y-1 flex-1">
-                                        <div className="flex items-center gap-2 cursor-pointer" onClick={() => openTaskDetail(task)}>
-                                            <span className={`text-sm font-medium group-hover:text-primary transition-colors ${task.status === 'DONE' ? 'line-through text-muted-foreground' : ''}`}>
-                                                {task.title}
-                                            </span>
-                                            {/* Priority badge next to task name */}
-                                            <Badge className={`text-[10px] h-6 px-2 flex items-center justify-center ${getPriorityColor(task.priority)}`}>
-                                                {task.priority}
-                                            </Badge>
-                                            {task.checklist && task.checklist.length > 0 && (
-                                                <Badge variant="outline" className="text-[10px] h-5 px-2 text-muted-foreground border-muted-foreground/30">
-                                                    {task.checklist.filter(i => i.isDone).length}/{task.checklist.length}
-                                                </Badge>
-                                            )}
-                                        </div>
-
-                                        {/* Assign To */}
+                                        {/* Assign To - First line */}
                                         {task.assignees && task.assignees.length > 0 && (
                                             <div className="pl-1">
                                                 <span className="text-xs text-muted-foreground">
@@ -915,8 +975,8 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                             </div>
                                         )}
 
-                                        {/* Status: To Do / In Progress */}
-                                        <div className="pl-1">
+                                        {/* Status: To Do / In Progress - Second line with Priority */}
+                                        <div className="pl-1 flex items-center gap-2">
                                             <span className="text-xs text-muted-foreground">
                                                 {t('tasks.status')}: {task.status === 'DONE' 
                                                     ? t('tasks.statusDone') 
@@ -927,6 +987,22 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                             : 'To Do'
                                                     })()}
                                             </span>
+                                            {/* Priority badge on the same line as status */}
+                                            <Badge className={`text-[10px] h-6 px-2 flex items-center justify-center ${getPriorityColor(task.priority)}`}>
+                                                {task.priority}
+                                            </Badge>
+                                        </div>
+
+                                        {/* Task Title - Third line */}
+                                        <div className="flex items-center gap-2 cursor-pointer" onClick={() => openTaskDetail(task)}>
+                                            <span className={`text-sm font-medium group-hover:text-primary transition-colors ${task.status === 'DONE' ? 'line-through text-muted-foreground' : ''}`}>
+                                                {task.title}
+                                            </span>
+                                            {task.checklist && task.checklist.length > 0 && (
+                                                <Badge variant="outline" className="text-[10px] h-5 px-2 text-muted-foreground border-muted-foreground/30">
+                                                    {task.checklist.filter(i => i.isDone).length}/{task.checklist.length}
+                                                </Badge>
+                                            )}
                                         </div>
 
                                         <div className="flex items-center gap-4 text-xs text-muted-foreground pl-1">
@@ -943,25 +1019,84 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                             <div className="pl-3 mt-2 space-y-1.5 border-l-2 border-muted/50">
                                                 {localSubtasks[task.id].map((subtask) => (
                                                     <div key={subtask.id} className="flex items-center gap-2 group/subtask">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-5 w-5 opacity-0 group-hover/subtask:opacity-100 text-muted-foreground hover:text-destructive"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation()
-                                                                handleDeleteSubtask(task.id, subtask.id)
-                                                            }}
-                                                        >
-                                                            <Trash2 className="h-3 w-3" />
-                                                        </Button>
+                                                        {/* 3 dots menu - only visible on hover */}
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-5 w-5 opacity-0 group-hover/subtask:opacity-100 text-muted-foreground hover:text-foreground"
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                >
+                                                                    <MoreVertical className="h-3 w-3" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align={isRTL ? "start" : "end"}>
+                                                                <DropdownMenuItem 
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation()
+                                                                        handleStartWorking(task.id, subtask.id)
+                                                                    }}
+                                                                >
+                                                                    <Play className="h-4 w-4 mr-2" />
+                                                                    {t('tasks.startWorking')}
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem 
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation()
+                                                                        setEditingSubtask({ taskId: task.id, subtaskId: subtask.id })
+                                                                        setEditingSubtaskTitle(subtask.title)
+                                                                    }}
+                                                                >
+                                                                    <Pencil className="h-4 w-4 mr-2" />
+                                                                    {t('tasks.edit')}
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem 
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation()
+                                                                        handleDeleteSubtask(task.id, subtask.id)
+                                                                    }}
+                                                                    className="text-destructive focus:text-destructive"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4 mr-2" />
+                                                                    {t('tasks.delete')}
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
                                                         <Checkbox
                                                             checked={subtask.isDone}
                                                             onCheckedChange={() => handleToggleSubtask(task.id, subtask.id, subtask.isDone)}
                                                             className="h-4 w-4"
                                                         />
-                                                        <span className={`text-xs flex-1 ${subtask.isDone ? 'line-through text-muted-foreground opacity-70' : 'text-muted-foreground'}`}>
-                                                            {subtask.title}
-                                                        </span>
+                                                        {editingSubtask?.taskId === task.id && editingSubtask?.subtaskId === subtask.id ? (
+                                                            <Input
+                                                                value={editingSubtaskTitle}
+                                                                onChange={(e) => setEditingSubtaskTitle(e.target.value)}
+                                                                onKeyDown={(e) => {
+                                                                    if (e.key === "Enter") {
+                                                                        e.preventDefault()
+                                                                        handleEditSubtask(task.id, subtask.id, editingSubtaskTitle)
+                                                                    } else if (e.key === "Escape") {
+                                                                        setEditingSubtask(null)
+                                                                        setEditingSubtaskTitle("")
+                                                                    }
+                                                                }}
+                                                                onBlur={() => {
+                                                                    if (editingSubtaskTitle.trim()) {
+                                                                        handleEditSubtask(task.id, subtask.id, editingSubtaskTitle)
+                                                                    } else {
+                                                                        setEditingSubtask(null)
+                                                                        setEditingSubtaskTitle("")
+                                                                    }
+                                                                }}
+                                                                className="h-6 text-xs flex-1"
+                                                                autoFocus
+                                                            />
+                                                        ) : (
+                                                            <span className={`text-xs flex-1 ${subtask.isDone ? 'line-through text-muted-foreground opacity-70' : 'text-muted-foreground'}`}>
+                                                                {subtask.title}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 ))}
                                             </div>
@@ -1052,18 +1187,24 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align={isRTL ? "start" : "end"}>
                                                 <DropdownMenuItem onClick={() => {
+                                                    handleStartWorking(task.id)
+                                                }}>
+                                                    <Play className="h-4 w-4 mr-2" />
+                                                    {t('tasks.startWorking')}
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => {
                                                     setEditingTask(task)
                                                     setIsEditDialogOpen(true)
                                                 }}>
                                                     <Pencil className="h-4 w-4 mr-2" />
-                                                    Edit
+                                                    {t('tasks.edit')}
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem 
                                                     onClick={() => handleDelete(task.id)}
                                                     className="text-destructive focus:text-destructive"
                                                 >
                                                     <Trash2 className="h-4 w-4 mr-2" />
-                                                    Delete
+                                                    {t('tasks.delete')}
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>

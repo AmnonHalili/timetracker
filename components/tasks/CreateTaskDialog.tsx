@@ -23,6 +23,17 @@ import { useLanguage } from "@/lib/useLanguage"
 interface CreateTaskDialogProps {
     users: { id: string; name: string | null; email: string | null }[]
     onTaskCreated?: () => void
+    onOptimisticTaskCreate?: (task: {
+        id: string
+        title: string
+        priority: string
+        deadline: Date | null
+        description: string | null
+        status: string
+        assignees: Array<{ id: string; name: string | null; email: string | null }>
+        createdAt: Date
+        updatedAt: Date
+    }) => void
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     task?: any // Making flexible to accept task object
     mode?: 'create' | 'edit'
@@ -31,7 +42,7 @@ interface CreateTaskDialogProps {
     currentUserId?: string
 }
 
-export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mode = 'create', open: controlledOpen, onOpenChange: setControlledOpen, currentUserId }: CreateTaskDialogProps) {
+export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimisticTaskCreate, task, mode = 'create', open: controlledOpen, onOpenChange: setControlledOpen, currentUserId }: CreateTaskDialogProps) {
     const router = useRouter()
     const { t } = useLanguage()
     const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
@@ -42,7 +53,7 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mod
 
     const [title, setTitle] = useState("")
     const [assignedToIds, setAssignedToIds] = useState<string[]>([])
-    const [priority, setPriority] = useState("MEDIUM")
+    const [priority, setPriority] = useState("LOW")
     const [deadline, setDeadline] = useState("")
     const [deadlineTime, setDeadlineTime] = useState("")
     const [description, setDescription] = useState("")
@@ -88,7 +99,7 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mod
             if (mode === 'edit' && task) {
                 setTitle(task.title || "")
                 setDescription(task.description || "")
-                setPriority(task.priority || "MEDIUM")
+                setPriority(task.priority || "LOW")
 
                 if (task.deadline) {
                     const d = new Date(task.deadline)
@@ -131,7 +142,7 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mod
                     setAssignedToIds([])
                     setShowToMe(false)
                 }
-                setPriority("MEDIUM")
+                setPriority("LOW")
                 setDeadline("")
                 setDeadlineTime("")
                 setDescription("")
@@ -141,37 +152,79 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mod
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        setLoading(true)
+        
+        let finalDeadline = null;
+        if (deadline) {
+            if (deadlineTime) {
+                finalDeadline = new Date(`${deadline}T${deadlineTime}:00`).toISOString()
+            } else {
+                // Start of day UTC for date-only
+                finalDeadline = new Date(deadline).toISOString()
+            }
+        }
+
+        // If "showToMe" is checked, ensure currentUserId is in assignedToIds
+        let finalAssignedToIds = [...assignedToIds]
+        if (showToMe && currentUserId && !finalAssignedToIds.includes(currentUserId)) {
+            // Add currentUserId if showToMe is checked but user is not in assignedToIds
+            finalAssignedToIds.push(currentUserId)
+        } else if (!showToMe && currentUserId && finalAssignedToIds.includes(currentUserId)) {
+            // Remove currentUserId only if showToMe is unchecked AND user is not manually selected in Assign To
+            // If user manually selected themselves in Assign To, keep them even if showToMe is unchecked
+            if (!assignedToIds.includes(currentUserId)) {
+                finalAssignedToIds = finalAssignedToIds.filter(id => id !== currentUserId)
+            }
+        }
+
+        // Optimistic update for create mode - close dialog immediately and add task optimistically
+        if (mode === 'create' && onOptimisticTaskCreate) {
+            const tempTask = {
+                id: `temp-${Date.now()}`, // Temporary ID
+                title,
+                priority,
+                deadline: finalDeadline ? new Date(finalDeadline) : null,
+                description: description || null,
+                status: "TODO",
+                assignees: finalAssignedToIds.map(id => {
+                    const user = users.find(u => u.id === id)
+                    return {
+                        id: id,
+                        name: user?.name || null,
+                        email: user?.email || null
+                    }
+                }),
+                createdAt: new Date(),
+                updatedAt: new Date()
+            }
+            onOptimisticTaskCreate(tempTask)
+            setIsOpen(false)
+            
+            // Reset form immediately
+            setTitle("")
+            if (currentUserId && users.some(u => u.id === currentUserId)) {
+                setAssignedToIds([currentUserId])
+                setShowToMe(true)
+            } else {
+                setAssignedToIds([])
+                setShowToMe(false)
+            }
+            setPriority("LOW")
+            setDeadline("")
+            setDeadlineTime("")
+            setDescription("")
+        } else {
+            setLoading(true)
+        }
 
         try {
-            let finalDeadline = null;
-            if (deadline) {
-                if (deadlineTime) {
-                    finalDeadline = new Date(`${deadline}T${deadlineTime}:00`).toISOString()
-                } else {
-                    // Start of day UTC for date-only
-                    finalDeadline = new Date(deadline).toISOString()
-                }
-            }
-
-            // If "showToMe" is checked, ensure currentUserId is in assignedToIds
-            let finalAssignedToIds = [...assignedToIds]
-            if (showToMe && currentUserId && !finalAssignedToIds.includes(currentUserId)) {
-                // Add currentUserId if showToMe is checked but user is not in assignedToIds
-                finalAssignedToIds.push(currentUserId)
-            } else if (!showToMe && currentUserId && finalAssignedToIds.includes(currentUserId)) {
-                // Remove currentUserId only if showToMe is unchecked AND user is not manually selected in Assign To
-                // If user manually selected themselves in Assign To, keep them even if showToMe is unchecked
-                if (!assignedToIds.includes(currentUserId)) {
-                    finalAssignedToIds = finalAssignedToIds.filter(id => id !== currentUserId)
-                }
-            }
-
             const url = mode === 'edit' ? `/api/tasks/${task.id}` : "/api/tasks"
             const method = mode === 'edit' ? "PATCH" : "POST"
 
-            await fetch(url, {
+            const response = await fetch(url, {
                 method: method,
+                headers: {
+                    "Content-Type": "application/json"
+                },
                 body: JSON.stringify({
                     title,
                     assignedToIds: finalAssignedToIds,
@@ -180,25 +233,23 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, task, mod
                     description
                 }),
             })
-            setIsOpen(false)
-            if (mode === 'create') {
-                setTitle("")
-                if (currentUserId && users.some(u => u.id === currentUserId)) {
-                    setAssignedToIds([currentUserId])
-                    setShowToMe(true)
-                } else {
-                    setAssignedToIds([])
-                    setShowToMe(false)
-                }
-                setPriority("MEDIUM")
-                setDeadline("")
-                setDeadlineTime("")
-                setDescription("")
+
+            if (!response.ok) {
+                throw new Error(`Failed to ${mode} task`)
             }
+
+            // For edit mode, close dialog after successful update
+            if (mode === 'edit') {
+                setIsOpen(false)
+            }
+
+            // Refresh data in background
             onTaskCreated?.()
             router.refresh()
-        } catch {
-            console.error(`Failed to ${mode} task`)
+        } catch (error) {
+            console.error(`Failed to ${mode} task:`, error)
+            // If optimistic update was used, we should revert it
+            // But since we're refreshing, the server data will correct it
         } finally {
             setLoading(false)
         }

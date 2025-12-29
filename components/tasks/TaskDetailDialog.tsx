@@ -27,6 +27,11 @@ interface TaskDetailDialogProps {
         startTime: Date | string
         endTime: Date | string | null
         description: string | null
+        subtaskId: string | null
+        subtask?: {
+            id: string
+            title: string
+        } | null
         user: {
             id: string
             name: string | null
@@ -124,21 +129,6 @@ export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }:
                 </DialogHeader>
 
                 <div className="space-y-6">
-                    {/* Assigned Users - At the top */}
-                    {task.assignees.length > 0 && (
-                        <div>
-                            <h3 className="text-sm font-semibold mb-2">{t('tasks.assignTo')}</h3>
-                            <div className="flex flex-wrap gap-2">
-                                {task.assignees.map(assignee => (
-                                    <Badge key={assignee.id} variant="secondary">
-                                        {assignee.name || 'Unknown'}
-                                    </Badge>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-
                     {/* Description */}
                     {task.description && (
                         <div>
@@ -176,6 +166,92 @@ export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }:
                             </p>
                         </div>
                     )}
+
+                    {/* Subtasks Time Tracking */}
+                    {totalSubtasks > 0 && (() => {
+                        // Group time entries by subtask
+                        const timeBySubtask = new Map<string, {
+                            subtask: { id: string; title: string }
+                            entries: Array<{
+                                user: { id: string; name: string | null }
+                                totalSeconds: number
+                            }>
+                            totalSeconds: number
+                        }>()
+
+                        timeEntries.forEach(entry => {
+                            if (entry.endTime && entry.subtaskId && entry.subtask) {
+                                const start = new Date(entry.startTime).getTime()
+                                const end = new Date(entry.endTime).getTime()
+                                const seconds = Math.floor((end - start) / 1000)
+
+                                const existing = timeBySubtask.get(entry.subtaskId)
+                                if (existing) {
+                                    existing.totalSeconds += seconds
+                                    // Find or add user entry
+                                    const userEntry = existing.entries.find(e => e.user.id === entry.user.id)
+                                    if (userEntry) {
+                                        userEntry.totalSeconds += seconds
+                                    } else {
+                                        existing.entries.push({
+                                            user: entry.user,
+                                            totalSeconds: seconds
+                                        })
+                                    }
+                                } else {
+                                    timeBySubtask.set(entry.subtaskId, {
+                                        subtask: entry.subtask,
+                                        entries: [{
+                                            user: entry.user,
+                                            totalSeconds: seconds
+                                        }],
+                                        totalSeconds: seconds
+                                    })
+                                }
+                            }
+                        })
+
+                        if (timeBySubtask.size === 0) return null
+
+                        // Sort subtasks by their original order in the task
+                        const sortedSubtasks = Array.from(timeBySubtask.values()).sort((a, b) => {
+                            const aIndex = task.subtasks?.findIndex(s => s.id === a.subtask.id) ?? -1
+                            const bIndex = task.subtasks?.findIndex(s => s.id === b.subtask.id) ?? -1
+                            // If not found in original list, put at the end
+                            if (aIndex === -1) return 1
+                            if (bIndex === -1) return -1
+                            return aIndex - bIndex
+                        })
+
+                        return (
+                            <div>
+                                <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                                    <Clock className="h-4 w-4" />
+                                    {t('tasks.timeSpentOnSubtasks')}
+                                </h3>
+                                <div className="space-y-3">
+                                    {sortedSubtasks.map(({ subtask, entries, totalSeconds }) => (
+                                            <div key={subtask.id} className="p-3 bg-muted/50 rounded-lg">
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <span className="text-sm font-medium">{subtask.title}</span>
+                                                    <span className="text-sm font-semibold">{formatTime(totalSeconds)}</span>
+                                                </div>
+                                                <div className="space-y-1.5 mt-2 pl-2 border-l-2 border-muted">
+                                                    {entries
+                                                        .sort((a, b) => b.totalSeconds - a.totalSeconds)
+                                                        .map(({ user, totalSeconds: userSeconds }) => (
+                                                            <div key={user.id} className="flex justify-between items-center text-xs">
+                                                                <span className="text-muted-foreground">{user.name || 'Unknown'}</span>
+                                                                <span className="font-medium">{formatTime(userSeconds)}</span>
+                                                            </div>
+                                                        ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                </div>
+                            </div>
+                        )
+                    })()}
 
                     {/* Users Who Worked on This Task - Combined with Time by User */}
                     {usersWhoWorked.length > 0 && (

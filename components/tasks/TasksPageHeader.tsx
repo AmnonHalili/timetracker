@@ -7,9 +7,20 @@ interface TasksPageHeaderProps {
     isAdmin: boolean
     users: { id: string; name: string | null; email: string | null }[]
     currentUserId: string
+    onOptimisticTaskCreate?: (task: {
+        id: string
+        title: string
+        priority: string
+        deadline: Date | null
+        description: string | null
+        status: string
+        assignees: Array<{ id: string; name: string | null; email: string | null }>
+        createdAt: Date
+        updatedAt: Date
+    }) => void
 }
 
-export function TasksPageHeader({ isAdmin, users, currentUserId }: TasksPageHeaderProps) {
+export function TasksPageHeader({ isAdmin, users, currentUserId, onOptimisticTaskCreate }: TasksPageHeaderProps) {
     const { t } = useLanguage()
     
     return (
@@ -23,6 +34,7 @@ export function TasksPageHeader({ isAdmin, users, currentUserId }: TasksPageHead
             <CreateTaskDialog
                 users={users}
                 currentUserId={currentUserId}
+                onOptimisticTaskCreate={onOptimisticTaskCreate}
             />
         </div>
     )

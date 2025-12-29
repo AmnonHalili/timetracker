@@ -55,6 +55,12 @@ export async function GET(
                 createdAt: true,
                 updatedAt: true,
                 subtaskId: true,
+                subtask: {
+                    select: {
+                        id: true,
+                        title: true
+                    }
+                },
                 user: {
                     select: {
                         id: true,
