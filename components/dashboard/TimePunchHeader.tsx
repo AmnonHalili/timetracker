@@ -211,12 +211,12 @@ export function TimePunchHeader({ workLocation, activeEntry }: TimePunchHeaderPr
         } catch (error) {
             console.error("Error getting location:", error)
             setLocationStatus("unavailable")
-            
+
             // Optimistic update even if location failed
             const optimisticStartTime = new Date()
             setIsWorking(true)
             setWorkingSince(optimisticStartTime)
-            
+
             // Allow start but flag as unavailable
             const response = await fetch("/api/time-entries", {
                 method: "POST",
@@ -372,7 +372,7 @@ export function TimePunchHeader({ workLocation, activeEntry }: TimePunchHeaderPr
                         {/* Action Button */}
                         <Button
                             onClick={isWorking ? handleEndDay : handleStartDay}
-                            disabled={isProcessing || (workLocation && locationStatus === "outside_area" && !isWorking)}
+                            disabled={(isProcessing || (workLocation && locationStatus === "outside_area" && !isWorking)) || undefined}
                             size="lg"
                             className={`
                                 min-w-[140px] h-12 text-base font-bold
