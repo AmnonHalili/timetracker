@@ -2,7 +2,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
-import { startOfDay, endOfDay, isSameDay } from "date-fns"
+import { startOfDay, endOfDay } from "date-fns"
 
 export async function GET(req: Request) {
     const session = await getServerSession(authOptions)
