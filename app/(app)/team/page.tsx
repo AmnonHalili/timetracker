@@ -87,8 +87,12 @@ export default async function TeamPage() {
     let allTeamMembers: TeamMember[]
     try {
         // Try to fetch with sharedChiefGroupId
+        // Only include ACTIVE users (those who have accepted invitation and signed in)
         allTeamMembers = await prisma.user.findMany({
-            where: { projectId: currentUser.projectId },
+            where: { 
+                projectId: currentUser.projectId,
+                status: "ACTIVE" // Only show users who have accepted invitation and signed in
+            },
             select: {
                 id: true,
                 name: true,
@@ -107,8 +111,12 @@ export default async function TeamPage() {
         }) as TeamMember[]
     } catch {
         // If field doesn't exist, fetch without it and add null
+        // Only include ACTIVE users (those who have accepted invitation and signed in)
         const fetchedUsers = await prisma.user.findMany({
-            where: { projectId: currentUser.projectId },
+            where: { 
+                projectId: currentUser.projectId,
+                status: "ACTIVE" // Only show users who have accepted invitation and signed in
+            },
             select: {
                 id: true,
                 name: true,

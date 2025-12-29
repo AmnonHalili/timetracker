@@ -39,13 +39,39 @@ export default async function DashboardPage() {
         where: { id: session.user.id },
         include: {
             timeEntries: {
-                include: {
+                select: {
+                    id: true,
+                    userId: true,
+                    startTime: true,
+                    endTime: true,
+                    description: true,
+                    isManual: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    subtaskId: true,
+                    locationRequired: true,
+                    startLocationLat: true,
+                    startLocationLng: true,
+                    startLocationVerified: true,
+                    endLocationLat: true,
+                    endLocationLng: true,
+                    endLocationVerified: true,
+                    locationStatus: true,
                     breaks: true,
                     tasks: true,
                     subtask: true
                 }
             },
-            project: true
+            project: {
+                select: {
+                    workMode: true,
+                    workLocationLatitude: true,
+                    workLocationLongitude: true,
+                    workLocationRadius: true,
+                    workLocationAddress: true,
+                    isRemoteWork: true,
+                }
+            }
         },
     })) as unknown as DashboardUser
 

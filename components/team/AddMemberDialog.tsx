@@ -92,8 +92,9 @@ export function AddMemberDialog({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        // If adding a chief (ADMIN role with hideManagerSelect), require chief type selection
-        if (role === "ADMIN" && hideManagerSelect && !chiefType) {
+        // If adding a chief (ADMIN role) without a manager, require chief type selection
+        const isTopLevelChief = managerId === "unassigned" || !managerId
+        if (role === "ADMIN" && isTopLevelChief && !chiefType) {
             alert("Please select how this chief should be added (Partner or Independent)")
             return
         }
@@ -110,7 +111,7 @@ export function AddMemberDialog({
                     role,
                     jobTitle,
                     managerId: managerId === "unassigned" ? null : managerId,
-                    chiefType: role === "ADMIN" && hideManagerSelect ? chiefType : undefined
+                    chiefType: role === "ADMIN" && (managerId === "unassigned" || !managerId) ? chiefType : undefined
                 }),
             })
 
@@ -238,8 +239,8 @@ export function AddMemberDialog({
                             />
                         </div>
 
-                        {/* Chief Type Selection - Only shown when adding a chief */}
-                        {role === "ADMIN" && hideManagerSelect && (
+                        {/* Chief Type Selection - Shown when adding a chief without a manager */}
+                        {role === "ADMIN" && (managerId === "unassigned" || !managerId) && (
                             <div className="space-y-4 pt-2">
                                 <div>
                                     <Label className="text-base font-semibold">

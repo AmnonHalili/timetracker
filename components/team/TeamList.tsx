@@ -29,10 +29,13 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { SecondaryManagersForm } from "./SecondaryManagersForm"
+import { AssignManagerDialog } from "./AssignManagerDialog"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2, Trash2 } from "lucide-react"
+import { Loader2, Trash2, Edit, Check } from "lucide-react"
 import { useLanguage } from "@/lib/useLanguage"
+import { Card } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
 
 interface User {
     id: string
@@ -91,6 +94,14 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
     const [showTransferAdmin, setShowTransferAdmin] = useState(false)
     const [newAdminId, setNewAdminId] = useState<string>("")
 
+    // Manager edit dialog state
+    const [showManagerDialog, setShowManagerDialog] = useState(false)
+    
+    // Chief type edit state
+    const [showChiefTypeDialog, setShowChiefTypeDialog] = useState(false)
+    const [selectedChiefType, setSelectedChiefType] = useState<'partner' | 'independent' | null>(null)
+    const [savingChiefType, setSavingChiefType] = useState(false)
+
     const daysOfWeek = [
         { value: 0, label: t('days.sunday') },
         { value: 1, label: t('days.monday') },
@@ -115,8 +126,17 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
             const res = await fetch(`/api/team/hierarchy`)
             if (res.ok) {
                 const data = await res.json()
-                const foundUser = data.users.find((u: User & { secondaryManagers: Array<{ managerId: string; permissions: string[] }> }) => u.id === user.id)
+                const foundUser = data.users.find((u: User & { 
+                    secondaryManagers: Array<{ managerId: string; permissions: string[] }>
+                    sharedChiefGroupId?: string | null
+                }) => u.id === user.id)
                 setSecondaryManagers(foundUser?.secondaryManagers || [])
+                // Set chief type based on sharedChiefGroupId
+                if (foundUser && foundUser.role === 'ADMIN' && !foundUser.managerId) {
+                    setSelectedChiefType(foundUser.sharedChiefGroupId ? 'partner' : 'independent')
+                } else {
+                    setSelectedChiefType(null)
+                }
             }
         } catch (error) {
             console.error("Failed to fetch secondary managers", error)
@@ -129,6 +149,41 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
         setSelectedUser(null)
         setEditTarget("")
         setEditDays([])
+        setShowManagerDialog(false)
+        setShowChiefTypeDialog(false)
+        setSelectedChiefType(null)
+    }
+
+    const handleSaveChiefType = async () => {
+        if (!selectedUser || !selectedChiefType) return
+
+        setSavingChiefType(true)
+        try {
+            const res = await fetch("/api/team/chief-type", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    userId: selectedUser.id,
+                    chiefType: selectedChiefType
+                })
+            })
+
+            if (!res.ok) {
+                const data = await res.json()
+                throw new Error(data.message || "Failed to update chief type")
+            }
+
+            router.refresh()
+            setShowChiefTypeDialog(false)
+            // Refresh the dialog to show updated data
+            if (selectedUser) {
+                openDialog(selectedUser)
+            }
+        } catch (error) {
+            alert(error instanceof Error ? error.message : "Error updating chief type")
+        } finally {
+            setSavingChiefType(false)
+        }
     }
 
     // const openRoleDialog = (user: User, e: React.MouseEvent) => {
@@ -443,7 +498,20 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
                                 <div className="space-y-6">
                                     {/* Primary Manager(s) Section */}
                                     <div className="space-y-3">
-                                        <Label className={`text-base font-semibold ${isRTL ? 'text-right' : 'text-left'}`}>{t('team.primaryManagers')}</Label>
+                                        <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+                                            <Label className={`text-base font-semibold ${isRTL ? 'text-right' : 'text-left'}`}>{t('team.primaryManagers')}</Label>
+                                            {selectedUser && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => setShowManagerDialog(true)}
+                                                    className="h-8"
+                                                >
+                                                    <Edit className={`h-3 w-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                                                    {t('common.edit')}
+                                                </Button>
+                                            )}
+                                        </div>
                                         <div className="p-4 border rounded-lg bg-muted/30">
                                             {(() => {
                                                 // Use allUsers if available, otherwise fall back to users
@@ -528,10 +596,33 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
                                                 }
 
                                                 // No managerId - user has no direct manager
+                                                const selectedUserWithExtras = selectedUser as User & { sharedChiefGroupId?: string | null }
+                                                const isTopLevelChief = selectedUser.role === 'ADMIN' && !selectedUser.managerId
+                                                
                                                 return (
-                                                    <p className={`text-sm text-muted-foreground ${isRTL ? 'text-right' : 'text-left'}`}>
-                                                        {t('team.noPrimaryManager')}
-                                                    </p>
+                                                    <div className="space-y-3">
+                                                        <p className={`text-sm text-muted-foreground ${isRTL ? 'text-right' : 'text-left'}`}>
+                                                            {t('team.noPrimaryManager')}
+                                                        </p>
+                                                        {isTopLevelChief && (
+                                                            <div className="space-y-2">
+                                                                <Label className={`text-sm font-medium ${isRTL ? 'text-right' : 'text-left'}`}>
+                                                                    Chief Type
+                                                                </Label>
+                                                                <div className="flex gap-2">
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        onClick={() => setShowChiefTypeDialog(true)}
+                                                                        className="flex-1"
+                                                                    >
+                                                                        <Edit className={`h-3 w-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                                                                        {selectedChiefType === 'partner' ? 'Partner' : selectedChiefType === 'independent' ? 'Independent' : 'Set Chief Type'}
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 )
                                             })()}
                                         </div>
@@ -592,6 +683,112 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
                         <Button onClick={saveRole} disabled={savingRole}>
                             {savingRole && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Update Role
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Manager Edit Dialog */}
+            {selectedUser && (
+                <AssignManagerDialog
+                    open={showManagerDialog}
+                    onOpenChange={(open) => {
+                        setShowManagerDialog(open)
+                        if (!open && selectedUser) {
+                            // Refresh user data after manager change
+                            openDialog(selectedUser)
+                        }
+                    }}
+                    employee={selectedUser as any}
+                    managers={users.filter(u => u.id !== selectedUser.id && (u.role === 'ADMIN' || u.role === 'MANAGER'))}
+                />
+            )}
+
+            {/* Chief Type Edit Dialog */}
+            <Dialog open={showChiefTypeDialog} onOpenChange={setShowChiefTypeDialog}>
+                <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle>Set Chief Type</DialogTitle>
+                        <DialogDescription>
+                            Select how this chief should be configured in the organization
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-4">
+                        <div className="grid gap-3">
+                            {/* Option 1: Partner */}
+                            <Card
+                                className={cn(
+                                    "p-4 cursor-pointer border-2 transition-all hover:border-primary/50",
+                                    selectedChiefType === "partner"
+                                        ? "border-primary bg-primary/5"
+                                        : "border-border"
+                                )}
+                                onClick={() => setSelectedChiefType("partner")}
+                            >
+                                <div className="flex items-start gap-3">
+                                    <div className={cn(
+                                        "mt-0.5 h-5 w-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
+                                        selectedChiefType === "partner"
+                                            ? "border-primary bg-primary"
+                                            : "border-muted-foreground"
+                                    )}>
+                                        {selectedChiefType === "partner" && (
+                                            <Check className="h-3 w-3 text-primary-foreground" />
+                                        )}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="font-semibold text-sm mb-1">
+                                            Partner – Shared Leadership
+                                        </h4>
+                                        <p className="text-sm text-muted-foreground mb-2">
+                                            This chief will act as a shared manager together with other chiefs in the same group. All chiefs in the group behave as a single logical entity.
+                                        </p>
+                                    </div>
+                                </div>
+                            </Card>
+
+                            {/* Option 2: Independent */}
+                            <Card
+                                className={cn(
+                                    "p-4 cursor-pointer border-2 transition-all hover:border-primary/50",
+                                    selectedChiefType === "independent"
+                                        ? "border-primary bg-primary/5"
+                                        : "border-border"
+                                )}
+                                onClick={() => setSelectedChiefType("independent")}
+                            >
+                                <div className="flex items-start gap-3">
+                                    <div className={cn(
+                                        "mt-0.5 h-5 w-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
+                                        selectedChiefType === "independent"
+                                            ? "border-primary bg-primary"
+                                            : "border-muted-foreground"
+                                    )}>
+                                        {selectedChiefType === "independent" && (
+                                            <Check className="h-3 w-3 text-primary-foreground" />
+                                        )}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="font-semibold text-sm mb-1">
+                                            Independent Chief – Separate Branch
+                                        </h4>
+                                        <p className="text-sm text-muted-foreground mb-2">
+                                            This chief will be a separate top-level manager with their own hierarchy.
+                                        </p>
+                                    </div>
+                                </div>
+                            </Card>
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowChiefTypeDialog(false)} disabled={savingChiefType}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleSaveChiefType} disabled={savingChiefType || !selectedChiefType}>
+                            {savingChiefType && <Loader2 className={`h-4 w-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} />}
+                            Save
                         </Button>
                     </DialogFooter>
                 </DialogContent>

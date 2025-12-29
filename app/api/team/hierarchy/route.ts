@@ -48,11 +48,15 @@ export async function GET() {
         // Fetch all users in the project
         // We fetch flat list and build tree securely in memory or rely on relation
         // For deep nesting, Prisma recursion is limited, but we can fetch all and rebuild
+        // Only include ACTIVE users (those who have accepted the invitation and signed in)
         let allUsers
         try {
             // Try to fetch with new fields first
             allUsers = await prisma.user.findMany({
-                where: { projectId: currentUser.projectId },
+                where: { 
+                    projectId: currentUser.projectId,
+                    status: "ACTIVE" // Only show users who have accepted invitation and signed in
+                },
                 select: {
                     id: true,
                     name: true,
@@ -86,7 +90,10 @@ export async function GET() {
             if (error.message?.includes('sharedChiefGroupId') || error.message?.includes('Unknown field') || error.message?.includes('secondaryManagers')) {
                 console.warn("New fields not available in Prisma client, fetching without them")
                 allUsers = await prisma.user.findMany({
-                    where: { projectId: currentUser.projectId },
+                    where: { 
+                        projectId: currentUser.projectId,
+                        status: "ACTIVE" // Only show users who have accepted invitation and signed in
+                    },
                     select: {
                         id: true,
                         name: true,
