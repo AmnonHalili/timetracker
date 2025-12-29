@@ -25,14 +25,6 @@ export async function generateDailySnapshot(userId: string, date: Date = new Dat
             createdAt: true,
             updatedAt: true,
             subtaskId: true,
-            locationRequired: true,
-            startLocationLat: true,
-            startLocationLng: true,
-            startLocationVerified: true,
-            endLocationLat: true,
-            endLocationLng: true,
-            endLocationVerified: true,
-            locationStatus: true,
             breaks: true
         }
     })

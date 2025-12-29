@@ -96,14 +96,6 @@ export async function calculateFocusScore(userId: string, date: Date = new Date(
             createdAt: true,
             updatedAt: true,
             subtaskId: true,
-            locationRequired: true,
-            startLocationLat: true,
-            startLocationLng: true,
-            startLocationVerified: true,
-            endLocationLat: true,
-            endLocationLng: true,
-            endLocationVerified: true,
-            locationStatus: true,
             breaks: true
         }
     })
@@ -169,14 +161,6 @@ export async function analyzeWorkPatterns(userId: string, days: number = 30): Pr
             createdAt: true,
             updatedAt: true,
             subtaskId: true,
-            locationRequired: true,
-            startLocationLat: true,
-            startLocationLng: true,
-            startLocationVerified: true,
-            endLocationLat: true,
-            endLocationLng: true,
-            endLocationVerified: true,
-            locationStatus: true,
             breaks: true
         }
     })
