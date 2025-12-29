@@ -61,6 +61,7 @@ export function AddMemberDialog({
     const [role] = useState(defaultRole) // Changed from [role, setRole] to [role]
     const [jobTitle, setJobTitle] = useState("")
     const [managerId, setManagerId] = useState<string>("")
+    const [showChiefType, setShowChiefType] = useState(false)
     const [managers, setManagers] = useState<SimpleUser[]>([])
     // Chief type selection: 'partner' | 'independent' | null
     const [chiefType, setChiefType] = useState<'partner' | 'independent' | null>(null)
@@ -92,11 +93,12 @@ export function AddMemberDialog({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        // If adding a chief (ADMIN role) without a manager, require manager selection
-        // Top-level chiefs should only be added from hierarchy tree
-        if (role === "ADMIN" && !managerId) {
-            alert("Please select a manager for this user. To add a top-level chief, use the hierarchy tree.")
-            return
+        // If adding a chief (ADMIN role) without a manager, require chief type selection
+        if (role === "ADMIN" && (managerId === "unassigned" || !managerId)) {
+            if (!chiefType) {
+                alert("Please select how this chief should be added (Partner or Independent)")
+                return
+            }
         }
 
         setLoading(true)
@@ -110,8 +112,8 @@ export function AddMemberDialog({
                     email,
                     role,
                     jobTitle,
-                    managerId: managerId || null,
-                    chiefType: undefined // Chief type selection only available in hierarchy tree
+                    managerId: managerId === "unassigned" || !managerId ? null : managerId,
+                    chiefType: role === "ADMIN" && (managerId === "unassigned" || !managerId) ? chiefType : undefined
                 }),
             })
 
@@ -155,12 +157,22 @@ export function AddMemberDialog({
         }
     }
 
-    // Reset chief type when dialog closes
+    // Reset chief type and show state when dialog closes or manager changes
     useEffect(() => {
         if (!open) {
             setChiefType(null)
+            setShowChiefType(false)
         }
     }, [open])
+
+    // Update showChiefType when managerId changes
+    useEffect(() => {
+        if (role === "ADMIN") {
+            setShowChiefType(managerId === "unassigned" || !managerId)
+        } else {
+            setShowChiefType(false)
+        }
+    }, [managerId, role])
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -208,11 +220,23 @@ export function AddMemberDialog({
                                     Reports To
                                 </Label>
                                 <div className="col-span-3">
-                                    <Select onValueChange={setManagerId} value={managerId || undefined} required={role === "ADMIN"}>
+                                    <Select 
+                                        onValueChange={(value) => {
+                                            setManagerId(value)
+                                            // Show chief type selection if ADMIN and no manager selected
+                                            if (role === "ADMIN") {
+                                                setShowChiefType(value === "unassigned" || !value)
+                                            }
+                                        }} 
+                                        value={managerId || undefined}
+                                    >
                                         <SelectTrigger>
-                                            <SelectValue placeholder={role === "ADMIN" ? "Select Manager (Required)" : "Select Manager (Optional)"} />
+                                            <SelectValue placeholder={role === "ADMIN" ? "Select Manager (Optional)" : "Select Manager (Optional)"} />
                                         </SelectTrigger>
                                         <SelectContent>
+                                            {role === "ADMIN" && (
+                                                <SelectItem value="unassigned">No Manager (Top Level)</SelectItem>
+                                            )}
                                             {managers.map((user) => (
                                                 <SelectItem key={user.id} value={user.id}>
                                                     {user.name} {user.jobTitle ? `- ${user.jobTitle}` : ""}
@@ -238,9 +262,8 @@ export function AddMemberDialog({
                             />
                         </div>
 
-                        {/* Chief Type Selection - Should not be shown in AddMemberDialog */}
-                        {/* Top-level chiefs should only be added from hierarchy tree */}
-                        {false && role === "ADMIN" && !managerId && (
+                        {/* Chief Type Selection - Shown when adding a chief without a manager */}
+                        {role === "ADMIN" && (managerId === "unassigned" || !managerId) && (
                             <div className="space-y-4 pt-2">
                                 <div>
                                     <Label className="text-base font-semibold">
