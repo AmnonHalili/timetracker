@@ -122,19 +122,15 @@ export const authOptions: NextAuthOptions = {
     },
     callbacks: {
         async jwt({ token, user, trigger, session }) {
+            // Debug Log
+            console.log("[AUTH] JWT Callback Triggered", { trigger, hasUser: !!user, hasSession: !!session })
+
             if (trigger === "update" && session) {
+                console.log("[AUTH] Session Update Triggered", session.user)
                 return { ...token, ...session.user }
             }
             if (user) {
-                // Fetch latest user data including role which might have been updated in createUser event
-                // Note: createUser runs AFTER the initial session creation, so the first session might still have default role.
-                // However, for Google Sign In, the flow usually redirects, so subsequent requests should catch it.
-                // We can try to re-fetch here if needed, but 'user' obj comes from the adapter.
-
-                // Better strategy: Since createUser fires asynchronously, the 'user' object here might be stale IF it runs in parallel.
-                // But typically adapter.createUser finishes before this callback if it's part of the flow. 
-                // Let's rely on standard flow first.
-
+                console.log("[AUTH] User Login", { id: user.id, email: user.email, role: user.role })
                 token.id = user.id
                 token.role = user.role
                 token.status = user.status
@@ -146,6 +142,8 @@ export const authOptions: NextAuthOptions = {
                 session.user.id = token.id
                 session.user.role = token.role
                 session.user.status = token.status
+                // Debug Log (Comment out in production later if too noisy)
+                // console.log("[AUTH] Session Callback", { email: session.user.email, role: session.user.role })
             }
             return session
         },
