@@ -107,19 +107,6 @@ export function getMonthlyReport(
         // Check for manual entries
         const hasManualEntries = dayEntries.some(e => e.isManual)
 
-        // Get location status from entries (use the first entry's status for the day)
-        const firstEntry = dayEntries[0]
-        const locationStatus = firstEntry?.locationStatus || null
-        const locationRequired = firstEntry?.locationRequired || false
-        
-        // Count breaks caused by leaving work area
-        const breaksFromLocation = dayEntries.reduce((count, entry) => {
-            if (entry.breaks) {
-                return count + entry.breaks.filter(b => b.reason === 'left_work_area').length
-            }
-            return count
-        }, 0)
-
         return {
             date: day,
             dayName: format(day, 'EEEE'),

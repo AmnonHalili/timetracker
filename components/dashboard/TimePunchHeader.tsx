@@ -32,12 +32,11 @@ type LocationStatus = "verified" | "unavailable" | "outside_area" | "not_require
 
 export function TimePunchHeader({ workLocation, activeEntry }: TimePunchHeaderProps) {
     const router = useRouter()
-    const { t } = useLanguage()
     const [currentTime, setCurrentTime] = useState(new Date())
     const [locationStatus, setLocationStatus] = useState<LocationStatus>(
         workLocation ? "checking" : "not_required"
     )
-    const [currentLocation, setCurrentLocation] = useState<Location | null>(null)
+    const [, setCurrentLocation] = useState<Location | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
     const [showOutsideDialog, setShowOutsideDialog] = useState(false)
     const [watchId, setWatchId] = useState<number | null>(null)
@@ -128,7 +127,7 @@ export function TimePunchHeader({ workLocation, activeEntry }: TimePunchHeaderPr
                 clearLocationWatch(watchId)
             }
         }
-    }, [workLocation, isWorking])
+    }, [workLocation, isWorking, isOutsideArea, watchId])
 
     const handleStartDay = async () => {
         if (!workLocation) {

@@ -2,7 +2,6 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
-import { calculateDistance } from "@/lib/gps-utils"
 
 /**
  * API endpoint to handle automatic breaks when user leaves work area
@@ -68,7 +67,7 @@ export async function POST(req: Request) {
 /**
  * Resume work when user returns to work area
  */
-export async function PATCH(req: Request) {
+export async function PATCH() {
     const session = await getServerSession(authOptions)
 
     if (!session || !session.user) {

@@ -27,7 +27,6 @@ interface WorkLocationSetupProps {
 }
 
 export function WorkLocationSetup({ onSave, onSkip, initialLocation, isOptional = true }: WorkLocationSetupProps) {
-    const { t } = useLanguage()
     const [isLoading, setIsLoading] = useState(false)
     const [isGettingLocation, setIsGettingLocation] = useState(false)
     const [latitude, setLatitude] = useState<number | null>(initialLocation?.latitude || null)
@@ -76,7 +75,7 @@ export function WorkLocationSetup({ onSave, onSkip, initialLocation, isOptional 
         if (mode === 'current' && !latitude && !longitude) {
             getCurrentLocation()
         }
-    }, [mode])
+    }, [mode, latitude, longitude])
 
     const handleSave = () => {
         if (!latitude || !longitude) {
