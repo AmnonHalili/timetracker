@@ -49,10 +49,10 @@ export default function LoginPage() {
         <div className="w-full max-w-[90%] sm:max-w-md space-y-4">
             <Link
                 href="/"
-                className={`inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors ${isRTL ? 'flex-row-reverse' : 'flex-row-reverse md:flex-row'}`}
+                className={`inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors ${isRTL ? 'flex-row-reverse' : 'flex-row'}`}
             >
+                <ChevronLeft className={`h-4 w-4 ${isRTL ? 'mr-1 rotate-180' : 'mr-1'}`} />
                 {t('auth.backToHome')}
-                <ChevronLeft className={`h-4 w-4 ${isRTL ? 'mr-1 rotate-180' : 'mr-1 md:ml-1 md:mr-0'}`} />
             </Link>
             <Card className="w-full">
                 <CardHeader className="px-4 sm:px-6 pb-3 sm:pb-6">
