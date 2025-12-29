@@ -2,6 +2,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
+import { startOfDay, endOfDay } from "date-fns"
 // Note: Location verification is now handled by Workday, not TimeEntry
 
 // GET: Fetch currently running entry + recent history
@@ -108,7 +109,12 @@ export async function POST(req: Request) {
                     createdAt: true,
                     updatedAt: true,
                     subtaskId: true,
-                    breaks: true
+                    breaks: true,
+                    tasks: {
+                        select: {
+                            id: true
+                        }
+                    }
                 }
             })
 
@@ -125,17 +131,132 @@ export async function POST(req: Request) {
                 })
             }
 
-            // Note: Location verification is handled by Workday, not TimeEntry
-            // TimeEntry is only for task tracking, not location tracking
+            const endTime = new Date()
+            const startTime = new Date(active.startTime)
+            const dayStart = startOfDay(startTime)
+            const dayEnd = endOfDay(startTime)
 
-            const updated = await prisma.timeEntry.update({
-                where: { id: active.id },
-                data: {
-                    endTime: new Date(),
+            // Get task IDs for context matching
+            const activeTaskIds = active.tasks.map(t => t.id).sort()
+            const activeSubtaskId = active.subtaskId
+
+            // Find existing entries for the same day with the same context
+            const existingEntries = await prisma.timeEntry.findMany({
+                where: {
+                    userId: session.user.id,
+                    id: { not: active.id }, // Exclude the current active entry
+                    endTime: { not: null }, // Only completed entries
+                    startTime: {
+                        gte: dayStart,
+                        lte: dayEnd
+                    },
+                    subtaskId: activeSubtaskId, // Must match subtask (or both null)
+                },
+                select: {
+                    id: true,
+                    startTime: true,
+                    endTime: true,
+                    tasks: {
+                        select: {
+                            id: true
+                        }
+                    },
+                    breaks: {
+                        select: {
+                            id: true,
+                            startTime: true,
+                            endTime: true
+                        }
+                    }
                 }
             })
 
-            return NextResponse.json({ entry: updated })
+            // Find matching entry by task context
+            // Match if: same task IDs (or both have no tasks) and same subtaskId
+            const matchingEntry = existingEntries.find(entry => {
+                const entryTaskIds = entry.tasks.map(t => t.id).sort()
+                const taskIdsMatch = 
+                    (activeTaskIds.length === 0 && entryTaskIds.length === 0) ||
+                    (activeTaskIds.length === entryTaskIds.length && 
+                     activeTaskIds.every((id, idx) => id === entryTaskIds[idx]))
+                return taskIdsMatch
+            })
+
+            if (matchingEntry) {
+                // Merge with existing entry
+                const existingStart = new Date(matchingEntry.startTime)
+                const existingEnd = matchingEntry.endTime ? new Date(matchingEntry.endTime) : null
+                
+                // Keep earliest start time
+                const mergedStart = existingStart < startTime ? existingStart : startTime
+                // Use latest end time
+                const mergedEnd = existingEnd && existingEnd > endTime ? existingEnd : endTime
+
+                // Move breaks from active entry to matching entry
+                const activeBreaks = await prisma.timeBreak.findMany({
+                    where: { timeEntryId: active.id }
+                })
+
+                // Update breaks to point to matching entry
+                if (activeBreaks.length > 0) {
+                    await prisma.timeBreak.updateMany({
+                        where: { timeEntryId: active.id },
+                        data: { timeEntryId: matchingEntry.id }
+                    })
+                }
+
+                // Update matching entry with merged times
+                const merged = await prisma.timeEntry.update({
+                    where: { id: matchingEntry.id },
+                    data: {
+                        startTime: mergedStart,
+                        endTime: mergedEnd,
+                    },
+                    select: {
+                        id: true,
+                        userId: true,
+                        startTime: true,
+                        endTime: true,
+                        description: true,
+                        isManual: true,
+                        createdAt: true,
+                        updatedAt: true,
+                        subtaskId: true,
+                        breaks: true,
+                        tasks: true
+                    }
+                })
+
+                // Delete the active entry (now merged)
+                await prisma.timeEntry.delete({
+                    where: { id: active.id }
+                })
+
+                return NextResponse.json({ entry: merged, merged: true })
+            } else {
+                // No matching entry found, just update the active entry
+                const updated = await prisma.timeEntry.update({
+                    where: { id: active.id },
+                    data: {
+                        endTime: endTime,
+                    },
+                    select: {
+                        id: true,
+                        userId: true,
+                        startTime: true,
+                        endTime: true,
+                        description: true,
+                        isManual: true,
+                        createdAt: true,
+                        updatedAt: true,
+                        subtaskId: true,
+                        breaks: true,
+                        tasks: true
+                    }
+                })
+
+                return NextResponse.json({ entry: updated, merged: false })
+            }
         }
 
         // 3. PAUSE TIMER
@@ -215,21 +336,122 @@ export async function POST(req: Request) {
         if (action === "manual") {
             console.log("API: Creating manual entry", manualData)
             const { start, end, description } = manualData as { start: string; end: string; description?: string }
-            const entry = await prisma.timeEntry.create({
-                data: {
+            const startTime = new Date(start)
+            const endTime = new Date(end)
+            const dayStart = startOfDay(startTime)
+            const dayEnd = endOfDay(startTime)
+
+            // Get task IDs for context matching
+            const entryTaskIds = (taskIds || []).sort()
+            const entrySubtaskId = subtaskId || null
+
+            // Find existing entries for the same day with the same context
+            const existingEntries = await prisma.timeEntry.findMany({
+                where: {
                     userId: session.user.id,
-                    startTime: new Date(start),
-                    endTime: new Date(end),
-                    description,
-                    isManual: true,
-                    tasks: taskIds && taskIds.length > 0 ? {
-                        connect: taskIds.map(id => ({ id }))
-                    } : undefined,
-                    subtaskId: subtaskId || null,
+                    endTime: { not: null }, // Only completed entries
+                    startTime: {
+                        gte: dayStart,
+                        lte: dayEnd
+                    },
+                    subtaskId: entrySubtaskId, // Must match subtask (or both null)
+                },
+                select: {
+                    id: true,
+                    startTime: true,
+                    endTime: true,
+                    tasks: {
+                        select: {
+                            id: true
+                        }
+                    },
+                    breaks: {
+                        select: {
+                            id: true,
+                            startTime: true,
+                            endTime: true
+                        }
+                    }
                 }
             })
-            console.log("API: Created entry", entry.id)
-            return NextResponse.json({ entry })
+
+            // Find matching entry by task context
+            const matchingEntry = existingEntries.find(entry => {
+                const existingTaskIds = entry.tasks.map(t => t.id).sort()
+                const taskIdsMatch = 
+                    (entryTaskIds.length === 0 && existingTaskIds.length === 0) ||
+                    (entryTaskIds.length === existingTaskIds.length && 
+                     entryTaskIds.every((id, idx) => id === existingTaskIds[idx]))
+                return taskIdsMatch
+            })
+
+            if (matchingEntry) {
+                // Merge with existing entry
+                const existingStart = new Date(matchingEntry.startTime)
+                const existingEnd = matchingEntry.endTime ? new Date(matchingEntry.endTime) : null
+                
+                // Keep earliest start time
+                const mergedStart = existingStart < startTime ? existingStart : startTime
+                // Use latest end time
+                const mergedEnd = existingEnd && existingEnd > endTime ? existingEnd : endTime
+
+                // Update matching entry with merged times
+                const merged = await prisma.timeEntry.update({
+                    where: { id: matchingEntry.id },
+                    data: {
+                        startTime: mergedStart,
+                        endTime: mergedEnd,
+                        // Update description if provided and existing is empty
+                        description: description && !matchingEntry.description ? description : undefined,
+                    },
+                    select: {
+                        id: true,
+                        userId: true,
+                        startTime: true,
+                        endTime: true,
+                        description: true,
+                        isManual: true,
+                        createdAt: true,
+                        updatedAt: true,
+                        subtaskId: true,
+                        breaks: true,
+                        tasks: true
+                    }
+                })
+
+                console.log("API: Merged manual entry with existing", merged.id)
+                return NextResponse.json({ entry: merged, merged: true })
+            } else {
+                // No matching entry found, create new entry
+                const entry = await prisma.timeEntry.create({
+                    data: {
+                        userId: session.user.id,
+                        startTime: startTime,
+                        endTime: endTime,
+                        description,
+                        isManual: true,
+                        tasks: taskIds && taskIds.length > 0 ? {
+                            connect: taskIds.map(id => ({ id }))
+                        } : undefined,
+                        subtaskId: entrySubtaskId,
+                    },
+                    select: {
+                        id: true,
+                        userId: true,
+                        startTime: true,
+                        endTime: true,
+                        description: true,
+                        isManual: true,
+                        createdAt: true,
+                        updatedAt: true,
+                        subtaskId: true,
+                        breaks: true,
+                        tasks: true
+                    }
+                })
+                console.log("API: Created entry", entry.id)
+                return NextResponse.json({ entry, merged: false })
+            }
         }
 
         return NextResponse.json({ message: "Invalid action" }, { status: 400 })
