@@ -73,7 +73,7 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
     }, [users])
     const [editTarget, setEditTarget] = useState<string>("")
     const [editDays, setEditDays] = useState<number[]>([])
-    const [saving, setSaving] = useState(false)
+
     const [secondaryManagers, setSecondaryManagers] = useState<Array<{
         managerId: string
         manager: {
@@ -152,7 +152,7 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
         setSelectedUser(user)
         setEditTarget(user.dailyTarget?.toString() || "")
         setEditDays(user.workDays || [])
-        setPendingSecondaryManagers([])
+        setPendingSecondaryManagers(null)
 
         // Fetch secondary managers
         setLoadingSecondary(true)
@@ -307,32 +307,10 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
         }
     }
 
-    const saveEdit = async () => {
-        if (!selectedUser) return
 
-        setSaving(true)
-        try {
-            const res = await fetch("/api/team/work-settings", {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    userId: selectedUser.id,
-                    dailyTarget: editTarget === "" ? null : parseFloat(editTarget),
-                    workDays: editDays
-                }),
-            })
-            if (!res.ok) throw new Error("Failed to update")
-            router.refresh()
-            closeDialog()
-        } catch {
-            alert("Error updating work settings")
-        } finally {
-            setSaving(false)
-        }
-    }
 
     // Store pending secondary managers changes (will be saved when clicking main Save button)
-    const [pendingSecondaryManagers, setPendingSecondaryManagers] = useState<Array<{ managerId: string; permissions: string[] }>>([])
+    const [pendingSecondaryManagers, setPendingSecondaryManagers] = useState<Array<{ managerId: string; permissions: string[] }> | null>(null)
 
     const handleSaveSecondaryManagers = async (managers: Array<{ managerId: string; permissions: string[] }>) => {
         // Just update the state, don't save yet
@@ -392,7 +370,8 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
             }
 
             // 3. Save Secondary Managers
-            const managersToSave = pendingSecondaryManagers.length > 0 ? pendingSecondaryManagers : secondaryManagers
+            // If pendingSecondaryManagers is null, it means no changes were made to secondary managers
+            const managersToSave = pendingSecondaryManagers !== null ? pendingSecondaryManagers : secondaryManagers
             const newManagerIds = managersToSave.map(m => m.managerId)
 
             // Remove managers that are no longer selected
