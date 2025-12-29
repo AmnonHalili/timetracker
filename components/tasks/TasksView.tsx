@@ -960,11 +960,6 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                         filteredTasks.map((task) => (
                             <div key={task.id} className="flex flex-row items-center border-b pb-4 last:border-0 last:pb-0 gap-4">
                                 <div className="flex items-start gap-3 flex-1 group">
-                                    <Checkbox
-                                        checked={task.status === 'DONE'}
-                                        onCheckedChange={(checked) => handleCheckboxChange(task.id, task.status, checked as boolean)}
-                                        className="mt-1"
-                                    />
                                     <div className="space-y-1 flex-1">
                                         {/* Assign To - First line */}
                                         {task.assignees && task.assignees.length > 0 && (
@@ -993,8 +988,16 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                             </Badge>
                                         </div>
 
-                                        {/* Task Title - Third line */}
+                                        {/* Task Title - Third line with Checkbox */}
                                         <div className="flex items-center gap-2 cursor-pointer" onClick={() => openTaskDetail(task)}>
+                                            <Checkbox
+                                                checked={task.status === 'DONE'}
+                                                onCheckedChange={(checked) => {
+                                                    handleCheckboxChange(task.id, task.status, checked as boolean)
+                                                }}
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="h-4 w-4"
+                                            />
                                             <span className={`text-sm font-medium group-hover:text-primary transition-colors ${task.status === 'DONE' ? 'line-through text-muted-foreground' : ''}`}>
                                                 {task.title}
                                             </span>
