@@ -63,19 +63,22 @@ export function LandingPageContent() {
     <>
       {/* Navbar / Header */}
       <header>
-        <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50" role="navigation" aria-label="Main navigation">
-          <div className="w-full px-6 md:px-8 h-24 flex items-center justify-between">
-            <div className="flex items-center">
-              <Link href="/" aria-label="Collabo Home">
-                <ThemeLogo width={140} height={56} className="h-12 w-auto" priority />
+        <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 relative" role="navigation" aria-label="Main navigation">
+          <div className={`w-full px-3 sm:px-4 md:px-8 h-16 md:h-24 flex items-center ${isRTL ? 'justify-start' : 'justify-end'} gap-2`}>
+            {/* Logo - positioned in corner with absolute positioning */}
+            {/* In RTL: logo goes to maximum right (especially on mobile), in LTR: logo goes to maximum left */}
+            <div className={`absolute ${isRTL ? 'right-0 sm:right-4 md:right-8' : 'left-3 sm:left-4 md:left-8'} top-1/2 -translate-y-1/2 flex items-center flex-shrink-0 z-10`}>
+              <Link href="/" aria-label="Collabo Home" className="flex items-center">
+                <ThemeLogo width={140} height={56} className="h-8 w-auto sm:h-10 md:h-12" priority />
               </Link>
             </div>
-            <div className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+            {/* Buttons - in RTL: positioned to the left side, in LTR: positioned to the right side */}
+            <div className={`flex items-center gap-2 sm:gap-3 md:gap-4 flex-shrink-0 ${isRTL ? 'flex-row-reverse mr-auto' : 'ml-auto'}`}>
               {/* Language Switcher */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9" aria-label={t('language.title')}>
-                    <Globe className="h-5 w-5" />
+                  <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0" aria-label={t('language.title')}>
+                    <Globe className="h-4 w-4 sm:h-5 sm:w-5" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align={isRTL ? 'start' : 'end'}>
@@ -93,10 +96,18 @@ export function LandingPageContent() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Link href="/login" className="text-sm font-medium hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md px-2 py-1">
+              {/* Log In - hidden on very small screens, shown as text on larger */}
+              <Link 
+                href="/login" 
+                className="text-xs sm:text-sm font-medium hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md px-2 sm:px-3 py-1.5 whitespace-nowrap"
+              >
                 {t('landing.logIn')}
               </Link>
-              <Link href="/register" className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+              {/* Get Started button - compact on mobile */}
+              <Link 
+                href="/register" 
+                className="inline-flex items-center justify-center rounded-md bg-primary px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-primary-foreground shadow hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 whitespace-nowrap"
+              >
                 {t('landing.getStarted')}
               </Link>
             </div>

@@ -72,9 +72,9 @@ function RegisterForm() {
         <div className="w-full max-w-md space-y-4">
             <Link
                 href="/"
-                className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors"
+                className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors flex-row-reverse md:flex-row"
             >
-                <ChevronLeft className="mr-1 h-4 w-4" />
+                <ChevronLeft className="mr-1 md:ml-1 md:mr-0 h-4 w-4" />
                 Back to Home
             </Link>
             <Card className="w-full">

@@ -46,24 +46,24 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="w-full max-w-md space-y-4">
+        <div className="w-full max-w-[90%] sm:max-w-md space-y-4">
             <Link
                 href="/"
-                className={`inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors ${isRTL ? 'flex-row-reverse' : ''}`}
+                className={`inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors ${isRTL ? 'flex-row-reverse' : 'flex-row-reverse md:flex-row'}`}
             >
                 {t('auth.backToHome')}
-                <ChevronLeft className={`h-4 w-4 ${isRTL ? 'mr-1 rotate-180' : 'ml-1'}`} />
+                <ChevronLeft className={`h-4 w-4 ${isRTL ? 'mr-1 rotate-180' : 'mr-1 md:ml-1 md:mr-0'}`} />
             </Link>
             <Card className="w-full">
-                <CardHeader>
-                    <CardTitle className={isRTL ? 'text-right' : 'text-left'}>{t('auth.welcomeBack')}</CardTitle>
-                    <CardDescription className={isRTL ? 'text-right' : 'text-left'}>{t('auth.signInToAccount')}</CardDescription>
+                <CardHeader className="px-4 sm:px-6 pb-3 sm:pb-6">
+                    <CardTitle className={`text-lg sm:text-xl ${isRTL ? 'text-right' : 'text-left'}`}>{t('auth.welcomeBack')}</CardTitle>
+                    <CardDescription className={`text-sm sm:text-base ${isRTL ? 'text-right' : 'text-left'}`}>{t('auth.signInToAccount')}</CardDescription>
                 </CardHeader>
-                <div className="mb-4 px-6">
+                <div className="mb-4 px-4 sm:px-6">
                     <GoogleLoginButton />
                 </div>
-                <div className="relative mb-4 px-6">
-                    <div className="absolute inset-0 flex items-center px-6">
+                <div className="relative mb-4 px-4 sm:px-6">
+                    <div className="absolute inset-0 flex items-center px-4 sm:px-6">
                         <span className="w-full border-t" />
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
@@ -74,7 +74,7 @@ export default function LoginPage() {
                 </div>
 
                 <form onSubmit={handleSubmit}>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-4 px-4 sm:px-6">
                         {error && (
                             <div className="flex items-center gap-2 rounded-md bg-destructive/15 p-3 text-sm text-destructive" role="alert" aria-live="assertive">
                                 <AlertCircle className="h-4 w-4" aria-hidden="true" />
@@ -109,7 +109,7 @@ export default function LoginPage() {
                             </Link>
                         </div>
                     </CardContent>
-                    <CardFooter className="flex flex-col gap-4">
+                    <CardFooter className="flex flex-col gap-4 px-4 sm:px-6 pt-4 sm:pt-6">
                         <Button type="submit" className="w-full" disabled={loading}>
                             {loading && <Loader2 className={`h-4 w-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} aria-hidden="true" />}
                             {t('auth.signIn')}
