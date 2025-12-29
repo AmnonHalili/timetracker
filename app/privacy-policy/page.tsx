@@ -32,7 +32,7 @@ export default function PrivacyPolicyPage() {
                     <div className="space-y-8 text-zinc-700 dark:text-zinc-300">
                         <section>
                             <p>
-                                Welcome to Collabo ("we," "our," or "us"). We are committed to protecting your personal information and your right to privacy.
+                                Welcome to Collabo (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;). We are committed to protecting your personal information and your right to privacy.
                                 If you have any questions or concerns about this privacy notice or our practices with regard to your personal information, please
                                 contact us at collabo.timetracker@gmail.com.
                             </p>
@@ -63,7 +63,7 @@ export default function PrivacyPolicyPage() {
                             <h2 className="text-xl font-semibold text-zinc-900 dark:text-white mb-3">3. Cookies and Tracking Technologies</h2>
                             <p>We use cookies and similar tracking technologies (like web beacons and pixels) to access or store information.</p>
                             <ul className="list-disc pl-5 mt-2 space-y-1">
-                                <li><strong>Authentication:</strong> We use cookies to verify your account and determine when you're logged in.</li>
+                                <li><strong>Authentication:</strong> We use cookies to verify your account and determine when you&apos;re logged in.</li>
                                 <li><strong>Analytics:</strong> We use Google Analytics to collect data on how you interact with our website. This helps us understand what works well and what needs improvement.</li>
                             </ul>
                         </section>
