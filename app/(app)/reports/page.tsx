@@ -156,7 +156,7 @@ export default async function ReportsPage({
                         hasDailyTarget={!!(data.user.dailyTarget && data.user.dailyTarget > 0)}
                     />
 
-                    <ReportTable days={report.days} showWarnings={currentUser.role === "ADMIN"} />
+                    <ReportTable days={report.days} showWarnings={currentUser.role === "ADMIN"} userId={targetUserId} />
                 </>
             )}
         </div>

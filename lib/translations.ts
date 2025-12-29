@@ -208,6 +208,13 @@ export const translations = {
     'reports.day': 'Day',
     'reports.date': 'Date',
     'reports.none': 'None',
+    'reports.dayDetails': 'Day Details',
+    'reports.workdaySummary': 'Workday Summary',
+    'reports.taskEntries': 'Task Entries',
+    'reports.noTaskEntries': 'No task entries for this day',
+    'reports.breaks': 'Breaks',
+    'reports.manualEntry': 'Manual Entry',
+    'reports.totalTaskTime': 'Total Task Time',
 
     // Team
     'team.teamManagement': 'Team Management',
@@ -777,6 +784,13 @@ export const translations = {
     'reports.day': 'יום',
     'reports.date': 'תאריך',
     'reports.none': 'אין',
+    'reports.dayDetails': 'פרטי היום',
+    'reports.workdaySummary': 'סיכום יום עבודה',
+    'reports.taskEntries': 'רשומות משימות',
+    'reports.noTaskEntries': 'אין רשומות משימות ליום זה',
+    'reports.breaks': 'הפסקות',
+    'reports.manualEntry': 'רשומה ידנית',
+    'reports.totalTaskTime': 'סה"כ זמן משימות',
 
     // Team
     'team.teamManagement': 'ניהול צוות',
