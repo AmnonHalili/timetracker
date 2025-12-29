@@ -28,7 +28,7 @@ type TreeNode = User & {
 
 export default function HierarchyPage() {
     const { data: session } = useSession()
-    const { t, isRTL } = useLanguage()
+    const { t } = useLanguage()
     const [users, setUsers] = useState<User[]>([])
     const [projectName, setProjectName] = useState("Organization")
     const [projectId, setProjectId] = useState<string | null>(null)
