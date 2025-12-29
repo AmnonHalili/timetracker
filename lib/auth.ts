@@ -138,17 +138,29 @@ export const authOptions: NextAuthOptions = {
                 token.id = user.id
                 token.role = user.role
                 token.status = user.status
+                token.managerId = user.managerId
+                token.workDays = user.workDays
+                token.dailyTarget = user.dailyTarget
             } else if (token.id) {
                 // Subsequent request: fetch fresh role from DB to ensure sync
                 // This fixes the "Stale Admin Role" issue
                 try {
                     const freshUser = await prisma.user.findUnique({
                         where: { id: token.id as string },
-                        select: { role: true, status: true }
+                        select: {
+                            role: true,
+                            status: true,
+                            managerId: true,
+                            workDays: true,
+                            dailyTarget: true
+                        }
                     })
                     if (freshUser) {
                         token.role = freshUser.role
                         token.status = freshUser.status
+                        token.managerId = freshUser.managerId
+                        token.workDays = freshUser.workDays
+                        token.dailyTarget = freshUser.dailyTarget
                         // console.log("[AUTH] Refreshed Role from DB:", freshUser.role)
                     }
                 } catch (error) {
@@ -162,6 +174,9 @@ export const authOptions: NextAuthOptions = {
                 session.user.id = token.id
                 session.user.role = token.role
                 session.user.status = token.status
+                session.user.managerId = token.managerId
+                session.user.workDays = token.workDays as number[]
+                session.user.dailyTarget = token.dailyTarget as number | null
                 // Debug Log (Comment out in production later if too noisy)
                 // console.log("[AUTH] Session Callback", { email: session.user.email, role: session.user.role })
             }

@@ -5,13 +5,19 @@ import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { signOut } from "next-auth/react"
+import { useSession, signOut } from "next-auth/react"
 import { stopActiveTimer } from "@/lib/utils"
 import { useLanguage } from "@/lib/useLanguage"
 
 export function Sidebar() {
     const pathname = usePathname()
     const { t } = useLanguage()
+    const { data: session } = useSession()
+
+    // Check if user is a top-level admin with incomplete profile
+    const showSettingsBadge = session?.user?.role === 'ADMIN' &&
+        !session?.user?.managerId &&
+        (!session?.user?.workDays?.length || !session?.user?.dailyTarget)
 
     const routes = [
         {
@@ -44,6 +50,7 @@ export function Sidebar() {
             href: "/settings",
             label: t('nav.settings'),
             active: pathname === "/settings",
+            badge: showSettingsBadge
         },
     ]
 
@@ -53,46 +60,46 @@ export function Sidebar() {
                 <Link href="/dashboard" className="flex flex-col items-center gap-2" aria-label="Collabo Home">
                     {/* Pink Theme Logo */}
                     <div className="hidden [.pink-theme_&]:block">
-                            <Image 
-                                src="/collabologopink.png" 
-                                alt="Collabo Logo" 
-                                width={80} 
-                                height={80} 
+                        <Image
+                            src="/collabologopink.png"
+                            alt="Collabo Logo"
+                            width={80}
+                            height={80}
                             className="h-16 w-auto"
-                                priority 
-                            />
+                            priority
+                        />
                     </div>
 
                     {/* White Theme Logo */}
                     <div className="hidden [.white-theme_&]:block">
-                            <Image 
-                                src="/collabologoblack.png" 
-                                alt="Collabo Logo" 
-                                width={80} 
-                                height={80} 
-                                className="h-16 w-auto" 
-                                priority 
-                            />
+                        <Image
+                            src="/collabologoblack.png"
+                            alt="Collabo Logo"
+                            width={80}
+                            height={80}
+                            className="h-16 w-auto"
+                            priority
+                        />
                     </div>
 
                     {/* Default Logos (Blue/Dark) - Hide if pink or white theme is active */}
                     <div className="[.pink-theme_&]:hidden [.white-theme_&]:hidden">
-                            <Image 
-                                src="/collabologo.png" 
-                                alt="Collabo Logo" 
-                                width={80} 
-                                height={80} 
-                                className="h-16 w-auto dark:hidden" 
-                                priority 
-                            />
-                            <Image 
-                                src="/collabologowhitenoback.png" 
-                                alt="Collabo Logo" 
-                                width={80} 
-                                height={80} 
-                                className="h-16 w-auto hidden dark:block" 
-                                priority 
-                            />
+                        <Image
+                            src="/collabologo.png"
+                            alt="Collabo Logo"
+                            width={80}
+                            height={80}
+                            className="h-16 w-auto dark:hidden"
+                            priority
+                        />
+                        <Image
+                            src="/collabologowhitenoback.png"
+                            alt="Collabo Logo"
+                            width={80}
+                            height={80}
+                            className="h-16 w-auto hidden dark:block"
+                            priority
+                        />
                     </div>
                 </Link>
             </div>
@@ -105,7 +112,7 @@ export function Sidebar() {
                             href={route.href}
                             prefetch={true}
                             className={cn(
-                                "flex items-center px-4 py-3 text-sm font-medium rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                                "flex items-center justify-between px-4 py-3 text-sm font-medium rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                                 route.active
                                     ? "bg-muted text-primary"
                                     : "text-muted-foreground hover:bg-muted/50 hover:text-primary"
@@ -113,6 +120,10 @@ export function Sidebar() {
                             aria-current={route.active ? "page" : undefined}
                         >
                             {route.label}
+                            {/* @ts-ignore - badge is added dynamically to the route object */}
+                            {route.badge && (
+                                <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                            )}
                         </Link>
                     ))}
                 </div>

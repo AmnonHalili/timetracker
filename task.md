@@ -54,4 +54,7 @@
 - [x] Update Team Page / Hierarchy for Private Mode
     - [x] Show "Private Session"
     - [x] Fix RecursiveNode type errorsCreate Team" button
-    - [x] Hierarchy API: Handle user without project (return self only?)
+- [x] Admin Onboarding Prompt
+    - [x] Locate Sidebar component
+    - [x] Update auth session types
+    - [x] Implement badge logic in Sidebar

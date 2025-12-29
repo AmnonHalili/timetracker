@@ -10,6 +10,9 @@ declare module "next-auth" {
             id: string
             role: Role
             status: Status
+            managerId?: string | null
+            workDays?: number[]
+            dailyTarget?: number | null
         } & DefaultSession["user"]
     }
 
@@ -17,6 +20,9 @@ declare module "next-auth" {
         id: string
         role: Role
         status: Status
+        managerId?: string | null
+        workDays?: number[]
+        dailyTarget?: number | null
     }
 }
 
@@ -25,5 +31,8 @@ declare module "next-auth/jwt" {
         id: string
         role: Role
         status: Status
+        managerId?: string | null
+        workDays?: number[]
+        dailyTarget?: number | null
     }
 }
