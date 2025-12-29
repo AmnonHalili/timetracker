@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { Loader2, Check } from "lucide-react"
 import { User } from "@prisma/client"
 import { useSession } from "next-auth/react"
@@ -95,10 +94,6 @@ export function AssignManagerDialog({ open, onOpenChange, employee, managers, on
                 const data = await res.json()
                 throw new Error(data.message || "Failed to assign manager")
             }
-
-            const router = window.location // fallback if hook unavailable or just use router.refresh
-            // Actually router is imported. 
-            // We need to refresh parent
 
             if (onManagerChange) {
                 // If we still want to notify parent for some reason, but we primarily save here

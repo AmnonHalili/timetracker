@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Calendar, Clock, Users, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react"
 import { format } from "date-fns"
@@ -231,23 +230,23 @@ export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }:
                                 </h3>
                                 <div className="space-y-3">
                                     {sortedSubtasks.map(({ subtask, entries, totalSeconds }) => (
-                                            <div key={subtask.id} className="p-3 bg-muted/50 rounded-lg">
-                                                <div className="flex justify-between items-center mb-2">
-                                                    <span className="text-sm font-medium">{subtask.title}</span>
-                                                    <span className="text-sm font-semibold">{formatTime(totalSeconds)}</span>
-                                                </div>
-                                                <div className="space-y-1.5 mt-2 pl-2 border-l-2 border-muted">
-                                                    {entries
-                                                        .sort((a, b) => b.totalSeconds - a.totalSeconds)
-                                                        .map(({ user, totalSeconds: userSeconds }) => (
-                                                            <div key={user.id} className="flex justify-between items-center text-xs">
-                                                                <span className="text-muted-foreground">{user.name || 'Unknown'}</span>
-                                                                <span className="font-medium">{formatTime(userSeconds)}</span>
-                                                            </div>
-                                                        ))}
-                                                </div>
+                                        <div key={subtask.id} className="p-3 bg-muted/50 rounded-lg">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <span className="text-sm font-medium">{subtask.title}</span>
+                                                <span className="text-sm font-semibold">{formatTime(totalSeconds)}</span>
                                             </div>
-                                        ))}
+                                            <div className="space-y-1.5 mt-2 pl-2 border-l-2 border-muted">
+                                                {entries
+                                                    .sort((a, b) => b.totalSeconds - a.totalSeconds)
+                                                    .map(({ user, totalSeconds: userSeconds }) => (
+                                                        <div key={user.id} className="flex justify-between items-center text-xs">
+                                                            <span className="text-muted-foreground">{user.name || 'Unknown'}</span>
+                                                            <span className="font-medium">{formatTime(userSeconds)}</span>
+                                                        </div>
+                                                    ))}
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         )

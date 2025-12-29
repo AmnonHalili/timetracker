@@ -57,9 +57,14 @@ export function TasksPageWithOptimisticUpdate({
                 return prev
             }
             // Add task at the beginning of the list
-            return [task as typeof initialTasks[0], ...prev]
+            const newTask = {
+                ...task,
+                checklist: [],
+                subtasks: []
+            }
+            return [newTask as typeof initialTasks[0], ...prev]
         })
-    }, [initialTasks])
+    }, [])
 
     return (
         <div className="container mx-auto space-y-8">
