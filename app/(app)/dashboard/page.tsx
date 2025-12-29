@@ -18,6 +18,14 @@ type DashboardUser = User & {
         subtask?: { id: string; title: string } | null
     })[]
     pendingProjectId?: string | null
+    project?: {
+        workMode: "OUTPUT_BASED" | "TIME_BASED" | "PROJECT_BASED"
+        workLocationLatitude: number | null
+        workLocationLongitude: number | null
+        workLocationRadius: number | null
+        workLocationAddress: string | null
+        isRemoteWork: boolean
+    } | null
 }
 
 export default async function DashboardPage() {
@@ -37,16 +45,7 @@ export default async function DashboardPage() {
                     subtask: true
                 }
             },
-            project: {
-                select: { 
-                    workMode: true,
-                    workLocationLatitude: true,
-                    workLocationLongitude: true,
-                    workLocationRadius: true,
-                    workLocationAddress: true,
-                    isRemoteWork: true,
-                }
-            }
+            project: true
         },
     })) as unknown as DashboardUser
 
@@ -182,13 +181,12 @@ export default async function DashboardPage() {
                             user.project?.isRemoteWork
                                 ? null // Remote work - no location required
                                 : user.project?.workLocationLatitude && user.project?.workLocationLongitude
-                                ? {
-                                    latitude: user.project.workLocationLatitude,
-                                    longitude: user.project.workLocationLongitude,
-                                    radius: user.project.workLocationRadius || 150,
-                                    address: user.project.workLocationAddress,
-                                }
-                                : null
+                                    ? {
+                                        latitude: user.project.workLocationLatitude,
+                                        longitude: user.project.workLocationLongitude,
+                                        radius: user.project.workLocationRadius || 150,
+                                    }
+                                    : null
                         }
                         activeEntry={activeEntry || null}
                     />
