@@ -67,18 +67,37 @@ export async function DELETE(req: Request) {
                         return NextResponse.json({ message: "Invalid new admin selection" }, { status: 400 })
                     }
 
-                    // Perform transfer and delete in transaction
+                    // Perform transfer and remove from team in transaction
                     await prisma.$transaction([
                         prisma.user.update({
                             where: { id: newAdminId },
                             data: { role: "ADMIN" }
                         }),
-                        prisma.user.delete({
-                            where: { id: userId }
+                        prisma.user.update({
+                            where: { id: userId },
+                            data: {
+                                projectId: null,
+                                managerId: null,
+                                sharedChiefGroupId: null,
+                            }
                         })
                     ])
 
-                    return NextResponse.json({ message: "Admin transferred and user deleted successfully" })
+                    // Remove secondary manager relationships
+                    try {
+                        await prisma.secondaryManager.deleteMany({
+                            where: {
+                                OR: [
+                                    { employeeId: userId },
+                                    { managerId: userId }
+                                ]
+                            }
+                        })
+                    } catch (error) {
+                        console.warn("Could not remove secondary manager relationships:", error)
+                    }
+
+                    return NextResponse.json({ message: "Admin transferred and user removed from team successfully" })
                 }
 
                 // Prevent deletion without transfer
@@ -88,12 +107,35 @@ export async function DELETE(req: Request) {
             }
         }
 
-        // Delete the user (normal flow)
-        await prisma.user.delete({
-            where: { id: userId }
+        // Remove user from team instead of deleting
+        // Set projectId to null, clear manager relationships, but keep the user account active
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                projectId: null,
+                managerId: null,
+                sharedChiefGroupId: null,
+                // Keep status as ACTIVE so they can still log in
+                // They will see the "join or create team" screen
+            }
         })
 
-        return NextResponse.json({ message: "User deleted successfully" })
+        // Also remove any secondary manager relationships
+        try {
+            await prisma.secondaryManager.deleteMany({
+                where: {
+                    OR: [
+                        { employeeId: userId },
+                        { managerId: userId }
+                    ]
+                }
+            })
+        } catch (error) {
+            // If secondaryManager doesn't exist, continue
+            console.warn("Could not remove secondary manager relationships:", error)
+        }
+
+        return NextResponse.json({ message: "User removed from team successfully" })
     } catch (error) {
         console.error("[TEAM_USER_DELETE_ERROR]", error)
         return NextResponse.json({ message: "Failed to delete user" }, { status: 500 })

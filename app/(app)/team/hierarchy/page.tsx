@@ -28,7 +28,7 @@ type TreeNode = User & {
 
 export default function HierarchyPage() {
     const { data: session } = useSession()
-    const { t } = useLanguage()
+    const { t, isRTL } = useLanguage()
     const [users, setUsers] = useState<User[]>([])
     const [projectName, setProjectName] = useState("Organization")
     const [projectId, setProjectId] = useState<string | null>(null)
@@ -561,15 +561,15 @@ export default function HierarchyPage() {
                         </div>
                     </div>
 
-                    {/* Desktop Back Button - Far Right */}
-                    <div className="hidden md:flex absolute right-0 top-0 items-center gap-2 z-30 -mr-16 h-full">
+                    {/* Desktop Back Button - Always on the left */}
+                    <div className="hidden md:flex absolute left-0 -ml-16 top-0 items-center gap-2 z-30 h-full">
                         <Button
                             variant="ghost"
                             size="icon"
                             asChild
                         >
                             <Link href="/team" aria-label="Back to Team">
-                                <ArrowRight className="h-5 w-5" />
+                                <ArrowRight className="h-5 w-5 rotate-180" />
                             </Link>
                         </Button>
                     </div>

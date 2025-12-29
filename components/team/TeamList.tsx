@@ -209,7 +209,7 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
         setNewAdminId("")
     }
 
-    const deleteUser = async () => {
+            const deleteUser = async () => {
         if (!deleteDialogUser) return
 
         setDeleting(true)
@@ -232,7 +232,7 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
                     setDeleting(false)
                     return
                 }
-                throw new Error(data.message || "Failed to delete")
+                throw new Error(data.message || "Failed to remove user from team")
             }
 
             // Optimistic update
@@ -241,7 +241,7 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
             router.refresh()
             closeDeleteDialog()
         } catch (error) {
-            alert(error instanceof Error ? error.message : "Error deleting user")
+            alert(error instanceof Error ? error.message : "Error removing user from team")
         } finally {
             setDeleting(false)
         }
@@ -798,12 +798,12 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
             <Dialog open={!!deleteDialogUser} onOpenChange={(open) => !open && closeDeleteDialog()}>
                 <DialogContent className="sm:max-w-[400px]">
                     <DialogHeader>
-                        <DialogTitle>Delete User</DialogTitle>
+                        <DialogTitle>Remove User from Team</DialogTitle>
                         <DialogDescription>
                             {showTransferAdmin ? (
-                                <>Select a new admin before deleting <strong>{deleteDialogUser?.name}</strong></>
+                                <>Select a new admin before removing <strong>{deleteDialogUser?.name}</strong> from the team</>
                             ) : (
-                                <>Are you sure you want to delete <strong>{deleteDialogUser?.name}</strong>? This action cannot be undone.</>
+                                <>Are you sure you want to remove <strong>{deleteDialogUser?.name}</strong> from the team? They will be removed from the team but their account will remain active.</>
                             )}
                         </DialogDescription>
                     </DialogHeader>
@@ -834,9 +834,9 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
                             </div>
                         </div>
                     ) : (
-                        <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4 mt-4">
-                            <p className="text-sm text-destructive">
-                                ⚠️ All time entries and data associated with this user will be permanently deleted.
+                        <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md p-4 mt-4">
+                            <p className="text-sm text-blue-900 dark:text-blue-100">
+                                ℹ️ The user will be removed from the team and will no longer appear in the team list or hierarchy. Their account will remain active and they can join another team or create their own.
                             </p>
                         </div>
                     )}
@@ -851,7 +851,7 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
                             disabled={deleting || (showTransferAdmin && !newAdminId)}
                         >
                             {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {showTransferAdmin ? "Transfer & Delete" : "Delete User"}
+                            {showTransferAdmin ? "Transfer & Remove" : "Remove from Team"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
