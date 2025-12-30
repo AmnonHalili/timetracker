@@ -16,6 +16,12 @@
     },
     {
       "src": "/collabospecialnoback.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/collabospecialnoback.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
