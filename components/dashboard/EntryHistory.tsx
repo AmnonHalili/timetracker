@@ -53,7 +53,12 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
 
     useEffect(() => {
         // Filter out entries that are pending deletion to prevent them from reappearing
+        // This is critical for fast deletions - entries stay filtered even after router.refresh()
         const filteredEntries = entries.filter(e => !pendingDeletions.has(e.id))
+        
+        // Always update local entries when entries prop changes
+        // This ensures merged entries with updated breaks are reflected immediately
+        // We update whenever the entries array changes, which includes when entry data (breaks, times) changes
         setLocalEntries(filteredEntries)
         
         // When server entries arrive, check if we should remove the optimistic entry
@@ -137,10 +142,10 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
         }
     }
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = (id: string) => {
         if (!confirm(t('common.delete') + "?")) return
         
-        // Optimistic update - remove entry immediately from UI
+        // Optimistic update - remove entry immediately from UI (BEFORE any async operations)
         const deletedEntry = localEntries.find(e => e.id === id)
         const deletedIndex = localEntries.findIndex(e => e.id === id)
         
@@ -149,43 +154,46 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
         // Mark as pending deletion to prevent it from reappearing during router.refresh()
         setPendingDeletions(prev => new Set(prev).add(id))
         
-        // Remove immediately for instant UI feedback
+        // Remove immediately for instant UI feedback - this happens synchronously
         setLocalEntries(current => current.filter(e => e.id !== id))
         
-        try {
-            await fetch(`/api/time-entries?id=${id}`, { method: "DELETE" })
-            startTransition(() => {
-                router.refresh()
+        // API call happens in background - doesn't block UI
+        fetch(`/api/time-entries?id=${id}`, { method: "DELETE" })
+            .then(() => {
+                // Refresh in background after deletion completes
+                startTransition(() => {
+                    router.refresh()
+                })
+                // Keep in pending deletions longer to handle multiple rapid deletions
+                // Remove after a longer delay to ensure all router.refresh() calls complete
+                setTimeout(() => {
+                    setPendingDeletions(prev => {
+                        const next = new Set(prev)
+                        next.delete(id)
+                        return next
+                    })
+                }, 5000) // Longer delay to handle rapid deletions and ensure router.refresh() completes
             })
-            // Remove from pending deletions after a short delay to allow router.refresh() to complete
-            // This ensures the entry won't reappear even if the refresh brings stale data
-            setTimeout(() => {
+            .catch(error => {
+                // Revert on error - restore the entry at its original position
                 setPendingDeletions(prev => {
                     const next = new Set(prev)
                     next.delete(id)
                     return next
                 })
-            }, 1000)
-        } catch (error) {
-            // Revert on error - restore the entry at its original position
-            setPendingDeletions(prev => {
-                const next = new Set(prev)
-                next.delete(id)
-                return next
+                setLocalEntries(current => {
+                    const newEntries = [...current]
+                    // Restore at original position if possible, otherwise append
+                    if (deletedIndex >= 0 && deletedIndex <= newEntries.length) {
+                        newEntries.splice(deletedIndex, 0, deletedEntry)
+                    } else {
+                        newEntries.push(deletedEntry)
+                    }
+                    return newEntries
+                })
+                console.error("Failed to delete entry:", error)
+                alert(t('common.error') || "Failed to delete entry. Please try again.")
             })
-            setLocalEntries(current => {
-                const newEntries = [...current]
-                // Restore at original position if possible, otherwise append
-                if (deletedIndex >= 0 && deletedIndex <= newEntries.length) {
-                    newEntries.splice(deletedIndex, 0, deletedEntry)
-                } else {
-                    newEntries.push(deletedEntry)
-                }
-                return newEntries
-            })
-            console.error("Failed to delete entry:", error)
-            alert(t('common.error') || "Failed to delete entry. Please try again.")
-        }
     }
 
     // Helper to calculate duration string

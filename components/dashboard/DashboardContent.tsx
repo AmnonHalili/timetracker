@@ -245,10 +245,22 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
         // Remove optimistic entry if exists
         setOptimisticStoppedEntry(null)
         
+        // Normalize the merged entry - convert string dates to Date objects for breaks
+        const normalizedEntry: TimeEntry = {
+            ...mergedEntry,
+            startTime: new Date(mergedEntry.startTime),
+            endTime: mergedEntry.endTime ? new Date(mergedEntry.endTime) : null,
+            breaks: (mergedEntry.breaks || []).map(b => ({
+                ...b,
+                startTime: typeof b.startTime === 'string' ? new Date(b.startTime) : b.startTime,
+                endTime: b.endTime ? (typeof b.endTime === 'string' ? new Date(b.endTime) : b.endTime) : null
+            }))
+        }
+        
         // Update local entries - replace matching entry (we already merged optimistically)
         setLocalHistoryEntries(prev => {
-            const mergedTaskIds = (mergedEntry.tasks || []).map(t => t.id).sort()
-            const mergedSubtaskId = mergedEntry.subtask?.id || null
+            const mergedTaskIds = (normalizedEntry.tasks || []).map(t => t.id).sort()
+            const mergedSubtaskId = normalizedEntry.subtask?.id || null
             
             const existingIndex = prev.findIndex(entry => {
                 const entryTaskIds = (entry.tasks || []).map(t => t.id).sort()
@@ -267,13 +279,13 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
             if (existingIndex >= 0) {
                 // Replace existing entry with server-confirmed merged one
                 const updated = [...prev]
-                updated[existingIndex] = mergedEntry
+                updated[existingIndex] = normalizedEntry
                 return updated
             } else {
                 // Entry not found (shouldn't happen, but handle gracefully)
                 // Remove any temp entries and add the merged one
                 const withoutTemp = prev.filter(e => !e.id.startsWith('temp-'))
-                return [mergedEntry, ...withoutTemp]
+                return [normalizedEntry, ...withoutTemp]
             }
         })
         

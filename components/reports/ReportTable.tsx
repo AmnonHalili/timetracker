@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { DailyReport } from "@/lib/report-calculations"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { format, getDay } from "date-fns"
+import { format, getDay, isSameDay, isToday, isYesterday, startOfDay, formatISO } from "date-fns"
 import { cn, formatHoursMinutes } from "@/lib/utils"
 import { useLanguage } from "@/lib/useLanguage"
 import { ChevronDown, ChevronUp, Loader2 } from "lucide-react"
@@ -35,6 +35,28 @@ export function ReportTable({ days, userId }: ReportTableProps) {
     const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set())
     const [dayEntries, setDayEntries] = useState<Record<string, { entries: TimeEntry[], loading: boolean }>>({})
     
+    // Sort days: current day first, then yesterday, then older days in descending order
+    const sortedDays = useMemo(() => {
+        const today = startOfDay(new Date())
+        const yesterday = startOfDay(new Date(today.getTime() - 24 * 60 * 60 * 1000))
+        
+        return [...days].sort((a, b) => {
+            const dateA = startOfDay(a.date)
+            const dateB = startOfDay(b.date)
+            
+            // Current day first
+            if (isToday(dateA) && !isToday(dateB)) return -1
+            if (!isToday(dateA) && isToday(dateB)) return 1
+            
+            // Yesterday second
+            if (isYesterday(dateA) && !isYesterday(dateB) && !isToday(dateB)) return -1
+            if (!isYesterday(dateA) && !isToday(dateA) && isYesterday(dateB)) return 1
+            
+            // Older days in descending order (most recent first)
+            return dateB.getTime() - dateA.getTime()
+        })
+    }, [days])
+    
     const getDayName = (date: Date) => {
         const dayOfWeek = getDay(date)
         const dayKeys: Array<'days.sunday' | 'days.monday' | 'days.tuesday' | 'days.wednesday' | 'days.thursday' | 'days.friday' | 'days.saturday'> = ['days.sunday', 'days.monday', 'days.tuesday', 'days.wednesday', 'days.thursday', 'days.friday', 'days.saturday']
@@ -42,7 +64,8 @@ export function ReportTable({ days, userId }: ReportTableProps) {
     }
 
     const handleDayClick = async (day: DailyReport) => {
-        const dayKey = day.date.toISOString().split('T')[0]
+        // Format date as YYYY-MM-DD in local timezone to avoid UTC conversion issues
+        const dayKey = format(day.date, 'yyyy-MM-dd')
         const isExpanded = expandedDays.has(dayKey)
 
         if (isExpanded) {
@@ -60,12 +83,28 @@ export function ReportTable({ days, userId }: ReportTableProps) {
                 setDayEntries(prev => ({ ...prev, [dayKey]: { entries: [], loading: true } }))
                 
                 try {
+                    console.log(`[ReportTable] Fetching entries for date: ${dayKey}, userId: ${userId}`)
                     const response = await fetch(`/api/reports/day-details?userId=${userId}&date=${dayKey}`)
                     if (response.ok) {
                         const data = await response.json()
+                        console.log(`[ReportTable] Response for ${dayKey}:`, {
+                            timeEntriesCount: data.timeEntries?.length || 0,
+                            entries: data.timeEntries
+                        })
                         setDayEntries(prev => ({ 
                             ...prev, 
                             [dayKey]: { entries: data.timeEntries || [], loading: false } 
+                        }))
+                    } else {
+                        const errorText = await response.text()
+                        console.error(`[ReportTable] Failed to fetch day details:`, {
+                            status: response.status,
+                            statusText: response.statusText,
+                            error: errorText
+                        })
+                        setDayEntries(prev => ({ 
+                            ...prev, 
+                            [dayKey]: { entries: [], loading: false } 
                         }))
                     }
                 } catch (error) {
@@ -116,8 +155,9 @@ export function ReportTable({ days, userId }: ReportTableProps) {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {days.map((day) => {
-                        const dayKey = day.date.toISOString().split('T')[0]
+                    {sortedDays.map((day) => {
+                        // Format date as YYYY-MM-DD in local timezone
+                        const dayKey = format(day.date, 'yyyy-MM-dd')
                         const isExpanded = expandedDays.has(dayKey)
                         const entries = dayEntries[dayKey]?.entries || []
                         const loading = dayEntries[dayKey]?.loading || false
@@ -161,68 +201,80 @@ export function ReportTable({ days, userId }: ReportTableProps) {
                                         className="bg-muted/20"
                                     >
                                         <TableCell colSpan={5} className="p-0">
-                                            <div className={cn("p-4 space-y-3 transition-all duration-300 ease-in-out", isRTL && "text-right")}>
+                                            <div className={cn("p-4 space-y-3 transition-all duration-200 ease-in-out", isRTL && "text-right")}>
                                                 {loading ? (
                                                     <div className="flex items-center justify-center py-8">
                                                         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                                                     </div>
                                                 ) : entries.length === 0 ? (
-                                                    <div className="text-sm text-muted-foreground py-4 text-center">
-                                                        {t('reports.noTaskEntries')}
+                                                    <div className="text-sm text-muted-foreground py-8 text-center">
+                                                        {t('reports.noTimeTracked')}
                                                     </div>
                                                 ) : (
                                                     <div className="space-y-3">
-                                                        {entries.map((entry) => {
+                                                        {entries.map((entry, index) => {
                                                             const duration = calculateDuration(entry.startTime, entry.endTime, entry.breaks)
                                                             return (
                                                                 <div
                                                                     key={entry.id}
-                                                                    className="rounded-xl border p-4 bg-card/50 hover:bg-card hover:shadow-sm transition-all"
+                                                                    className="rounded-xl border-2 border-border p-4 bg-card hover:bg-accent/50 hover:shadow-md transition-all"
                                                                 >
                                                                     <div className={cn("flex flex-col gap-3", isRTL && "text-right")}>
-                                                                        {/* Time Range and Duration */}
+                                                                        {/* Time Range */}
                                                                         <div className="flex items-center justify-between">
-                                                                            <span className="font-mono text-sm font-medium">
-                                                                                {getTimeRange(entry.startTime, entry.endTime)}
-                                                                            </span>
-                                                                            <span className="font-mono text-sm font-semibold text-primary">
-                                                                                {formatHoursMinutes(duration)}
-                                                                            </span>
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="font-mono text-base font-semibold text-foreground">
+                                                                                    {getTimeRange(entry.startTime, entry.endTime)}
+                                                                                </span>
+                                                                            </div>
+                                                                            <div className={cn("flex flex-col items-end", isRTL && "items-start")}>
+                                                                                <div className="text-[10px] uppercase text-muted-foreground font-semibold tracking-wider">
+                                                                                    {t('timeEntries.netWork')}
+                                                                                </div>
+                                                                                <span className="font-mono text-base font-bold text-primary">
+                                                                                    {formatHoursMinutes(duration)}
+                                                                                </span>
+                                                                            </div>
                                                                         </div>
 
                                                                         {/* Description */}
-                                                                        {entry.description && (
-                                                                            <div className="text-sm text-muted-foreground">
+                                                                        {entry.description ? (
+                                                                            <div className="text-sm font-medium text-foreground bg-muted/30 px-3 py-2 rounded">
                                                                                 {entry.description}
                                                                             </div>
-                                                                        )}
-
-                                                                        {/* Tasks */}
-                                                                        {entry.tasks && entry.tasks.length > 0 && (
-                                                                            <div className="flex flex-wrap gap-2">
-                                                                                {entry.tasks.map((task) => (
-                                                                                    <span
-                                                                                        key={task.id}
-                                                                                        className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-primary/10 text-primary border border-primary/20"
-                                                                                    >
-                                                                                        {task.title}
-                                                                                    </span>
-                                                                                ))}
+                                                                        ) : (
+                                                                            <div className="text-xs text-muted-foreground italic">
+                                                                                {t('timeEntries.noDescription')}
                                                                             </div>
                                                                         )}
 
-                                                                        {/* Subtask */}
-                                                                        {entry.subtask && (
-                                                                            <div className="flex flex-wrap gap-2">
-                                                                                <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-secondary/50 text-secondary-foreground border border-secondary/30">
+                                                                        {/* Tasks and Subtask */}
+                                                                        <div className="flex flex-wrap gap-2">
+                                                                            {/* Tasks */}
+                                                                            {entry.tasks && entry.tasks.length > 0 && (
+                                                                                <>
+                                                                                    {entry.tasks.map((task) => (
+                                                                                        <span
+                                                                                            key={task.id}
+                                                                                            className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-primary/10 text-primary border border-primary/20"
+                                                                                        >
+                                                                                            {task.title}
+                                                                                        </span>
+                                                                                    ))}
+                                                                                </>
+                                                                            )}
+
+                                                                            {/* Subtask */}
+                                                                            {entry.subtask && (
+                                                                                <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-secondary/50 text-secondary-foreground border border-secondary/30">
                                                                                     {entry.subtask.title}
                                                                                 </span>
-                                                                            </div>
-                                                                        )}
+                                                                            )}
+                                                                        </div>
 
                                                                         {/* Manual Entry Badge */}
                                                                         {entry.isManual && (
-                                                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200 w-fit">
+                                                                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200 w-fit">
                                                                                 {t('reports.manualEntry')}
                                                                             </span>
                                                                         )}

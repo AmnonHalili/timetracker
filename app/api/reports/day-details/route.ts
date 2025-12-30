@@ -60,10 +60,23 @@ export async function GET(req: Request) {
         }
     }
 
-    // Parse date
-    const targetDate = new Date(date)
+    // Parse date - handle YYYY-MM-DD format properly to avoid timezone issues
+    // When date is "2025-12-30", we want to get the start/end of that day in local timezone
+    let targetDate: Date
+    if (date.includes('T')) {
+        targetDate = new Date(date)
+    } else {
+        // If it's YYYY-MM-DD format, parse it in local timezone
+        // Split and create date in local timezone to avoid UTC conversion issues
+        const [year, month, day] = date.split('-').map(Number)
+        targetDate = new Date(year, month - 1, day, 0, 0, 0, 0) // Local timezone
+    }
+    
     const dayStart = startOfDay(targetDate)
     const dayEnd = endOfDay(targetDate)
+    
+    // Log for debugging
+    console.log(`[day-details] Date param: ${date}, Parsed targetDate: ${targetDate.toISOString()}, DayStart: ${dayStart.toISOString()}, DayEnd: ${dayEnd.toISOString()}`)
 
     // Fetch workday for this date
     const workday = await prisma.workday.findFirst({
@@ -85,12 +98,17 @@ export async function GET(req: Request) {
     })
 
     // Fetch all time entries for this day
+    // Include both completed entries (with endTime) and active entries (without endTime)
+    // Query by startTime to get all entries that started on this day
+    const nextDayStart = new Date(dayEnd)
+    nextDayStart.setMilliseconds(nextDayStart.getMilliseconds() + 1) // Start of next day
+    
     const timeEntries = await prisma.timeEntry.findMany({
         where: {
             userId: userId,
             startTime: {
                 gte: dayStart,
-                lte: dayEnd,
+                lt: nextDayStart, // Less than start of next day
             },
         },
         orderBy: {
@@ -128,6 +146,16 @@ export async function GET(req: Request) {
             }
         },
     })
+
+    // Log for debugging
+    console.log(`[day-details] Found ${timeEntries.length} time entries for user ${userId} on ${date}`)
+    if (timeEntries.length > 0) {
+        console.log(`[day-details] Entry times:`, timeEntries.map(e => ({
+            id: e.id,
+            startTime: e.startTime,
+            endTime: e.endTime
+        })))
+    }
 
     return NextResponse.json({
         workday,

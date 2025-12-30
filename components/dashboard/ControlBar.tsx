@@ -341,75 +341,75 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
             })
         }
 
-        setLoading(true)
-
         // API call happens in background - doesn't block UI
-        try {
-            if (isManualMode && manualStart && manualEnd) {
-                // Manual Entry
-                const start = new Date()
-                const end = new Date()
-                const [startH, startM] = manualStart.split(':')
-                const [endH, endM] = manualEnd.split(':')
+        if (isManualMode && manualStart && manualEnd) {
+            // Manual Entry
+            const start = new Date()
+            const end = new Date()
+            const [startH, startM] = manualStart.split(':')
+            const [endH, endM] = manualEnd.split(':')
 
-                start.setHours(parseInt(startH), parseInt(startM), 0, 0)
-                end.setHours(parseInt(endH), parseInt(endM), 0, 0)
+            start.setHours(parseInt(startH), parseInt(startM), 0, 0)
+            end.setHours(parseInt(endH), parseInt(endM), 0, 0)
 
-                const manualResponse = await fetch('/api/time-entries', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'manual',
-                        manualData: { start, end, description },
-                        taskIds: selectedTaskIds.length > 0 ? selectedTaskIds : undefined,
-                        subtaskId: selectedSubtaskId || null
-                    }),
+            fetch('/api/time-entries', {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'manual',
+                    manualData: { start, end, description },
+                    taskIds: selectedTaskIds.length > 0 ? selectedTaskIds : undefined,
+                    subtaskId: selectedSubtaskId || null
+                }),
+            })
+                .then(response => response.json())
+                .then(manualData => {
+                    setManualStart("")
+                    setManualEnd("")
+                    setTimeError("")
+                    setDescription("")
+                    setSelectedTaskIds([])
+                    setSelectedSubtaskId(null)
+                    
+                    // If merged, update UI immediately
+                    if (manualData.merged && manualData.entry && onEntryMerged) {
+                        onEntryMerged(manualData.entry)
+                    } else {
+                        startTransition(() => {
+                            router.refresh()
+                        })
+                    }
                 })
-                const manualData = await manualResponse.json()
-                
-                setManualStart("")
-                setManualEnd("")
-                setTimeError("")
-                setDescription("")
-                setSelectedTaskIds([])
-                setSelectedSubtaskId(null)
-                
-                // If merged, update UI immediately
-                if (manualData.merged && manualData.entry && onEntryMerged) {
-                    onEntryMerged(manualData.entry)
-                } else {
+                .catch(error => {
+                    console.error(error)
+                    alert("Failed to save entry")
+                })
+        } else {
+            // Timer Start - fire and forget
+            fetch('/api/time-entries', {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'start',
+                    description,
+                    taskIds: selectedTaskIds.length > 0 ? selectedTaskIds : undefined,
+                    subtaskId: selectedSubtaskId || null
+                }),
+            })
+                .then(() => {
                     startTransition(() => {
                         router.refresh()
                     })
-                }
-            } else {
-                // Timer Start
-                await fetch('/api/time-entries', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'start',
-                        description,
-                        taskIds: selectedTaskIds.length > 0 ? selectedTaskIds : undefined,
-                        subtaskId: selectedSubtaskId || null
-                    }),
                 })
-            }
-            startTransition(() => {
-            router.refresh()
-            })
-        } catch (error) {
-            console.error(error)
-            // Revert optimistic update on error
-            setOptimisticEntry(previousEntry)
-            alert("Failed to save entry")
-        } finally {
-            setLoading(false)
+                .catch(error => {
+                    console.error(error)
+                    // Revert optimistic update on error
+                    setOptimisticEntry(previousEntry)
+                    alert("Failed to save entry")
+                })
         }
     }
 
     const handleAction = async (action: 'stop' | 'pause' | 'resume') => {
-        setLoading(true)
-
-        // Optimistic updates for immediate UI feedback
+        // Optimistic updates FIRST - immediate UI feedback, no delay
         const now = new Date()
         const previousEntry = optimisticEntry // Backup for rollback
 
@@ -452,38 +452,36 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
             }
         }
 
-        try {
-            const response = await fetch('/api/time-entries', {
-                method: 'POST',
-                body: JSON.stringify({ action }),
+        // API call happens in background - doesn't block UI
+        fetch('/api/time-entries', {
+            method: 'POST',
+            body: JSON.stringify({ action }),
+        })
+            .then(response => response.json())
+            .then(data => {
+                // If entries were merged, update UI immediately without full refresh
+                if (data.merged && action === 'stop' && data.entry && onEntryMerged) {
+                    // Update UI immediately with merged entry
+                    onEntryMerged(data.entry)
+                } else {
+                    // Normal case - refresh in background
+                    startTransition(() => {
+                        router.refresh()
+                    })
+                }
             })
-            const data = await response.json()
-            
-            // If entries were merged, update UI immediately without full refresh
-            if (data.merged && action === 'stop' && data.entry && onEntryMerged) {
-                // Clear optimistic entry immediately since it was merged
-                setOptimisticEntry(null)
-                setDescription("")
-                // Keep selectedTaskIds so subtask selector remains visible
-                // Only clear selectedSubtaskId to allow selecting a new subtask
-                setSelectedSubtaskId(null)
-                
-                // Update UI immediately with merged entry
-                onEntryMerged(data.entry)
-            } else {
-                // Normal case - refresh in background
-                startTransition(() => {
-                    router.refresh()
-                })
-            }
-        } catch (error) {
-            console.error("Timer action failed", error)
-            // Revert optimistic update on error
-            setOptimisticEntry(previousEntry)
-            alert("Failed to update timer. Please try again.")
-        } finally {
-            setLoading(false)
-        }
+            .catch(error => {
+                console.error("Timer action failed", error)
+                // Revert optimistic update on error
+                setOptimisticEntry(previousEntry)
+                if (action === 'stop' && previousEntry) {
+                    // Restore description if it was cleared
+                    setDescription(previousEntry.description || "")
+                    setSelectedTaskIds(previousEntry.tasks?.map(t => t.id) || [])
+                    setSelectedSubtaskId(previousEntry.subtaskId || null)
+                }
+                alert("Failed to update timer. Please try again.")
+            })
     }
 
     return (
@@ -621,110 +619,163 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                onClick={async () => {
-                                    try {
-                                        // If subtask is selected, mark only the subtask as done
-                                        if (selectedSubtaskId && selectedSubtask) {
-                                            await fetch('/api/tasks/subtasks', {
-                                                method: 'PATCH',
-                                                headers: { 'Content-Type': 'application/json' },
-                                                body: JSON.stringify({
-                                                    id: selectedSubtask.id,
-                                                    isDone: !isSubtaskDone
-                                                })
-                                            })
-                                            
-                                            // If marking subtask as done, clear the selection so it disappears from the list
-                                            if (!isSubtaskDone) {
-                                                setSelectedSubtaskId(null)
+                                onClick={() => {
+                                    // If subtask is selected, mark only the subtask as done
+                                    if (selectedSubtaskId && selectedSubtask) {
+                                        // Optimistic update first - stop timer immediately
+                                        if (!isSubtaskDone && optimisticEntry && onTimerStopped) {
+                                            const now = new Date()
+                                            const stoppedEntry = {
+                                                startTime: new Date(optimisticEntry.startTime),
+                                                endTime: now,
+                                                description: optimisticEntry.description || null,
+                                                breaks: optimisticEntry.breaks?.map(b => ({
+                                                    startTime: new Date(b.startTime),
+                                                    endTime: b.endTime ? new Date(b.endTime) : null
+                                                })) || [],
+                                                tasks: optimisticEntry.tasks || [],
+                                                subtaskId: optimisticEntry.subtaskId || null
                                             }
+                                            onTimerStopped(stoppedEntry)
                                             
-                                            // Refresh to update UI
-                                            startTransition(() => {
-                                                router.refresh()
+                                            // Clear optimistic entry and reset fields immediately
+                                            setOptimisticEntry(null)
+                                            setDescription("")
+                                            setSelectedTaskIds([])
+                                            setSelectedSubtaskId(null)
+                                        } else if (!isSubtaskDone) {
+                                            // Clear selection immediately
+                                            setSelectedSubtaskId(null)
+                                        }
+                                        
+                                        // API calls happen in background
+                                        fetch('/api/tasks/subtasks', {
+                                            method: 'PATCH',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                id: selectedSubtask.id,
+                                                isDone: !isSubtaskDone
                                             })
-                                        } else {
-                                            // Mark task as done
-                                            await fetch('/api/tasks', {
-                                                method: 'PATCH',
-                                                headers: { 'Content-Type': 'application/json' },
-                                                body: JSON.stringify({
-                                                    id: selectedTask.id,
-                                                    status: isTaskDone ? 'TODO' : 'DONE'
-                                                })
-                                            })
-                                            
-                                            // If marking as done, mark all subtasks as done
-                                            if (!isTaskDone && availableSubtasks.length > 0) {
-                                                const subtasksToUpdate = availableSubtasks.filter(st => !st.isDone)
-                                                if (subtasksToUpdate.length > 0) {
-                                                    // Update all subtasks in parallel
-                                                    await Promise.all(
-                                                        subtasksToUpdate.map(subtask =>
-                                                            fetch('/api/tasks/subtasks', {
-                                                                method: 'PATCH',
-                                                                headers: { 'Content-Type': 'application/json' },
-                                                                body: JSON.stringify({
-                                                                    id: subtask.id,
-                                                                    isDone: true
-                                                                })
-                                                            }).catch(err => {
-                                                                console.error(`Failed to update subtask ${subtask.id}:`, err)
-                                                            })
-                                                        )
-                                                    )
-                                                }
-                                            }
-                                            
-                                            // Stop current time entry to add it to history (only if marking as done, not when unmarking)
-                                            if (!isTaskDone && optimisticEntry && onTimerStopped) {
-                                                const now = new Date()
-                                                const stoppedEntry = {
-                                                    startTime: new Date(optimisticEntry.startTime),
-                                                    endTime: now,
-                                                    description: optimisticEntry.description || null,
-                                                    breaks: optimisticEntry.breaks?.map(b => ({
-                                                        startTime: new Date(b.startTime),
-                                                        endTime: b.endTime ? new Date(b.endTime) : null
-                                                    })) || [],
-                                                    tasks: optimisticEntry.tasks || [],
-                                                    subtaskId: optimisticEntry.subtaskId || null
-                                                }
-                                                onTimerStopped(stoppedEntry)
-                                                
-                                                const stopResponse = await fetch('/api/time-entries', {
-                                                    method: 'POST',
-                                                    headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({
-                                                        action: 'stop'
+                                        })
+                                            .then(() => {
+                                                // If marking subtask as done, also stop timer in background
+                                                if (!isSubtaskDone && optimisticEntry) {
+                                                    return fetch('/api/time-entries', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({
+                                                            action: 'stop'
+                                                        })
                                                     })
-                                                })
-                                                const stopData = await stopResponse.json()
-                                                
-                                                // Clear optimistic entry
-                                                setOptimisticEntry(null)
-                                                setDescription("")
-                                                setSelectedTaskIds([])
-                                                setSelectedSubtaskId(null)
-                                                
-                                                // If merged, update UI immediately
-                                                if (stopData.merged && stopData.entry && onEntryMerged) {
-                                                    onEntryMerged(stopData.entry)
+                                                        .then(stopResponse => stopResponse.json())
+                                                        .then(stopData => {
+                                                            // If merged, update UI immediately
+                                                            if (stopData.merged && stopData.entry && onEntryMerged) {
+                                                                onEntryMerged(stopData.entry)
+                                                            } else {
+                                                                startTransition(() => {
+                                                                    router.refresh()
+                                                                })
+                                                            }
+                                                        })
                                                 } else {
+                                                    // Just refresh
                                                     startTransition(() => {
                                                         router.refresh()
                                                     })
                                                 }
-                                            } else {
-                                                // Just refresh if unmarking as done
-                                                startTransition(() => {
-                                                    router.refresh()
-                                                })
+                                            })
+                                            .catch(error => {
+                                                console.error("Failed to update subtask:", error)
+                                                alert("Failed to update subtask. Please try again.")
+                                            })
+                                    } else {
+                                        // Optimistic update first - stop timer immediately if marking as done
+                                        if (!isTaskDone && optimisticEntry && onTimerStopped) {
+                                            const now = new Date()
+                                            const stoppedEntry = {
+                                                startTime: new Date(optimisticEntry.startTime),
+                                                endTime: now,
+                                                description: optimisticEntry.description || null,
+                                                breaks: optimisticEntry.breaks?.map(b => ({
+                                                    startTime: new Date(b.startTime),
+                                                    endTime: b.endTime ? new Date(b.endTime) : null
+                                                })) || [],
+                                                tasks: optimisticEntry.tasks || [],
+                                                subtaskId: optimisticEntry.subtaskId || null
                                             }
+                                            onTimerStopped(stoppedEntry)
+                                            
+                                            // Clear optimistic entry and reset fields immediately
+                                            setOptimisticEntry(null)
+                                            setDescription("")
+                                            setSelectedTaskIds([])
+                                            setSelectedSubtaskId(null)
                                         }
-                                    } catch (error) {
-                                        console.error("Failed to update task status:", error)
-                                        alert("Failed to update task status. Please try again.")
+                                        
+                                        // API calls happen in background
+                                        fetch('/api/tasks', {
+                                            method: 'PATCH',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                id: selectedTask.id,
+                                                status: isTaskDone ? 'TODO' : 'DONE'
+                                            })
+                                        })
+                                            .then(() => {
+                                                // If marking as done, mark all subtasks as done in background
+                                                if (!isTaskDone && availableSubtasks.length > 0) {
+                                                    const subtasksToUpdate = availableSubtasks.filter(st => !st.isDone)
+                                                    if (subtasksToUpdate.length > 0) {
+                                                        // Update all subtasks in parallel
+                                                        Promise.all(
+                                                            subtasksToUpdate.map(subtask =>
+                                                                fetch('/api/tasks/subtasks', {
+                                                                    method: 'PATCH',
+                                                                    headers: { 'Content-Type': 'application/json' },
+                                                                    body: JSON.stringify({
+                                                                        id: subtask.id,
+                                                                        isDone: true
+                                                                    })
+                                                                }).catch(err => {
+                                                                    console.error(`Failed to update subtask ${subtask.id}:`, err)
+                                                                })
+                                                            )
+                                                        )
+                                                    }
+                                                }
+                                                
+                                                // Stop timer in background if marking as done
+                                                if (!isTaskDone && optimisticEntry) {
+                                                    return fetch('/api/time-entries', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({
+                                                            action: 'stop'
+                                                        })
+                                                    })
+                                                        .then(stopResponse => stopResponse.json())
+                                                        .then(stopData => {
+                                                            // If merged, update UI immediately
+                                                            if (stopData.merged && stopData.entry && onEntryMerged) {
+                                                                onEntryMerged(stopData.entry)
+                                                            } else {
+                                                                startTransition(() => {
+                                                                    router.refresh()
+                                                                })
+                                                            }
+                                                        })
+                                                } else {
+                                                    // Just refresh if unmarking as done
+                                                    startTransition(() => {
+                                                        router.refresh()
+                                                    })
+                                                }
+                                            })
+                                            .catch(error => {
+                                                console.error("Failed to update task status:", error)
+                                                alert("Failed to update task status. Please try again.")
+                                            })
                                     }
                                 }}
                                 className="shrink-0 h-9 border-primary text-primary hover:bg-transparent hover:border-primary/80 hover:text-primary/90"
