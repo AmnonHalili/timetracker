@@ -22,7 +22,7 @@ interface ControlBarProps {
         tasks?: Array<{ id: string; title: string }>
         subtaskId?: string | null
     } | null
-    tasks: Array<{ 
+    tasks: Array<{
         id: string
         title: string
         status?: string
@@ -110,7 +110,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
     useEffect(() => {
         // Don't update description if user is currently typing
         if (isInputFocusedRef.current) return
-        
+
         if (optimisticEntry?.description) {
             setDescription(optimisticEntry.description)
         } else if (!optimisticEntry) {
@@ -123,7 +123,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
         }
         // Don't clear selectedTaskIds when optimisticEntry is null (after stop)
         // This keeps the subtask selector visible so user can select a new subtask
-        
+
         if (optimisticEntry?.subtaskId !== undefined) {
             // When timer is running, sync subtask selection with active entry
             setSelectedSubtaskId(optimisticEntry.subtaskId)
@@ -133,14 +133,14 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
             setSelectedSubtaskId(null)
         }
     }, [optimisticEntry])
-    
+
     // Clear selectedSubtaskId if the selected subtask is now done
     useEffect(() => {
         if (!selectedSubtaskId || selectedTaskIds.length === 0) return
-        
+
         const selectedTask = tasks.find(t => selectedTaskIds.includes(t.id))
         if (!selectedTask) return
-        
+
         const selectedSubtask = selectedTask.subtasks?.find(st => st.id === selectedSubtaskId)
         // If selected subtask is done, clear the selection
         if (selectedSubtask?.isDone) {
@@ -187,7 +187,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
     // Handle description update
     const handleDescriptionUpdate = async (newDescription: string) => {
         if (!activeEntry || !optimisticEntry) return
-        
+
         try {
             // Get active entry ID from server
             const activeEntryResponse = await fetch('/api/time-entries')
@@ -214,7 +214,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
     // Handle subtask update
     const handleSubtaskUpdate = async (newSubtaskId: string | null) => {
         if (!activeEntry || !optimisticEntry) return
-        
+
         try {
             // Get active entry ID from server
             const activeEntryResponse = await fetch('/api/time-entries')
@@ -232,7 +232,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                     // Update optimistic entry
                     setOptimisticEntry(prev => prev ? { ...prev, subtaskId: newSubtaskId } : null)
                     startTransition(() => {
-                    router.refresh()
+                        router.refresh()
                     })
                 }
             }
@@ -244,15 +244,15 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
     // Handle task change - splits current entry and creates new one
     const handleTaskChange = async (oldTaskIds: string[], newTaskIds: string[]) => {
         if (!activeEntry || !optimisticEntry) return
-        
+
         setLoading(true)
         const now = new Date()
-        
+
         // Optimistic update - update state immediately so subtasks appear instantly
         const newTasks = newTaskIds.length > 0
             ? tasks.filter(t => newTaskIds.includes(t.id))
             : undefined
-        
+
         // Update optimistic entry immediately with new tasks (subtasks will appear instantly)
         setOptimisticEntry({
             startTime: now,
@@ -261,7 +261,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
             tasks: newTasks,
             subtaskId: null
         })
-        
+
         // Create stopped entry data for optimistic display
         if (optimisticEntry && onTimerStopped) {
             const stoppedEntry = {
@@ -277,7 +277,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
             }
             onTimerStopped(stoppedEntry)
         }
-        
+
         try {
             // Stop current entry (set endTime)
             await fetch('/api/time-entries', {
@@ -301,7 +301,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
             })
 
             startTransition(() => {
-            router.refresh()
+                router.refresh()
             })
         } catch (error) {
             console.error("Failed to change task:", error)
@@ -369,7 +369,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                     setDescription("")
                     setSelectedTaskIds([])
                     setSelectedSubtaskId(null)
-                    
+
                     // If merged, update UI immediately
                     if (manualData.merged && manualData.entry && onEntryMerged) {
                         onEntryMerged(manualData.entry)
@@ -528,7 +528,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                             value={selectedTaskIds.length > 0 ? selectedTaskIds[0] : undefined}
                             onValueChange={(value) => {
                                 const newTaskIds = value === "__none__" ? [] : (value ? [value] : [])
-                                
+
                                 // If timer is running and task changed, split the entry
                                 if (optimisticEntry && activeEntry) {
                                     const taskIdsChanged = JSON.stringify(newTaskIds.sort()) !== JSON.stringify(selectedTaskIds.sort())
@@ -541,7 +541,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                                         return
                                     }
                                 }
-                                
+
                                 // Update state immediately for instant UI feedback
                                 setSelectedTaskIds(newTaskIds)
                                 // Clear subtask selection when task changes
@@ -568,7 +568,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                         const allSubtasks = selectedTask?.subtasks || []
                         // Filter out done subtasks - only show subtasks that are not done
                         const availableSubtasks = allSubtasks.filter(st => !st.isDone)
-                        
+
                         // Only show subtask selector if there are available (not done) subtasks
                         if (availableSubtasks.length > 0) {
                             return (
@@ -604,16 +604,16 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                     {selectedTaskIds.length > 0 && optimisticEntry && (() => {
                         const selectedTask = tasks.find(t => selectedTaskIds.includes(t.id))
                         if (!selectedTask) return null
-                        
+
                         const isTaskDone = selectedTask.status === 'DONE'
                         const allSubtasks = selectedTask?.subtasks || []
                         const availableSubtasks = allSubtasks.filter(st => !st.isDone)
                         // Check if subtask is selected and get its done status
-                        const selectedSubtask = selectedSubtaskId 
+                        const selectedSubtask = selectedSubtaskId
                             ? allSubtasks.find(st => st.id === selectedSubtaskId)
                             : null
                         const isSubtaskDone = selectedSubtask?.isDone ?? false
-                        
+
                         return (
                             <Button
                                 type="button"
@@ -637,7 +637,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                                                 subtaskId: optimisticEntry.subtaskId || null
                                             }
                                             onTimerStopped(stoppedEntry)
-                                            
+
                                             // Clear optimistic entry and reset fields immediately
                                             setOptimisticEntry(null)
                                             setDescription("")
@@ -647,7 +647,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                                             // Clear selection immediately
                                             setSelectedSubtaskId(null)
                                         }
-                                        
+
                                         // API calls happen in background
                                         fetch('/api/tasks/subtasks', {
                                             method: 'PATCH',
@@ -705,14 +705,14 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                                                 subtaskId: optimisticEntry.subtaskId || null
                                             }
                                             onTimerStopped(stoppedEntry)
-                                            
+
                                             // Clear optimistic entry and reset fields immediately
                                             setOptimisticEntry(null)
                                             setDescription("")
                                             setSelectedTaskIds([])
                                             setSelectedSubtaskId(null)
                                         }
-                                        
+
                                         // API calls happen in background
                                         fetch('/api/tasks', {
                                             method: 'PATCH',
@@ -744,7 +744,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                                                         )
                                                     }
                                                 }
-                                                
+
                                                 // Stop timer in background if marking as done
                                                 if (!isTaskDone && optimisticEntry) {
                                                     return fetch('/api/time-entries', {
@@ -795,45 +795,83 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                             <div className="flex flex-col gap-1">
                                 <label htmlFor="manual-start-time" className="text-[10px] text-muted-foreground font-medium">
                                     {t('dashboard.startTime')}
-                            </label>
-                            <Input
-                                id="manual-start-time"
-                                type="time"
-                                value={manualStart}
+                                </label>
+                                <Input
+                                    id="manual-start-time"
+                                    type="time"
+                                    value={manualStart}
                                     onChange={(e) => {
                                         setManualStart(e.target.value)
-                                        // Check if end time is before start time
-                                        if (e.target.value && manualEnd && e.target.value >= manualEnd) {
+                                        const val = e.target.value
+
+                                        // Check for future time
+                                        const now = new Date()
+                                        const [h, m] = val.split(':').map(Number)
+                                        const date = new Date()
+                                        date.setHours(h, m, 0, 0)
+
+                                        if (date > now) {
+                                            setTimeError("Cannot select future time")
+                                        } else if (val && manualEnd && val >= manualEnd) {
                                             setTimeError(t('dashboard.endTimeBeforeStart'))
                                         } else {
+                                            // Clear error only if no other errors exist (re-validate pair)
+                                            if (manualEnd) {
+                                                const [endH, endM] = manualEnd.split(':').map(Number)
+                                                const endDate = new Date()
+                                                endDate.setHours(endH, endM, 0, 0)
+                                                if (endDate > now) {
+                                                    setTimeError("Cannot select future time")
+                                                    return
+                                                }
+                                            }
                                             setTimeError("")
                                         }
                                     }}
                                     className={`w-[95px] h-9 text-sm bg-background border-input shadow-sm ${timeError ? 'border-destructive' : ''}`}
-                                aria-label="Start time"
-                            />
+                                    aria-label="Start time"
+                                />
                             </div>
                             <span className="text-muted-foreground mb-2" aria-hidden="true">-</span>
                             <div className="flex flex-col gap-1">
                                 <label htmlFor="manual-end-time" className="text-[10px] text-muted-foreground font-medium">
                                     {t('dashboard.endTime')}
-                            </label>
-                            <Input
-                                id="manual-end-time"
-                                type="time"
-                                value={manualEnd}
+                                </label>
+                                <Input
+                                    id="manual-end-time"
+                                    type="time"
+                                    value={manualEnd}
                                     onChange={(e) => {
                                         setManualEnd(e.target.value)
-                                        // Check if end time is before start time
-                                        if (manualStart && e.target.value && manualStart >= e.target.value) {
+                                        const val = e.target.value
+
+                                        // Check for future time
+                                        const now = new Date()
+                                        const [h, m] = val.split(':').map(Number)
+                                        const date = new Date()
+                                        date.setHours(h, m, 0, 0)
+
+                                        if (date > now) {
+                                            setTimeError("Cannot select future time")
+                                        } else if (manualStart && val && manualStart >= val) {
                                             setTimeError(t('dashboard.endTimeBeforeStart'))
                                         } else {
+                                            // Re-validate start time against future to be safe
+                                            if (manualStart) {
+                                                const [startH, startM] = manualStart.split(':').map(Number)
+                                                const startDate = new Date()
+                                                startDate.setHours(startH, startM, 0, 0)
+                                                if (startDate > now) {
+                                                    setTimeError("Cannot select future time")
+                                                    return
+                                                }
+                                            }
                                             setTimeError("")
                                         }
                                     }}
                                     className={`w-[95px] h-9 text-sm bg-background border-input shadow-sm ${timeError ? 'border-destructive' : ''}`}
-                                aria-label="End time"
-                            />
+                                    aria-label="End time"
+                                />
                             </div>
                             {timeError && (
                                 <div className="absolute -bottom-5 left-0">

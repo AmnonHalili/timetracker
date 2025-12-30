@@ -290,7 +290,12 @@ export default async function DashboardPage() {
 
                         {/* Stats Widget (Conditionally visible) */}
                         {showStats && (
-                            <StatsWidget extraHours={stats.monthlyOvertime} remainingHours={remainingHours} />
+                            <StatsWidget
+                                extraHours={stats.monthlyOvertime}
+                                remainingHours={remainingHours}
+                                activeEntryStartTime={activeWorkday?.workdayStartTime}
+                                isPaused={false} // Workday based pausing not fully implemented in this view yet, assuming continuous for now or until requested
+                            />
                         )}
 
                         {/* Team Status (Admin Only) - Hidden on mobile, shown on desktop */}
