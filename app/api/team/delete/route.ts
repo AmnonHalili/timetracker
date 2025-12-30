@@ -21,7 +21,7 @@ export async function DELETE(req: Request) {
     }
 
     try {
-        const { userId, newAdminId } = await req.json()
+        const { userId, newAdminId, replacementManagerId } = await req.json()
 
         if (!userId) {
             return NextResponse.json({ message: "User ID is required" }, { status: 400 })
@@ -104,6 +104,37 @@ export async function DELETE(req: Request) {
                 return NextResponse.json({
                     message: "Cannot delete: This is the only admin in the project."
                 }, { status: 400 })
+            }
+        }
+
+        // Handle direct reports
+        const directReports = await prisma.user.count({
+            where: { managerId: userId }
+        })
+
+        if (directReports > 0) {
+            if (replacementManagerId) {
+                // Verify replacement manager is in the same project
+                const replacement = await prisma.user.findUnique({
+                    where: { id: replacementManagerId },
+                    select: { projectId: true }
+                })
+
+                if (replacement?.projectId !== currentUser.projectId) {
+                    return NextResponse.json({ message: "Invalid replacement manager" }, { status: 400 })
+                }
+
+                // Transfer reports
+                await prisma.user.updateMany({
+                    where: { managerId: userId },
+                    data: { managerId: replacementManagerId }
+                })
+            } else {
+                // Orphan reports (set managerId to null) so they don't point to a non-project member
+                await prisma.user.updateMany({
+                    where: { managerId: userId },
+                    data: { managerId: null }
+                })
             }
         }
 

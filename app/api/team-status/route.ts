@@ -11,85 +11,106 @@ export async function GET() {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
-    const user = await prisma.user.findUnique({
+    // 1. Fetch current user to get their hierarchy info
+    const currentUser = await prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { id: true, role: true, projectId: true }
-    })
-
-    if (!user) {
-        return NextResponse.json({ message: "User not found" }, { status: 404 })
-    }
-
-    // Allow all project members to see team status
-    if (!user.projectId) {
-        return NextResponse.json([])
-    }
-
-    const projectUsers = await prisma.user.findMany({
-        where: {
-            projectId: user.projectId,
-            status: "ACTIVE",
-            NOT: { id: user.id }
-        },
         select: {
             id: true,
-            name: true,
-            email: true,
-            role: true,
-            jobTitle: true,
-            timeEntries: {
-                where: { endTime: null },
-                select: {
-                    id: true,
-                    userId: true,
-                    startTime: true,
-                    endTime: true,
-                    description: true,
-                    isManual: true,
-                    createdAt: true,
-                    updatedAt: true,
-                    subtaskId: true,
-                    breaks: {
-                        where: { endTime: null },
-                        select: {
-                            id: true,
-                            timeEntryId: true,
-                            startTime: true,
-                            endTime: true,
-                            reason: true,
-                            locationLat: true,
-                            locationLng: true
-                        }
-                    }
-                }
-            },
-            lastSeen: true
+            projectId: true,
+            managerId: true
         }
     })
 
-    type ProjectUser = {
+    if (!currentUser) {
+        return NextResponse.json({ message: "User not found" }, { status: 404 })
+    }
+
+    if (!currentUser.projectId) {
+        return NextResponse.json([])
+    }
+
+    // Common selection for status display
+    const userSelect = {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        jobTitle: true,
+        lastSeen: true,
+        timeEntries: {
+            where: { endTime: null },
+            select: {
+                id: true,
+                startTime: true,
+                breaks: {
+                    where: { endTime: null },
+                    select: { id: true }
+                }
+            }
+        }
+    }
+
+    // 2. Parallel fetch for Manager, Reports, and Peers
+    const [manager, directReports, peers] = await Promise.all([
+        // Fetch Manager
+        currentUser.managerId ? prisma.user.findUnique({
+            where: { id: currentUser.managerId },
+            select: userSelect
+        }) : Promise.resolve(null),
+
+        // Fetch Direct Reports (Children)
+        prisma.user.findMany({
+            where: {
+                managerId: currentUser.id,
+                status: "ACTIVE"
+            },
+            select: userSelect
+        }),
+
+        // Fetch Peers (Same Manager) - Only if user has a manager
+        currentUser.managerId ? prisma.user.findMany({
+            where: {
+                managerId: currentUser.managerId,
+                status: "ACTIVE",
+                NOT: { id: currentUser.id } // Exclude self
+            },
+            select: userSelect
+        }) : Promise.resolve([])
+    ])
+
+    // 3. Combine results in specific order: Manager -> Reports -> Peers
+    const rawUsers = [
+        ...(manager ? [manager] : []),
+        ...directReports,
+        ...peers
+    ]
+
+    // 4. Transform to TeamMemberStatus format
+    // Define exact type for the query result to avoid 'any'
+    type QueryUser = {
         id: string
         name: string
         email: string
-        role: "ADMIN" | "EMPLOYEE" | "MANAGER"
+        role: string // Prisma Role enum, simplified as string here
         jobTitle: string | null
         lastSeen: Date | null
-        timeEntries: (TimeEntry & { breaks: TimeBreak[] })[]
+        timeEntries: {
+            id: string
+            startTime: Date
+            breaks: { id: string }[]
+        }[]
     }
 
-    const teamStatus = (projectUsers as unknown as ProjectUser[]).map((u) => {
+    const teamStatus = (rawUsers as QueryUser[]).map((u) => {
         const activeEntry = u.timeEntries[0]
         let status: 'WORKING' | 'BREAK' | 'OFFLINE' | 'ONLINE' = 'OFFLINE'
         let lastActive: Date | undefined = undefined
 
-        // Check for active time entry first
         if (activeEntry) {
-            const activeBreak = activeEntry.breaks && activeEntry.breaks.length > 0
+            const activeBreak = activeEntry.breaks.length > 0
             status = activeBreak ? 'BREAK' : 'WORKING'
             lastActive = activeEntry.startTime
-        }
-        // If not working, check for online presence (lastSeen within 90 seconds)
-        else if (u.lastSeen) {
+        } else if (u.lastSeen) {
             const ninetySecondsAgo = new Date(Date.now() - 90000)
             if (u.lastSeen > ninetySecondsAgo) {
                 status = 'ONLINE'
