@@ -21,7 +21,7 @@ import { Plus, Pencil } from "lucide-react"
 import { useLanguage } from "@/lib/useLanguage"
 
 interface CreateTaskDialogProps {
-    users: { id: string; name: string | null; email: string | null }[]
+    users: { id: string; name: string | null; email: string | null; managerId?: string | null; role?: string }[]
     onTaskCreated?: () => void
     onOptimisticTaskCreate?: (task: {
         id: string
@@ -30,7 +30,7 @@ interface CreateTaskDialogProps {
         deadline: Date | null
         description: string | null
         status: string
-        assignees: Array<{ id: string; name: string | null; email: string | null }>
+        assignees: Array<{ id: string; name: string | null; email: string | null; managerId?: string | null; role?: string }>
         createdAt: Date
         updatedAt: Date
     }) => void
@@ -57,16 +57,74 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
     const [deadline, setDeadline] = useState("")
     const [deadlineTime, setDeadlineTime] = useState("")
     const [description, setDescription] = useState("")
-    const [users, setUsers] = useState<Array<{ id: string; name: string | null; email: string | null }>>([])
+    const [users, setUsers] = useState<Array<{ id: string; name: string | null; email: string | null; managerId?: string | null; role?: string; depth?: number }>>([])
     const [loading, setLoading] = useState(false)
     const [showToMe, setShowToMe] = useState(false)
+
+    // Helper to sort users: Current User first, then Hierarchy
+    const sortUsersHierarchically = (usersToSort: Array<{ id: string; name: string | null; email: string | null; managerId?: string | null; role?: string }>, meId?: string) => {
+        if (!usersToSort.length) return [];
+
+        let me: typeof users[0] | undefined;
+        const others = usersToSort.map(u => ({ ...u, depth: 0 })); // Initialize depth for all users
+
+        // 1. Extract Me
+        if (meId) {
+            const meIndex = others.findIndex(u => u.id === meId);
+            if (meIndex >= 0) {
+                me = others[meIndex];
+                others.splice(meIndex, 1);
+            }
+        }
+
+        // 2. Build Tree
+        const userMap = new Map<string, typeof users[0]>();
+        const childrenMap = new Map<string, typeof users[0][]>();
+
+        others.forEach(u => {
+            userMap.set(u.id, u);
+            if (!childrenMap.has(u.id)) childrenMap.set(u.id, []);
+        });
+
+        const roots: typeof users = [];
+
+        others.forEach(u => {
+            // If manager exists in the filtered list, add as child
+            if (u.managerId && userMap.has(u.managerId)) {
+                childrenMap.get(u.managerId)?.push(u);
+            } else {
+                // Otherwise it's a root (relative to this list)
+                roots.push(u);
+            }
+        });
+
+        // 3. DFS Flatten with Depth
+        const flattened: typeof users = [];
+        const traverse = (nodes: typeof users, currentDepth: number) => {
+            // Sort siblings alphabetically or by role if needed
+            nodes.sort((a, b) => (a.name || a.email || "").localeCompare(b.name || b.email || ""))
+                .forEach(node => {
+                    flattened.push({ ...node, depth: currentDepth });
+                    const children = childrenMap.get(node.id);
+                    if (children && children.length > 0) {
+                        traverse(children, currentDepth + 1);
+                    }
+                });
+        };
+
+        traverse(roots, 0);
+
+        return me ? [{ ...me, depth: 0 }, ...flattened] : flattened;
+    }
 
 
     useEffect(() => {
         if (isOpen) {
             // Initialize users list
             if (initialUsers && initialUsers.length > 0) {
-                setUsers(initialUsers)
+                // Cast initial users to compatible type (adding optional depth)
+                const compatibleUsers = initialUsers as Array<{ id: string; name: string | null; email: string | null; managerId?: string | null; role?: string; depth?: number }>;
+                setUsers(sortUsersHierarchically(compatibleUsers, currentUserId))
                 if (mode === 'create') {
                     // If currentUserId is provided, mark it as default
                     if (currentUserId && initialUsers.some(u => u.id === currentUserId)) {
@@ -79,7 +137,8 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                 fetch("/api/team?all=true")
                     .then(res => res.json())
                     .then(data => {
-                        setUsers(data)
+                        const sorted = sortUsersHierarchically(data, currentUserId)
+                        setUsers(sorted)
                         if (mode === 'create') {
                             // If currentUserId is provided, mark it as default
                             if (currentUserId && Array.isArray(data) && data.some((u: { id: string }) => u.id === currentUserId)) {
@@ -148,11 +207,11 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                 setDescription("")
             }
         }
-    }, [isOpen, initialUsers, mode, task, currentUserId, users])
+    }, [isOpen, initialUsers, mode, task, currentUserId])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        
+
         let finalDeadline = null;
         if (deadline) {
             if (deadlineTime) {
@@ -198,7 +257,7 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
             }
             onOptimisticTaskCreate(tempTask)
             setIsOpen(false)
-            
+
             // Reset form immediately
             setTitle("")
             if (currentUserId && users.some(u => u.id === currentUserId)) {
@@ -260,12 +319,12 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
             const newIds = prev.includes(userId)
                 ? prev.filter(id => id !== userId)
                 : [...prev, userId]
-            
+
             // If current user is being toggled, sync showToMe state
             if (currentUserId && userId === currentUserId) {
                 setShowToMe(newIds.includes(currentUserId))
             }
-            
+
             return newIds
         })
     }
@@ -323,7 +382,7 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                                 </Label>
                                 <div className="col-span-3 border rounded-md max-h-40 overflow-y-auto p-2 space-y-2">
                                     {users.map(user => (
-                                        <div key={user.id} className="flex items-center gap-3">
+                                        <div key={user.id} className="flex items-center gap-3" style={{ paddingInlineStart: `${(user.depth || 0) * 1.25}rem` }}>
                                             <input
                                                 type="checkbox"
                                                 id={`user-${user.id}`}

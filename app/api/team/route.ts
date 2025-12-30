@@ -61,7 +61,8 @@ export async function GET(req: Request) {
                 email: true,
                 image: true,
                 role: true,
-                jobTitle: true
+                jobTitle: true,
+                managerId: true
             },
             orderBy: {
                 name: 'asc'
