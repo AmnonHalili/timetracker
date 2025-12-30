@@ -52,21 +52,14 @@ const ceoNode: HierarchyNode = {
       role: "EXECUTIVE",
       children: [
         {
-          name: "Brian Edwards",
-          title: "Marketing Manager",
-          role: "MANAGER",
-          children: [
-            {
-              name: "Jessica Brown",
-              title: "Content Manager",
-              role: "EMPLOYEE"
-            },
-            {
-              name: "Olivia Harris",
-              title: "Social Media Manager",
-              role: "EMPLOYEE"
-            }
-          ]
+          name: "Jessica Brown",
+          title: "Content Manager",
+          role: "EMPLOYEE"
+        },
+        {
+          name: "Olivia Harris",
+          title: "Social Media Manager",
+          role: "EMPLOYEE"
         }
       ]
     }
@@ -109,7 +102,7 @@ function HierarchyNodeCard({ node, isRoot = false }: { node: HierarchyNode; isRo
   }
 
   return (
-    <div className="relative group flex flex-col items-start p-1 md:p-1.5 rounded border bg-card text-card-foreground shadow-sm w-[80px] md:w-[95px] lg:w-[110px] hover:shadow-md transition-all">
+    <div className="relative group flex flex-col items-start p-0.5 md:p-1 rounded border bg-card text-card-foreground shadow-sm w-[75px] md:w-[90px] lg:w-[105px] hover:shadow-md transition-all">
       <div className={cn("absolute top-0 left-0 w-0.5 h-full rounded-l", getBarColor())} />
       <div className="pl-1 md:pl-1.5 flex items-center gap-0.5 md:gap-1 w-full">
         <Avatar className="h-4 w-4 md:h-5 md:w-5 border border-border/50 shrink-0">
@@ -169,7 +162,7 @@ function HierarchyLevel({ nodes, depth = 0 }: { nodes: HierarchyNode[]; depth?: 
 
               {/* Vertical connector line from node to children */}
               {hasChildren && (
-                <div className="h-2 md:h-2.5 w-px bg-border my-1 md:my-1.5" />
+                <div className="h-1.5 md:h-2 w-px bg-border my-0.5 md:my-1" />
               )}
 
               {/* Recursive children rendered horizontally */}
@@ -186,10 +179,10 @@ function HierarchyLevel({ nodes, depth = 0 }: { nodes: HierarchyNode[]; depth?: 
 
 export function HierarchyDemo() {
   return (
-    <div className="w-full py-2 md:py-3 px-1 md:px-2 bg-background">
+    <div className="w-full py-1 md:py-2 px-1 md:px-2 bg-background max-h-full overflow-hidden">
       <div className="flex flex-col items-center relative mx-auto">
         {/* Company Header */}
-        <div className="mb-2 md:mb-3">
+        <div className="mb-1 md:mb-1.5">
           <HierarchyNodeCard
             node={{ name: "Collabo", title: "Organization", role: "CEO" }}
             isRoot
@@ -197,16 +190,16 @@ export function HierarchyDemo() {
         </div>
 
         {/* Vertical connector from company to CEO */}
-        <div className="h-2.5 md:h-3 w-px bg-border mb-1.5 md:mb-2" />
+        <div className="h-2 md:h-2.5 w-px bg-border mb-1 md:mb-1.5" />
 
         {/* CEO Node */}
-        <div className="mb-1.5 md:mb-2">
+        <div className="mb-1 md:mb-1.5">
           <HierarchyNodeCard node={ceoNode} />
         </div>
 
         {/* Vertical connector from CEO to executives */}
         {ceoNode.children && ceoNode.children.length > 0 && (
-          <div className="h-2 md:h-2.5 w-px bg-border mb-1.5 md:mb-2" />
+          <div className="h-1.5 md:h-2 w-px bg-border mb-1 md:mb-1.5" />
         )}
 
         {/* Hierarchy Tree - Executives and below */}

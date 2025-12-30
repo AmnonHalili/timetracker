@@ -86,7 +86,7 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                 ))}
             </div>
 
-            <div className={cn("grid grid-cols-7 gap-1 lg:gap-2 relative", isLoading && "opacity-50 pointer-events-none")}>
+            <div className={cn("grid grid-cols-7 gap-0.5 lg:gap-1 relative", isLoading && "opacity-50 pointer-events-none")}>
                 {isLoading && (
                     <div className="absolute inset-0 flex items-center justify-center z-50">
                         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -131,14 +131,14 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                             key={day.toString()}
                             onClick={() => onDayClick?.(day)}
                             className={cn(
-                                "aspect-square p-1 md:p-1.5 flex flex-col justify-between transition-colors hover:bg-muted/30 cursor-pointer overflow-hidden",
+                                "aspect-square p-0.5 md:p-1 flex flex-col justify-between transition-colors hover:bg-muted/30 cursor-pointer overflow-hidden",
                                 !isSameMonth(day, monthStart) && "bg-muted/10 text-muted-foreground",
                                 isToday(day) && "border-primary shadow-sm"
                             )}
                         >
                             <div className="flex justify-between items-start">
                                 <span className={cn(
-                                    "text-xs md:text-sm font-semibold h-5 w-5 md:h-6 md:w-6 flex items-center justify-center rounded-full",
+                                    "text-[10px] md:text-xs font-semibold h-4 w-4 md:h-5 md:w-5 flex items-center justify-center rounded-full",
                                     isToday(day) && "bg-primary text-primary-foreground"
                                 )}>
                                     {format(day, 'd')}
@@ -146,7 +146,7 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                                 {/* Hours worked - hidden on mobile, shown on desktop */}
                                 {hoursWorked > 0 && (
                                     <span className={cn(
-                                        "hidden md:block text-[10px] font-bold px-1 py-0.5 rounded",
+                                        "hidden md:block text-[8px] font-bold px-0.5 py-0 rounded",
                                         isTargetMet ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
                                     )}>
                                         {formatHoursMinutes(hoursWorked)}
@@ -154,18 +154,18 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                                 )}
                                 {/* Pink dot indicator on mobile if has events */}
                                 {hasEvents && (
-                                    <span className="md:hidden w-2 h-2 rounded-full bg-pink-500 shrink-0" />
+                                    <span className="md:hidden w-1.5 h-1.5 rounded-full bg-pink-500 shrink-0" />
                                 )}
                             </div>
 
                             {/* Content - hidden on mobile, shown on desktop */}
-                            <div className="hidden md:block space-y-0.5 mt-1">
+                            <div className="hidden md:block space-y-0.5 mt-0.5">
                                 {/* Events */}
                                 {daysEvents.map((event) => (
                                     <div
                                         key={event.id}
                                         className={cn(
-                                            "text-[9px] truncate px-0.5 rounded border",
+                                            "text-[8px] truncate px-0.5 py-0 rounded border",
                                             eventTypeColors[event.type] || eventTypeColors.OTHER
                                         )}
                                         title={event.title}
@@ -182,7 +182,7 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                                     <div
                                         key={task.id}
                                         className={cn(
-                                            "text-[9px] truncate px-0.5 rounded border",
+                                            "text-[8px] truncate px-0.5 py-0 rounded border",
                                             task.priority === 'HIGH' ? "bg-pink-700 text-white border-pink-800" :
                                                 task.priority === 'MEDIUM' ? "bg-pink-500 text-white border-pink-600" :
                                                     "bg-pink-300 text-white border-pink-400"
@@ -193,7 +193,7 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                                     </div>
                                 ))}
                                 {totalRemaining > 0 && (
-                                    <div className="text-[9px] text-muted-foreground font-medium">
+                                    <div className="text-[8px] text-muted-foreground font-medium">
                                         +{totalRemaining}
                                     </div>
                                 )}
