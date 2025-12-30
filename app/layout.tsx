@@ -27,15 +27,19 @@ export const metadata: Metadata = {
   title: "Time Tracker & Task Manager | Collabo",
   description: "The simplest time tracker and task manager for small businesses and freelancers. Track hours, manage projects, and collaborate without the complexity. Start for free.",
   metadataBase: new URL('https://collabo-web.com'),
+  manifest: "/manifest.json",
   icons: {
     icon: [
-      { url: "/collabospecialnoback.png", type: "image/png", sizes: "32x32" },
+      { url: "/collabologocut.png", media: "(prefers-color-scheme: light)", type: "image/png", sizes: "32x32" },
+      { url: "/collabologocutwhite.png", media: "(prefers-color-scheme: dark)", type: "image/png", sizes: "32x32" },
     ],
     shortcut: [
-      { url: "/collabospecialnoback.png", type: "image/png" },
+      { url: "/collabologocut.png", media: "(prefers-color-scheme: light)", type: "image/png" },
+      { url: "/collabologocutwhite.png", media: "(prefers-color-scheme: dark)", type: "image/png" },
     ],
     apple: [
-      { url: "/collabospecialnoback.png", type: "image/png", sizes: "180x180" },
+      { url: "/collabologocut.png", media: "(prefers-color-scheme: light)", type: "image/png", sizes: "180x180" },
+      { url: "/collabologocutwhite.png", media: "(prefers-color-scheme: dark)", type: "image/png", sizes: "180x180" },
     ],
   },
   verification: {
