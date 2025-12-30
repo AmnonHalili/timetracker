@@ -65,16 +65,16 @@ export function DayView({ date, events, tasks, projectId, onOptimisticEventCreat
             // If the time is exactly 00:00:00.000Z, we treat it as All Day (User likely picked just a date)
             const isUtcMidnight = deadline.getUTCHours() === 0 && deadline.getUTCMinutes() === 0 && deadline.getUTCSeconds() === 0
 
-            // For timed tasks, assume 1 hour duration
+            // For tasks with deadlines, show only the deadline time (not a duration)
+            // Set endTime equal to startTime so it appears as a point in time
             const endTime = new Date(deadline)
-            endTime.setHours(endTime.getHours() + 1)
 
             return {
                 id: t.id,
                 title: t.title,
                 description: t.description || `Status: ${t.status} | Priority: ${t.priority}`,
                 startTime: deadline,
-                endTime: endTime,
+                endTime: endTime, // Same as startTime to show only deadline time
                 allDay: isUtcMidnight, // Use UTC check to catch date-only inputs
                 type: "TASK_TIME",
                 location: null,

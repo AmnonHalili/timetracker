@@ -243,6 +243,9 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
                     <div className="flex items-center gap-1 text-xs opacity-90">
                         {event.allDay ? (
                             <span>{event.type === 'TASK_TIME' ? 'Deadline: Today' : 'All day'}</span>
+                        ) : event.type === 'TASK_TIME' ? (
+                            // For tasks, show only the deadline time (not a time range)
+                            <span>Deadline: {formatTimeWithAMPM(start)}</span>
                         ) : (
                             <span>
                                 {formatTimeWithAMPM(start)} - {formatTimeWithAMPM(end)}

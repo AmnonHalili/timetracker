@@ -96,42 +96,49 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                     // Find daily report for this day
                     const dailyData = data.dailyReports.find(r => isSameDay(new Date(r.date), day))
 
-                    // Find tasks due this day
-                    const priorityOrder = { 'HIGH': 0, 'MEDIUM': 1, 'LOW': 2 };
-                    const allDaysTasks = data.tasks
+                    // Convert tasks to event-like objects for unified sorting
+                    const taskEvents = data.tasks
                         .filter(t => t.deadline && isSameDay(new Date(t.deadline), day) && t.status !== 'DONE')
-                        .sort((a, b) => (priorityOrder[a.priority as keyof typeof priorityOrder] ?? 2) - (priorityOrder[b.priority as keyof typeof priorityOrder] ?? 2))
+                        .map(t => {
+                            const deadline = new Date(t.deadline!)
+                            // Detect "Date Only" (stored as UTC Midnight)
+                            const isUtcMidnight = deadline.getUTCHours() === 0 && deadline.getUTCMinutes() === 0 && deadline.getUTCSeconds() === 0
+                            
+                            return {
+                                id: t.id,
+                                title: t.title,
+                                startTime: deadline,
+                                endTime: new Date(deadline),
+                                allDay: isUtcMidnight,
+                                type: "TASK_TIME",
+                                isTask: true, // Flag to identify tasks
+                                assignees: t.assignees
+                            }
+                        })
 
                     // Find all events on this day
                     const allDaysEvents = (data.events || [])
                         .filter(e => isSameDay(new Date(e.startTime), day))
+                        .map(e => ({ ...e, isTask: false }))
 
-                    // Show all events and tasks, but limit to reasonable number to fit in cell
-                    // Estimate: each item is ~20px (text-[10px] + py-0.5 + space-y-0.5)
-                    // Cell height is roughly 80-100px on desktop, header takes ~20px, so we have ~60-80px
-                    // That's about 3-4 items max
-                    const maxVisibleItems = 4
-                    const totalItems = allDaysEvents.length + allDaysTasks.length
-                    
-                    // If we hit the limit, prioritize events first, then tasks
-                    let finalVisibleEvents = allDaysEvents
-                    let finalVisibleTasks = allDaysTasks
-                    let finalRemainingCount = 0
-                    
-                    if (totalItems > maxVisibleItems) {
-                        if (allDaysEvents.length >= maxVisibleItems) {
-                            // Too many events, show max events only
-                            finalVisibleEvents = allDaysEvents.slice(0, maxVisibleItems)
-                            finalVisibleTasks = []
-                            finalRemainingCount = allDaysTasks.length + (allDaysEvents.length - maxVisibleItems)
-                        } else {
-                            // Show all events, then fill remaining with tasks
-                            finalVisibleEvents = allDaysEvents
-                            const remainingSlots = maxVisibleItems - allDaysEvents.length
-                            finalVisibleTasks = allDaysTasks.slice(0, remainingSlots)
-                            finalRemainingCount = Math.max(0, allDaysTasks.length - remainingSlots)
-                        }
-                    }
+                    // Combine events and tasks into one array
+                    const allItems = [...allDaysEvents, ...taskEvents]
+
+                    // Sort: allDay items first, then by startTime (earliest to latest)
+                    const sortedItems = allItems.sort((a, b) => {
+                        // All-day items come first
+                        if (a.allDay && !b.allDay) return -1
+                        if (!a.allDay && b.allDay) return 1
+                        // If both are allDay or both are not, sort by startTime
+                        const aTime = new Date(a.startTime).getTime()
+                        const bTime = new Date(b.startTime).getTime()
+                        return aTime - bTime
+                    })
+
+                    // Limit to 6 visible items
+                    const maxVisibleItems = 6
+                    const visibleItems = sortedItems.slice(0, maxVisibleItems)
+                    const remainingCount = Math.max(0, sortedItems.length - maxVisibleItems)
 
                     const hoursWorked = dailyData?.totalDurationHours || 0
                     const isTargetMet = dailyData?.status === 'MET'
@@ -145,7 +152,8 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                         OTHER: "bg-orange-50 border-orange-200 text-orange-700",
                     }
 
-                    const hasEvents = (data.events || []).some(e => isSameDay(new Date(e.startTime), day))
+                    // Check if there are any events or tasks for this day (for mobile indicator)
+                    const hasEvents = sortedItems.length > 0
 
                     return (
                         <Card
@@ -183,50 +191,37 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
 
                                 {/* Content - hidden on mobile, shown on desktop */}
                                 <div className="hidden md:flex flex-col space-y-0.5 flex-1 min-h-0 mt-1 overflow-hidden">
-                                    {/* Events - shown first at the top */}
-                                    {finalVisibleEvents.map((event) => (
-                                        <div
-                                            key={event.id}
-                                            className={cn(
-                                                "text-[10px] truncate px-1 py-0.5 rounded border shrink-0",
-                                                eventTypeColors[event.type] || eventTypeColors.OTHER
-                                            )}
-                                            title={event.title}
-                                        >
-                                            <span className="truncate flex items-center gap-1">
-                                                <span className="w-1 h-1 rounded-full bg-current shrink-0" />
-                                                {event.title}
-                                            </span>
-                                        </div>
-                                    ))}
-
-                                    {/* Tasks - shown after events */}
-                                    {finalVisibleTasks.map((task) => {
-                                        // Task colors similar to event style but different colors
-                                        const taskColors = 
-                                            task.priority === 'HIGH' ? "bg-pink-50 border-pink-200 text-pink-700" :
-                                            task.priority === 'MEDIUM' ? "bg-purple-50 border-purple-200 text-purple-700" :
-                                                "bg-orange-50 border-orange-200 text-orange-700"
+                                    {/* Events and Tasks - sorted by time */}
+                                    {visibleItems.map((item) => {
+                                        // Determine colors: tasks use TASK_TIME color, events use their type color
+                                        const itemColors = item.isTask 
+                                            ? "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20"
+                                            : (eventTypeColors[item.type] || eventTypeColors.OTHER)
+                                        
+                                        // For tasks, include assignees in tooltip
+                                        const title = item.isTask && 'assignees' in item && item.assignees
+                                            ? `${item.title} - ${item.assignees.map((u: { name: string; email: string }) => u.name).join(', ') || 'Unassigned'}`
+                                            : item.title
                                         
                                         return (
                                             <div
-                                                key={task.id}
+                                                key={item.id}
                                                 className={cn(
                                                     "text-[10px] truncate px-1 py-0.5 rounded border shrink-0",
-                                                    taskColors
+                                                    itemColors
                                                 )}
-                                                title={`${task.title} - ${task.assignees?.map((u) => u.name).join(', ') || 'Unassigned'}`}
+                                                title={title}
                                             >
                                                 <span className="truncate flex items-center gap-1">
                                                     <span className="w-1 h-1 rounded-full bg-current shrink-0" />
-                                                    {task.title}
+                                                    {item.title}
                                                 </span>
                                             </div>
                                         )
                                     })}
-                                    {finalRemainingCount > 0 && (
+                                    {remainingCount > 0 && (
                                         <div className="text-[10px] text-muted-foreground font-medium shrink-0">
-                                            +{finalRemainingCount}
+                                            +{remainingCount}
                                         </div>
                                     )}
                                 </div>
