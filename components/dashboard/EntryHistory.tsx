@@ -48,9 +48,13 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
     const [localEntries, setLocalEntries] = useState(entries)
     const [inlineEditingId, setInlineEditingId] = useState<string | null>(null)
     const [tempDescription, setTempDescription] = useState("")
+    // Track IDs that are being deleted to prevent showing them during router.refresh()
+    const [pendingDeletions, setPendingDeletions] = useState<Set<string>>(new Set())
 
     useEffect(() => {
-        setLocalEntries(entries)
+        // Filter out entries that are pending deletion to prevent them from reappearing
+        const filteredEntries = entries.filter(e => !pendingDeletions.has(e.id))
+        setLocalEntries(filteredEntries)
         
         // When server entries arrive, check if we should remove the optimistic entry
         if (optimisticEntryId && onOptimisticEntryCleared) {
@@ -66,7 +70,7 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
                 }, 100)
             }
         }
-    }, [entries, optimisticEntryId, onOptimisticEntryCleared])
+    }, [entries, optimisticEntryId, onOptimisticEntryCleared, pendingDeletions])
 
     const handleEditStart = (entry: TimeEntry) => {
         setEditingEntry(entry)
@@ -142,16 +146,33 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
         
         if (!deletedEntry) return
         
+        // Mark as pending deletion to prevent it from reappearing during router.refresh()
+        setPendingDeletions(prev => new Set(prev).add(id))
+        
         // Remove immediately for instant UI feedback
         setLocalEntries(current => current.filter(e => e.id !== id))
         
         try {
-        await fetch(`/api/time-entries?id=${id}`, { method: "DELETE" })
+            await fetch(`/api/time-entries?id=${id}`, { method: "DELETE" })
             startTransition(() => {
-        router.refresh()
+                router.refresh()
             })
+            // Remove from pending deletions after a short delay to allow router.refresh() to complete
+            // This ensures the entry won't reappear even if the refresh brings stale data
+            setTimeout(() => {
+                setPendingDeletions(prev => {
+                    const next = new Set(prev)
+                    next.delete(id)
+                    return next
+                })
+            }, 1000)
         } catch (error) {
             // Revert on error - restore the entry at its original position
+            setPendingDeletions(prev => {
+                const next = new Set(prev)
+                next.delete(id)
+                return next
+            })
             setLocalEntries(current => {
                 const newEntries = [...current]
                 // Restore at original position if possible, otherwise append

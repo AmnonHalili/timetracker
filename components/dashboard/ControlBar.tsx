@@ -564,7 +564,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                         </Select>
                     </div>
 
-                    {/* Subtask Selector with Task Done button - Only show if a task is selected and has subtasks */}
+                    {/* Subtask Selector - Only show if a task is selected and has available subtasks */}
                     {selectedTaskIds.length > 0 && (() => {
                         const selectedTask = tasks.find(t => selectedTaskIds.includes(t.id))
                         const allSubtasks = selectedTask?.subtasks || []
@@ -573,174 +573,77 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                         
                         // Only show subtask selector if there are available (not done) subtasks
                         if (availableSubtasks.length > 0) {
-                            const isTaskDone = selectedTask?.status === 'DONE'
-                            
                             return (
-                                <>
-                                    <div className="w-[160px] shrink-0">
-                                        <Select
-                                            value={selectedSubtaskId || undefined}
-                                            onValueChange={(value) => {
-                                                setSelectedSubtaskId(value)
-                                                // Update subtask on active entry if timer is running
-                                                if (optimisticEntry && activeEntry) {
-                                                    handleSubtaskUpdate(value || null)
-                                                }
-                                            }}
-                                        >
-                                            <SelectTrigger className="bg-background border-input hover:bg-accent/50 text-sm h-9 shadow-sm">
-                                                <SelectValue placeholder={t('tasks.subtaskPlaceholder')} />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {availableSubtasks.map((subtask) => (
-                                                    <SelectItem key={subtask.id} value={subtask.id}>
-                                                        {subtask.title}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    {/* Task Done button - only show if timer is running */}
-                                    {optimisticEntry && selectedTask && (() => {
-                                        // Check if subtask is selected and get its done status
-                                        // Use allSubtasks to check status even if subtask is done
-                                        const selectedSubtask = selectedSubtaskId 
-                                            ? allSubtasks.find(st => st.id === selectedSubtaskId)
-                                            : null
-                                        const isSubtaskDone = selectedSubtask?.isDone ?? false
-                                        
-                                        return (
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={async () => {
-                                                    try {
-                                                        // If subtask is selected, mark only the subtask as done
-                                                        if (selectedSubtaskId && selectedSubtask) {
-                                                            await fetch('/api/tasks/subtasks', {
-                                                                method: 'PATCH',
-                                                                headers: { 'Content-Type': 'application/json' },
-                                                                body: JSON.stringify({
-                                                                    id: selectedSubtask.id,
-                                                                    isDone: !isSubtaskDone
-                                                                })
-                                                            })
-                                                            
-                                                            // If marking subtask as done, clear the selection so it disappears from the list
-                                                            if (!isSubtaskDone) {
-                                                                setSelectedSubtaskId(null)
-                                                            }
-                                                        } else {
-                                                            // Mark task as done
-                                                            await fetch('/api/tasks', {
-                                                                method: 'PATCH',
-                                                                headers: { 'Content-Type': 'application/json' },
-                                                                body: JSON.stringify({
-                                                                    id: selectedTask.id,
-                                                                    status: isTaskDone ? 'TODO' : 'DONE'
-                                                                })
-                                                            })
-                                                            
-                                                            // If marking as done, mark all subtasks as done
-                                                            if (!isTaskDone && availableSubtasks.length > 0) {
-                                                                const subtasksToUpdate = availableSubtasks.filter(st => !st.isDone)
-                                                                if (subtasksToUpdate.length > 0) {
-                                                                    // Update all subtasks in parallel
-                                                                    await Promise.all(
-                                                                        subtasksToUpdate.map(subtask =>
-                                                                            fetch('/api/tasks/subtasks', {
-                                                                                method: 'PATCH',
-                                                                                headers: { 'Content-Type': 'application/json' },
-                                                                                body: JSON.stringify({
-                                                                                    id: subtask.id,
-                                                                                    isDone: true
-                                                                                })
-                                                                            }).catch(err => {
-                                                                                console.error(`Failed to update subtask ${subtask.id}:`, err)
-                                                                            })
-                                                                        )
-                                                                    )
-                                                                }
-                                                            }
-                                                        }
-                                                        
-                                                        // Stop current time entry to add it to history (only if marking subtask/task as done, not when unmarking)
-                                                        const isMarkingDone = selectedSubtaskId 
-                                                            ? !isSubtaskDone
-                                                            : !isTaskDone
-                                                        
-                                                        if (isMarkingDone && optimisticEntry && onTimerStopped) {
-                                                            const now = new Date()
-                                                            const stoppedEntry = {
-                                                                startTime: new Date(optimisticEntry.startTime),
-                                                                endTime: now,
-                                                                description: optimisticEntry.description || null,
-                                                                breaks: optimisticEntry.breaks?.map(b => ({
-                                                                    startTime: new Date(b.startTime),
-                                                                    endTime: b.endTime ? new Date(b.endTime) : null
-                                                                })) || [],
-                                                                tasks: optimisticEntry.tasks || [],
-                                                                subtaskId: optimisticEntry.subtaskId || null
-                                                            }
-                                                            onTimerStopped(stoppedEntry)
-                                                            
-                                                            const stopResponse = await fetch('/api/time-entries', {
-                                                                method: 'POST',
-                                                                headers: { 'Content-Type': 'application/json' },
-                                                                body: JSON.stringify({
-                                                                    action: 'stop'
-                                                                })
-                                                            })
-                                                            const stopData = await stopResponse.json()
-                                                            
-                                                            // Clear optimistic entry
-                                                            setOptimisticEntry(null)
-                                                            setDescription("")
-                                                            setSelectedTaskIds([])
-                                                            setSelectedSubtaskId(null)
-                                                            
-                                                            // If merged, update UI immediately
-                                                            if (stopData.merged && stopData.entry && onEntryMerged) {
-                                                                onEntryMerged(stopData.entry)
-                                                            } else {
-                                                                startTransition(() => {
-                                                                    router.refresh()
-                                                                })
-                                                            }
-                                                        }
-                                                    } catch (error) {
-                                                        console.error("Failed to update task status:", error)
-                                                    }
-                                                }}
-                                                className="shrink-0 h-9 border-primary text-primary hover:bg-transparent hover:border-primary/80 hover:text-primary/90"
-                                            >
-                                                Task Done
-                                            </Button>
-                                        )
-                                    })()}
-                                </>
+                                <div className="w-[160px] shrink-0">
+                                    <Select
+                                        value={selectedSubtaskId || undefined}
+                                        onValueChange={(value) => {
+                                            setSelectedSubtaskId(value)
+                                            // Update subtask on active entry if timer is running
+                                            if (optimisticEntry && activeEntry) {
+                                                handleSubtaskUpdate(value || null)
+                                            }
+                                        }}
+                                    >
+                                        <SelectTrigger className="bg-background border-input hover:bg-accent/50 text-sm h-9 shadow-sm">
+                                            <SelectValue placeholder={t('tasks.subtaskPlaceholder')} />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {availableSubtasks.map((subtask) => (
+                                                <SelectItem key={subtask.id} value={subtask.id}>
+                                                    {subtask.title}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             )
                         }
                         return null
                     })()}
 
-                    {/* Task Done button - only show if a task is selected but no subtasks */}
+                    {/* Task Done button - Always show when task is selected and timer is running */}
                     {selectedTaskIds.length > 0 && optimisticEntry && (() => {
                         const selectedTask = tasks.find(t => selectedTaskIds.includes(t.id))
                         if (!selectedTask) return null
-                        const availableSubtasks = selectedTask?.subtasks?.filter(st => !st.isDone) || []
-                        // Only show button if task has no subtasks (or all are done)
-                        if (availableSubtasks.length === 0) {
-                            const isTaskDone = selectedTask.status === 'DONE'
-                            
-                            return (
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={async () => {
-                                        try {
+                        
+                        const isTaskDone = selectedTask.status === 'DONE'
+                        const allSubtasks = selectedTask?.subtasks || []
+                        const availableSubtasks = allSubtasks.filter(st => !st.isDone)
+                        // Check if subtask is selected and get its done status
+                        const selectedSubtask = selectedSubtaskId 
+                            ? allSubtasks.find(st => st.id === selectedSubtaskId)
+                            : null
+                        const isSubtaskDone = selectedSubtask?.isDone ?? false
+                        
+                        return (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={async () => {
+                                    try {
+                                        // If subtask is selected, mark only the subtask as done
+                                        if (selectedSubtaskId && selectedSubtask) {
+                                            await fetch('/api/tasks/subtasks', {
+                                                method: 'PATCH',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({
+                                                    id: selectedSubtask.id,
+                                                    isDone: !isSubtaskDone
+                                                })
+                                            })
+                                            
+                                            // If marking subtask as done, clear the selection so it disappears from the list
+                                            if (!isSubtaskDone) {
+                                                setSelectedSubtaskId(null)
+                                            }
+                                            
+                                            // Refresh to update UI
+                                            startTransition(() => {
+                                                router.refresh()
+                                            })
+                                        } else {
                                             // Mark task as done
                                             await fetch('/api/tasks', {
                                                 method: 'PATCH',
@@ -752,8 +655,8 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                                             })
                                             
                                             // If marking as done, mark all subtasks as done
-                                            if (!isTaskDone && selectedTask.subtasks && selectedTask.subtasks.length > 0) {
-                                                const subtasksToUpdate = selectedTask.subtasks.filter(st => !st.isDone)
+                                            if (!isTaskDone && availableSubtasks.length > 0) {
+                                                const subtasksToUpdate = availableSubtasks.filter(st => !st.isDone)
                                                 if (subtasksToUpdate.length > 0) {
                                                     // Update all subtasks in parallel
                                                     await Promise.all(
@@ -773,7 +676,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                                                 }
                                             }
                                             
-                                            // Stop current time entry to add it to history (only if marking as done)
+                                            // Stop current time entry to add it to history (only if marking as done, not when unmarking)
                                             if (!isTaskDone && optimisticEntry && onTimerStopped) {
                                                 const now = new Date()
                                                 const stoppedEntry = {
@@ -812,18 +715,23 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                                                         router.refresh()
                                                     })
                                                 }
+                                            } else {
+                                                // Just refresh if unmarking as done
+                                                startTransition(() => {
+                                                    router.refresh()
+                                                })
                                             }
-                                        } catch (error) {
-                                            console.error("Failed to update task status:", error)
                                         }
-                                    }}
-                                    className="shrink-0 h-9 border-primary text-primary hover:bg-transparent hover:border-primary/80 hover:text-primary/90"
-                                >
-                                    Task Done
-                                </Button>
-                            )
-                        }
-                        return null
+                                    } catch (error) {
+                                        console.error("Failed to update task status:", error)
+                                        alert("Failed to update task status. Please try again.")
+                                    }
+                                }}
+                                className="shrink-0 h-9 border-primary text-primary hover:bg-transparent hover:border-primary/80 hover:text-primary/90"
+                            >
+                                {t('tasks.taskDone')}
+                            </Button>
+                        )
                     })()}
                 </div>
 

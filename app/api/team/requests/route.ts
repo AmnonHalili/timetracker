@@ -79,15 +79,21 @@ export async function POST(req: Request) {
                 }
             })
 
+            // Get current user's plan
+            const currentUserPlan = await prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: { plan: true }
+            })
+
             // Determine required tier based on current user count
-            // Free: up to 5 users (0-5)
-            // Tier 1: 6-20 users
-            // Tier 2: 21-50 users
-            // Tier 3: 50+ users
+            // Free: up to 3 users (0-3)
+            // Team (Tier 1): 4-20 users
+            // Business (Tier 2): 20-50 users
+            // Company (Tier 3): 51+ users
             let requiredTier: string | null = null
             
-            if (activeUserCount >= 5) {
-                // Already at free limit (5 users), need Tier 1 for 6th user
+            if (activeUserCount >= 3) {
+                // Already at free limit (3 users), need Team for 4th user
                 if (activeUserCount < 20) {
                     requiredTier = "tier1"
                 } else if (activeUserCount < 50) {
@@ -97,8 +103,14 @@ export async function POST(req: Request) {
                 }
             }
 
+            // Check if current plan allows this user count
+            const planLimit = currentUserPlan?.plan === 'FREE' ? 3 :
+                             currentUserPlan?.plan === 'TIER1' ? 20 :
+                             currentUserPlan?.plan === 'TIER2' ? 50 :
+                             Infinity
+
             // If approving this request would exceed current plan limit, return error
-            if (requiredTier) {
+            if (requiredTier && activeUserCount >= planLimit) {
                 return NextResponse.json({
                     message: "User limit exceeded. Please upgrade your plan to approve this join request.",
                     error: "USER_LIMIT_EXCEEDED",

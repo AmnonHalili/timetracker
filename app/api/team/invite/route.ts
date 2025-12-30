@@ -64,19 +64,37 @@ export async function POST(req: Request) {
         // and check against the user's ACTUAL subscription plan
         const userPlan = currentUser.plan || 'FREE' // Default to free if null
 
-        let planLimit = 5
+        // New pricing model limits:
+        // Free: up to 3 users
+        // Team (TIER1): 4-20 users
+        // Business (TIER2): 20-50 users
+        // Company (TIER3): 51+ users
+        let planLimit = 3
         if (userPlan === 'TIER1') planLimit = 20
         if (userPlan === 'TIER2') planLimit = 50
-        if (userPlan === 'TIER3') planLimit = 999999
+        if (userPlan === 'TIER3') planLimit = Infinity
+
+        // Determine required tier if limit would be exceeded
+        let requiredTier: string | null = null
+        if (activeUserCount >= 3) {
+            if (activeUserCount < 20) {
+                requiredTier = "tier1"
+            } else if (activeUserCount < 50) {
+                requiredTier = "tier2"
+            } else {
+                requiredTier = "tier3"
+            }
+        }
 
         // If user would exceed current plan limit, return error
-        if (activeUserCount >= planLimit) {
+        if (activeUserCount >= planLimit && requiredTier) {
             return NextResponse.json({
                 message: "User limit exceeded. Please upgrade your plan to add more team members.",
                 error: "USER_LIMIT_EXCEEDED",
+                requiredTier,
                 currentPlan: userPlan,
                 currentUserCount: activeUserCount,
-                limit: planLimit
+                limit: activeUserCount < 20 ? 20 : activeUserCount < 50 ? 50 : null
             }, { status: 402 }) // 402 Payment Required
         }
 
