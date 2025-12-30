@@ -47,7 +47,7 @@ export function CreateEventDialog({
     const [type, setType] = useState("MEETING")
     const [location, setLocation] = useState("")
     const [allDay, setAllDay] = useState(false)
-    const [users, setUsers] = useState<Array<{ id: string; name: string | null; email: string | null; managerId?: string | null }>>([])
+    const [users, setUsers] = useState<Array<{ id: string; name: string | null; email: string | null; managerId?: string | null; depth?: number }>>([])
     const [participantIds, setParticipantIds] = useState<string[]>([])
     const [showEventToMe, setShowEventToMe] = useState(false)
 
@@ -148,7 +148,7 @@ export function CreateEventDialog({
                                         managerId: currentUser.managerId || null
                                     }
                                 )
-                                
+
                                 // Sort hierarchically
                                 const sortedUsers = sortUsersHierarchically(filteredUsers, session?.user?.id)
                                 setUsers(sortedUsers)
@@ -342,12 +342,12 @@ export function CreateEventDialog({
             const newIds = prev.includes(userId)
                 ? prev.filter(id => id !== userId)
                 : [...prev, userId]
-            
+
             // If current user is being toggled, sync showEventToMe state
             if (session?.user?.id && userId === session.user.id) {
                 setShowEventToMe(newIds.includes(session.user.id))
             }
-            
+
             return newIds
         })
     }
