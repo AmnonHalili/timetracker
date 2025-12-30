@@ -103,7 +103,7 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                             const deadline = new Date(t.deadline!)
                             // Detect "Date Only" (stored as UTC Midnight)
                             const isUtcMidnight = deadline.getUTCHours() === 0 && deadline.getUTCMinutes() === 0 && deadline.getUTCSeconds() === 0
-                            
+
                             return {
                                 id: t.id,
                                 title: t.title,
@@ -194,15 +194,19 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                                     {/* Events and Tasks - sorted by time */}
                                     {visibleItems.map((item) => {
                                         // Determine colors: tasks use TASK_TIME color, events use their type color
-                                        const itemColors = item.isTask 
+                                        const itemColors = item.isTask
                                             ? "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20"
                                             : (eventTypeColors[item.type] || eventTypeColors.OTHER)
-                                        
+
                                         // For tasks, include assignees in tooltip
-                                        const title = item.isTask && 'assignees' in item && item.assignees
-                                            ? `${item.title} - ${item.assignees.map((u: { name: string; email: string }) => u.name).join(', ') || 'Unassigned'}`
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                        const taskAssignees = item.isTask ? (item as any).assignees : null
+
+                                        const title = taskAssignees
+                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                            ? `${item.title} - ${taskAssignees.map((u: any) => u.name).join(', ') || 'Unassigned'}`
                                             : item.title
-                                        
+
                                         return (
                                             <div
                                                 key={item.id}
