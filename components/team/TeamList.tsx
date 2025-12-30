@@ -95,6 +95,8 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
     const [deleting, setDeleting] = useState(false)
     const [showTransferAdmin, setShowTransferAdmin] = useState(false)
     const [newAdminId, setNewAdminId] = useState<string>("")
+    const [directReportsCount, setDirectReportsCount] = useState(0)
+    const [replacementManagerId, setReplacementManagerId] = useState<string>("")
 
     // Manager edit dialog state
     const [showManagerDialog, setShowManagerDialog] = useState(false)
@@ -238,12 +240,25 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
         setDeleteDialogUser(user)
         setShowTransferAdmin(false)
         setNewAdminId("")
+
+        // Check for direct reports
+        if (allUsers) {
+            const count = allUsers.filter(u => u.managerId === user.id).length
+            setDirectReportsCount(count)
+        } else {
+            // Fallback to local users if allUsers not provided (though it should be for accurate count)
+            const count = users.filter(u => u.managerId === user.id).length
+            setDirectReportsCount(count)
+        }
+        setReplacementManagerId("")
     }
 
     const closeDeleteDialog = () => {
         setDeleteDialogUser(null)
         setShowTransferAdmin(false)
         setNewAdminId("")
+        setDirectReportsCount(0)
+        setReplacementManagerId("")
     }
 
     const deleteUser = async () => {
@@ -256,7 +271,8 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     userId: deleteDialogUser.id,
-                    newAdminId: showTransferAdmin ? newAdminId : undefined
+                    newAdminId: showTransferAdmin ? newAdminId : undefined,
+                    replacementManagerId: directReportsCount > 0 && replacementManagerId ? replacementManagerId : undefined
                 }),
             })
 
@@ -886,12 +902,19 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
 
             {/* Delete Confirmation Dialog */}
             <Dialog open={!!deleteDialogUser} onOpenChange={(open) => !open && closeDeleteDialog()}>
-                <DialogContent className="sm:max-w-[400px]">
+                <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
-                        <DialogTitle>Remove User from Team</DialogTitle>
+                        <DialogTitle>
+                            {directReportsCount > 0 ? "ARE YOU SURE YOU WANT TO DELETE THIS MANAGER?" : "Remove User from Team"}
+                        </DialogTitle>
                         <DialogDescription>
                             {showTransferAdmin ? (
                                 <>Select a new admin before removing <strong>{deleteDialogUser?.name}</strong> from the team</>
+                            ) : directReportsCount > 0 ? (
+                                <span className="text-destructive font-medium block mt-2">
+                                    This user has <strong>{directReportsCount}</strong> direct reports. Deleting them will leave these reports without a manager.
+                                    You can transfer them to another manager below, or they will be left unassigned (orphaned).
+                                </span>
                             ) : (
                                 <>Are you sure you want to remove <strong>{deleteDialogUser?.name}</strong> from the team? They will be removed from the team but their account will remain active.</>
                             )}
@@ -924,14 +947,47 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
                             </div>
                         </div>
                     ) : (
-                        <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md p-4 mt-4">
-                            <p className="text-sm text-blue-900 dark:text-blue-100">
-                                ℹ️ The user will be removed from the team and will no longer appear in the team list or hierarchy. Their account will remain active and they can join another team or create their own.
-                            </p>
+                        <div className="pt-4 space-y-4">
+                            {directReportsCount > 0 && (
+                                <div className="space-y-3 p-4 border rounded-md bg-muted/30">
+                                    <Label htmlFor="replacementManager">
+                                        Transfer Direct Reports To (Optional)
+                                    </Label>
+                                    <Select value={replacementManagerId} onValueChange={setReplacementManagerId}>
+                                        <SelectTrigger id="replacementManager">
+                                            <SelectValue placeholder="Select replacement manager" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {/* Show only potential managers (Admins/Managers) who are NOT the user being deleted */}
+                                            {users
+                                                .filter(u =>
+                                                    u.id !== deleteDialogUser?.id &&
+                                                    (u.role === 'ADMIN' || u.role === 'MANAGER')
+                                                )
+                                                .map(u => (
+                                                    <SelectItem key={u.id} value={u.id}>
+                                                        {u.name} - {u.role}
+                                                    </SelectItem>
+                                                ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <p className="text-xs text-muted-foreground">
+                                        If you don&apos;t select a replacement, the {directReportsCount} reports will be left without a direct manager.
+                                    </p>
+                                </div>
+                            )}
+
+                            {!directReportsCount && (
+                                <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md p-4">
+                                    <p className="text-sm text-blue-900 dark:text-blue-100">
+                                        ℹ️ The user will be removed from the team and will no longer appear in the team list or hierarchy. Their account will remain active.
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     )}
 
-                    <DialogFooter>
+                    <DialogFooter className="gap-2 sm:gap-0">
                         <Button variant="outline" onClick={closeDeleteDialog} disabled={deleting}>
                             Cancel
                         </Button>
@@ -941,7 +997,11 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
                             disabled={deleting || (showTransferAdmin && !newAdminId)}
                         >
                             {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {showTransferAdmin ? "Transfer & Remove" : "Remove from Team"}
+                            {showTransferAdmin ? "Transfer & Remove" :
+                                directReportsCount > 0
+                                    ? (replacementManagerId ? "Transfer & Delete Manager" : "Delete Manager (Orphan Reports)")
+                                    : "Remove from Team"
+                            }
                         </Button>
                     </DialogFooter>
                 </DialogContent>
