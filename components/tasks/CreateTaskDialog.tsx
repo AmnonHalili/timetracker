@@ -328,17 +328,17 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                     </Button>
                 </DialogTrigger>
             )}
-            <DialogContent className="sm:max-w-[425px] [&>button]:left-4 [&>button]:right-auto">
+            <DialogContent className="sm:max-w-[425px]" dir="ltr">
                 <form onSubmit={handleSubmit}>
-                    <DialogHeader className="text-right">
-                        <DialogTitle className="text-right">{mode === 'edit' ? t('tasks.edit') : t('tasks.createNewTask')}</DialogTitle>
-                        <DialogDescription className="text-right">
+                    <DialogHeader className="text-left">
+                        <DialogTitle className="text-left">{mode === 'edit' ? t('tasks.edit') : t('tasks.createNewTask')}</DialogTitle>
+                        <DialogDescription className="text-left">
                             {mode === 'edit' ? t('tasks.edit') : t('tasks.assignNewTask')}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="title" className="text-right">
+                            <Label htmlFor="title">
                                 {t('tasks.titleLabel')}
                             </Label>
                             <Input
@@ -351,7 +351,7 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                         </div>
 
                         <div className="grid grid-cols-4 items-start gap-4">
-                            <Label htmlFor="description" className="text-right pt-2">
+                            <Label htmlFor="description" className="pt-2">
                                 {t('tasks.description')}
                             </Label>
                             <Textarea
@@ -367,7 +367,7 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                         {/* Only show assignment if there are users loaded */}
                         {(users.length > 0) && (
                             <div className="grid grid-cols-4 items-start gap-4">
-                                <Label className="text-right pt-2">
+                                <Label className="pt-2">
                                     {t('tasks.assignTo')}
                                 </Label>
                                 <div className="col-span-3 border rounded-md max-h-40 overflow-y-auto p-2 space-y-2">
@@ -395,7 +395,7 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                         {/* Show to me checkbox - only in create mode */}
                         {mode === 'create' && currentUserId && (
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label className="text-right">
+                                <Label>
                                     {/* Empty label for alignment */}
                                 </Label>
                                 <div className="col-span-3 flex items-center space-x-2">
@@ -412,7 +412,7 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                         )}
 
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="priority" className="text-right">
+                            <Label htmlFor="priority">
                                 {t('tasks.priority')}
                             </Label>
                             <div className="col-span-3">
@@ -429,7 +429,7 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                             </div>
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="deadline" className="text-right">
+                            <Label htmlFor="deadline">
                                 {t('tasks.deadline')}
                             </Label>
                             <div className="col-span-3 flex gap-2">
@@ -452,7 +452,10 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                             </div>
                         </div>
                     </div>
-                    <DialogFooter className="justify-end">
+                    <DialogFooter className="justify-end gap-2">
+                        <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
+                            {t('common.cancel')}
+                        </Button>
                         <Button type="submit" disabled={loading}>
                             {mode === 'edit' ? <Pencil className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
                             {mode === 'edit' ? t('tasks.edit') : t('tasks.create')}
