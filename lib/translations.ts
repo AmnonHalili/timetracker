@@ -185,6 +185,7 @@ export const translations = {
     'calendar.break': 'Break',
     'calendar.personal': 'Personal',
     'calendar.other': 'Other',
+    'calendar.showThisEventToMe': 'Show this event to me',
 
     // Reports
     'reports.monthlyReports': 'Monthly Reports',
@@ -767,6 +768,7 @@ export const translations = {
     'calendar.appointment': 'תור',
     'calendar.taskTime': 'זמן משימה',
     'calendar.break': 'הפסקה',
+    'calendar.showThisEventToMe': 'הצג אירוע זה לי',
     'calendar.personal': 'אישי',
     'calendar.other': 'אחר',
 

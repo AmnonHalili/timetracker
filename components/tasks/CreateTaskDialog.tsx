@@ -59,7 +59,7 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
     const [description, setDescription] = useState("")
     const [users, setUsers] = useState<Array<{ id: string; name: string | null; email: string | null; managerId?: string | null; role?: string; depth?: number }>>([])
     const [loading, setLoading] = useState(false)
-    const [showToMe, setShowToMe] = useState(false)
+    const [showToMe, setShowToMe] = useState(true) // Default to true - independent of Assign To
 
     // Helper to sort users: Current User first, then Hierarchy
     const sortUsersHierarchically = (usersToSort: Array<{ id: string; name: string | null; email: string | null; managerId?: string | null; role?: string }>, meId?: string) => {
@@ -183,24 +183,14 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const assigneeIds = assignees.map((u: any) => u.id)
                     setAssignedToIds(assigneeIds)
-                    // Set showToMe if current user is in assignees
-                    if (currentUserId && assigneeIds.includes(currentUserId)) {
-                        setShowToMe(true)
-                    } else {
-                        setShowToMe(false)
-                    }
+                    // showToMe is independent - default to true in create mode, keep current state in edit mode
+                    // Don't sync with assignees - user can have showToMe checked even if not in assignees
                 }
             } else if (mode === 'create') {
                 // Reset fields
                 setTitle("")
-                // Set default assigned user if currentUserId is provided
-                if (currentUserId && users.some(u => u.id === currentUserId)) {
-                    setAssignedToIds([currentUserId])
-                    setShowToMe(true) // Default to showing to creator
-                } else {
-                    setAssignedToIds([])
-                    setShowToMe(false)
-                }
+                setAssignedToIds([])
+                setShowToMe(true) // Always default to true, independent of Assign To
                 setPriority("LOW")
                 setDeadline("")
                 setDeadlineTime("")
@@ -223,14 +213,20 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
         }
 
         // If "showToMe" is checked, ensure currentUserId is in assignedToIds
+        // This is independent of manual selection in Assign To
         let finalAssignedToIds = [...assignedToIds]
         if (showToMe && currentUserId && !finalAssignedToIds.includes(currentUserId)) {
             // Add currentUserId if showToMe is checked but user is not in assignedToIds
             finalAssignedToIds.push(currentUserId)
         } else if (!showToMe && currentUserId && finalAssignedToIds.includes(currentUserId)) {
-            // Remove currentUserId only if showToMe is unchecked AND user is not manually selected in Assign To
-            // If user manually selected themselves in Assign To, keep them even if showToMe is unchecked
-            if (!assignedToIds.includes(currentUserId)) {
+            // Remove currentUserId only if showToMe is unchecked
+            // But check if user was manually selected - if so, keep them
+            // We track this by checking if currentUserId was in the original assignedToIds
+            // If it wasn't there originally, it means it was added by showToMe, so we can remove it
+            // If it was there originally, it means user selected themselves manually, so keep it
+            const wasManuallySelected = assignedToIds.includes(currentUserId)
+            if (!wasManuallySelected) {
+                // Only remove if it was added by showToMe, not if manually selected
                 finalAssignedToIds = finalAssignedToIds.filter(id => id !== currentUserId)
             }
         }
@@ -260,13 +256,8 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
 
             // Reset form immediately
             setTitle("")
-            if (currentUserId && users.some(u => u.id === currentUserId)) {
-                setAssignedToIds([currentUserId])
-                setShowToMe(true)
-            } else {
-                setAssignedToIds([])
-                setShowToMe(false)
-            }
+            setAssignedToIds([])
+            setShowToMe(true) // Always default to true, independent of Assign To
             setPriority("LOW")
             setDeadline("")
             setDeadlineTime("")
@@ -320,10 +311,9 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                 ? prev.filter(id => id !== userId)
                 : [...prev, userId]
 
-            // If current user is being toggled, sync showToMe state
-            if (currentUserId && userId === currentUserId) {
-                setShowToMe(newIds.includes(currentUserId))
-            }
+            // showToMe is now independent - don't sync it with manual selection
+            // User can select themselves in Assign To and still have showToMe unchecked
+            // Or have showToMe checked without selecting themselves in Assign To
 
             return newIds
         })

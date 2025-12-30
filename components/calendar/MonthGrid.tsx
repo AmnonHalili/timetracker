@@ -102,15 +102,36 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                         .filter(t => t.deadline && isSameDay(new Date(t.deadline), day) && t.status !== 'DONE')
                         .sort((a, b) => (priorityOrder[a.priority as keyof typeof priorityOrder] ?? 2) - (priorityOrder[b.priority as keyof typeof priorityOrder] ?? 2))
 
-                    // Find events on this day
-                    const daysEvents = (data.events || [])
+                    // Find all events on this day
+                    const allDaysEvents = (data.events || [])
                         .filter(e => isSameDay(new Date(e.startTime), day))
-                        .slice(0, 1) // Limit to 1 event for display in small cards
 
-                    // Limit to 1 task for display (to make room for events)
-                    const visibleTasks = allDaysTasks.slice(0, 1)
-                    const remainingTasks = allDaysTasks.length - 1
-                    const totalRemaining = Math.max(0, remainingTasks) + Math.max(0, (data.events || []).filter(e => isSameDay(new Date(e.startTime), day)).length - 1)
+                    // Show all events and tasks, but limit to reasonable number to fit in cell
+                    // Estimate: each item is ~20px (text-[10px] + py-0.5 + space-y-0.5)
+                    // Cell height is roughly 80-100px on desktop, header takes ~20px, so we have ~60-80px
+                    // That's about 3-4 items max
+                    const maxVisibleItems = 4
+                    const totalItems = allDaysEvents.length + allDaysTasks.length
+                    
+                    // If we hit the limit, prioritize events first, then tasks
+                    let finalVisibleEvents = allDaysEvents
+                    let finalVisibleTasks = allDaysTasks
+                    let finalRemainingCount = 0
+                    
+                    if (totalItems > maxVisibleItems) {
+                        if (allDaysEvents.length >= maxVisibleItems) {
+                            // Too many events, show max events only
+                            finalVisibleEvents = allDaysEvents.slice(0, maxVisibleItems)
+                            finalVisibleTasks = []
+                            finalRemainingCount = allDaysTasks.length + (allDaysEvents.length - maxVisibleItems)
+                        } else {
+                            // Show all events, then fill remaining with tasks
+                            finalVisibleEvents = allDaysEvents
+                            const remainingSlots = maxVisibleItems - allDaysEvents.length
+                            finalVisibleTasks = allDaysTasks.slice(0, remainingSlots)
+                            finalRemainingCount = Math.max(0, allDaysTasks.length - remainingSlots)
+                        }
+                    }
 
                     const hoursWorked = dailyData?.totalDurationHours || 0
                     const isTargetMet = dailyData?.status === 'MET'
@@ -161,9 +182,9 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                                 </div>
 
                                 {/* Content - hidden on mobile, shown on desktop */}
-                                <div className="hidden md:flex flex-col space-y-0.5 flex-1 min-h-0 mt-1">
+                                <div className="hidden md:flex flex-col space-y-0.5 flex-1 min-h-0 mt-1 overflow-hidden">
                                     {/* Events - shown first at the top */}
-                                    {daysEvents.map((event) => (
+                                    {finalVisibleEvents.map((event) => (
                                         <div
                                             key={event.id}
                                             className={cn(
@@ -180,23 +201,32 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                                     ))}
 
                                     {/* Tasks - shown after events */}
-                                    {visibleTasks.map((task) => (
-                                        <div
-                                            key={task.id}
-                                            className={cn(
-                                                "text-[8px] truncate px-0.5 py-0 rounded border shrink-0",
-                                                task.priority === 'HIGH' ? "bg-pink-700 text-white border-pink-800" :
-                                                    task.priority === 'MEDIUM' ? "bg-pink-500 text-white border-pink-600" :
-                                                        "bg-pink-300 text-white border-pink-400"
-                                            )}
-                                            title={`${task.title} - ${task.assignees?.map((u) => u.name).join(', ') || 'Unassigned'}`}
-                                        >
-                                            <span className="truncate">{task.title}</span>
-                                        </div>
-                                    ))}
-                                    {totalRemaining > 0 && (
-                                        <div className="text-[8px] text-muted-foreground font-medium shrink-0">
-                                            +{totalRemaining}
+                                    {finalVisibleTasks.map((task) => {
+                                        // Task colors similar to event style but different colors
+                                        const taskColors = 
+                                            task.priority === 'HIGH' ? "bg-pink-50 border-pink-200 text-pink-700" :
+                                            task.priority === 'MEDIUM' ? "bg-purple-50 border-purple-200 text-purple-700" :
+                                                "bg-orange-50 border-orange-200 text-orange-700"
+                                        
+                                        return (
+                                            <div
+                                                key={task.id}
+                                                className={cn(
+                                                    "text-[10px] truncate px-1 py-0.5 rounded border shrink-0",
+                                                    taskColors
+                                                )}
+                                                title={`${task.title} - ${task.assignees?.map((u) => u.name).join(', ') || 'Unassigned'}`}
+                                            >
+                                                <span className="truncate flex items-center gap-1">
+                                                    <span className="w-1 h-1 rounded-full bg-current shrink-0" />
+                                                    {task.title}
+                                                </span>
+                                            </div>
+                                        )
+                                    })}
+                                    {finalRemainingCount > 0 && (
+                                        <div className="text-[10px] text-muted-foreground font-medium shrink-0">
+                                            +{finalRemainingCount}
                                         </div>
                                     )}
                                 </div>

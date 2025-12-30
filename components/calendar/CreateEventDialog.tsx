@@ -7,11 +7,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Loader2, Plus, Pencil } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { useSession } from "next-auth/react"
 import { useLanguage } from "@/lib/useLanguage"
+import { filterHierarchyGroup } from "@/lib/hierarchy-utils"
 
 interface CreateEventDialogProps {
     open: boolean
@@ -45,8 +47,65 @@ export function CreateEventDialog({
     const [type, setType] = useState("MEETING")
     const [location, setLocation] = useState("")
     const [allDay, setAllDay] = useState(false)
-    const [users, setUsers] = useState<Array<{ id: string; name: string | null; email: string | null }>>([])
+    const [users, setUsers] = useState<Array<{ id: string; name: string | null; email: string | null; managerId?: string | null }>>([])
     const [participantIds, setParticipantIds] = useState<string[]>([])
+    const [showEventToMe, setShowEventToMe] = useState(false)
+
+    // Helper to sort users: Current User first, then Hierarchy
+    const sortUsersHierarchically = (usersToSort: Array<{ id: string; name: string | null; email: string | null; managerId?: string | null }>, meId?: string) => {
+        if (!usersToSort.length) return []
+
+        let me: typeof users[0] | undefined
+        const others = usersToSort.map(u => ({ ...u, depth: 0 })) // Initialize depth for all users
+
+        // 1. Extract Me
+        if (meId) {
+            const meIndex = others.findIndex(u => u.id === meId)
+            if (meIndex >= 0) {
+                me = others[meIndex]
+                others.splice(meIndex, 1)
+            }
+        }
+
+        // 2. Build Tree
+        const userMap = new Map<string, typeof users[0]>()
+        const childrenMap = new Map<string, typeof users[0][]>()
+
+        others.forEach(u => {
+            userMap.set(u.id, u)
+            if (!childrenMap.has(u.id)) childrenMap.set(u.id, [])
+        })
+
+        const roots: typeof users = []
+
+        others.forEach(u => {
+            // If manager exists in the filtered list, add as child
+            if (u.managerId && userMap.has(u.managerId)) {
+                childrenMap.get(u.managerId)?.push(u)
+            } else {
+                // Otherwise it's a root (relative to this list)
+                roots.push(u)
+            }
+        })
+
+        // 3. DFS Flatten with Depth
+        const flattened: typeof users = []
+        const traverse = (nodes: typeof users, currentDepth: number) => {
+            // Sort siblings alphabetically
+            nodes.sort((a, b) => (a.name || a.email || "").localeCompare(b.name || b.email || ""))
+                .forEach(node => {
+                    flattened.push({ ...node, depth: currentDepth })
+                    const children = childrenMap.get(node.id)
+                    if (children && children.length > 0) {
+                        traverse(children, currentDepth + 1)
+                    }
+                })
+        }
+
+        traverse(roots, 0)
+
+        return me ? [{ ...me, depth: 0 }, ...flattened] : flattened
+    }
 
     // Date/Time state
     const formatDateLocal = (date: Date) => {
@@ -74,12 +133,34 @@ export function CreateEventDialog({
                     .then(res => res.json())
                     .then(data => {
                         if (Array.isArray(data)) {
-                            const sortedUser = [...data].sort((a, b) => {
-                                if (a.id === session?.user?.id) return -1
-                                if (b.id === session?.user?.id) return 1
-                                return (a.name || "").localeCompare(b.name || "")
-                            })
-                            setUsers(sortedUser)
+                            // Filter to hierarchy group (manager, siblings, direct reports)
+                            const currentUser = data.find((u: { id: string; managerId?: string | null }) => u.id === session?.user?.id)
+                            if (currentUser) {
+                                const filteredUsers = filterHierarchyGroup(
+                                    data.map((u: { id: string; name: string | null; email: string | null; managerId?: string | null }) => ({
+                                        id: u.id,
+                                        name: u.name,
+                                        email: u.email,
+                                        managerId: u.managerId || null
+                                    })),
+                                    {
+                                        id: currentUser.id,
+                                        managerId: currentUser.managerId || null
+                                    }
+                                )
+                                
+                                // Sort hierarchically
+                                const sortedUsers = sortUsersHierarchically(filteredUsers, session?.user?.id)
+                                setUsers(sortedUsers)
+                            } else {
+                                // Fallback: just sort if we can't find current user
+                                const sortedUser = [...data].sort((a, b) => {
+                                    if (a.id === session?.user?.id) return -1
+                                    if (b.id === session?.user?.id) return 1
+                                    return (a.name || "").localeCompare(b.name || "")
+                                })
+                                setUsers(sortedUser)
+                            }
                         }
                     })
                     .catch(() => {
@@ -99,7 +180,14 @@ export function CreateEventDialog({
                 // Populate participants
                 if (event.participants) {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    setParticipantIds(event.participants.map((p: any) => p.user.id))
+                    const participantIdsList = event.participants.map((p: any) => p.user.id)
+                    setParticipantIds(participantIdsList)
+                    // Set showEventToMe if current user is in participants
+                    if (session?.user?.id && participantIdsList.includes(session.user.id)) {
+                        setShowEventToMe(true)
+                    } else {
+                        setShowEventToMe(false)
+                    }
                 }
 
                 const start = new Date(event.startTime)
@@ -120,7 +208,21 @@ export function CreateEventDialog({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        if (participantIds.length === 0) {
+        // If "showEventToMe" is checked, ensure currentUserId is in participantIds
+        let finalParticipantIds = [...participantIds]
+        if (showEventToMe && session?.user?.id && !finalParticipantIds.includes(session.user.id)) {
+            // Add currentUserId if showEventToMe is checked but user is not in participantIds
+            finalParticipantIds.push(session.user.id)
+        } else if (!showEventToMe && session?.user?.id && finalParticipantIds.includes(session.user.id)) {
+            // Remove currentUserId only if showEventToMe is unchecked AND user is not manually selected in Participants
+            // If user manually selected themselves in Participants, keep them even if showEventToMe is unchecked
+            const wasManuallySelected = participantIds.includes(session.user.id)
+            if (!wasManuallySelected) {
+                finalParticipantIds = finalParticipantIds.filter(id => id !== session.user.id)
+            }
+        }
+
+        if (finalParticipantIds.length === 0) {
             toast.error("Please select at least one participant")
             return
         }
@@ -129,7 +231,7 @@ export function CreateEventDialog({
 
         // Create temp event for optimistic UI
         if (mode === 'create' && onOptimisticEventCreate) {
-            const isCurrentUserParticipant = session?.user?.id && participantIds.includes(session.user.id)
+            const isCurrentUserParticipant = session?.user?.id && finalParticipantIds.includes(session.user.id)
 
             if (isCurrentUserParticipant) {
                 const tempEvent = {
@@ -145,7 +247,7 @@ export function CreateEventDialog({
                         name: session?.user?.name || "You",
                         email: session?.user?.email || ""
                     },
-                    participants: participantIds.map(id => {
+                    participants: finalParticipantIds.map(id => {
                         const user = users.find(u => u.id === id)
                         return {
                             user: {
@@ -185,7 +287,7 @@ export function CreateEventDialog({
                     type,
                     location: location || null,
                     projectId,
-                    participantIds,
+                    participantIds: finalParticipantIds,
                     reminderMinutes: []
                 })
             })
@@ -216,6 +318,7 @@ export function CreateEventDialog({
         setLocation("")
         setAllDay(false)
         setParticipantIds(session?.user?.id ? [session.user.id] : [])
+        setShowEventToMe(false)
 
         const baseDate = defaultDate || new Date()
         const dateStr = formatDateLocal(baseDate)
@@ -235,11 +338,18 @@ export function CreateEventDialog({
     }
 
     const toggleUser = (userId: string) => {
-        setParticipantIds(prev =>
-            prev.includes(userId)
+        setParticipantIds(prev => {
+            const newIds = prev.includes(userId)
                 ? prev.filter(id => id !== userId)
                 : [...prev, userId]
-        )
+            
+            // If current user is being toggled, sync showEventToMe state
+            if (session?.user?.id && userId === session.user.id) {
+                setShowEventToMe(newIds.includes(session.user.id))
+            }
+            
+            return newIds
+        })
     }
 
     const toggleSelectAll = () => {
@@ -269,7 +379,7 @@ export function CreateEventDialog({
                                 id="title"
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
-                                placeholder={t('calendar.meeting')}
+                                placeholder=""
                                 required
                             />
                         </div>
@@ -415,6 +525,19 @@ export function CreateEventDialog({
                             </div>
                         )}
 
+                        {/* Show to me checkbox - only in create mode and when there are other participants */}
+                        {mode === 'create' && session?.user?.id && users.some(u => u.id !== session.user.id) && (
+                            <div className="flex items-center space-x-2">
+                                <Checkbox
+                                    id="showEventToMe"
+                                    checked={showEventToMe}
+                                    onCheckedChange={(checked) => setShowEventToMe(checked as boolean)}
+                                />
+                                <Label htmlFor="showEventToMe" className="cursor-pointer text-sm font-normal">
+                                    {t('calendar.showThisEventToMe')}
+                                </Label>
+                            </div>
+                        )}
 
                     </div>
 
