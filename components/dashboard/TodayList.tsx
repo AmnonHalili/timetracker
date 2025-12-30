@@ -32,16 +32,16 @@ export function TodayList({ entries }: TodayListProps) {
         // Filter out entries that are pending deletion to prevent them from reappearing
         // This is critical for fast deletions - entries stay filtered even after router.refresh()
         const filteredEntries = entries.filter(e => !pendingDeletions.has(e.id))
-        
+
         // Only update if there are actual changes to avoid unnecessary re-renders
         setLocalEntries(prev => {
             const prevIds = new Set(prev.map(e => e.id))
             const newIds = new Set(filteredEntries.map(e => e.id))
-            
+
             // Check if sets are different
-            if (prevIds.size !== newIds.size || 
-                ![...prevIds].every(id => newIds.has(id)) ||
-                ![...newIds].every(id => prevIds.has(id))) {
+            if (prevIds.size !== newIds.size ||
+                !Array.from(prevIds).every(id => newIds.has(id)) ||
+                !Array.from(newIds).every(id => prevIds.has(id))) {
                 return filteredEntries
             }
             return prev
@@ -125,19 +125,19 @@ export function TodayList({ entries }: TodayListProps) {
 
     const handleDelete = (id: string) => {
         if (!confirm("Delete this entry?")) return
-        
+
         // Optimistic update - remove entry immediately from UI (BEFORE any async operations)
         const deletedEntry = localEntries.find(e => e.id === id)
         const deletedIndex = localEntries.findIndex(e => e.id === id)
-        
+
         if (!deletedEntry) return
-        
+
         // Mark as pending deletion to prevent it from reappearing during router.refresh()
         setPendingDeletions(prev => new Set(prev).add(id))
-        
+
         // Remove immediately for instant UI feedback - this happens synchronously
         setLocalEntries(current => current.filter(e => e.id !== id))
-        
+
         // API call happens in background - doesn't block UI
         fetch(`/api/time-entries?id=${id}`, { method: "DELETE" })
             .then(() => {

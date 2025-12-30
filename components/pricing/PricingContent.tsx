@@ -12,7 +12,7 @@ export function PricingContent() {
     const { t, isRTL } = useLanguage()
     const [userCount, setUserCount] = React.useState<number>(0)
     const [currentPlan, setCurrentPlan] = React.useState<string>("free")
-    const [loading, setLoading] = React.useState(true)
+
 
     // Fetch current subscription info
     React.useEffect(() => {
@@ -27,7 +27,7 @@ export function PricingContent() {
             } catch (error) {
                 console.error("Failed to fetch subscription:", error)
             } finally {
-                setLoading(false)
+
             }
         }
         fetchSubscription()
@@ -192,15 +192,13 @@ export function PricingContent() {
                     const tierStyle = getTierStyle(plan.id)
                     const isQualified = qualifiedTier?.slug === plan.id
                     const isCurrentPlan = currentPlan === plan.id
-                    
+
                     return (
                         <Card
                             key={plan.id}
-                            className={`relative flex flex-col ${
-                                plan.popular ? 'border-primary shadow-lg scale-105' : ''
-                            } ${
-                                isQualified && plan.id !== 'free' ? `${tierStyle.border} border-2` : ''
-                            }`}
+                            className={`relative flex flex-col ${plan.popular ? 'border-primary shadow-lg scale-105' : ''
+                                } ${isQualified && plan.id !== 'free' ? `${tierStyle.border} border-2` : ''
+                                }`}
                         >
                             {plan.popular && (
                                 <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary">
@@ -217,75 +215,75 @@ export function PricingContent() {
                                     <span>{tierStyle.symbol}</span>
                                     <span>{plan.name}</span>
                                 </CardTitle>
-                            <div className="mt-4">
-                                <div className="text-3xl font-bold">{plan.price}</div>
-                                {plan.id === 'tier3' && (
-                                    <div className="mt-2 space-y-1">
-                                        {userCount > 50 ? (
-                                            <div className="text-xs text-muted-foreground">
-                                                {t('pricing.tier3.basePrice')} + ${2.5.toFixed(2)} × {userCount - 50} {t('pricing.tier3.usersAbove50')} = ${calculateCompanyPrice(userCount).toFixed(2)}/month
-                                            </div>
-                                        ) : (
-                                            <div className="text-xs text-muted-foreground">
-                                                {t('pricing.tier3.basePrice')} + ${2.5.toFixed(2)} {t('pricing.tier3.perUserAbove50')}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                                {plan.id !== 'free' && (
-                                    <>
-                                        <div className="mt-2 text-sm font-medium text-foreground">
-                                            {plan.users}
-                                        </div>
-                                        <CardDescription className="mt-1">{plan.description}</CardDescription>
-                                    </>
-                                )}
-                                {plan.id === 'free' && (
-                                    <>
-                                        <div className="mt-2 text-sm font-medium text-foreground">
-                                            {plan.users}
-                                        </div>
-                                        <CardDescription className="mt-1">{plan.description}</CardDescription>
-                                    </>
-                                )}
-                            </div>
-                        </CardHeader>
-                        <CardContent className="flex-1 flex flex-col">
-                            <ul className={`space-y-3 flex-1 ${isRTL ? 'text-right' : 'text-left'}`}>
-                                {(plan.id === 'tier3' ? companyFeatures : allFeatures).map((feature) => {
-                                    const included = getFeatureStatus(plan.id, feature.key)
-                                    // For userSupport, use dynamic text per plan
-                                    const displayText = feature.key === 'userSupport'
-                                        ? getUserSupportText(plan.id)
-                                        : feature.text
-                                    return (
-                                        <li key={feature.key} className="flex items-start gap-2">
-                                            {included ? (
-                                                <Check className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+                                <div className="mt-4">
+                                    <div className="text-3xl font-bold">{plan.price}</div>
+                                    {plan.id === 'tier3' && (
+                                        <div className="mt-2 space-y-1">
+                                            {userCount > 50 ? (
+                                                <div className="text-xs text-muted-foreground">
+                                                    {t('pricing.tier3.basePrice')} + ${2.5.toFixed(2)} × {userCount - 50} {t('pricing.tier3.usersAbove50')} = ${calculateCompanyPrice(userCount).toFixed(2)}/month
+                                                </div>
                                             ) : (
-                                                <X className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                                                <div className="text-xs text-muted-foreground">
+                                                    {t('pricing.tier3.basePrice')} + ${2.5.toFixed(2)} {t('pricing.tier3.perUserAbove50')}
+                                                </div>
                                             )}
-                                            <span className={included ? 'text-foreground' : 'text-muted-foreground'}>
-                                                {displayText}
-                                            </span>
-                                        </li>
-                                    )
-                                })}
-                            </ul>
-                            <Button
-                                className={`w-full mt-6 ${plan.id === 'free' ? 'variant-outline' : ''}`}
-                                variant={plan.popular ? 'default' : 'outline'}
-                                onClick={() => plan.id !== 'free' && handleUpgrade(plan.id)}
-                                disabled={isLoading === plan.id || plan.id === 'free' || (isCurrentPlan && plan.id !== 'free')}
-                            >
-                                {isLoading === plan.id ? (
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                ) : (
-                                    isCurrentPlan ? t('pricing.currentPlan') : (plan.id === 'free' ? t('pricing.currentPlan') : t('pricing.upgrade'))
-                                )}
-                            </Button>
-                        </CardContent>
-                    </Card>
+                                        </div>
+                                    )}
+                                    {plan.id !== 'free' && (
+                                        <>
+                                            <div className="mt-2 text-sm font-medium text-foreground">
+                                                {plan.users}
+                                            </div>
+                                            <CardDescription className="mt-1">{plan.description}</CardDescription>
+                                        </>
+                                    )}
+                                    {plan.id === 'free' && (
+                                        <>
+                                            <div className="mt-2 text-sm font-medium text-foreground">
+                                                {plan.users}
+                                            </div>
+                                            <CardDescription className="mt-1">{plan.description}</CardDescription>
+                                        </>
+                                    )}
+                                </div>
+                            </CardHeader>
+                            <CardContent className="flex-1 flex flex-col">
+                                <ul className={`space-y-3 flex-1 ${isRTL ? 'text-right' : 'text-left'}`}>
+                                    {(plan.id === 'tier3' ? companyFeatures : allFeatures).map((feature) => {
+                                        const included = getFeatureStatus(plan.id, feature.key)
+                                        // For userSupport, use dynamic text per plan
+                                        const displayText = feature.key === 'userSupport'
+                                            ? getUserSupportText(plan.id)
+                                            : feature.text
+                                        return (
+                                            <li key={feature.key} className="flex items-start gap-2">
+                                                {included ? (
+                                                    <Check className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+                                                ) : (
+                                                    <X className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                                                )}
+                                                <span className={included ? 'text-foreground' : 'text-muted-foreground'}>
+                                                    {displayText}
+                                                </span>
+                                            </li>
+                                        )
+                                    })}
+                                </ul>
+                                <Button
+                                    className={`w-full mt-6 ${plan.id === 'free' ? 'variant-outline' : ''}`}
+                                    variant={plan.popular ? 'default' : 'outline'}
+                                    onClick={() => plan.id !== 'free' && handleUpgrade(plan.id)}
+                                    disabled={isLoading === plan.id || plan.id === 'free' || (isCurrentPlan && plan.id !== 'free')}
+                                >
+                                    {isLoading === plan.id ? (
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                    ) : (
+                                        isCurrentPlan ? t('pricing.currentPlan') : (plan.id === 'free' ? t('pricing.currentPlan') : t('pricing.upgrade'))
+                                    )}
+                                </Button>
+                            </CardContent>
+                        </Card>
                     )
                 })}
             </div>

@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react"
 import { DailyReport } from "@/lib/report-calculations"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { format, getDay, isSameDay, isToday, isYesterday, startOfDay, formatISO } from "date-fns"
+import { format, getDay, isToday, isYesterday, startOfDay } from "date-fns"
 import { cn, formatHoursMinutes } from "@/lib/utils"
 import { useLanguage } from "@/lib/useLanguage"
 import { ChevronDown, ChevronUp, Loader2 } from "lucide-react"
@@ -34,29 +34,28 @@ export function ReportTable({ days, userId }: ReportTableProps) {
     const { t, isRTL } = useLanguage()
     const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set())
     const [dayEntries, setDayEntries] = useState<Record<string, { entries: TimeEntry[], loading: boolean }>>({})
-    
+
     // Sort days: current day first, then yesterday, then older days in descending order
     const sortedDays = useMemo(() => {
-        const today = startOfDay(new Date())
-        const yesterday = startOfDay(new Date(today.getTime() - 24 * 60 * 60 * 1000))
-        
+
+
         return [...days].sort((a, b) => {
             const dateA = startOfDay(a.date)
             const dateB = startOfDay(b.date)
-            
+
             // Current day first
             if (isToday(dateA) && !isToday(dateB)) return -1
             if (!isToday(dateA) && isToday(dateB)) return 1
-            
+
             // Yesterday second
             if (isYesterday(dateA) && !isYesterday(dateB) && !isToday(dateB)) return -1
             if (!isYesterday(dateA) && !isToday(dateA) && isYesterday(dateB)) return 1
-            
+
             // Older days in descending order (most recent first)
             return dateB.getTime() - dateA.getTime()
         })
     }, [days])
-    
+
     const getDayName = (date: Date) => {
         const dayOfWeek = getDay(date)
         const dayKeys: Array<'days.sunday' | 'days.monday' | 'days.tuesday' | 'days.wednesday' | 'days.thursday' | 'days.friday' | 'days.saturday'> = ['days.sunday', 'days.monday', 'days.tuesday', 'days.wednesday', 'days.thursday', 'days.friday', 'days.saturday']
@@ -78,10 +77,10 @@ export function ReportTable({ days, userId }: ReportTableProps) {
         } else {
             // Expand - fetch data if not already loaded
             setExpandedDays(prev => new Set(prev).add(dayKey))
-            
+
             if (!dayEntries[dayKey]) {
                 setDayEntries(prev => ({ ...prev, [dayKey]: { entries: [], loading: true } }))
-                
+
                 try {
                     console.log(`[ReportTable] Fetching entries for date: ${dayKey}, userId: ${userId}`)
                     const response = await fetch(`/api/reports/day-details?userId=${userId}&date=${dayKey}`)
@@ -91,9 +90,9 @@ export function ReportTable({ days, userId }: ReportTableProps) {
                             timeEntriesCount: data.timeEntries?.length || 0,
                             entries: data.timeEntries
                         })
-                        setDayEntries(prev => ({ 
-                            ...prev, 
-                            [dayKey]: { entries: data.timeEntries || [], loading: false } 
+                        setDayEntries(prev => ({
+                            ...prev,
+                            [dayKey]: { entries: data.timeEntries || [], loading: false }
                         }))
                     } else {
                         const errorText = await response.text()
@@ -102,16 +101,16 @@ export function ReportTable({ days, userId }: ReportTableProps) {
                             statusText: response.statusText,
                             error: errorText
                         })
-                        setDayEntries(prev => ({ 
-                            ...prev, 
-                            [dayKey]: { entries: [], loading: false } 
+                        setDayEntries(prev => ({
+                            ...prev,
+                            [dayKey]: { entries: [], loading: false }
                         }))
                     }
                 } catch (error) {
                     console.error("Error fetching day details:", error)
-                    setDayEntries(prev => ({ 
-                        ...prev, 
-                        [dayKey]: { entries: [], loading: false } 
+                    setDayEntries(prev => ({
+                        ...prev,
+                        [dayKey]: { entries: [], loading: false }
                     }))
                 }
             }
@@ -164,8 +163,8 @@ export function ReportTable({ days, userId }: ReportTableProps) {
 
                         return (
                             <>
-                                <TableRow 
-                                    key={day.date.toISOString()} 
+                                <TableRow
+                                    key={day.date.toISOString()}
                                     className={cn(
                                         !day.isWorkDay && "bg-muted/30",
                                         "cursor-pointer hover:bg-accent/50 transition-colors"
@@ -193,11 +192,11 @@ export function ReportTable({ days, userId }: ReportTableProps) {
                                         {formatHoursMinutes(day.totalDurationHours)}
                                     </TableCell>
                                 </TableRow>
-                                
+
                                 {/* Expanded Content */}
                                 {isExpanded && (
-                                    <TableRow 
-                                        key={`${day.date.toISOString()}-expanded`} 
+                                    <TableRow
+                                        key={`${day.date.toISOString()}-expanded`}
                                         className="bg-muted/20"
                                     >
                                         <TableCell colSpan={5} className="p-0">
@@ -212,7 +211,7 @@ export function ReportTable({ days, userId }: ReportTableProps) {
                                                     </div>
                                                 ) : (
                                                     <div className="space-y-3">
-                                                        {entries.map((entry, index) => {
+                                                        {entries.map((entry) => {
                                                             const duration = calculateDuration(entry.startTime, entry.endTime, entry.breaks)
                                                             return (
                                                                 <div

@@ -1,5 +1,5 @@
 import { TimeEntry, User, WorkMode } from "@prisma/client"
-import { eachDayOfInterval, endOfDay, isSameDay, startOfDay, startOfMonth, isSameMonth } from "date-fns"
+import { eachDayOfInterval, isSameDay, startOfDay, startOfMonth } from "date-fns"
 
 export type BalanceResult = {
     totalWorkedHours: number
@@ -32,7 +32,6 @@ export function calculateBalance(
 
     // 1. Determine Timeframe: Start of current Month -> Reference Date (Today)
     const monthStart = startOfMonth(referenceDate)
-    const checkEndDate = endOfDay(referenceDate) // Include today fully (for target calc)
 
     // 2. Calculate Actual Hours (Work performed in this month)
     let totalWorkedHours = 0

@@ -14,8 +14,8 @@ function formatHours(hours: number, showSign: boolean = false): string {
     const isNegative = hours < 0
     const absHours = Math.abs(hours)
 
-    const h = Math.floor(absHours)
-    const m = Math.round((absHours - h) * 60)
+
+
 
     // Handle edge case where rounding minutes pushes to next hour (e.g. 1.99 hours -> 1h 60m -> 2h 00m)
     const totalMinutes = Math.round(absHours * 60)

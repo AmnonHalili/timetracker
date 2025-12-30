@@ -12,6 +12,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, CheckCircle2, XCircle, Eye, EyeOff } from "lucide-react"
 import Image from "next/image"
 
+export const dynamic = "force-dynamic"
+
 function AcceptInvitationContent() {
     const router = useRouter()
     const searchParams = useSearchParams()

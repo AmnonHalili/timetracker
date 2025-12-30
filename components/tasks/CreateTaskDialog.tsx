@@ -207,7 +207,7 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                 setDescription("")
             }
         }
-    }, [isOpen, initialUsers, mode, task, currentUserId])
+    }, [isOpen, initialUsers, mode, task, currentUserId]) // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
