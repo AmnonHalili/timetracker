@@ -41,6 +41,12 @@ export const metadata: Metadata = {
       { url: "/collabologocut.png", media: "(prefers-color-scheme: light)", type: "image/png", sizes: "180x180" },
       { url: "/collabologocutwhite.png", media: "(prefers-color-scheme: dark)", type: "image/png", sizes: "180x180" },
     ],
+    other: [
+      {
+        rel: "apple-touch-icon",
+        url: "/collabospecialnoback.png",
+      },
+    ],
   },
   verification: {
     google: "pD0VM3NjqBMRzZegnSIGRHan7ruRQ0SzdQfrzRgSjmU",
