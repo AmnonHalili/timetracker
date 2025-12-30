@@ -136,67 +136,70 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                                 isToday(day) && "border-primary shadow-sm"
                             )}
                         >
-                            <div className="flex justify-between items-start">
-                                <span className={cn(
-                                    "text-[10px] md:text-xs font-semibold h-4 w-4 md:h-5 md:w-5 flex items-center justify-center rounded-full",
-                                    isToday(day) && "bg-primary text-primary-foreground"
-                                )}>
-                                    {format(day, 'd')}
-                                </span>
-                                {/* Hours worked - hidden on mobile, shown on desktop */}
-                                {hoursWorked > 0 && (
+                            <div className="flex flex-col h-full">
+                                {/* Header with date and hours */}
+                                <div className="flex justify-between items-start mb-0.5">
                                     <span className={cn(
-                                        "hidden md:block text-[8px] font-bold px-0.5 py-0 rounded",
-                                        isTargetMet ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
+                                        "text-[10px] md:text-xs font-semibold h-4 w-4 md:h-5 md:w-5 flex items-center justify-center rounded-full",
+                                        isToday(day) && "bg-primary text-primary-foreground"
                                     )}>
-                                        {formatHoursMinutes(hoursWorked)}
+                                        {format(day, 'd')}
                                     </span>
-                                )}
-                                {/* Pink dot indicator on mobile if has events */}
-                                {hasEvents && (
-                                    <span className="md:hidden w-1.5 h-1.5 rounded-full bg-pink-500 shrink-0" />
-                                )}
-                            </div>
-
-                            {/* Content - hidden on mobile, shown on desktop */}
-                            <div className="hidden md:block space-y-0.5 mt-0.5">
-                                {/* Events */}
-                                {daysEvents.map((event) => (
-                                    <div
-                                        key={event.id}
-                                        className={cn(
-                                            "text-[8px] truncate px-0.5 py-0 rounded border",
-                                            eventTypeColors[event.type] || eventTypeColors.OTHER
-                                        )}
-                                        title={event.title}
-                                    >
-                                        <span className="truncate flex items-center gap-0.5">
-                                            <span className="w-0.5 h-0.5 rounded-full bg-current shrink-0" />
-                                            {event.title}
+                                    {/* Hours worked - hidden on mobile, shown on desktop */}
+                                    {hoursWorked > 0 && (
+                                        <span className={cn(
+                                            "hidden md:block text-[8px] font-bold px-0.5 py-0 rounded",
+                                            isTargetMet ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
+                                        )}>
+                                            {formatHoursMinutes(hoursWorked)}
                                         </span>
-                                    </div>
-                                ))}
+                                    )}
+                                    {/* Pink dot indicator on mobile if has events */}
+                                    {hasEvents && (
+                                        <span className="md:hidden w-1.5 h-1.5 rounded-full bg-pink-500 shrink-0" />
+                                    )}
+                                </div>
 
-                                {/* Tasks */}
-                                {visibleTasks.map((task) => (
-                                    <div
-                                        key={task.id}
-                                        className={cn(
-                                            "text-[8px] truncate px-0.5 py-0 rounded border",
-                                            task.priority === 'HIGH' ? "bg-pink-700 text-white border-pink-800" :
-                                                task.priority === 'MEDIUM' ? "bg-pink-500 text-white border-pink-600" :
-                                                    "bg-pink-300 text-white border-pink-400"
-                                        )}
-                                        title={`${task.title} - ${task.assignees?.map((u) => u.name).join(', ') || 'Unassigned'}`}
-                                    >
-                                        <span className="truncate">{task.title}</span>
-                                    </div>
-                                ))}
-                                {totalRemaining > 0 && (
-                                    <div className="text-[8px] text-muted-foreground font-medium">
-                                        +{totalRemaining}
-                                    </div>
-                                )}
+                                {/* Content - hidden on mobile, shown on desktop */}
+                                <div className="hidden md:flex flex-col space-y-0.5 flex-1 min-h-0 mt-1">
+                                    {/* Events - shown first at the top */}
+                                    {daysEvents.map((event) => (
+                                        <div
+                                            key={event.id}
+                                            className={cn(
+                                                "text-[10px] truncate px-1 py-0.5 rounded border shrink-0",
+                                                eventTypeColors[event.type] || eventTypeColors.OTHER
+                                            )}
+                                            title={event.title}
+                                        >
+                                            <span className="truncate flex items-center gap-1">
+                                                <span className="w-1 h-1 rounded-full bg-current shrink-0" />
+                                                {event.title}
+                                            </span>
+                                        </div>
+                                    ))}
+
+                                    {/* Tasks - shown after events */}
+                                    {visibleTasks.map((task) => (
+                                        <div
+                                            key={task.id}
+                                            className={cn(
+                                                "text-[8px] truncate px-0.5 py-0 rounded border shrink-0",
+                                                task.priority === 'HIGH' ? "bg-pink-700 text-white border-pink-800" :
+                                                    task.priority === 'MEDIUM' ? "bg-pink-500 text-white border-pink-600" :
+                                                        "bg-pink-300 text-white border-pink-400"
+                                            )}
+                                            title={`${task.title} - ${task.assignees?.map((u) => u.name).join(', ') || 'Unassigned'}`}
+                                        >
+                                            <span className="truncate">{task.title}</span>
+                                        </div>
+                                    ))}
+                                    {totalRemaining > 0 && (
+                                        <div className="text-[8px] text-muted-foreground font-medium shrink-0">
+                                            +{totalRemaining}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </Card>
                     )
