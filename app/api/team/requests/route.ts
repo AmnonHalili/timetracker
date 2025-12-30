@@ -91,7 +91,7 @@ export async function POST(req: Request) {
             // Business (Tier 2): 20-50 users
             // Company (Tier 3): 51+ users
             let requiredTier: string | null = null
-            
+
             if (activeUserCount >= 3) {
                 // Already at free limit (3 users), need Team for 4th user
                 if (activeUserCount < 20) {
@@ -105,9 +105,9 @@ export async function POST(req: Request) {
 
             // Check if current plan allows this user count
             const planLimit = currentUserPlan?.plan === 'FREE' ? 3 :
-                             currentUserPlan?.plan === 'TIER1' ? 20 :
-                             currentUserPlan?.plan === 'TIER2' ? 50 :
-                             Infinity
+                currentUserPlan?.plan === 'TIER1' ? 20 :
+                    currentUserPlan?.plan === 'TIER2' ? 50 :
+                        Infinity
 
             // If approving this request would exceed current plan limit, return error
             if (requiredTier && activeUserCount >= planLimit) {
@@ -125,6 +125,7 @@ export async function POST(req: Request) {
                     pendingProjectId: null,
                     projectId: currentUser.projectId,
                     status: "ACTIVE", // Ensure active
+                    role: "EMPLOYEE",
                     managerId: session.user.id // Assign to approving admin as default manager
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } as any

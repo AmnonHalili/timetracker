@@ -24,7 +24,7 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Time Tracker & Task Manager | Collabo",
+  title: "Collabo | Teamtracker",
   description: "The simplest time tracker and task manager for small businesses and freelancers. Track hours, manage projects, and collaborate without the complexity. Start for free.",
   metadataBase: new URL('https://collabo-web.com'),
   manifest: "/manifest.json",

@@ -354,6 +354,7 @@ enum Role {
   ADMIN
   MANAGER
   EMPLOYEE
+  MEMBER
 }
 
 enum Status {
