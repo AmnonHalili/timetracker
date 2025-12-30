@@ -29,16 +29,13 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://collabo-web.com'),
   icons: {
     icon: [
-      { url: "/collabologocut.png", media: "(prefers-color-scheme: light)", type: "image/png", sizes: "32x32" },
-      { url: "/collabologocutwhite.png", media: "(prefers-color-scheme: dark)", type: "image/png", sizes: "32x32" },
+      { url: "/collabospecialnoback.png", type: "image/png", sizes: "32x32" },
     ],
     shortcut: [
-      { url: "/collabologocut.png", media: "(prefers-color-scheme: light)", type: "image/png" },
-      { url: "/collabologocutwhite.png", media: "(prefers-color-scheme: dark)", type: "image/png" },
+      { url: "/collabospecialnoback.png", type: "image/png" },
     ],
     apple: [
-      { url: "/collabologocut.png", media: "(prefers-color-scheme: light)", type: "image/png", sizes: "180x180" },
-      { url: "/collabologocutwhite.png", media: "(prefers-color-scheme: dark)", type: "image/png", sizes: "180x180" },
+      { url: "/collabospecialnoback.png", type: "image/png", sizes: "180x180" },
     ],
   },
   verification: {
