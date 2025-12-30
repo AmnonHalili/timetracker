@@ -146,51 +146,35 @@ export function RecursiveNode({ node, allUsers, onAddClick, depth = 0, hideConne
             {hasChildren && (
                 <div className="flex items-start gap-4 mt-8 relative">
                     {/* Central Stem from Parent down to the bus line height */}
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 h-8 w-px bg-border" />
+                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 h-8 w-[2px] bg-slate-300 dark:bg-slate-600" />
 
                     {/* 
                         Connector Lines Wrapper
                         We need a horizontal line connecting the center of the first child to the center of the last child 
                     */}
                     {node.children!.length > 1 && (
-                        <div className="absolute top-[-1px] left-1/2 -translate-x-1/2 w-[calc(100%-200px)] h-px bg-border hidden" />
-                        // Calculating width dynamically in CSS is hard. 
-                        // Simpler approach: Each child draws a line up to a common horizontal track.
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[calc(100%-200px)] h-[2px] bg-slate-300 dark:bg-slate-600 hidden" />
                     )}
 
                     {node.children!.map((child, index) => (
                         <div key={child.id} className="flex flex-col items-center relative">
                             {/* Horizontal Connector Part */}
-                            {/* 
-                                This part represents the horizontal branch.
-                                If multiple children, we need a horizontal line spanning from first to last child.
-                                
-                                CSS Trick: 
-                                ::before = vertical line up
-                                ::after = horizontal line 
-                            */}
-
-                            {/* Connector Logic:
-                                1. Vertical line from Parent bottom to 'bus'. (Handled by parent above)
-                                2. 'Bus' horizontal line.
-                                3. Vertical line from 'bus' to Child top.
-                            */}
-
-                            {/* VISUAL HACK: 
-                                 Draw a horizontal line above this child if it's not the only child.
-                                 And connect it to the parent.
-                             */}
-
                             {!hideConnectorLines && node.children!.length > 1 && (
-                                <div className={cn(
-                                    "absolute top-[-2rem] h-px bg-border",
-                                    index === 0 ? "left-1/2 w-1/2" :
-                                        index === node.children!.length - 1 ? "right-1/2 w-1/2" : "w-full"
-                                )} />
+                                <div
+                                    className={cn(
+                                        "absolute top-0 h-[2px] bg-slate-300 dark:bg-slate-600",
+                                        index === 0 ? "left-1/2" : "left-0"
+                                    )}
+                                    style={{
+                                        width: index === 0 ? "calc(50% + 1rem)" :
+                                            index === node.children!.length - 1 ? "50%" :
+                                                "calc(100% + 1rem)"
+                                    }}
+                                />
                             )}
 
                             {/* Vertical connection to child */}
-                            <div className="h-8 w-px bg-border" />
+                            <div className="h-8 w-[2px] bg-slate-300 dark:bg-slate-600" />
 
                             <RecursiveNode
                                 key={child.id}

@@ -648,14 +648,13 @@ export default function HierarchyPage() {
                     {tree && tree.length > 0 && (
                         <>
                             {/* Vertical line from Project Card down */}
-                            <div className="absolute top-[3.5rem] h-8 w-px bg-border" />
+                            <div className="absolute top-[2rem] h-16 w-[2px] bg-slate-300 dark:bg-slate-600" />
 
                             {/* Horizontal Line spanning first to last root */}
                             {tree.length > 1 && (
-                                <div className="absolute top-[5.5rem] h-px bg-border w-full max-w-[calc(100%-16rem)] hidden" />
-                                // Calculating exact width is tricky. 
-                                // Let's use the same trick as RecursiveNode: each child draws its own connector
+                                <div className="absolute top-[5.5rem] h-[2px] bg-slate-300 dark:bg-slate-600 w-full max-w-[calc(100%-16rem)] hidden" />
                             )}
+
 
                             <div className="absolute top-[5.5rem] w-full flex justify-center">
                                 {/* This is the horizontal bus line from which roots hang */}
@@ -731,7 +730,7 @@ export default function HierarchyPage() {
                                                             {/* Horizontal connecting line between partners (except for the last one) */}
                                                             {nodeIndex < group.nodes.length - 1 && (
                                                                 <div
-                                                                    className="absolute top-1/2 -translate-y-1/2 left-full h-px bg-border z-0"
+                                                                    className="absolute top-1/2 -translate-y-1/2 left-full h-[2px] bg-slate-300 dark:bg-slate-600 z-0"
                                                                     style={{ width: '2rem' }}
                                                                 />
                                                             )}
@@ -741,21 +740,21 @@ export default function HierarchyPage() {
                                             </div>
 
                                             {/* Vertical line up to the Project Bus (from center of group) */}
-                                            <div className="h-8 w-px bg-border absolute -top-8 left-1/2 -translate-x-1/2" />
+                                            <div className="h-8 w-[2px] bg-slate-300 dark:bg-slate-600 absolute -top-8 left-1/2 -translate-x-1/2" />
 
                                             {/* Horizontal connector to siblings */}
                                             {groupIndex < grouped.length - 1 && (
-                                                <div className="absolute top-[-2rem] right-[-1rem] h-px bg-border w-[calc(50%+1rem)]" />
+                                                <div className="absolute top-[-2rem] right-[-1rem] h-[2px] bg-slate-300 dark:bg-slate-600 w-[calc(50%+1rem)]" />
                                             )}
                                             {groupIndex > 0 && (
-                                                <div className="absolute top-[-2rem] left-[-1rem] h-px bg-border w-[calc(50%+1rem)]" />
+                                                <div className="absolute top-[-2rem] left-[-1rem] h-[2px] bg-slate-300 dark:bg-slate-600 w-[calc(50%+1rem)]" />
                                             )}
 
                                             {/* Render merged children below the partner group */}
                                             {mergedChildren.length > 0 && (
                                                 <div className="relative flex flex-col items-center mt-16">
                                                     {/* Vertical connector from partners to children horizontal bus - shortened to stop at bus line */}
-                                                    <div className="absolute -top-16 h-8 w-px bg-border" />
+                                                    <div className="absolute -top-16 h-8 w-[2px] bg-slate-300 dark:bg-slate-600" />
 
                                                     {/* Children in a horizontal row */}
                                                     <div className="flex gap-8 relative items-start">
@@ -772,14 +771,14 @@ export default function HierarchyPage() {
                                                                             {/* Right segment - extends to right edge of this card */}
                                                                             {!isLast && (
                                                                                 <div
-                                                                                    className="absolute -top-8 right-[-1rem] h-px bg-border"
+                                                                                    className="absolute -top-8 right-[-1rem] h-[2px] bg-slate-300 dark:bg-slate-600"
                                                                                     style={{ width: 'calc(50% + 1rem)' }}
                                                                                 />
                                                                             )}
                                                                             {/* Left segment - extends from left edge of this card */}
                                                                             {!isFirst && (
                                                                                 <div
-                                                                                    className="absolute -top-8 left-[-1rem] h-px bg-border"
+                                                                                    className="absolute -top-8 left-[-1rem] h-[2px] bg-slate-300 dark:bg-slate-600"
                                                                                     style={{ width: 'calc(50% + 1rem)' }}
                                                                                 />
                                                                             )}
@@ -787,7 +786,7 @@ export default function HierarchyPage() {
                                                                     )}
 
                                                                     {/* Vertical drop line from bus to child card */}
-                                                                    <div className="h-8 w-px bg-border absolute -top-8" />
+                                                                    <div className="h-8 w-[2px] bg-slate-300 dark:bg-slate-600 absolute -top-8" />
 
                                                                     <RecursiveNode
                                                                         node={child}
@@ -819,17 +818,17 @@ export default function HierarchyPage() {
                                                     <>
                                                         {/* Connector to Right Sibling (for First and Middle) */}
                                                         {!isLast && (
-                                                            <div className="absolute top-[-2rem] right-[-1rem] h-px bg-border w-[calc(50%+1rem)]" />
+                                                            <div className="absolute top-[-2rem] right-[-1rem] h-[2px] bg-slate-300 dark:bg-slate-600 w-[calc(50%+1rem)]" />
                                                         )}
                                                         {/* Connector to Left Sibling (for Last and Middle) */}
                                                         {!isFirst && (
-                                                            <div className="absolute top-[-2rem] left-[-1rem] h-px bg-border w-[calc(50%+1rem)]" />
+                                                            <div className="absolute top-[-2rem] left-[-1rem] h-[2px] bg-slate-300 dark:bg-slate-600 w-[calc(50%+1rem)]" />
                                                         )}
                                                     </>
                                                 )}
 
                                                 {/* Vertical line up to the Project Bus */}
-                                                <div className="h-8 w-px bg-border absolute -top-8" />
+                                                <div className="h-8 w-[2px] bg-slate-300 dark:bg-slate-600 absolute -top-8" />
                                                 <RecursiveNode
                                                     node={rootNode}
                                                     allUsers={users}
