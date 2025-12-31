@@ -214,22 +214,17 @@ export async function POST(req: Request) {
             }
 
             // Stop any running task timers
-            const activeTimeEntry = await prisma.timeEntry.findFirst({
+            // Stop any running task timers
+            // Use updateMany to ensure all potentially active entries are closed (robustness)
+            await prisma.timeEntry.updateMany({
                 where: {
                     userId: session.user.id,
                     endTime: null,
                 },
-                select: {
-                    id: true,
+                data: {
+                    endTime: new Date(),
                 },
             })
-
-            if (activeTimeEntry) {
-                await prisma.timeEntry.update({
-                    where: { id: activeTimeEntry.id },
-                    data: { endTime: new Date() },
-                })
-            }
 
             // Get location if required
             let endLocationLat: number | null = null
