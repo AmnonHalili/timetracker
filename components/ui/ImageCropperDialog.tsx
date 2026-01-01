@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import Cropper from 'react-easy-crop'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -17,10 +17,11 @@ interface ImageCropperDialogProps {
 
 export function ImageCropperDialog({ open, imageSrc, onClose, onCropComplete }: ImageCropperDialogProps) {
     const [crop, setCrop] = useState({ x: 0, y: 0 })
-    const [zoom, setZoom] = useState(1)
+    const [zoom, setZoom] = useState(0.6) // Start more zoomed out
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(false)
+    const containerRef = useRef<HTMLDivElement>(null)
 
     const onCropChange = (location: { x: number; y: number }) => {
         setCrop(location)
@@ -71,6 +72,56 @@ export function ImageCropperDialog({ open, imageSrc, onClose, onCropComplete }: 
         return canvas.toDataURL('image/png')
     }
 
+    // Reset zoom and crop when dialog opens
+    useEffect(() => {
+        if (open) {
+            setZoom(0.6) // Reset to zoomed out view
+            setCrop({ x: 0, y: 0 })
+            // Disable body scroll to prevent background zoom
+            document.body.style.overflow = 'hidden'
+        } else {
+            // Re-enable body scroll when dialog closes
+            document.body.style.overflow = ''
+        }
+
+        return () => {
+            // Cleanup: re-enable body scroll
+            document.body.style.overflow = ''
+        }
+    }, [open])
+
+    // Handle wheel event with smaller increments and prevent propagation
+    const handleWheel = useCallback((e: React.WheelEvent | WheelEvent) => {
+        // Prevent the event from propagating to the background
+        e.stopPropagation()
+        e.preventDefault()
+
+        // Very small, proportional zoom step for smooth scrolling
+        // Scale deltaY to create smooth, slow zoom increments
+        const deltaY = 'deltaY' in e ? e.deltaY : (e as WheelEvent).deltaY
+        // Use a very small multiplier (0.002) for smooth, slow zoom
+        const zoomDelta = -deltaY * 0.002
+        setZoom(prevZoom => {
+            const newZoom = Math.max(0.5, Math.min(prevZoom + zoomDelta, 3))
+            return newZoom
+        })
+    }, [])
+
+    // Attach wheel event listener in capture phase to intercept before react-easy-crop
+    useEffect(() => {
+        if (!open) return
+
+        const container = containerRef.current
+        if (!container) return
+
+        const handler = (e: WheelEvent) => handleWheel(e)
+        container.addEventListener('wheel', handler, { passive: false, capture: true })
+
+        return () => {
+            container.removeEventListener('wheel', handler, { capture: true })
+        }
+    }, [open, handleWheel])
+
     const handleSave = async () => {
         if (!imageSrc || !croppedAreaPixels) return
 
@@ -90,12 +141,21 @@ export function ImageCropperDialog({ open, imageSrc, onClose, onCropComplete }: 
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent 
+                className="sm:max-w-md"
+                onWheel={(e) => {
+                    // Prevent wheel events from propagating to background
+                    e.stopPropagation()
+                }}
+            >
                 <DialogHeader>
                     <DialogTitle>Adjust Logo</DialogTitle>
                 </DialogHeader>
 
-                <div className="relative h-64 w-full bg-black/5 rounded-md overflow-hidden mt-4">
+                <div 
+                    ref={containerRef}
+                    className="relative h-64 w-full bg-black/5 rounded-md overflow-hidden mt-4"
+                >
                     <Cropper
                         image={imageSrc}
                         crop={crop}
@@ -105,6 +165,8 @@ export function ImageCropperDialog({ open, imageSrc, onClose, onCropComplete }: 
                         onCropComplete={onCropCompleteCallback}
                         onZoomChange={onZoomChange}
                         showGrid={false}
+                        zoomWithScroll={false}
+                        restrictPosition={false}
                     />
                 </div>
 
@@ -114,8 +176,8 @@ export function ImageCropperDialog({ open, imageSrc, onClose, onCropComplete }: 
                         <span>{zoom.toFixed(1)}x</span>
                     </div>
                     <Slider
-                        defaultValue={[1]}
-                        min={1}
+                        defaultValue={[0.6]}
+                        min={0.5}
                         max={3}
                         step={0.1}
                         value={[zoom]}
