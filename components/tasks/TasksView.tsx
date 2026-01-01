@@ -637,14 +637,16 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
             })
     }
 
-    const handleEditSubtask = async (taskId: string, subtaskId: string, newTitle: string) => {
-        const trimmedTitle = newTitle.trim()
+
+
+    const handleUpdateSubtask = async (taskId: string, subtaskId: string) => {
+        const trimmedTitle = editingSubtaskTitle.trim()
         if (!trimmedTitle) {
             setEditingSubtask(null)
             return
         }
 
-        // Store previous state for potential revert
+        // Store previous state for revert
         const previousSubtasks = localSubtasks[taskId] || []
         const previousSubtask = previousSubtasks.find(s => s.id === subtaskId)
 
