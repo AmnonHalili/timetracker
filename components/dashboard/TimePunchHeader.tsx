@@ -378,7 +378,7 @@ export function TimePunchHeader({ workLocation, activeWorkday }: TimePunchHeader
                                 min-w-[140px] h-12 text-base font-bold
                                 ${isWorking
                                     ? "bg-red-600 hover:bg-red-700 text-white"
-                                    : "bg-green-600 hover:bg-green-700 text-white"
+                                    : "bg-primary hover:bg-primary/90 text-primary-foreground"
                                 }
                                 transition-all duration-200
                                 ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}
