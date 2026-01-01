@@ -73,7 +73,17 @@ export function TasksDemo() {
     }
   }
 
-  const getStatusDisplay = (task: any) => {
+  interface DemoTask {
+    id: string
+    title: string
+    status: string
+    priority: string
+    deadline: Date | null
+    assignees: { name: string }[]
+    subtasks: { id: string, title: string, isDone: boolean }[]
+  }
+
+  const getStatusDisplay = (task: DemoTask) => {
     const isOverdue = task.deadline && isPast(new Date(task.deadline)) && !isToday(new Date(task.deadline)) && task.status !== 'DONE'
 
     if (task.status === 'DONE') {
