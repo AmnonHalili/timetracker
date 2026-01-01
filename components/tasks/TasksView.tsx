@@ -1460,7 +1460,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                             <div className="space-y-2">
                                 {[
                                     { value: 'today', label: t('timeEntries.today') },
-                                    { value: 'thisWeek', label: t('landing.thisWeek') || 'This week' },
+                                    { value: 'thisWeek', label: 'This week' },
                                     { value: 'overdue', label: t('tasks.statusOverdue') }
                                 ].map(option => (
                                     <div key={option.value} className="flex items-center space-x-2">
