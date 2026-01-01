@@ -11,7 +11,7 @@ interface HierarchyNode {
   children?: HierarchyNode[]
 }
 
-// CEO node
+// CEO node (Desktop version - wide layout)
 const ceoNode: HierarchyNode = {
   name: "Michael Anderson",
   title: "Founder And CEO",
@@ -66,6 +66,45 @@ const ceoNode: HierarchyNode = {
   ]
 }
 
+// Mobile version - tree structure
+// Founder -> 2 managers -> 1 manager has 2 workers, 1 manager has 1 worker
+const mobileCeoNode: HierarchyNode = {
+  name: "Michael Anderson",
+  title: "Founder And CEO",
+  role: "CEO",
+  children: [
+    {
+      name: "Robert Thompson",
+      title: "Engineering Manager",
+      role: "MANAGER",
+      children: [
+        {
+          name: "Andrew Parker",
+          title: "Backend Developer",
+          role: "EMPLOYEE"
+        },
+        {
+          name: "Lucas Martinez",
+          title: "Frontend Developer",
+          role: "EMPLOYEE"
+        }
+      ]
+    },
+    {
+      name: "James Wilson",
+      title: "Product Manager",
+      role: "MANAGER",
+      children: [
+        {
+          name: "Emily Johnson",
+          title: "QA Engineer",
+          role: "EMPLOYEE"
+        }
+      ]
+    }
+  ]
+}
+
 function HierarchyNodeCard({ node, isRoot = false }: { node: HierarchyNode; isRoot?: boolean }) {
 
   const getBarColor = () => {
@@ -96,7 +135,7 @@ function HierarchyNodeCard({ node, isRoot = false }: { node: HierarchyNode; isRo
             className="h-full w-full object-contain"
           />
         </div>
-        <span className="font-bold text-xs md:text-sm lg:text-base ml-2 md:ml-2.5">{node.name}</span>
+        <span className="font-bold text-xs md:text-sm lg:text-base ml-4 md:ml-5">{node.name}</span>
       </div>
     )
   }
@@ -123,6 +162,7 @@ function HierarchyNodeCard({ node, isRoot = false }: { node: HierarchyNode; isRo
   )
 }
 
+// Desktop version - horizontal layout
 function HierarchyLevel({ nodes, depth = 0 }: { nodes: HierarchyNode[]; depth?: number }) {
   if (!nodes || nodes.length === 0) return null
 
@@ -177,10 +217,95 @@ function HierarchyLevel({ nodes, depth = 0 }: { nodes: HierarchyNode[]; depth?: 
   )
 }
 
+// Mobile version - tree layout with horizontal branches
+function MobileHierarchyLevel({ nodes, depth = 0 }: { nodes: HierarchyNode[]; depth?: number }) {
+  if (!nodes || nodes.length === 0) return null
+
+  return (
+    <div className="flex flex-col items-center w-full">
+      {/* Horizontal row of nodes at this level */}
+      <div className="flex justify-center items-start gap-1 relative">
+        {nodes.map((node, index) => {
+          const hasChildren = node.children && node.children.length > 0
+          const isFirst = index === 0
+          const isLast = index === nodes.length - 1
+          const isOnly = nodes.length === 1
+
+          return (
+            <div key={index} className="flex flex-col items-center relative">
+              {/* Horizontal connector lines between siblings */}
+              {!isOnly && (
+                <>
+                  {/* Line extending to the right (for first and middle nodes) */}
+                  {!isLast && (
+                    <div className="absolute -top-2.5 left-1/2 h-px bg-border w-[calc(50%+0.5rem)]" />
+                  )}
+                  {/* Line extending to the left (for last and middle nodes) */}
+                  {!isFirst && (
+                    <div className="absolute -top-2.5 right-1/2 h-px bg-border w-[calc(50%+0.5rem)]" />
+                  )}
+                </>
+              )}
+
+              {/* Vertical line from parent to this node */}
+              {depth >= 0 && (
+                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 h-2.5 w-px bg-border" />
+              )}
+
+              {/* Node Card */}
+              <HierarchyNodeCard node={node} />
+
+              {/* Vertical connector line from node to children */}
+              {hasChildren && (
+                <div className="h-1.5 w-px bg-border my-0.5" />
+              )}
+
+              {/* Recursive children rendered horizontally */}
+              {hasChildren && (
+                <MobileHierarchyLevel nodes={node.children!} depth={depth + 1} />
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export function HierarchyDemo() {
   return (
-    <div className="w-full py-1 md:py-2 px-1 md:px-2 bg-background max-h-full overflow-hidden">
-      <div className="flex flex-col items-center relative mx-auto">
+    <div className="w-full pt-1 pb-0 md:pt-2 md:pb-0 px-1 md:px-2 bg-background max-h-full overflow-hidden">
+      {/* Mobile Version - Tree Layout */}
+      <div className="flex flex-col items-center relative mx-auto md:hidden">
+        {/* Company Header */}
+        <div className="mb-1">
+          <HierarchyNodeCard
+            node={{ name: "Collabo", title: "Organization", role: "CEO" }}
+            isRoot
+          />
+        </div>
+
+        {/* Vertical connector from company to CEO */}
+        <div className="h-2 w-px bg-border mb-1" />
+
+        {/* CEO Node */}
+        <div className="mb-1">
+          <HierarchyNodeCard node={mobileCeoNode} />
+        </div>
+
+        {/* Vertical connector from CEO to team */}
+        {mobileCeoNode.children && mobileCeoNode.children.length > 0 && (
+          <div className="h-1.5 w-px bg-border mb-1" />
+        )}
+
+        {/* Hierarchy Tree - Tree Structure */}
+        <div className="relative w-full">
+          <MobileHierarchyLevel nodes={mobileCeoNode.children || []} />
+        </div>
+      </div>
+
+      {/* Desktop Version - Horizontal Layout */}
+      <div className="hidden md:flex flex-col items-center relative mx-auto">
         {/* Company Header */}
         <div className="mb-1 md:mb-1.5">
           <HierarchyNodeCard

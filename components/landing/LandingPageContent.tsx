@@ -67,7 +67,7 @@ export function LandingPageContent() {
           <div className={`w-full px-3 sm:px-4 md:px-8 h-16 md:h-24 flex items-center ${isRTL ? 'justify-start' : 'justify-end'} gap-2`}>
             {/* Logo - positioned in corner with absolute positioning */}
             {/* In RTL: logo goes to maximum right (especially on mobile), in LTR: logo goes to maximum left */}
-            <div className={`absolute ${isRTL ? 'right-0 sm:right-4 md:right-8' : 'left-3 sm:left-4 md:left-8'} top-1/2 -translate-y-1/2 flex items-center flex-shrink-0 z-10`}>
+            <div className={`absolute ${isRTL ? 'right-0 sm:right-4 md:right-8' : '-left-6 sm:left-4 md:left-8'} top-1/2 -translate-y-1/2 flex items-center flex-shrink-0 z-10`}>
               <Link href="/" aria-label="Collabo Home" className="flex items-center">
                 <ThemeLogo width={140} height={56} className="h-8 w-auto sm:h-10 md:h-12" priority />
               </Link>
@@ -173,7 +173,7 @@ export function LandingPageContent() {
 
         {/* Project Management Spotlight */}
         {/* Project Management Spotlight */}
-        <section className="py-24">
+        <section className="pt-24 pb-0 mb-0" style={{ marginBottom: '-4rem' }}>
           <div className="container mx-auto px-0 md:px-4 relative">
             {/* Navigation Arrows - Responsive positioning: Inside on laptop, Outside on large screens */}
             <button
@@ -197,8 +197,8 @@ export function LandingPageContent() {
               <div className="overflow-hidden">
                 <div className="flex transition-transform duration-500 ease-in-out" style={{ transform: isRTL ? `translateX(${currentSlide * 100}%)` : `translateX(-${currentSlide * 100}%)` }}>
                   {/* Slide 1: Full Section with Text and Hierarchy */}
-                  <div className="min-w-full px-12 md:px-24">
-                    <div className={`grid md:grid-cols-2 gap-12 items-stretch ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <div className="min-w-full px-12 md:px-24 pb-0">
+                    <div className={`grid md:grid-cols-2 gap-12 items-stretch ${isRTL ? 'flex-row-reverse' : ''} mb-0`}>
                       <div className={`space-y-6 ${isRTL ? 'text-right' : 'text-left'}`}>
                         <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary font-semibold">
                           {t('landing.forManagersLeaders')}
@@ -221,11 +221,9 @@ export function LandingPageContent() {
                           </Link>
                         </div>
                       </div>
-                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-hidden bg-background mx-auto md:mx-2 h-[500px]" dir="ltr">
-                        <div className="w-full h-full bg-background flex items-center justify-center p-8">
-                          <div className="w-full h-full flex items-center justify-center">
-                            <HierarchyDemo />
-                          </div>
+                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-hidden bg-background mx-auto md:mx-2 h-auto min-h-[300px] md:min-h-[400px] flex items-center justify-center" dir="ltr">
+                        <div className="bg-background pt-4 pb-0 md:pt-8 md:pb-0 px-4 md:px-8">
+                          <HierarchyDemo />
                         </div>
                       </div>
                     </div>
@@ -318,7 +316,7 @@ export function LandingPageContent() {
               </div>
 
               {/* Slide Indicators - Hidden on mobile */}
-              <div className="hidden md:flex justify-center gap-2 mt-8">
+              <div className="hidden md:flex justify-center gap-2 mt-0">
                 {Array.from({ length: totalSlides }).map((_, index) => (
                   <button
                     key={index}
@@ -336,7 +334,7 @@ export function LandingPageContent() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t py-12 bg-muted/20" role="contentinfo">
+      <footer className="border-t pt-6 pb-12 bg-muted/20" style={{ marginTop: '-6rem' }} role="contentinfo">
         <div className="container mx-auto px-4">
           <div className="flex justify-center mb-4">
             <ThemeLogo width={120} height={48} className="h-10 w-auto opacity-80" />
