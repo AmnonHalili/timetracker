@@ -25,8 +25,8 @@ export function calculateBalance(
     workdays: Pick<Workday, 'workdayStartTime' | 'workdayEndTime'>[] = []
 ): BalanceResult {
     const { dailyTarget, workDays } = user
-    // Prefer Project setting, fall back to User setting (legacy), default to TIME_BASED
-    const workMode = user.project?.workMode || user.workMode || 'TIME_BASED'
+    // workMode check removed as it was unused
+
 
     // If no daily target, we can't calculate meaningful targets
     const effectiveDailyTarget = dailyTarget ?? 0
@@ -40,12 +40,12 @@ export function calculateBalance(
 
     // Group workdays by day to handle multiple workdays per day (prefer active ones)
     const workdaysByDay = new Map<string, Pick<Workday, 'workdayStartTime' | 'workdayEndTime'>[]>()
-    
+
     workdays.forEach((workday) => {
         const workdayStart = new Date(workday.workdayStartTime)
         // Only count workdays that started in this month
         if (workdayStart < monthStart) return
-        
+
         const dayKey = startOfDay(workdayStart).toISOString()
         if (!workdaysByDay.has(dayKey)) {
             workdaysByDay.set(dayKey, [])
@@ -54,22 +54,22 @@ export function calculateBalance(
     })
 
     // Calculate hours from workdays
-    workdaysByDay.forEach((dayWorkdays, dayKey) => {
+    workdaysByDay.forEach((dayWorkdays, _dayKey) => {
         // Prefer active workday (workdayEndTime is null) over completed ones
         const activeWorkday = dayWorkdays.find(w => !w.workdayEndTime)
         const dayWorkday = activeWorkday || dayWorkdays[0] // Use first if no active one (should be sorted desc)
-        
+
         const workdayStartTime = new Date(dayWorkday.workdayStartTime)
         const workdayEndTime = dayWorkday.workdayEndTime ? new Date(dayWorkday.workdayEndTime) : null
-        
+
         // Calculate duration from workday (Start Day to End Day, or current time if active)
         if (workdayStartTime) {
             const endTime = workdayEndTime || (isSameDay(workdayStartTime, referenceDate) ? referenceDate : null)
-            
+
             if (endTime) {
                 const durationHours = (endTime.getTime() - workdayStartTime.getTime()) / (1000 * 60 * 60)
                 totalWorkedHours += Math.max(0, durationHours)
-                
+
                 if (isSameDay(workdayStartTime, referenceDate)) {
                     todayWorked += Math.max(0, durationHours)
                 }

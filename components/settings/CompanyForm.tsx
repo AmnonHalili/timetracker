@@ -13,12 +13,11 @@ import { useLanguage } from "@/lib/useLanguage"
 
 interface CompanyFormProps {
     initialName: string
-    initialWorkMode?: 'OUTPUT_BASED' | 'TIME_BASED' | 'PROJECT_BASED'
     projectId: string
     joinCode: string
 }
 
-export function CompanyForm({ initialName, initialWorkMode = 'TIME_BASED', projectId, joinCode }: CompanyFormProps) {
+export function CompanyForm({ initialName, projectId, joinCode }: CompanyFormProps) {
     const router = useRouter()
     const { t, dir } = useLanguage()
     const [isLoading, setIsLoading] = useState(false)
