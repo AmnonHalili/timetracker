@@ -221,8 +221,8 @@ export function LandingPageContent() {
                           </Link>
                         </div>
                       </div>
-                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-hidden bg-background mx-auto md:mx-2 h-auto min-h-[300px] md:min-h-[400px] flex items-center justify-center" dir="ltr">
-                        <div className="bg-background pt-4 pb-0 md:pt-8 md:pb-0 px-4 md:px-8">
+                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-hidden bg-background mx-auto md:mx-2 h-auto min-h-[300px] md:h-[500px] flex items-center justify-center" dir="ltr">
+                        <div className="w-full h-full bg-background rounded-lg flex items-center justify-center p-2 md:p-4 overflow-hidden">
                           <HierarchyDemo />
                         </div>
                       </div>
@@ -249,8 +249,8 @@ export function LandingPageContent() {
                           <CheckItem text={t('landing.timeTracker.feature6')} />
                         </ul>
                       </div>
-                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-hidden bg-background mx-auto md:mx-2 h-[500px]">
-                        <div className="w-full h-full bg-background rounded-lg flex items-center justify-center p-8 overflow-auto">
+                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-hidden bg-background mx-auto md:mx-2 h-auto min-h-[400px] md:h-[500px]">
+                        <div className="w-full h-full bg-background rounded-lg flex items-center justify-center p-2 md:p-4 overflow-hidden">
                           <TimeTrackerDemo />
                         </div>
                       </div>
@@ -277,8 +277,8 @@ export function LandingPageContent() {
                           <CheckItem text={t('landing.tasks.feature6')} />
                         </ul>
                       </div>
-                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-hidden bg-background mx-auto md:mx-2 h-[500px]">
-                        <div className="w-full h-full bg-background rounded-lg flex items-center justify-center p-8 overflow-hidden">
+                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-hidden bg-background mx-auto md:mx-2 h-auto min-h-[400px] md:h-[500px]">
+                        <div className="w-full h-full bg-background rounded-lg flex items-center justify-center p-2 md:p-4 overflow-hidden">
                           <TasksDemo />
                         </div>
                       </div>
@@ -305,8 +305,8 @@ export function LandingPageContent() {
                           <CheckItem text={t('landing.calendar.feature6')} />
                         </ul>
                       </div>
-                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-hidden bg-background mx-auto md:mx-2 h-[500px]">
-                        <div className="w-full h-full bg-background rounded-lg flex items-center justify-center p-8 overflow-hidden">
+                      <div className="relative w-full rounded-2xl border shadow-2xl overflow-hidden bg-background mx-auto md:mx-2 h-auto min-h-[400px] md:h-[500px]">
+                        <div className="w-full h-full bg-background rounded-lg flex items-center justify-center p-2 md:p-4 overflow-hidden">
                           <CalendarDemo />
                         </div>
                       </div>

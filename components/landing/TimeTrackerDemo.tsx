@@ -32,7 +32,7 @@ export function TimeTrackerDemo() {
   ]
 
   return (
-    <div className="w-full space-y-4 bg-background">
+    <div className="w-full space-y-4">
       {/* Control Bar Demo */}
       <Card className="border-2 border-primary/50 shadow-md">
         <CardContent className="p-4 space-y-4">

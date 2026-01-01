@@ -109,7 +109,7 @@ export function CalendarDemo() {
   }
 
   return (
-    <div className="w-full space-y-4 bg-background">
+    <div className="w-full space-y-4">
       {/* Month View - Top Section */}
       <div className="space-y-2">
         {/* Week Days Header */}

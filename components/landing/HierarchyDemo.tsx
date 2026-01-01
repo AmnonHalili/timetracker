@@ -274,7 +274,7 @@ function MobileHierarchyLevel({ nodes, depth = 0 }: { nodes: HierarchyNode[]; de
 
 export function HierarchyDemo() {
   return (
-    <div className="w-full pt-1 pb-0 md:pt-2 md:pb-0 px-1 md:px-2 bg-background max-h-full overflow-hidden">
+    <div className="w-full flex justify-center items-center overflow-hidden">
       {/* Mobile Version - Tree Layout */}
       <div className="flex flex-col items-center relative mx-auto md:hidden">
         {/* Company Header */}

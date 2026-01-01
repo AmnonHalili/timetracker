@@ -2,139 +2,266 @@
 
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
-import { Calendar } from "lucide-react"
-import { format } from "date-fns"
+import { Calendar, CheckCircle2, AlertCircle, Plus } from "lucide-react"
+import { format, isPast, isToday } from "date-fns"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { useLanguage } from "@/lib/useLanguage"
 
 export function TasksDemo() {
+  const { t } = useLanguage()
+
   // Demo tasks data - matching the real screen structure
   const demoTasks = [
     {
       id: "1",
-      title: "Design Landing Page",
-      status: "IN_PROGRESS",
-      priority: "HIGH",
-      deadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
-      assignees: [{ name: "Sarah Johnson" }],
-      inProgressBy: "Sarah Johnson",
+      title: "Job interviews for a marketing position",
+      status: "DONE",
+      priority: "MEDIUM",
+      deadline: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000), // Jan 9
+      assignees: [{ name: "AL" }, { name: "JA" }],
       subtasks: [
-        { id: "1-1", title: "Create wireframes", isDone: true },
-        { id: "1-2", title: "Design mockups", isDone: false }
+        { id: "1-1", title: "Review resumes", isDone: true }
       ]
     },
     {
       id: "2",
-      title: "Implement User Authentication",
-      status: "TODO",
-      priority: "MEDIUM",
-      deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-      assignees: [{ name: "Mike Chen" }, { name: "Emily Davis" }],
+      title: "Design campaign visuals",
+      status: "DONE",
+      priority: "LOW",
+      deadline: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000), // Jan 5
+      assignees: [{ name: "SO" }, { name: "JA" }],
       subtasks: [
-        { id: "2-1", title: "Setup OAuth", isDone: false },
-        { id: "2-2", title: "Create login page", isDone: false }
+        { id: "2-1", title: "Create moodboard", isDone: true }
       ]
     },
     {
       id: "3",
-      title: "Write API Documentation",
+      title: "Schedule post for the week",
+      status: "TODO",
+      priority: "MEDIUM",
+      deadline: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000), // Jan 2
+      assignees: [{ name: "JE" }, { name: "JA" }],
+      subtasks: [
+        { id: "3-1", title: "Draft captions", isDone: false },
+        { id: "3-2", title: "Select images", isDone: false }
+      ]
+    },
+    {
+      id: "4",
+      title: "Launch new marketing campaign",
       status: "DONE",
-      priority: "LOW",
-      deadline: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-      assignees: [{ name: "Alex Brown" }],
-      subtasks: []
+      priority: "HIGH",
+      deadline: null,
+      assignees: [{ name: "JA" }],
+      subtasks: [
+        { id: "4-1", title: "Initial setup", isDone: false },
+        { id: "4-2", title: "Team briefing", isDone: false }
+      ]
     }
   ]
 
-  // Priority colors matching the theme - using primary color with different opacities
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case "HIGH":
-        return "bg-primary hover:bg-primary text-primary-foreground"
-      case "MEDIUM":
-        return "bg-primary/80 hover:bg-primary/80 text-primary-foreground"
-      case "LOW":
-        return "bg-primary/60 hover:bg-primary/60 text-primary-foreground"
+      case 'HIGH':
+        return 'bg-primary text-primary-foreground border-transparent'
+      case 'MEDIUM':
+        return 'bg-[#4b7699] text-primary-foreground border-transparent'
+      case 'LOW':
+        return 'bg-[#7fa1bc] text-primary-foreground border-transparent'
       default:
-        return "bg-primary/60 hover:bg-primary/60 text-primary-foreground"
+        return 'bg-muted text-muted-foreground border-border'
     }
   }
 
+  const getStatusDisplay = (task: any) => {
+    const isOverdue = task.deadline && isPast(new Date(task.deadline)) && !isToday(new Date(task.deadline)) && task.status !== 'DONE'
+
+    if (task.status === 'DONE') {
+      return (
+        <div className="h-8 w-full max-w-[140px] mx-auto flex items-center justify-center gap-2 text-[10px] md:text-xs font-semibold text-white bg-[#00c875] rounded-md shadow-sm">
+          <CheckCircle2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
+          <span>Done</span>
+        </div>
+      )
+    }
+
+    if (isOverdue) {
+      return (
+        <div className="h-8 w-full max-w-[140px] mx-auto flex items-center justify-center gap-2 text-[10px] md:text-xs font-semibold text-white bg-[#e2445c] rounded-md shadow-sm">
+          <AlertCircle className="h-3 w-3 md:h-3.5 md:w-3.5" />
+          <span>Overdue</span>
+        </div>
+      )
+    }
+
+    if (task.status === 'TODO') {
+      return (
+        <div className="h-8 w-full max-w-[140px] mx-auto flex items-center justify-center gap-2 text-[10px] md:text-xs font-semibold text-white bg-[#c4c4c4] rounded-md shadow-sm">
+          <span>TO DO</span>
+        </div>
+      )
+    }
+
+    return (
+      <div className="h-8 w-full max-w-[140px] mx-auto flex items-center justify-center gap-2 text-[10px] md:text-xs font-semibold text-white bg-[#fdab3d] rounded-md shadow-sm">
+        <span>Working</span>
+      </div>
+    )
+  }
+
   return (
-    <div className="w-full space-y-4 bg-background">
-      {demoTasks.map((task) => (
-        <div key={task.id} className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-4 last:border-0 last:pb-0 gap-4">
-          <div className="flex items-start gap-3 flex-1 group">
-            <Checkbox
-              checked={task.status === "DONE"}
-              disabled
-              className="mt-1"
-            />
-            <div className="space-y-1 flex-1">
-              {/* Task Title */}
-              <div className="flex items-center gap-2">
-                <span className={`text-sm font-medium ${task.status === "DONE" ? "line-through text-muted-foreground" : ""}`}>
-                  {task.title}
-                </span>
-              </div>
-
-              {/* Assign To */}
-              {task.assignees && task.assignees.length > 0 && (
-                <div className="pl-1">
-                  <span className="text-xs text-muted-foreground">
-                    Assigned to: {task.assignees.map(a => a.name).join(", ")}
-                  </span>
-                </div>
-              )}
-
-              {/* Status: To Do / In Progress */}
-              <div className="pl-1">
-                <span className="text-xs text-muted-foreground">
-                  Status: {task.status === "DONE" 
-                    ? "Done" 
-                    : task.inProgressBy
-                      ? `In Progress by ${task.inProgressBy}`
-                      : "To Do"}
-                </span>
-              </div>
-
-              {/* Deadline */}
-              {task.deadline && (
-                <div className="flex items-center gap-4 text-xs text-muted-foreground pl-1">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-3 w-3" />
-                    {format(new Date(task.deadline), "dd/MM/yyyy")}
-                  </span>
-                </div>
-              )}
-
-              {/* Subtasks Display - Under task title with border-left */}
-              {task.subtasks && task.subtasks.length > 0 && (
-                <div className="pl-3 mt-2 space-y-1.5 border-l-2 border-muted/50">
-                  {task.subtasks.map((subtask) => (
-                    <div key={subtask.id} className="flex items-center gap-2">
-                      <Checkbox
-                        checked={subtask.isDone}
-                        disabled
-                        className="h-4 w-4"
-                      />
-                      <span className={`text-xs flex-1 ${subtask.isDone ? "line-through text-muted-foreground opacity-70" : "text-muted-foreground"}`}>
-                        {subtask.title}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+    <div className="w-full flex flex-col">
+      {/* Header Info - Desktop Only */}
+      <div className="hidden md:flex flex-row items-baseline justify-between mb-4 px-1">
+        <div className="flex items-baseline gap-2">
+          <h2 className="text-2xl font-bold tracking-tight">Tasks</h2>
+          <p className="text-xs text-muted-foreground whitespace-nowrap">Manage team tasks</p>
+        </div>
+        <div className="flex items-center gap-2 scale-90 origin-right">
+          <div className="h-8 px-2 rounded-md border border-input bg-background flex items-center gap-1.5 text-xs font-medium text-muted-foreground shadow-sm uppercase tracking-tight">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-filter"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>
+            Filters
           </div>
-
-          {/* Priority Badge on the right */}
-          <div className="flex items-center gap-2">
-            <Badge className={`text-xs ${getPriorityColor(task.priority)}`}>
-              {task.priority}
-            </Badge>
+          <div className="h-8 px-2 rounded-md border border-input bg-background flex items-center gap-1.5 text-xs font-medium text-muted-foreground shadow-sm uppercase tracking-tight">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-up-down"><path d="m21 16-4 4-4-4" /><path d="M17 20V4" /><path d="m3 8 4-4 4 4" /><path d="M7 4v16" /></svg>
+            Sort
           </div>
         </div>
-      ))}
+      </div>
+
+      {/* Desktop Table - No Scrollbars */}
+      <div className="hidden md:block w-full overflow-hidden">
+        <div className="flex items-center gap-2 mb-3">
+          <h3 className="text-base font-bold text-primary/80">All Tasks (4)</h3>
+        </div>
+        <table className="w-full table-fixed border-collapse">
+          <thead>
+            <tr className="border-b border-border/50">
+              <th className="w-[42%] h-8 px-2 text-left font-normal text-muted-foreground text-[10px] uppercase tracking-wider bg-muted/10">{t('tasks.title') || 'Tasks'}</th>
+              <th className="w-[12%] h-8 px-1 text-center font-normal text-muted-foreground text-[10px] uppercase tracking-wider bg-muted/10">Assign</th>
+              <th className="w-[12%] h-8 px-1 text-center font-normal text-muted-foreground text-[10px] uppercase tracking-wider bg-muted/10">Pri</th>
+              <th className="w-[16%] h-8 px-1 text-center font-normal text-muted-foreground text-[10px] uppercase tracking-wider bg-muted/10">Deadline</th>
+              <th className="w-[18%] h-8 px-1 text-center font-normal text-muted-foreground text-[10px] uppercase tracking-wider bg-muted/10">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {demoTasks.map((task) => (
+              <tr key={task.id} className="border-b border-border/20 hover:bg-muted/5 transition-colors h-14">
+                {/* Title & Subtasks Info */}
+                <td className="px-2 py-1.5 align-top border-r border-border/40 overflow-hidden">
+                  <div className="flex items-start gap-2 h-full">
+                    <Checkbox checked={task.status === 'DONE'} disabled className="rounded-md border-2 h-4 w-4 mt-0.5 shrink-0" />
+                    <div className="flex flex-col min-w-0 flex-1 h-full justify-between">
+                      <span className={`text-xs md:text-sm font-semibold truncate ${task.status === 'DONE' ? 'line-through text-muted-foreground/60' : ''}`}>
+                        {task.title}
+                      </span>
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span className="text-[9px] text-muted-foreground font-medium opacity-80 whitespace-nowrap overflow-hidden">Subtasks</span>
+                        <span className="text-[9px] text-muted-foreground opacity-60 whitespace-nowrap">• {task.subtasks.filter(s => s.isDone).length}/{task.subtasks.length} done</span>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+
+                {/* Assignees */}
+                <td className="p-1 align-middle border-r border-border/40">
+                  <div className="flex -space-x-1.5 justify-center">
+                    {task.assignees.slice(0, 2).map((assignee, i) => (
+                      <Avatar key={i} className="h-6 w-6 ring-1 ring-background bg-muted">
+                        <AvatarFallback className="text-[8px] font-bold bg-[#dbe6ef] text-[#4b7699]">
+                          {assignee.name}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                  </div>
+                </td>
+
+                {/* Priority */}
+                <td className="p-1 align-middle text-center border-r border-border/40">
+                  <div className={`h-6 w-11 mx-auto flex items-center justify-center text-[9px] font-bold rounded shadow-sm border ${getPriorityColor(task.priority)}`}>
+                    <span className="capitalize">{task.priority.toLowerCase()}</span>
+                  </div>
+                </td>
+
+                {/* Deadline */}
+                <td className="p-1 align-middle text-center border-r border-border/40">
+                  {task.deadline ? (
+                    <div className="flex items-center justify-center gap-1 text-[10px] text-muted-foreground font-medium">
+                      <Calendar className="h-3 w-3" />
+                      {format(new Date(task.deadline), 'MMM d')}
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground/30 text-[10px]">-</span>
+                  )}
+                </td>
+
+                {/* Status */}
+                <td className="p-1 align-middle text-center overflow-hidden">
+                  <div className="scale-[0.8] origin-center translate-x-1 md:translate-x-0">
+                    {getStatusDisplay(task)}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile Card-Like View */}
+      <div className="md:hidden space-y-3 px-1 h-full overflow-hidden">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-bold tracking-tight">Tasks</h2>
+          <Badge variant="outline" className="text-[9px] font-bold py-0 h-5 px-2">4 Total</Badge>
+        </div>
+
+        {demoTasks.slice(0, 3).map((task) => (
+          <div key={task.id} className="bg-card border border-border/30 rounded-lg p-3 shadow-sm space-y-3">
+            <div className="flex items-start justify-between gap-2 overflow-hidden">
+              <div className="flex items-start gap-2 w-full overflow-hidden">
+                <Checkbox checked={task.status === 'DONE'} disabled className="mt-1 rounded-md h-4 w-4 shrink-0" />
+                <div className="space-y-1 flex-1 min-w-0">
+                  <h3 className={`text-[13px] font-bold leading-tight truncate ${task.status === 'DONE' ? 'line-through text-muted-foreground opacity-60' : ''}`}>
+                    {task.title}
+                  </h3>
+                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground overflow-hidden">
+                    <span className="flex items-center gap-1 whitespace-nowrap bg-muted/30 px-1.5 py-0.5 rounded-sm">
+                      <Calendar className="h-2.5 w-2.5" />
+                      {task.deadline ? format(new Date(task.deadline), 'MMM d') : '-'}
+                    </span>
+                    <span className="opacity-70 truncate">{task.subtasks.filter(s => s.isDone).length}/{task.subtasks.length} subtasks</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-border/30">
+              <div className="flex -space-x-1.5">
+                {task.assignees.map((assignee, i) => (
+                  <Avatar key={i} className="h-6 w-6 ring-1 ring-background bg-muted">
+                    <AvatarFallback className="text-[8px] font-bold bg-[#dbe6ef] text-[#4b7699]">
+                      {assignee.name}
+                    </AvatarFallback>
+                  </Avatar>
+                ))}
+              </div>
+              <div className="flex items-center gap-1.5 overflow-hidden">
+                <Badge className={`text-[9px] h-5 px-1.5 font-extrabold shadow-sm ${getPriorityColor(task.priority)}`}>
+                  {task.priority[0]}
+                </Badge>
+                <div className="scale-[0.8] origin-right translate-x-1">
+                  {getStatusDisplay(task)}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {/* Placeholder for Add Task on Mobile */}
+        <div className="border border-dashed border-border/40 rounded-lg p-3 flex items-center justify-center gap-2 text-muted-foreground/30 bg-muted/5">
+          <Plus className="h-3 w-3" />
+          <span className="text-[10px] font-bold uppercase tracking-wider">Add Task</span>
+        </div>
+      </div>
     </div>
   )
 }
-
