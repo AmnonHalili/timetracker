@@ -59,9 +59,9 @@ export default async function SettingsPage() {
                     }
                 },
                 project: {
-                    select: { 
-                        name: true, 
-                        workMode: true, 
+                    select: {
+                        name: true,
+                        workMode: true,
                         joinCode: true,
                         workLocationLatitude: true,
                         workLocationLongitude: true,
@@ -90,9 +90,9 @@ export default async function SettingsPage() {
                 projectId: true,
                 // Basic fields only
                 project: {
-                    select: { 
-                        name: true, 
-                        workMode: true, 
+                    select: {
+                        name: true,
+                        workMode: true,
                         joinCode: true,
                         workLocationLatitude: true,
                         workLocationLongitude: true,
@@ -154,7 +154,6 @@ export default async function SettingsPage() {
                     <TabsContent value="workspace" className="mt-6 space-y-6">
                         <CompanyForm
                             initialName={user.project?.name || ""}
-                            initialWorkMode={user.project?.workMode}
                             projectId={user.projectId}
                             joinCode={user.project?.joinCode || "No Code"}
                         />
