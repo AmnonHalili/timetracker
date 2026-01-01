@@ -349,7 +349,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
         if (type === 'deadline') {
             const labels: Record<string, string> = {
                 'today': t('timeEntries.today'),
-                'thisWeek': t('landing.thisWeek') || 'This week',
+                'thisWeek': 'This week',
                 'overdue': t('tasks.statusOverdue')
             }
             return labels[value] || value
