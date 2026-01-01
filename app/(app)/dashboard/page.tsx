@@ -132,23 +132,30 @@ export default async function DashboardPage() {
     const remainingHours = stats.accumulatedDeficit
 
     // Fetch available tasks for the user with subtasks
-    // Include DONE tasks if they're currently assigned to active entry
-    const activeTaskIds = activeEntry?.tasks?.map(t => t.id) || []
-    const tasks = await prisma.task.findMany({
-        where: {
-            assignees: { some: { id: user.id } },
-            OR: [
-                { status: { not: 'DONE' } },
-                { id: { in: activeTaskIds } } // Include DONE tasks if they're in active entry
-            ]
-        },
-        include: {
-            subtasks: {
-                orderBy: { createdAt: 'asc' }
-            }
-        },
-        orderBy: { updatedAt: 'desc' }
-    })
+    // Match logic from Tasks page: ADMINs see all project tasks, others see only assigned tasks
+    const tasksWhere = user.role === 'ADMIN'
+        ? { assignees: { some: { projectId: user.projectId || null } } }
+        : { assignees: { some: { id: user.id } } }
+
+    let tasks: any[] = []
+    try {
+        tasks = await prisma.task.findMany({
+            where: tasksWhere,
+            include: {
+                subtasks: {
+                    orderBy: { createdAt: 'asc' }
+                }
+            },
+            orderBy: { updatedAt: 'desc' }
+        })
+    } catch (e: any) {
+        console.warn("Dashboard: subtasks relation not available, fetching without it")
+        tasks = await prisma.task.findMany({
+            where: tasksWhere,
+            orderBy: { updatedAt: 'desc' }
+        })
+        tasks = tasks.map(t => ({ ...t, subtasks: [] }))
+    }
 
     // Check if user has no project (Private Workspace Mode)
     const isPrivateWorkspace = !user.projectId

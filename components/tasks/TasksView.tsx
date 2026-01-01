@@ -3,7 +3,7 @@
 
 import { useRouter } from "next/navigation"
 import { useState, useEffect, useRef } from "react"
-import { Trash2, Calendar, Plus, MoreVertical, Pencil, Play, CheckCircle2, AlertCircle, Timer, ArrowUp, ArrowDown, Minus } from "lucide-react"
+import { Trash2, Calendar, Plus, MoreVertical, Pencil, Play, Square, CheckCircle2, AlertCircle, Timer, ArrowUp, ArrowDown, Minus, Edit } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -22,6 +22,7 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
+    DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { format, isPast, isToday, endOfWeek, isWithinInterval } from "date-fns"
 import { TaskDetailDialog } from "./TaskDetailDialog"
@@ -76,13 +77,14 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
     const router = useRouter()
     const { t, isRTL } = useLanguage()
     const [tasks, setTasks] = useState(initialTasks)
-    const [newSubtaskTitle, setNewSubtaskTitle] = useState("")
+    const [newSubtaskTitle, setNewSubtaskTitle] = useState<Record<string, string>>({})
     const [editingSubtask, setEditingSubtask] = useState<{ taskId: string; subtaskId: string } | null>(null)
     const [editingSubtaskTitle, setEditingSubtaskTitle] = useState("")
 
     const [localSubtasks, setLocalSubtasks] = useState<Record<string, Array<{ id: string; title: string; isDone: boolean }>>>({})
     const [expandedSubtasks, setExpandedSubtasks] = useState<Record<string, boolean>>({})
     const [visibleSubtasksMap, setVisibleSubtasksMap] = useState<Record<string, boolean>>({})
+    const [stoppedTimers, setStoppedTimers] = useState<Set<string>>(new Set()) // Track tasks where timer was stopped
     const pendingOperations = useRef<Set<string>>(new Set()) // Track pending operations by subtask ID
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [selectedTask, setSelectedTask] = useState<TasksViewProps['initialTasks'][0] | null>(null)
@@ -346,8 +348,89 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
         return value
     }
 
+    const handleToggleTaskCompletion = async (taskId: string, checked: boolean) => {
+        const newStatus = checked ? 'DONE' : 'TODO'
+        const previousTasks = tasks
+        const previousSubtasks = localSubtasks
 
+        // Optimistic update - update task status
+        setTasks(tasks.map(t => t.id === taskId ? { ...t, status: newStatus } : t))
 
+        // If marking as DONE, also mark all subtasks as done optimistically
+        if (checked && localSubtasks[taskId]) {
+            setLocalSubtasks(prev => ({
+                ...prev,
+                [taskId]: (prev[taskId] || []).map(st => ({ ...st, isDone: true }))
+            }))
+        }
+
+        // If marking as DONE and has active timer, mark timer as stopped locally
+        if (checked && tasksWithActiveTimers[taskId]?.length > 0) {
+            setStoppedTimers(prev => new Set(Array.from(prev).concat(taskId)))
+        }
+
+        try {
+            // 1. Update task status
+            const taskResponse = await fetch("/api/tasks", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: taskId, status: newStatus }),
+            })
+
+            if (!taskResponse.ok) {
+                throw new Error("Failed to update task")
+            }
+
+            // If marking as DONE, do additional actions
+            if (checked) {
+                // 2. Stop active timer if running
+                if (tasksWithActiveTimers[taskId]?.length > 0) {
+                    try {
+                        await fetch('/api/time-entries', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                action: 'stop'
+                            })
+                        })
+                    } catch (timerError) {
+                        console.error("Failed to stop timer:", timerError)
+                        // Don't fail the whole operation if timer stop fails
+                    }
+                }
+
+                // 3. Mark all subtasks as done
+                const subtasks = localSubtasks[taskId] || []
+                if (subtasks.length > 0) {
+                    try {
+                        await Promise.all(
+                            subtasks.map(subtask =>
+                                fetch("/api/tasks/subtasks", {
+                                    method: "PATCH",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                        id: subtask.id,
+                                        isDone: true
+                                    })
+                                })
+                            )
+                        )
+                    } catch (subtaskError) {
+                        console.error("Failed to update some subtasks:", subtaskError)
+                        // Don't fail the whole operation
+                    }
+                }
+            }
+
+            router.refresh()
+        } catch (error) {
+            // Revert all optimistic updates on error
+            setTasks(previousTasks)
+            setLocalSubtasks(previousSubtasks)
+            console.error("Failed to update task:", error)
+            alert("Failed to update task status")
+        }
+    }
 
     const handleDelete = async (id: string) => {
         if (!confirm("Are you sure?")) return
@@ -395,14 +478,14 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
 
 
     const handleAddSubtask = async (taskId: string) => {
-        const trimmedTitle = newSubtaskTitle.trim()
+        const trimmedTitle = (newSubtaskTitle[taskId] || "").trim()
         if (!trimmedTitle) return
 
         const tempId = `temp-${Date.now()}-${Math.random()}`
         const titleToSave = trimmedTitle
 
         // Clear input IMMEDIATELY - keep input field open for rapid entry
-        setNewSubtaskTitle("")
+        setNewSubtaskTitle(prev => ({ ...prev, [taskId]: "" }))
 
         // Optimistic update: Add immediately with temporary ID - synchronous, no await
         setLocalSubtasks(prev => ({
@@ -587,28 +670,78 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
     }
 
     const handleStartWorking = async (taskId: string, subtaskId?: string) => {
+        // Find task/subtask title for description
+        const task = tasks.find(t => t.id === taskId)
+        let description = task?.title || ''
+
+        if (subtaskId) {
+            const subtask = (localSubtasks[taskId] || task?.subtasks || []).find(s => s.id === subtaskId)
+            if (subtask) {
+                description = subtask.title
+            }
+        }
+
+        // Navigate to dashboard immediately for instant feedback
+        router.push('/dashboard')
+
+        // Start timer in background (fire and forget)
         try {
-            // Start timer with the task
             const response = await fetch('/api/time-entries', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     action: 'start',
                     taskIds: [taskId],
-                    subtaskId: subtaskId || null
+                    subtaskId: subtaskId || null,
+                    description: description
                 })
             })
 
             if (!response.ok) {
                 const data = await response.json()
-                throw new Error(data.message || 'Failed to start timer')
+                console.error('Failed to start timer:', data.message || 'Unknown error')
+                // Don't show alert since user is already on dashboard
+                // The dashboard will show the timer state correctly
+            } else {
+                // Refresh to show the task name on dashboard
+                router.refresh()
             }
-
-            // Navigate to dashboard (time tracker screen)
-            router.push('/dashboard')
         } catch (error) {
             console.error('Failed to start working:', error)
-            alert(error instanceof Error ? error.message : 'Failed to start timer')
+            // Error is logged but not shown to user since they're already on dashboard
+        }
+    }
+
+    const handleStopWorking = async (taskId: string) => {
+        // Optimistically update stopped timers
+        setStoppedTimers(prev => new Set(Array.from(prev).concat(taskId)))
+
+        try {
+            const response = await fetch('/api/time-entries', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'stop'
+                })
+            })
+
+            if (response.ok) {
+                router.refresh()
+            } else {
+                // Revert optimistic update on failure
+                setStoppedTimers(prev => {
+                    const next = new Set(prev)
+                    next.delete(taskId)
+                    return next
+                })
+            }
+        } catch (error) {
+            console.error('Failed to stop working:', error)
+            setStoppedTimers(prev => {
+                const next = new Set(prev)
+                next.delete(taskId)
+                return next
+            })
         }
     }
 
@@ -811,10 +944,6 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                 <th className="h-10 px-4 text-left font-normal text-muted-foreground w-[150px] bg-muted/20">
                                     {t('tasks.assignToLabel') || 'Assigned to'}
                                 </th>
-                                {/* Status */}
-                                <th className="h-10 px-4 text-center font-normal text-muted-foreground w-[140px] bg-muted/20">
-                                    {t('tasks.status')}
-                                </th>
                                 {/* Priority */}
                                 <th className="h-10 px-4 text-center font-normal text-muted-foreground w-[140px] bg-muted/20">
                                     {t('tasks.priority') || 'Priority'}
@@ -822,6 +951,10 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                 {/* Deadline */}
                                 <th className="h-10 px-4 text-center font-normal text-muted-foreground w-[150px] bg-muted/20">
                                     {t('tasks.deadline') || 'Deadline'}
+                                </th>
+                                {/* Status */}
+                                <th className="h-10 px-4 text-center font-normal text-muted-foreground w-[140px] bg-muted/20">
+                                    {t('tasks.status')}
                                 </th>
                                 {/* Actions */}
                                 <th className="h-10 px-4 w-[50px] bg-muted/20 last:rounded-tr-lg"></th>
@@ -842,6 +975,12 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                         {/* Task Title & Subtask Toggle */}
                                         <td className="p-2 border-r border-border/50 min-w-[300px]">
                                             <div className="flex items-center gap-3">
+                                                <Checkbox
+                                                    checked={task.status === 'DONE'}
+                                                    onCheckedChange={(checked) => handleToggleTaskCompletion(task.id, checked as boolean)}
+                                                    className={`rounded-md h-5 w-5 border-2 ${getPriorityColor(task.priority).split(' ')[0].replace('bg-', 'border-').replace('text-primary-foreground', '')}`}
+                                                />
+
                                                 <div className="flex flex-col min-w-0 flex-1">
                                                     <span
                                                         className={`font-medium truncate cursor-pointer hover:underline hover:text-primary ${task.status === 'DONE' ? 'line-through text-muted-foreground' : ''}`}
@@ -875,13 +1014,20 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                                 <span>{localSubtasks[task.id].filter(st => st.isDone).length}/{localSubtasks[task.id].length} done</span>
                                                             </div>
                                                         ) : (
-                                                            <button
-                                                                onClick={() => handleAddSubtask(task.id)}
-                                                                className="flex items-center gap-1 text-xs text-muted-foreground/60 hover:text-primary transition-colors"
-                                                            >
-                                                                <Plus className="h-3 w-3" />
-                                                                Add subtask
-                                                            </button>
+                                                            <div className="flex items-center gap-1">
+                                                                <Plus className="h-3 w-3 text-muted-foreground/60" />
+                                                                <Input
+                                                                    placeholder="Add subtask..."
+                                                                    value={newSubtaskTitle[task.id] || ""}
+                                                                    onChange={(e) => setNewSubtaskTitle(prev => ({ ...prev, [task.id]: e.target.value }))}
+                                                                    onKeyDown={(e) => {
+                                                                        if (e.key === 'Enter' && (newSubtaskTitle[task.id] || "").trim()) {
+                                                                            handleAddSubtask(task.id)
+                                                                        }
+                                                                    }}
+                                                                    className="h-6 text-xs border-none bg-transparent hover:bg-muted/30 focus-visible:ring-0 focus-visible:ring-offset-0 px-1"
+                                                                />
+                                                            </div>
                                                         )}
                                                     </div>
                                                 </div>
@@ -907,41 +1053,12 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                             </div>
                                         </td>
 
-                                        {/* Status */}
-                                        <td className="p-1 align-middle text-center border-r border-border/50">
-                                            <div
-                                                className={`
-                                                    h-8 w-full max-w-[140px] mx-auto flex items-center justify-center gap-2 text-xs font-semibold text-white shadow-sm rounded-md transition-all
-                                                    ${task.status === 'DONE' ? 'bg-[#00c875] hover:bg-[#00c875]/90' : ''}
-                                                    ${(tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0) ? 'bg-[#fdab3d] hover:bg-[#fdab3d]/90' : ''}
-                                                    ${task.status === 'TODO' && !((tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0)) ? 'bg-[#c4c4c4] hover:bg-[#b0b0b0]' : ''}
-                                                    ${isPast(new Date(task.deadline || '')) && !isToday(new Date(task.deadline || '')) && task.status !== 'DONE' ? 'bg-[#e2445c] hover:bg-[#d00000]' : ''}
-                                                `}
-                                            >
-                                                {task.status === 'DONE' && <CheckCircle2 className="h-3.5 w-3.5" />}
-                                                {(tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0) && <Timer className="h-3.5 w-3.5 animate-pulse" />}
-                                                {isPast(new Date(task.deadline || '')) && !isToday(new Date(task.deadline || '')) && task.status !== 'DONE' && <AlertCircle className="h-3.5 w-3.5" />}
-
-                                                <span className="truncate">
-                                                    {task.status === 'DONE' ? 'Done' :
-                                                        isPast(new Date(task.deadline || '')) && !isToday(new Date(task.deadline || '')) && task.status !== 'DONE' ? 'Overdue' :
-                                                            (tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0)
-                                                                ? `In Progress by ${tasksWithActiveTimers[task.id][0].name?.split(' ')[0] || 'User'}`
-                                                                : 'TO DO'
-                                                    }
-                                                </span>
-                                            </div>
-                                        </td>
-
                                         {/* Priority */}
                                         <td className="p-1 align-middle text-center border-r border-border/50">
                                             <div className={`
                                                 h-8 w-full max-w-[140px] mx-auto flex items-center justify-center gap-1.5 text-xs font-semibold shadow-sm p-2 rounded-md border
                                                 ${getPriorityColor(task.priority)}
                                             `}>
-                                                {task.priority === 'HIGH' && <ArrowUp className="h-3.5 w-3.5" />}
-                                                {task.priority === 'MEDIUM' && <Minus className="h-3.5 w-3.5" />}
-                                                {task.priority === 'LOW' && <ArrowDown className="h-3.5 w-3.5" />}
                                                 <span className="capitalize">{task.priority.toLowerCase()}</span>
                                             </div>
                                         </td>
@@ -963,6 +1080,33 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                             )}
                                         </td>
 
+                                        {/* Status */}
+                                        <td className="p-1 align-middle text-center border-r border-border/50">
+                                            <div
+                                                className={`
+                                                    h-8 w-full max-w-[140px] mx-auto flex items-center justify-center gap-2 text-xs font-semibold text-white shadow-sm rounded-md transition-all
+                                                    ${task.status === 'DONE' ? 'bg-[#00c875] hover:bg-[#00c875]/90' : ''}
+                                                    ${(tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0) ? 'bg-[#fdab3d] hover:bg-[#fdab3d]/90' : ''}
+                                                    ${task.status === 'TODO' && !((tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0)) ? 'bg-[#c4c4c4] hover:bg-[#b0b0b0]' : ''}
+                                                    ${isPast(new Date(task.deadline || '')) && !isToday(new Date(task.deadline || '')) && task.status !== 'DONE' ? 'bg-[#e2445c] hover:bg-[#d00000]' : ''}
+                                                `}
+                                            >
+                                                {task.status === 'DONE' && <CheckCircle2 className="h-3.5 w-3.5" />}
+                                                {isPast(new Date(task.deadline || '')) && !isToday(new Date(task.deadline || '')) && task.status !== 'DONE' && <AlertCircle className="h-3.5 w-3.5" />}
+
+                                                <span className="truncate">
+                                                    {task.status === 'DONE' ? 'Done' :
+                                                        isPast(new Date(task.deadline || '')) && !isToday(new Date(task.deadline || '')) && task.status !== 'DONE' ? 'Overdue' :
+                                                            (tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0 && !stoppedTimers.has(task.id))
+                                                                ? (tasksWithActiveTimers[task.id].length > 1
+                                                                    ? `${tasksWithActiveTimers[task.id].length} users on it`
+                                                                    : `${tasksWithActiveTimers[task.id][0].name?.split(' ')[0] || 'User'} is on it`)
+                                                                : 'TO DO'
+                                                    }
+                                                </span>
+                                            </div>
+                                        </td>
+
                                         {/* Actions Column */}
                                         <td className="p-2 align-middle text-center">
                                             {(isAdmin || (currentUserId && task.assignees.some(a => a.id === currentUserId))) && (
@@ -973,10 +1117,17 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem onClick={() => handleStartWorking(task.id)}>
-                                                            <Play className="h-4 w-4 mr-2" />
-                                                            {t('tasks.startWorking')}
-                                                        </DropdownMenuItem>
+                                                        {tasksWithActiveTimers[task.id]?.some(u => u.id === currentUserId) && !stoppedTimers.has(task.id) ? (
+                                                            <DropdownMenuItem onClick={() => handleStopWorking(task.id)}>
+                                                                <Square className="h-4 w-4 mr-2" />
+                                                                Stop Working
+                                                            </DropdownMenuItem>
+                                                        ) : (
+                                                            <DropdownMenuItem onClick={() => handleStartWorking(task.id)}>
+                                                                <Play className="h-4 w-4 mr-2" />
+                                                                {t('tasks.startWorking')}
+                                                            </DropdownMenuItem>
+                                                        )}
                                                         <DropdownMenuItem onClick={() => {
                                                             setEditingTask(task)
                                                             setIsEditDialogOpen(true)
@@ -1054,15 +1205,57 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
 
                                                                     {tasksWithActiveTimers[subtask.id] && tasksWithActiveTimers[subtask.id].length > 0 && (
                                                                         <Badge variant="secondary" className="bg-[#fdab3d]/10 text-[#fdab3d] hover:bg-[#fdab3d]/20 border-none text-[10px] h-5 px-1.5 flex items-center gap-1">
-                                                                            <Timer className="h-3 w-3 animate-pulse" />
-                                                                            In Progress by {tasksWithActiveTimers[subtask.id][0].name?.split(' ')[0] || 'User'}
+                                                                            {tasksWithActiveTimers[subtask.id].length > 1
+                                                                                ? `${tasksWithActiveTimers[subtask.id].length} users on it`
+                                                                                : `${tasksWithActiveTimers[subtask.id][0].name?.split(' ')[0] || 'User'} is on it`}
                                                                         </Badge>
                                                                     )}
 
                                                                     <div className="ml-auto opacity-0 group-hover/subtask:opacity-100">
-                                                                        <button onClick={() => handleDeleteSubtask(task.id, subtask.id)} className="text-muted-foreground hover:text-destructive p-1">
-                                                                            <X className="h-3 w-3" />
-                                                                        </button>
+                                                                        <DropdownMenu>
+                                                                            <DropdownMenuTrigger asChild>
+                                                                                <button className="text-muted-foreground hover:text-primary p-1">
+                                                                                    <MoreVertical className="h-3 w-3" />
+                                                                                </button>
+                                                                            </DropdownMenuTrigger>
+                                                                            <DropdownMenuContent align="end" className="w-48">
+                                                                                {tasksWithActiveTimers[subtask.id]?.some(u => u.id === currentUserId) && !stoppedTimers.has(subtask.id) ? (
+                                                                                    <DropdownMenuItem
+                                                                                        onClick={() => handleStopWorking(subtask.id)}
+                                                                                        className="cursor-pointer"
+                                                                                    >
+                                                                                        <Square className="mr-2 h-4 w-4" />
+                                                                                        Stop Working
+                                                                                    </DropdownMenuItem>
+                                                                                ) : (
+                                                                                    <DropdownMenuItem
+                                                                                        onClick={() => handleStartWorking(task.id, subtask.id)}
+                                                                                        className="cursor-pointer"
+                                                                                    >
+                                                                                        <Play className="mr-2 h-4 w-4" />
+                                                                                        Start Working
+                                                                                    </DropdownMenuItem>
+                                                                                )}
+                                                                                <DropdownMenuItem
+                                                                                    onClick={() => {
+                                                                                        setEditingSubtask({ taskId: task.id, subtaskId: subtask.id })
+                                                                                        setEditingSubtaskTitle(subtask.title)
+                                                                                    }}
+                                                                                    className="cursor-pointer"
+                                                                                >
+                                                                                    <Edit className="mr-2 h-4 w-4" />
+                                                                                    Edit Subtask
+                                                                                </DropdownMenuItem>
+                                                                                <DropdownMenuSeparator />
+                                                                                <DropdownMenuItem
+                                                                                    onClick={() => handleDeleteSubtask(task.id, subtask.id)}
+                                                                                    className="cursor-pointer text-destructive focus:text-destructive"
+                                                                                >
+                                                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                                                    Delete Subtask
+                                                                                </DropdownMenuItem>
+                                                                            </DropdownMenuContent>
+                                                                        </DropdownMenu>
                                                                     </div>
                                                                 </div>
                                                             </td>
@@ -1090,6 +1283,37 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                         <td colSpan={5}></td>
                                                     </tr>
                                                 )}
+
+                                                {/* Add New Subtask Row */}
+                                                <tr className="group/add-subtask bg-muted/5 hover:bg-muted/10 relative">
+                                                    <td className="p-2 pl-12 border-r border-border/50 relative">
+                                                        {/* Hierarchy Line */}
+                                                        <div className="absolute left-[36px] top-0 bottom-1/2 w-[1px] bg-border/50"></div>
+                                                        <div className="absolute left-[36px] top-1/2 w-4 h-[1px] bg-border/50"></div>
+
+                                                        <div className="flex items-center gap-2 pl-6">
+                                                            <Plus className="h-3 w-3 text-muted-foreground/60" />
+                                                            <Input
+                                                                placeholder="Add subtask..."
+                                                                value={newSubtaskTitle[task.id] || ""}
+                                                                onChange={(e) => setNewSubtaskTitle(prev => ({ ...prev, [task.id]: e.target.value }))}
+                                                                onKeyDown={(e) => {
+                                                                    if (e.key === 'Enter' && (newSubtaskTitle[task.id] || "").trim()) {
+                                                                        handleAddSubtask(task.id)
+                                                                        // Auto-expand subtasks after adding
+                                                                        setVisibleSubtasksMap(prev => ({ ...prev, [task.id]: true }))
+                                                                    }
+                                                                }}
+                                                                className="h-6 text-xs border-none bg-transparent hover:bg-muted/30 focus-visible:ring-0 focus-visible:ring-offset-0 px-1"
+                                                            />
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-2 border-r border-border/50"></td>
+                                                    <td className="p-2 border-r border-border/50"></td>
+                                                    <td className="p-2 border-r border-border/50"></td>
+                                                    <td className="p-2 border-r border-border/50"></td>
+                                                    <td className="p-2"></td>
+                                                </tr>
                                             </>
                                         )
                                     })()}
