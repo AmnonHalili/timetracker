@@ -76,7 +76,6 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
     const router = useRouter()
     const { t, isRTL } = useLanguage()
     const [tasks, setTasks] = useState(initialTasks)
-    const [addingSubtaskTo, setAddingSubtaskTo] = useState<string | null>(null)
     const [newSubtaskTitle, setNewSubtaskTitle] = useState("")
     const [editingSubtask, setEditingSubtask] = useState<{ taskId: string; subtaskId: string } | null>(null)
     const [editingSubtaskTitle, setEditingSubtaskTitle] = useState("")
@@ -84,10 +83,11 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
     const [localSubtasks, setLocalSubtasks] = useState<Record<string, Array<{ id: string; title: string; isDone: boolean }>>>({})
     const [expandedSubtasks, setExpandedSubtasks] = useState<Record<string, boolean>>({})
     const [visibleSubtasksMap, setVisibleSubtasksMap] = useState<Record<string, boolean>>({})
-    const subtaskInputRef = useRef<HTMLInputElement | null>(null)
     const pendingOperations = useRef<Set<string>>(new Set()) // Track pending operations by subtask ID
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [selectedTask, setSelectedTask] = useState<TasksViewProps['initialTasks'][0] | null>(null)
     const [isDetailOpen, setIsDetailOpen] = useState(false)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [taskTimeEntries, setTaskTimeEntries] = useState<Array<{
         id: string
         startTime: Date | string
@@ -347,88 +347,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
     }
 
 
-    const handleCheckboxChange = async (id: string, currentStatus: string, checked: boolean) => {
-        // Optimistic update
-        const newStatus = checked ? 'DONE' : (currentStatus === 'DONE' ? 'TODO' : currentStatus)
-        const previousTasks = tasks
-        setTasks(tasks.map(t => t.id === id ? { ...t, status: newStatus } : t))
 
-        // If marking task as done, mark all subtasks as done
-        // If unmarking task, unmark all subtasks
-        if (checked) {
-            // Mark all subtasks as done
-            const taskSubtasks = localSubtasks[id] || []
-            if (taskSubtasks.length > 0) {
-                // Optimistic update for all subtasks
-                setLocalSubtasks(prev => ({
-                    ...prev,
-                    [id]: taskSubtasks.map(s => ({ ...s, isDone: true }))
-                }))
-
-                // Update all subtasks in background
-                Promise.all(
-                    taskSubtasks.map(subtask =>
-                        fetch("/api/tasks/subtasks", {
-                            method: "PATCH",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ id: subtask.id, isDone: true })
-                        }).catch(err => {
-                            console.error(`Failed to update subtask ${subtask.id}:`, err)
-                            // Revert this specific subtask on error
-                            setLocalSubtasks(prev => ({
-                                ...prev,
-                                [id]: (prev[id] || []).map(s =>
-                                    s.id === subtask.id ? { ...s, isDone: subtask.isDone } : s
-                                )
-                            }))
-                        })
-                    )
-                )
-            }
-        } else {
-            // Unmark all subtasks
-            const taskSubtasks = localSubtasks[id] || []
-            if (taskSubtasks.length > 0) {
-                // Optimistic update for all subtasks
-                setLocalSubtasks(prev => ({
-                    ...prev,
-                    [id]: taskSubtasks.map(s => ({ ...s, isDone: false }))
-                }))
-
-                // Update all subtasks in background
-                Promise.all(
-                    taskSubtasks.map(subtask =>
-                        fetch("/api/tasks/subtasks", {
-                            method: "PATCH",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ id: subtask.id, isDone: false })
-                        }).catch(err => {
-                            console.error(`Failed to update subtask ${subtask.id}:`, err)
-                            // Revert this specific subtask on error
-                            setLocalSubtasks(prev => ({
-                                ...prev,
-                                [id]: (prev[id] || []).map(s =>
-                                    s.id === subtask.id ? { ...s, isDone: subtask.isDone } : s
-                                )
-                            }))
-                        })
-                    )
-                )
-            }
-        }
-
-        try {
-            await fetch("/api/tasks", {
-                method: "PATCH",
-                body: JSON.stringify({ id, status: newStatus }),
-            })
-            router.refresh()
-        } catch (error) {
-            // Revert on error
-            setTasks(previousTasks)
-            console.error("Failed to update task:", error)
-        }
-    }
 
     const handleDelete = async (id: string) => {
         if (!confirm("Are you sure?")) return
@@ -473,27 +392,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
             })
     }
 
-    const openTaskDetail = async (task: TasksViewProps['initialTasks'][0]) => {
-        // Set the task first
-        setSelectedTask(task)
 
-        try {
-            // Fetch time entries first, then open dialog
-            const res = await fetch(`/api/tasks/${task.id}/time-entries`)
-            if (res.ok) {
-                const entries = await res.json()
-                setTaskTimeEntries(entries)
-            } else {
-                setTaskTimeEntries([])
-            }
-        } catch (error) {
-            console.error("Failed to fetch time entries:", error)
-            setTaskTimeEntries([])
-        } finally {
-            // Open dialog only after data is loaded
-            setIsDetailOpen(true)
-        }
-    }
 
     const handleAddSubtask = async (taskId: string) => {
         const trimmedTitle = newSubtaskTitle.trim()
@@ -943,41 +842,16 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                         {/* Task Title & Subtask Toggle */}
                                         <td className="p-2 border-r border-border/50 min-w-[300px]">
                                             <div className="flex items-center gap-3">
-                                                <Checkbox
-                                                    checked={task.status === 'DONE'}
-                                                    onCheckedChange={(checked) => handleToggleTask(task.id, checked as boolean)}
-                                                    className={`rounded-md h-5 w-5 border-2 ${getPriorityColor(task.priority).split(' ')[0].replace('bg-', 'border-').replace('text-primary-foreground', '')}`}
-                                                />
-
                                                 <div className="flex flex-col min-w-0 flex-1">
-                                                    {editingTask?.id === task.id ? (
-                                                        <div className="flex items-center gap-2">
-                                                            <Input
-                                                                value={editingTitle}
-                                                                onChange={(e) => setEditingTitle(e.target.value)}
-                                                                onKeyDown={(e) => {
-                                                                    if (e.key === 'Enter') handleUpdateTask(task.id)
-                                                                    if (e.key === 'Escape') setEditingTask(null)
-                                                                }}
-                                                                className="h-8"
-                                                                autoFocus
-                                                            />
-                                                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleUpdateTask(task.id)}>
-                                                                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                                                            </Button>
-                                                        </div>
-                                                    ) : (
-                                                        <span
-                                                            className={`font-medium truncate cursor-pointer hover:underline hover:text-primary ${task.status === 'DONE' ? 'line-through text-muted-foreground' : ''}`}
-                                                            onClick={() => {
-                                                                setEditingTask(task)
-                                                                setEditingTitle(task.title)
-                                                                setIsEditDialogOpen(true)
-                                                            }}
-                                                        >
-                                                            {task.title}
-                                                        </span>
-                                                    )}
+                                                    <span
+                                                        className={`font-medium truncate cursor-pointer hover:underline hover:text-primary ${task.status === 'DONE' ? 'line-through text-muted-foreground' : ''}`}
+                                                        onClick={() => {
+                                                            setEditingTask(task)
+                                                            setIsEditDialogOpen(true)
+                                                        }}
+                                                    >
+                                                        {task.title}
+                                                    </span>
 
                                                     {/* Subtask Meta & Master Toggle */}
                                                     <div className="flex items-center gap-2 mt-1">
@@ -1002,7 +876,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                             </div>
                                                         ) : (
                                                             <button
-                                                                onClick={() => handleAddSubtask(task.id, "")}
+                                                                onClick={() => handleAddSubtask(task.id)}
                                                                 className="flex items-center gap-1 text-xs text-muted-foreground/60 hover:text-primary transition-colors"
                                                             >
                                                                 <Plus className="h-3 w-3" />
