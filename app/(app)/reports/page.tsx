@@ -96,7 +96,7 @@ export default async function ReportsPage({
         // For simplicity, we'll use current hierarchy structure but filter removed users appropriately
         const visibleUsers = filterVisibleUsers(
             allProjectUsers.map(u => ({ ...u, removedAt: undefined })), // Remove removedAt for filterVisibleUsers
-            { id: currentUser.id, role: currentUser.role }, 
+            { id: currentUser.id, role: currentUser.role },
             secondaryRelations
         ).map(userId => allProjectUsers.find(u => u.id === userId)!)
             .filter(Boolean)
@@ -142,7 +142,7 @@ export default async function ReportsPage({
         })
 
         // Map to remove removedAt from the final projectUsers array (for compatibility)
-        projectUsers = sortedUsers.map(({ removedAt, ...user }) => ({ id: user.id, name: user.name, email: user.email }))
+        projectUsers = sortedUsers.map(({ removedAt: _removedAt, ...user }) => ({ id: user.id, name: user.name, email: user.email }))
 
         // If userId param is present, verify it belongs to the visible scope
         // Note: "all" is handled separately for export, but we still show a single user's report on screen
@@ -159,8 +159,7 @@ export default async function ReportsPage({
     const currentYear = searchParams.year ? parseInt(searchParams.year) : today.getFullYear()
     const isAllUsersSelected = searchParams.userId === "all" && ["ADMIN", "MANAGER"].includes(currentUser.role)
 
-    // Calculate the end date of the selected period
-    const reportPeriodEnd = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59) // Last moment of the selected month
+
 
     // Handle "all users" view
     if (isAllUsersSelected && projectUsers.length > 0) {
@@ -203,9 +202,9 @@ export default async function ReportsPage({
                         <p className="text-muted-foreground">No reports available for this period yet.</p>
                     </div>
                 ) : (
-                    <AllUsersReportTable 
-                        usersData={validUsersData} 
-                        showWarnings={currentUser.role === "ADMIN"} 
+                    <AllUsersReportTable
+                        usersData={validUsersData}
+                        showWarnings={currentUser.role === "ADMIN"}
                     />
                 )}
             </div>

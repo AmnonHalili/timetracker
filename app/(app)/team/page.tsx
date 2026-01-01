@@ -111,7 +111,7 @@ export default async function TeamPage() {
             } as never,
             orderBy: { createdAt: "asc" }
         }) as TeamMember[]
-    } catch (error: unknown) {
+    } catch {
         // If removedAt field doesn't exist yet (migration not run), try without it
         try {
             // Try with sharedChiefGroupId but without removedAt
