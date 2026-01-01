@@ -86,7 +86,7 @@ export default async function TeamPage() {
 
     let allTeamMembers: TeamMember[]
     try {
-        // Try to fetch with sharedChiefGroupId
+        // Try to fetch with sharedChiefGroupId and removedAt filter
         // Only include ACTIVE users (those who have accepted invitation and signed in)
         // Exclude removed users (removedAt != null)
         allTeamMembers = await prisma.user.findMany({
@@ -111,32 +111,56 @@ export default async function TeamPage() {
             } as never,
             orderBy: { createdAt: "asc" }
         }) as TeamMember[]
-    } catch {
-        // If field doesn't exist, fetch without it and add null
-        // Only include ACTIVE users (those who have accepted invitation and signed in)
-        // Exclude removed users (removedAt != null)
-        const fetchedUsers = await prisma.user.findMany({
-            where: {
-                projectId: currentUser.projectId,
-                status: "ACTIVE", // Only show users who have accepted invitation and signed in
-                removedAt: null // Exclude removed users
-            },
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                role: true,
-                status: true,
-                image: true,
-                dailyTarget: true,
-                workDays: true,
-                createdAt: true,
-                jobTitle: true,
-                managerId: true,
-            },
-            orderBy: { createdAt: "asc" }
-        })
-        allTeamMembers = fetchedUsers.map(u => ({ ...u, sharedChiefGroupId: null as string | null }))
+    } catch (error: unknown) {
+        // If removedAt field doesn't exist yet (migration not run), try without it
+        try {
+            // Try with sharedChiefGroupId but without removedAt
+            allTeamMembers = await prisma.user.findMany({
+                where: {
+                    projectId: currentUser.projectId,
+                    status: "ACTIVE" // Only show users who have accepted invitation and signed in
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    role: true,
+                    status: true,
+                    image: true,
+                    dailyTarget: true,
+                    workDays: true,
+                    createdAt: true,
+                    jobTitle: true,
+                    managerId: true,
+                    sharedChiefGroupId: true,
+                } as never,
+                orderBy: { createdAt: "asc" }
+            }) as TeamMember[]
+        } catch {
+            // If sharedChiefGroupId also doesn't exist, fetch without both
+            // Only include ACTIVE users (those who have accepted invitation and signed in)
+            const fetchedUsers = await prisma.user.findMany({
+                where: {
+                    projectId: currentUser.projectId,
+                    status: "ACTIVE" // Only show users who have accepted invitation and signed in
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    role: true,
+                    status: true,
+                    image: true,
+                    dailyTarget: true,
+                    workDays: true,
+                    createdAt: true,
+                    jobTitle: true,
+                    managerId: true,
+                },
+                orderBy: { createdAt: "asc" }
+            })
+            allTeamMembers = fetchedUsers.map(u => ({ ...u, sharedChiefGroupId: null as string | null }))
+        }
     }
 
     // Function to sort users by hierarchy level order (level by level)

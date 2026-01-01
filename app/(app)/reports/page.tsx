@@ -43,18 +43,33 @@ export default async function ReportsPage({
 
         // Fetch all active users in the project, including removed users if removedAt is after the report period end
         // This allows showing historical data for users who were removed
-        const allProjectUsers = await prisma.user.findMany({
-            where: {
-                projectId: currentUser.projectId,
-                status: "ACTIVE",
-                OR: [
-                    { removedAt: null }, // Active users
-                    { removedAt: { gt: reportPeriodEnd } } // Users removed after the report period
-                ]
-            },
-            select: { id: true, name: true, email: true, managerId: true, role: true, removedAt: true },
-            orderBy: { name: "asc" }
-        })
+        let allProjectUsers: Array<{ id: string; name: string | null; email: string; managerId: string | null; role: string; removedAt: Date | null }>
+        try {
+            // Try with removedAt field (after migration)
+            allProjectUsers = await prisma.user.findMany({
+                where: {
+                    projectId: currentUser.projectId,
+                    status: "ACTIVE",
+                    OR: [
+                        { removedAt: null }, // Active users
+                        { removedAt: { gt: reportPeriodEnd } } // Users removed after the report period
+                    ]
+                },
+                select: { id: true, name: true, email: true, managerId: true, role: true, removedAt: true },
+                orderBy: { name: "asc" }
+            })
+        } catch {
+            // Fallback: if removedAt field doesn't exist yet (migration not run), fetch all active users
+            const users = await prisma.user.findMany({
+                where: {
+                    projectId: currentUser.projectId,
+                    status: "ACTIVE"
+                },
+                select: { id: true, name: true, email: true, managerId: true, role: true },
+                orderBy: { name: "asc" }
+            })
+            allProjectUsers = users.map(u => ({ ...u, removedAt: null }))
+        }
 
         // Fetch secondary manager relationships for visibility with VIEW_TIME permission
         const allSecondaryRelations = await prisma.secondaryManager.findMany({

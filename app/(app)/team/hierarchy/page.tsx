@@ -65,51 +65,52 @@ export default function HierarchyPage() {
     }
 
     const fitToScreen = () => {
-        // Use requestAnimationFrame to ensure we measure correctly
-        requestAnimationFrame(() => {
-            const container = document.querySelector('[data-hierarchy-container]') as HTMLElement
-            if (container) {
-                const parentContainer = container.parentElement
-                if (parentContainer) {
-                    const parentRect = parentContainer.getBoundingClientRect()
-                    const containerRect = container.getBoundingClientRect()
+        const container = document.querySelector('[data-hierarchy-container]') as HTMLElement
+        if (!container) return
 
-                    // If container has 0 dims, retry later
-                    if (containerRect.width === 0 || containerRect.height === 0) return
+        const parentContainer = container.parentElement
+        if (!parentContainer) return
 
-                    // Get header height
-                    const headerElement = parentContainer.querySelector('.p-8') as HTMLElement
-                    const headerHeight = headerElement ? headerElement.getBoundingClientRect().height : 200
-                    const availableHeight = parentRect.height - headerHeight - 40
-                    const availableWidth = parentRect.width - 40
+        const parentRect = parentContainer.getBoundingClientRect()
+        
+        // Get header height
+        const headerElement = parentContainer.querySelector('.p-8') as HTMLElement
+        const headerHeight = headerElement ? headerElement.getBoundingClientRect().height : 200
+        const availableHeight = parentRect.height - headerHeight - 40
+        const availableWidth = parentRect.width - 40
 
-                    // Calculate required zoom based on UNTRANSFORMED dimensions
-                    // We use offsetWidth/offsetHeight for unscaled size
-                    const widthZoom = availableWidth / container.offsetWidth
-                    const heightZoom = availableHeight / container.offsetHeight
+        // Use offsetWidth/offsetHeight for unscaled dimensions
+        const containerWidth = container.offsetWidth
+        const containerHeight = container.offsetHeight
 
-                    // Optimal zoom
-                    const optimalZoom = Math.max(0.4, Math.min(widthZoom, heightZoom, 1.0))
+        // If container has 0 dims, retry later
+        if (containerWidth === 0 || containerHeight === 0) {
+            setTimeout(() => fitToScreen(), 50)
+            return
+        }
 
-                    setBaseZoom(optimalZoom)
-                    setZoomLevel(optimalZoom)
+        // Calculate required zoom based on UNTRANSFORMED dimensions
+        const widthZoom = availableWidth / containerWidth
+        const heightZoom = availableHeight / containerHeight
 
-                    // Robust Centering (Delta Correction)
-                    // Calculate shift needed to move current visual center to target center
-                    const currentVisualCenterX = containerRect.left + containerRect.width / 2
-                    const targetCenterX = parentRect.left + parentRect.width / 2
-                    const deltaX = targetCenterX - currentVisualCenterX
+        // Optimal zoom
+        const optimalZoom = Math.max(0.4, Math.min(widthZoom, heightZoom, 1.0))
 
-                    // Apply delta to current pan to preserve center
-                    const newPanX = panPosition.x + deltaX
+        setBaseZoom(optimalZoom)
+        setZoomLevel(optimalZoom)
 
-                    // Vertical: Reset to top (0) or apply specific offset
-                    // Using 0 ensures it starts naturally below the header
-                    setPanPosition({ x: newPanX, y: 0 })
-                    setIsInitialized(true)
-                }
-            }
-        })
+        // Calculate centering
+        // With transform-origin '0 0', we need to calculate pan position to center
+        const scaledWidth = containerWidth * optimalZoom
+        const scaledHeight = containerHeight * optimalZoom
+        
+        // Calculate pan position to center the scaled container in available space
+        const centeredPanX = (availableWidth - scaledWidth) / 2
+        const centeredPanY = (availableHeight - scaledHeight) / 2
+
+        // Apply the calculated pan position and mark as initialized
+        setPanPosition({ x: centeredPanX, y: centeredPanY })
+        setIsInitialized(true)
     }
 
     const handleFindMe = () => {
@@ -468,11 +469,13 @@ export default function HierarchyPage() {
     // Calculate optimal zoom level and center the tree initially
     useEffect(() => {
         if (tree && !isInitialized && !isLoading) {
-            // Delay slightly to allow layout to settle (images etc might take a frame)
-            // Double RAF
+            // Use multiple requestAnimationFrames to ensure DOM is fully rendered
+            // This is needed because images and other elements might take time to load
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
-                    fitToScreen()
+                    requestAnimationFrame(() => {
+                        fitToScreen()
+                    })
                 })
             })
         }
@@ -618,8 +621,7 @@ export default function HierarchyPage() {
                     transformOrigin: '0 0',
                     cursor: isDragging ? 'grabbing' : 'grab',
                     userSelect: 'none',
-                    opacity: isInitialized ? 1 : 0,
-                    transition: 'opacity 0.3s ease-in-out'
+                    visibility: isInitialized ? 'visible' : 'hidden'
                 }}
             >
                 {/* Project Root Node Section */}
