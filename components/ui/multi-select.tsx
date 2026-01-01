@@ -72,12 +72,16 @@ export function MultiSelect({
                         {selected.length === 0 && (
                             <span className="text-muted-foreground font-normal">{placeholder}</span>
                         )}
-                        {selected.length > 0 && selected.slice(0, maxCount).map((value) => {
+                        {selected.length > 0 && selected
+                            .filter((value) => value && options.find((o) => o.value === value))
+                            .slice(0, maxCount)
+                            .map((value) => {
                             const option = options.find((o) => o.value === value)
+                            if (!option) return null
                             return (
                                 <Badge variant="secondary" key={value} className="mr-1 mb-0.5 max-w-[150px] inline-flex items-center">
-                                    <span className="truncate" title={option?.label}>
-                                        {option?.label}
+                                    <span className="truncate" title={option.label}>
+                                        {option.label}
                                     </span>
                                     <div
                                         className="ml-1 shrink-0 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer"

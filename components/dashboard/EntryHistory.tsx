@@ -307,11 +307,11 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
                                                     >
                                                         {entry.description || t('timeEntries.noDescription')}
                                                     </div>
-                                                    <div className="flex flex-wrap gap-1">
+                                                    <div className="flex flex-wrap gap-1 min-w-0 flex-1">
                                                         {entry.tasks && entry.tasks.length > 0 && (
                                                             <>
                                                                 {entry.tasks.slice(0, 1).map((t, i) => (
-                                                                    <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/20 truncate max-w-[150px]" title={t.title}>
+                                                                    <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/20 truncate max-w-[400px]" title={t.title}>
                                                                         {t.title}
                                                                     </span>
                                                                 ))}
@@ -329,7 +329,7 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
                                                                 return task?.subtasks?.find(st => st.id === entry.subtask?.id)?.title || entry.subtask.id
                                                             })()
                                                             return (
-                                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-secondary/50 text-secondary-foreground border border-secondary/30 truncate max-w-[150px]" title={subtaskTitle}>
+                                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-secondary/50 text-primary border border-secondary/30 truncate max-w-[150px]" title={subtaskTitle}>
                                                                     {subtaskTitle}
                                                                 </span>
                                                             )

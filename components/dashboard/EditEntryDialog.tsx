@@ -16,6 +16,7 @@ import { Loader2, Keyboard } from "lucide-react"
 import { format } from "date-fns"
 
 import { MultiSelect } from "@/components/ui/multi-select"
+import { useLanguage } from "@/lib/useLanguage"
 
 interface TimeEntry {
     id: string
@@ -40,18 +41,32 @@ interface EditEntryDialogProps {
 }
 
 export function EditEntryDialog({ entry, open, onOpenChange, onSave, tasks = [] }: EditEntryDialogProps) {
+    const { isRTL } = useLanguage()
     const [loading, setLoading] = useState(false)
     const [description, setDescription] = useState("")
-    const [start, setStart] = useState("")
-    const [end, setEnd] = useState("")
+    const [startDate, setStartDate] = useState("")
+    const [startTime, setStartTime] = useState("")
+    const [endDate, setEndDate] = useState("")
+    const [endTime, setEndTime] = useState("")
     const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
 
     useEffect(() => {
         if (entry) {
             setDescription(entry.description || "")
-            setStart(format(new Date(entry.startTime), "yyyy-MM-dd'T'HH:mm"))
-            setEnd(entry.endTime ? format(new Date(entry.endTime), "yyyy-MM-dd'T'HH:mm") : "")
-            setSelectedTaskIds(entry.tasks?.map(t => t.id) || [])
+            const start = new Date(entry.startTime)
+            setStartDate(format(start, "yyyy-MM-dd"))
+            setStartTime(format(start, "HH:mm"))
+            if (entry.endTime) {
+                const end = new Date(entry.endTime)
+                setEndDate(format(end, "yyyy-MM-dd"))
+                setEndTime(format(end, "HH:mm"))
+            } else {
+                setEndDate("")
+                setEndTime("")
+            }
+            // Only set task IDs if there are tasks, filter out any empty/invalid IDs
+            const taskIds = entry.tasks?.map(t => t.id).filter(id => id && id.trim() !== '') || []
+            setSelectedTaskIds(taskIds)
         }
     }, [entry])
 
@@ -66,23 +81,23 @@ export function EditEntryDialog({ entry, open, onOpenChange, onSave, tasks = [] 
                 taskIds: selectedTaskIds
             }
 
-            // Only update times if changed
+            // Combine date and time
+            const newStart = new Date(`${startDate}T${startTime}`)
             const originalStart = new Date(entry.startTime).getTime()
-            const newStart = new Date(start).getTime()
 
-            if (originalStart !== newStart) {
-                updates.startTime = new Date(start)
+            if (originalStart !== newStart.getTime()) {
+                updates.startTime = newStart
             }
 
-            if (end) {
+            if (endDate && endTime) {
+                const newEnd = new Date(`${endDate}T${endTime}`)
                 const originalEnd = entry.endTime ? new Date(entry.endTime).getTime() : 0
-                const newEnd = new Date(end).getTime()
 
-                if (originalEnd !== newEnd) {
-                    updates.endTime = new Date(end)
+                if (originalEnd !== newEnd.getTime()) {
+                    updates.endTime = newEnd
                 }
 
-                if (newEnd <= newStart) {
+                if (newEnd.getTime() <= newStart.getTime()) {
                     alert("End time must be after start time")
                     setLoading(false)
                     return
@@ -140,27 +155,47 @@ export function EditEntryDialog({ entry, open, onOpenChange, onSave, tasks = [] 
                             <Label htmlFor="start" className="text-right">
                                 Start
                             </Label>
-                            <Input
-                                id="start"
-                                type="datetime-local"
-                                value={start}
-                                onChange={(e) => setStart(e.target.value)}
-                                className="col-span-3"
-                                required
-                            />
+                            <div className={`col-span-3 flex gap-2 ${isRTL ? 'flex-row-reverse' : 'flex-row'}`}>
+                                <Input
+                                    id="start-date"
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="flex-1"
+                                    required
+                                />
+                                <Input
+                                    id="start-time"
+                                    type="time"
+                                    value={startTime}
+                                    onChange={(e) => setStartTime(e.target.value)}
+                                    className="w-32"
+                                    required
+                                />
+                            </div>
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="end" className="text-right">
                                 End
                             </Label>
-                            <Input
-                                id="end"
-                                type="datetime-local"
-                                value={end}
-                                onChange={(e) => setEnd(e.target.value)}
-                                className="col-span-3"
-                                disabled={!entry?.endTime}
-                            />
+                            <div className={`col-span-3 flex gap-2 ${isRTL ? 'flex-row-reverse' : 'flex-row'}`}>
+                                <Input
+                                    id="end-date"
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="flex-1"
+                                    disabled={!entry?.endTime}
+                                />
+                                <Input
+                                    id="end-time"
+                                    type="time"
+                                    value={endTime}
+                                    onChange={(e) => setEndTime(e.target.value)}
+                                    className="w-32"
+                                    disabled={!entry?.endTime}
+                                />
+                            </div>
                             {!entry?.endTime && <p className="col-start-2 col-span-3 text-[10px] text-muted-foreground mt-1">Use Stop button to end timer</p>}
                         </div>
                     </div>
