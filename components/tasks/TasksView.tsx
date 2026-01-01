@@ -1194,7 +1194,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                                         <Checkbox
                                                                             checked={subtask.isDone}
                                                                             className="rounded-full w-4 h-4 border-2"
-                                                                            onCheckedChange={() => handleToggleSubtask(task.id, subtask.id)}
+                                                                            onCheckedChange={() => handleToggleSubtask(task.id, subtask.id, subtask.isDone)}
                                                                         />
 
                                                                         {editingSubtask?.subtaskId === subtask.id ? (

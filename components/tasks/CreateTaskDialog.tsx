@@ -252,7 +252,9 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                 createdAt: mode === 'edit' && task ? task.createdAt : new Date(),
                 updatedAt: new Date(),
                 // Preserve subtasks if editing
-                subtasks: mode === 'edit' && task ? task.subtasks : []
+                subtasks: mode === 'edit' && task ? task.subtasks : [],
+                // Preserve checklist if editing
+                checklist: mode === 'edit' && task ? task.checklist : []
             }
 
             onOptimisticTaskCreate(optimisticTask)
