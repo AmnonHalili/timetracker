@@ -151,7 +151,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                     <Button
                         variant="ghost"
                         size="icon"
-                        onClick={view === 'month' 
+                        onClick={view === 'month'
                             ? (isRTL ? handleNextMonth : handlePrevMonth)
                             : (isRTL ? handleNextDay : handlePrevDay)
                         }

@@ -15,16 +15,32 @@ import { useSession } from "next-auth/react"
 import { useLanguage } from "@/lib/useLanguage"
 import { filterHierarchyGroup } from "@/lib/hierarchy-utils"
 
+interface BaseCalendarEvent {
+    id: string
+    title: string
+    description?: string | null
+    startTime: Date | string
+    endTime: Date | string
+    allDay: boolean
+    type: string
+    location?: string | null
+    createdBy?: {
+        name: string
+        email: string
+    }
+    participants?: Array<{
+        user: { id?: string; name: string; email: string }
+    }>
+}
+
 interface CreateEventDialogProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     defaultDate?: Date
     projectId?: string | null
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    event?: any // Simplified type for now, matching the flexibility needed
+    event?: BaseCalendarEvent
     mode?: 'create' | 'edit'
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onOptimisticEventCreate?: (event: any) => void
+    onOptimisticEventCreate?: (event: BaseCalendarEvent) => void
 }
 
 export function CreateEventDialog({
@@ -179,8 +195,7 @@ export function CreateEventDialog({
 
                 // Populate participants
                 if (event.participants) {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const participantIdsList = event.participants.map((p: any) => p.user.id)
+                    const participantIdsList = event.participants.map((p: { user: { id?: string } }) => p.user.id)
                     setParticipantIds(participantIdsList)
                     // Set showEventToMe if current user is in participants
                     if (session?.user?.id && participantIdsList.includes(session.user.id)) {

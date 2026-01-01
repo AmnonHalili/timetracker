@@ -20,6 +20,17 @@ import { CreateEventDialog } from "./CreateEventDialog"
 import { useLanguage } from "@/lib/useLanguage"
 
 
+interface MonthGridEvent {
+    id: string;
+    title: string;
+    startTime: Date | string;
+    endTime: Date | string;
+    allDay: boolean;
+    type: string;
+    isTask?: boolean;
+    assignees?: Array<{ name: string; email: string }>;
+}
+
 interface MonthGridProps {
     date: Date
     data: {
@@ -31,25 +42,16 @@ interface MonthGridProps {
         tasks: Array<{
             id: string;
             title: string;
-            startDate?: Date | string | null;
             deadline: Date | string | null;
             priority: 'HIGH' | 'MEDIUM' | 'LOW';
             status: string;
             assignees: Array<{ name: string; email: string }>;
         }>
-        events?: Array<{
-            id: string;
-            title: string;
-            startTime: Date | string;
-            endTime: Date | string;
-            allDay: boolean;
-            type: string;
-        }>
+        events?: MonthGridEvent[]
     }
     onDayClick?: (day: Date) => void
     projectId?: string | null
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onOptimisticEventCreate?: (event: any) => void
+    onOptimisticEventCreate?: (event: MonthGridEvent) => void
     isLoading?: boolean
 }
 
@@ -98,98 +100,21 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                     const dailyData = data.dailyReports.find(r => isSameDay(new Date(r.date), day))
 
                     // Convert tasks to event-like objects for unified sorting
-                    // Task appears on day if: (has startDate and deadline: day is between them) OR (only deadline: day is deadline) OR (only startDate: day >= startDate)
                     const taskEvents = data.tasks
-                        .filter(t => {
-                            if (t.status === 'DONE') return false
-                            const taskStartDate = (t as any).startDate ? new Date((t as any).startDate) : null
-                            const taskDeadline = t.deadline ? new Date(t.deadline) : null
-                            
-                            // Normalize dates to start of day for comparison (ignore time component)
-                            const dayStart = new Date(day)
-                            dayStart.setHours(0, 0, 0, 0)
-                            
-                            // Task is active on this day if:
-                            // 1. Has startDate and deadline: day is between startDate and deadline (date only, ignore time)
-                            // 2. Has only deadline: day is deadline (date only)
-                            // 3. Has only startDate: day >= startDate (date only)
-                            if (taskStartDate && taskDeadline) {
-                                const startDateOnly = new Date(taskStartDate)
-                                startDateOnly.setHours(0, 0, 0, 0)
-                                const deadlineOnly = new Date(taskDeadline)
-                                deadlineOnly.setHours(0, 0, 0, 0)
-                                return dayStart >= startDateOnly && dayStart <= deadlineOnly
-                            } else if (taskDeadline) {
-                                return isSameDay(taskDeadline, day)
-                            } else if (taskStartDate) {
-                                const startDateOnly = new Date(taskStartDate)
-                                startDateOnly.setHours(0, 0, 0, 0)
-                                return dayStart >= startDateOnly
-                            }
-                            return false
-                        })
+                        .filter(t => t.deadline && isSameDay(new Date(t.deadline), day) && t.status !== 'DONE')
                         .map(t => {
-                            const taskStartDate = (t as any).startDate ? new Date((t as any).startDate) : null
-                            const taskDeadline = t.deadline ? new Date(t.deadline) : null
-                            
-                            // If task has both startDate and deadline, show as a time range
-                            if (taskStartDate && taskDeadline) {
-                                // Check if times are at midnight (date-only)
-                                const startIsMidnight = taskStartDate.getUTCHours() === 0 && taskStartDate.getUTCMinutes() === 0 && taskStartDate.getUTCSeconds() === 0
-                                const deadlineIsMidnight = taskDeadline.getUTCHours() === 0 && taskDeadline.getUTCMinutes() === 0 && taskDeadline.getUTCSeconds() === 0
-                                
-                                return {
-                                    id: t.id,
-                                    title: t.title,
-                                    startTime: taskStartDate,
-                                    endTime: taskDeadline,
-                                    allDay: startIsMidnight && deadlineIsMidnight,
-                                    type: "TASK_TIME",
-                                    isTask: true,
-                                    assignees: t.assignees
-                                }
-                            } else if (taskDeadline) {
-                                // Only deadline - show as a point in time
-                                const deadline = new Date(taskDeadline)
-                                const isUtcMidnight = deadline.getUTCHours() === 0 && deadline.getUTCMinutes() === 0 && deadline.getUTCSeconds() === 0
-                                
-                                return {
-                                    id: t.id,
-                                    title: t.title,
-                                    startTime: deadline,
-                                    endTime: new Date(deadline),
-                                    allDay: isUtcMidnight,
-                                    type: "TASK_TIME",
-                                    isTask: true,
-                                    assignees: t.assignees
-                                }
-                            } else if (taskStartDate) {
-                                // Only startDate - show as starting point
-                                const startDate = new Date(taskStartDate)
-                                const isUtcMidnight = startDate.getUTCHours() === 0 && startDate.getUTCMinutes() === 0 && startDate.getUTCSeconds() === 0
-                                
-                                return {
-                                    id: t.id,
-                                    title: t.title,
-                                    startTime: startDate,
-                                    endTime: new Date(startDate),
-                                    allDay: isUtcMidnight,
-                                    type: "TASK_TIME",
-                                    isTask: true,
-                                    assignees: t.assignees
-                                }
-                            }
-                            
-                            // Fallback (shouldn't happen due to filter above)
                             const deadline = new Date(t.deadline!)
+                            // Detect "Date Only" (stored as UTC Midnight)
+                            const isUtcMidnight = deadline.getUTCHours() === 0 && deadline.getUTCMinutes() === 0 && deadline.getUTCSeconds() === 0
+
                             return {
                                 id: t.id,
                                 title: t.title,
                                 startTime: deadline,
                                 endTime: new Date(deadline),
-                                allDay: true,
+                                allDay: isUtcMidnight,
                                 type: "TASK_TIME",
-                                isTask: true,
+                                isTask: true, // Flag to identify tasks
                                 assignees: t.assignees
                             }
                         })
@@ -277,12 +202,10 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                                             : (eventTypeColors[item.type] || eventTypeColors.OTHER)
 
                                         // For tasks, include assignees in tooltip
-                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                        const taskAssignees = item.isTask ? (item as any).assignees : null
+                                        const taskAssignees = item.isTask ? item.assignees : null
 
                                         const title = taskAssignees
-                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                            ? `${item.title} - ${taskAssignees.map((u: any) => u.name).join(', ') || 'Unassigned'}`
+                                            ? `${item.title} - ${taskAssignees.map((u: { name: string }) => u.name).join(', ') || 'Unassigned'}`
                                             : item.title
 
                                         return (
