@@ -203,31 +203,23 @@ export async function DELETE(req: Request) {
     const session = await getServerSession(authOptions)
     if (!session) return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
 
-    // Admin can delete, Manager checks hierarchy
-    if (session.user.role !== "ADMIN" && session.user.role !== "MANAGER") {
-        return NextResponse.json({ message: "Forbidden" }, { status: 403 })
-    }
-
     const { searchParams } = new URL(req.url)
     const id = searchParams.get("id")
 
     if (!id) return NextResponse.json({ message: "Missing ID" }, { status: 400 })
 
-    if (session.user.role === "MANAGER") {
-        // Check if manager manages the task assignees
-        // Ideally, we should check if they manage ALL assignees or just one? 
-        // For now, if they manage at least one or created permissions... but simpler: 
-        // Only ADMIN delete for now to be safe, or check hierarchy completely. 
-        // User asked to "manage" permissions. 
-        // Let's implement full check: Manager can delete if ALL assignees are in their subtree (or task has no assignees but belongs to project?). 
-        // It's safer to leave DELETE to ADMIN for now or implement strict check. 
-        // Let's stick to ADMIN only for DELETE to avoid data loss accidents by managers, unless requested.
-        // Actually user said "missions and everything". 
-        // Let's allow MANAGER if permission check passes similar to PATCH but stricter (all assignees).
+    // Check if user is an assignee
+    const task = await prisma.task.findUnique({ where: { id }, include: { assignees: true } })
+    if (!task) return NextResponse.json({ message: "Not found" }, { status: 404 })
 
-        const task = await prisma.task.findUnique({ where: { id }, include: { assignees: true } })
-        if (!task) return NextResponse.json({ message: "Not found" }, { status: 404 })
-
+    let hasPermission = false
+    if (session.user.role === "ADMIN") {
+        hasPermission = true
+    } else if (task.assignees.some(u => u.id === session.user.id)) {
+        // Allow assignees to delete their tasks
+        hasPermission = true
+    } else if (session.user.role === "MANAGER") {
+        // Manager checks (existing logic)
         const currentUser = await prisma.user.findUnique({
             where: { id: session.user.id },
             select: { id: true, projectId: true }
@@ -238,9 +230,14 @@ export async function DELETE(req: Request) {
         })
 
         const descendants = new Set(getAllDescendants(currentUser!.id, allUsers))
+        // Manager can delete if they manage ALL assignees (or if task has no assignees but is in their project scope?)
+        // For now trusting the existing strict check idea:
         const isManagerOfAll = task.assignees.every(u => descendants.has(u.id) || u.id === currentUser!.id)
+        if (isManagerOfAll) hasPermission = true
+    }
 
-        if (!isManagerOfAll) return NextResponse.json({ message: "Forbidden: Task involves users outside your management" }, { status: 403 })
+    if (!hasPermission) {
+        return NextResponse.json({ message: "Forbidden" }, { status: 403 })
     }
 
     await prisma.task.delete({ where: { id } })
