@@ -97,15 +97,15 @@ export function LandingPageContent() {
                 </DropdownMenuContent>
               </DropdownMenu>
               {/* Log In - hidden on very small screens, shown as text on larger */}
-              <Link 
-                href="/login" 
+              <Link
+                href="/login"
                 className="text-xs sm:text-sm font-medium hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md px-2 sm:px-3 py-1.5 whitespace-nowrap"
               >
                 {t('landing.logIn')}
               </Link>
               {/* Get Started button - compact on mobile */}
-              <Link 
-                href="/register" 
+              <Link
+                href="/register"
                 className="inline-flex items-center justify-center rounded-md bg-primary px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-primary-foreground shadow hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 whitespace-nowrap"
               >
                 {t('landing.getStarted')}
@@ -173,7 +173,7 @@ export function LandingPageContent() {
 
         {/* Project Management Spotlight */}
         {/* Project Management Spotlight */}
-        <section className="pt-24 pb-0 mb-0" style={{ marginBottom: '-4rem' }}>
+        <section className="pt-24 pb-0 -mb-16 md:mb-12">
           <div className="container mx-auto px-0 md:px-4 relative">
             {/* Navigation Arrows - Responsive positioning: Inside on laptop, Outside on large screens */}
             <button
@@ -316,7 +316,7 @@ export function LandingPageContent() {
               </div>
 
               {/* Slide Indicators - Hidden on mobile */}
-              <div className="hidden md:flex justify-center gap-2 mt-0">
+              <div className="hidden md:flex justify-center gap-2 mt-8">
                 {Array.from({ length: totalSlides }).map((_, index) => (
                   <button
                     key={index}
@@ -334,7 +334,7 @@ export function LandingPageContent() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t pt-6 pb-12 bg-muted/20" style={{ marginTop: '-6rem' }} role="contentinfo">
+      <footer className="border-t pt-12 pb-12 bg-muted/20 -mt-24 md:mt-24" role="contentinfo">
         <div className="container mx-auto px-4">
           <div className="flex justify-center mb-4">
             <ThemeLogo width={120} height={48} className="h-10 w-auto opacity-80" />
