@@ -9,7 +9,7 @@ import { StatsWidget } from "@/components/dashboard/StatsWidget"
 import { LiveTeamStatusWidget } from "@/components/dashboard/LiveTeamStatusWidget"
 import { TimePunchHeader } from "@/components/dashboard/TimePunchHeader"
 
-import { User, TimeEntry, Task, TimeBreak, Workday } from "@prisma/client"
+import { User, TimeEntry, Task, TimeBreak, Workday, TaskStatus } from "@prisma/client"
 import { startOfDay, endOfDay, startOfMonth } from "date-fns"
 
 type DashboardUser = User & {
@@ -89,7 +89,7 @@ export default async function DashboardPage() {
     const monthStart = startOfMonth(today)
     let monthlyWorkdays: Pick<Workday, 'workdayStartTime' | 'workdayEndTime'>[] = []
     let activeWorkday = null
-    
+
     try {
         const todayWorkdays = await prisma.workday.findMany({
             where: {
@@ -157,13 +157,13 @@ export default async function DashboardPage() {
     // Match logic from Tasks page: ADMINs see all project tasks, others see only assigned tasks
     // Exclude DONE tasks from timer selection
     const tasksWhere = user.role === 'ADMIN'
-        ? { 
+        ? {
             assignees: { some: { projectId: user.projectId || null } },
-            status: { not: 'DONE' } // Exclude DONE tasks from timer
+            status: { not: TaskStatus.DONE } // Exclude DONE tasks from timer
         }
-        : { 
+        : {
             assignees: { some: { id: user.id } },
-            status: { not: 'DONE' } // Exclude DONE tasks from timer
+            status: { not: TaskStatus.DONE } // Exclude DONE tasks from timer
         }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
