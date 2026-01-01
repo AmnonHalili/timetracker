@@ -5,7 +5,7 @@ import { RecursiveNode } from "@/components/team/RecursiveNode"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { AddChildDialog } from "@/components/team/AddChildDialog"
 import { User } from "@prisma/client"
-import { Loader2, Pencil, ZoomIn, ZoomOut, Network, ArrowRight, Crosshair, Eye } from "lucide-react"
+import { Loader2, Pencil, ZoomIn, ZoomOut, ArrowRight, Crosshair, Eye } from "lucide-react"
 import { toast } from "sonner"
 import { useSession } from "next-auth/react"
 import { useLanguage } from "@/lib/useLanguage"
@@ -181,13 +181,14 @@ export default function HierarchyPage() {
         const mouseY = e.clientY - parentRect.top
 
         // Get container's current bounding rect (after current transform)
-        const containerRect = container.getBoundingClientRect()
+        // containerRect is not used but kept as comment for logic documentation if needed
+        // const containerRect = container.getBoundingClientRect()
 
         // Calculate the point in the container's unscaled local coordinate space
         // With transform-origin '0 0', the transform is simpler:
         // screenX = panX + localX * zoom
         // So: localX = (screenX - panX) / zoom
-        
+
         const localX = (mouseX - panPosition.x) / zoomLevel
         const localY = (mouseY - panPosition.y) / zoomLevel
 

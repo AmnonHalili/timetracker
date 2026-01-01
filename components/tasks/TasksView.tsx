@@ -3,7 +3,7 @@
 
 import { useRouter } from "next/navigation"
 import { useState, useEffect, useRef } from "react"
-import { Trash2, Calendar, Plus, MoreVertical, Pencil, Play, Square, CheckCircle2, AlertCircle, Timer, ArrowUp, ArrowDown, Minus, Edit } from "lucide-react"
+import { Trash2, Calendar, Plus, MoreVertical, Pencil, Play, Square, CheckCircle2, AlertCircle, Edit } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

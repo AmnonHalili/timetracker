@@ -137,6 +137,7 @@ export default async function DashboardPage() {
         ? { assignees: { some: { projectId: user.projectId || null } } }
         : { assignees: { some: { id: user.id } } }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let tasks: any[] = []
     try {
         tasks = await prisma.task.findMany({
@@ -148,7 +149,7 @@ export default async function DashboardPage() {
             },
             orderBy: { updatedAt: 'desc' }
         })
-    } catch (e: any) {
+    } catch {
         console.warn("Dashboard: subtasks relation not available, fetching without it")
         tasks = await prisma.task.findMany({
             where: tasksWhere,
