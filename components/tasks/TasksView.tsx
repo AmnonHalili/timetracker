@@ -81,6 +81,8 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
     const [editingSubtaskTitle, setEditingSubtaskTitle] = useState("")
 
     const [localSubtasks, setLocalSubtasks] = useState<Record<string, Array<{ id: string; title: string; isDone: boolean }>>>({})
+    const [expandedSubtasks, setExpandedSubtasks] = useState<Record<string, boolean>>({})
+    const [visibleSubtasksMap, setVisibleSubtasksMap] = useState<Record<string, boolean>>({})
     const subtaskInputRef = useRef<HTMLInputElement | null>(null)
     const pendingOperations = useRef<Set<string>>(new Set()) // Track pending operations by subtask ID
     const [selectedTask, setSelectedTask] = useState<TasksViewProps['initialTasks'][0] | null>(null)
@@ -969,10 +971,19 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                         {/* Subtask Stats / Summary in small text if needed */}
                                                         {localSubtasks[task.id] && localSubtasks[task.id].length > 0 && (
                                                             <div className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-2">
-                                                                <span className="flex items-center gap-1">
-                                                                    <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40"></span>
-                                                                    {localSubtasks[task.id].length} subtasks
-                                                                </span>
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation()
+                                                                        setVisibleSubtasksMap(prev => ({ ...prev, [task.id]: !prev[task.id] }))
+                                                                    }}
+                                                                    className="flex items-center gap-1 hover:text-primary transition-colors cursor-pointer focus:outline-none"
+                                                                >
+                                                                    <span className={`w-1.5 h-1.5 rounded-full ${visibleSubtasksMap[task.id] ? 'bg-primary' : 'bg-muted-foreground/40'}`}></span>
+                                                                    {visibleSubtasksMap[task.id]
+                                                                        ? `Hide ${localSubtasks[task.id].length} subtasks`
+                                                                        : `Show ${localSubtasks[task.id].length} subtasks`
+                                                                    }
+                                                                </button>
                                                             </div>
                                                         )}
                                                     </div>
@@ -986,6 +997,8 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                             onClick={(e) => {
                                                                 e.stopPropagation()
                                                                 setAddingSubtaskTo(task.id)
+                                                                // Auto-show subtasks when adding
+                                                                setVisibleSubtasksMap(prev => ({ ...prev, [task.id]: true }))
                                                             }}
                                                             title={t('tasks.addSubTask')}
                                                         >
@@ -997,35 +1010,52 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
 
                                                 {/* Inline Subtask Edit/Add */}
                                                 {addingSubtaskTo === task.id && (
-                                                    <div className="mt-2 pl-8 flex items-center gap-2 pr-4 relative z-10">
-                                                        <div className="w-3 h-3 border-l pb-3 border-b border-muted-foreground/30 absolute left-6 top-[-10px]"></div>
-                                                        <Input
-                                                            ref={subtaskInputRef}
-                                                            placeholder="New subtask..."
-                                                            value={newSubtaskTitle}
-                                                            onChange={(e) => setNewSubtaskTitle(e.target.value)}
-                                                            onKeyDown={(e) => {
-                                                                if (e.key === "Enter" && newSubtaskTitle.trim()) {
-                                                                    e.preventDefault();
-                                                                    handleAddSubtask(task.id);
-                                                                } else if (e.key === "Escape") {
-                                                                    setAddingSubtaskTo(null);
-                                                                    setNewSubtaskTitle("");
-                                                                }
-                                                            }}
-                                                            className="h-8 text-sm bg-background"
-                                                            autoFocus
-                                                        />
-                                                        <Button size="sm" className="h-8 px-3" onClick={() => handleAddSubtask(task.id)}>Add</Button>
-                                                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => setAddingSubtaskTo(null)}><X className="h-4 w-4" /></Button>
+                                                    <div className="pl-12 pr-4 py-2 border-b border-border/50 bg-muted/20">
+                                                        <div className="flex items-center gap-2 relative">
+                                                            {/* Connector Line */}
+                                                            <div className="absolute left-[-20px] top-1/2 w-5 h-[1px] bg-border"></div>
+                                                            <div className="absolute left-[-20px] top-[-50%] bottom-1/2 w-[1px] bg-border"></div>
+
+                                                            <div className="w-4 flex justify-center">
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30"></div>
+                                                            </div>
+                                                            <Input
+                                                                ref={subtaskInputRef}
+                                                                value={newSubtaskTitle}
+                                                                onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                                                                onKeyDown={(e) => {
+                                                                    if (e.key === 'Enter') handleAddSubtask(task.id)
+                                                                    if (e.key === 'Escape') setAddingSubtaskTo(null)
+                                                                }}
+                                                                placeholder={t('tasks.subtaskPlaceholder') || "Subtask title..."}
+                                                                className="h-8 text-sm"
+                                                                autoFocus
+                                                            />
+                                                            <div className="flex items-center gap-1">
+                                                                <Button
+                                                                    size="sm"
+                                                                    className="h-8 px-3"
+                                                                    onClick={() => handleAddSubtask(task.id)}
+                                                                >
+                                                                    Add
+                                                                </Button>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 px-2"
+                                                                    onClick={() => setAddingSubtaskTo(null)}
+                                                                >
+                                                                    <X className="h-4 w-4" />
+                                                                </Button>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 )}
-
                                             </td >
 
                                             {/* Assigned To */}
-                                            < td className="p-2 align-middle" >
-                                                <div className="flex -space-x-2 overflow-hidden justify-start pl-2">
+                                            < td className="p-2 align-middle text-left border-e border-border/50" >
+                                                <div className="flex -space-x-2 overflow-hidden pl-1">
                                                     {task.assignees && task.assignees.length > 0 ? (
                                                         task.assignees.map((assignee, i) => (
                                                             <div
@@ -1049,9 +1079,9 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                 <div
                                                     className={`
                                                         h-8 w-full max-w-[140px] mx-auto flex items-center justify-center gap-2 text-xs font-semibold text-white shadow-sm rounded-md transition-all
-                                                        ${task.status === 'DONE' ? 'bg-[#00c875] hover:bg-[#00c875]/90' : ''} 
+                                                        ${task.status === 'DONE' ? 'bg-[#00c875] hover:bg-[#00c875]/90' : ''}
                                                         ${(tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0) ? 'bg-[#fdab3d] hover:bg-[#fdab3d]/90' : ''}
-                                                        ${task.status === 'TODO' && !((tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0)) ? 'bg-[#c4c4c4] hover:bg-[#b0b0b0]' : ''} 
+                                                        ${task.status === 'TODO' && !((tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0)) ? 'bg-[#c4c4c4] hover:bg-[#b0b0b0]' : ''}
                                                         ${isPast(new Date(task.deadline || '')) && !isToday(new Date(task.deadline || '')) && task.status !== 'DONE' ? 'bg-[#e2445c] hover:bg-[#d00000]' : ''}
                                                     `}
                                                 >
@@ -1079,8 +1109,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                     {task.priority === 'HIGH' && <ArrowUp className="h-3.5 w-3.5" />}
                                                     {task.priority === 'MEDIUM' && <Minus className="h-3.5 w-3.5" />}
                                                     {task.priority === 'LOW' && <ArrowDown className="h-3.5 w-3.5" />}
-
-                                                    {task.priority === 'HIGH' ? 'High' : task.priority === 'MEDIUM' ? 'Medium' : 'Low'}
+                                                    <span className="capitalize">{task.priority.toLowerCase()}</span>
                                                 </div>
                                             </td>
 
@@ -1088,11 +1117,11 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                             <td className="p-2 align-middle text-center">
                                                 {task.deadline ? (
                                                     <div className={`
-                                                        flex items-center justify-center gap-1.5 text-xs h-8 px-2 w-full max-w-[150px] mx-auto
+                                                        flex items-center justify-center gap-1.5 text-xs
                                                         ${isPast(new Date(task.deadline)) && !isToday(new Date(task.deadline)) && task.status !== 'DONE'
-                                                            ? 'text-[#e2445c] font-semibold bg-[#e2445c]/10'
-                                                            : 'text-muted-foreground bg-muted/30'}
-                                                    `}>
+                                                            ? 'text-destructive font-medium'
+                                                            : 'text-muted-foreground'
+                                                        }`}>
                                                         <Calendar className="h-3.5 w-3.5" />
                                                         {format(new Date(task.deadline), 'MMM d')}
                                                     </div>
@@ -1136,100 +1165,108 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                         </tr>
 
                                         {/* Nested Subtasks Rendered as Rows */}
-                                        {localSubtasks[task.id] && localSubtasks[task.id].length > 0 && (
-                                            localSubtasks[task.id].map((subtask) => (
-                                                <tr key={subtask.id} className="group/subtask bg-muted/5 hover:bg-muted/10">
-                                                    {/* Spacing for Task Title (nested) */}
-                                                    <td className="p-2 pl-12 border-e border-border/50">
-                                                        <div className="flex items-center gap-2 relative">
-                                                            {/* Connector Line */}
-                                                            <div className="absolute left-[-16px] top-1/2 w-4 h-[1px] bg-border"></div>
-                                                            <div className="absolute left-[-16px] top-[-50%] bottom-1/2 w-[1px] bg-border"></div>
+                                        {localSubtasks[task.id] && localSubtasks[task.id].length > 0 && visibleSubtasksMap[task.id] && (() => {
+                                            const subtasks = localSubtasks[task.id]
+                                            const isExpanded = expandedSubtasks[task.id]
+                                            const displaySubtasks = isExpanded ? subtasks : subtasks.slice(0, 5)
+                                            const hasMore = subtasks.length > 5
 
-                                                            <Checkbox
-                                                                checked={subtask.isDone}
-                                                                onCheckedChange={() => handleToggleSubtask(task.id, subtask.id, subtask.isDone)}
-                                                                className="h-3.5 w-3.5 opacity-60 data-[state=checked]:opacity-100"
-                                                            />
+                                            return (
+                                                <>
+                                                    {displaySubtasks.map((subtask, index) => {
+                                                        const isLast = index === displaySubtasks.length - 1 && !hasMore
+                                                        return (
+                                                            <tr key={subtask.id} className="group/subtask bg-muted/5 hover:bg-muted/10">
+                                                                {/* Spacing for Task Title (nested) */}
+                                                                <td className="p-2 pl-12 border-e border-border/50 relative">
+                                                                    {/* Continuous Hierarchy Line */}
+                                                                    <div className="absolute left-[36px] top-0 bottom-0 w-[1px] bg-border/50 group-last/subtask:bottom-1/2"></div>
+                                                                    {/* Branch Line */}
+                                                                    <div className="absolute left-[36px] top-1/2 w-4 h-[1px] bg-border/50"></div>
+                                                                    {/* Mask bottom part of line for last item if no "Show More" */}
+                                                                    {isLast && !hasMore && (
+                                                                        <div className="absolute left-[36px] top-1/2 bottom-0 w-[2px] bg-background translate-x-[-0.5px]"></div>
+                                                                    )}
 
-                                                            {editingSubtask?.taskId === task.id && editingSubtask?.subtaskId === subtask.id ? (
-                                                                <Input
-                                                                    value={editingSubtaskTitle}
-                                                                    onChange={(e) => setEditingSubtaskTitle(e.target.value)}
-                                                                    onKeyDown={(e) => {
-                                                                        if (e.key === "Enter") {
-                                                                            e.preventDefault()
-                                                                            handleEditSubtask(task.id, subtask.id, editingSubtaskTitle)
-                                                                        } else if (e.key === "Escape") {
-                                                                            setEditingSubtask(null)
-                                                                            setEditingSubtaskTitle("")
-                                                                        }
-                                                                    }}
-                                                                    onBlur={() => {
-                                                                        if (editingSubtaskTitle.trim()) {
-                                                                            handleEditSubtask(task.id, subtask.id, editingSubtaskTitle)
-                                                                        } else {
-                                                                            setEditingSubtask(null)
-                                                                            setEditingSubtaskTitle("")
-                                                                        }
-                                                                    }}
-                                                                    className="h-7 text-xs flex-1 min-w-[200px]"
-                                                                    autoFocus
-                                                                />
-                                                            ) : (
-                                                                <span className={`text-xs text-muted-foreground ${subtask.isDone ? 'line-through opacity-70' : ''}`}>
-                                                                    {subtask.title}
-                                                                </span>
-                                                            )}
+                                                                    <div className="flex items-center gap-2 relative">
+                                                                        <Checkbox
+                                                                            checked={subtask.isDone}
+                                                                            className="rounded-full w-4 h-4 border-2"
+                                                                            onCheckedChange={() => handleToggleSubtask(task.id, subtask.id)}
+                                                                        />
 
-                                                            <div className="opacity-0 group-hover/subtask:opacity-100 flex items-center gap-1 ml-2">
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-5 w-5 text-muted-foreground hover:text-foreground"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation()
-                                                                        setEditingSubtask({ taskId: task.id, subtaskId: subtask.id })
-                                                                        setEditingSubtaskTitle(subtask.title)
-                                                                    }}
-                                                                >
-                                                                    <Pencil className="h-3 w-3" />
-                                                                </Button>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-5 w-5 text-muted-foreground hover:text-destructive"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation()
-                                                                        handleDeleteSubtask(task.id, subtask.id)
-                                                                    }}
-                                                                >
-                                                                    <Trash2 className="h-3 w-3" />
-                                                                </Button>
-                                                            </div>
-                                                        </div>
-                                                    </td>
+                                                                        {editingSubtask?.subtaskId === subtask.id ? (
+                                                                            <Input
+                                                                                value={editingSubtaskTitle}
+                                                                                onChange={(e) => setEditingSubtaskTitle(e.target.value)}
+                                                                                onKeyDown={(e) => {
+                                                                                    if (e.key === 'Enter') handleUpdateSubtask(task.id, subtask.id)
+                                                                                    if (e.key === 'Escape') setEditingSubtask(null)
+                                                                                }}
+                                                                                onBlur={() => handleUpdateSubtask(task.id, subtask.id)}
+                                                                                autoFocus
+                                                                                className="h-7 text-sm"
+                                                                            />
+                                                                        ) : (
+                                                                            <span
+                                                                                className={`text-sm truncate cursor-pointer hover:underline ${subtask.isDone ? 'line-through text-muted-foreground' : ''}`}
+                                                                                onClick={() => {
+                                                                                    setEditingSubtask({ taskId: task.id, subtaskId: subtask.id })
+                                                                                    setEditingSubtaskTitle(subtask.title)
+                                                                                }}
+                                                                            >
+                                                                                {subtask.title}
+                                                                            </span>
+                                                                        )}
 
-                                                    {/* Empty Cell for Assigned To in Subtask Row */}
-                                                    <td className="p-2 border-r border-border/50"></td>
-                                                    {/* Empty for Status */}
-                                                    <td className="border-b border-border/20"></td>
-                                                    {/* Empty for Priority */}
-                                                    <td className="border-b border-border/20"></td>
-                                                    {/* Empty for Deadline */}
-                                                    <td className="border-b border-border/20"></td>
-                                                    {/* Empty for Actions */}
-                                                    <td className="border-b border-border/20"></td>
-                                                </tr>
-                                            ))
-                                        )}
+                                                                        {tasksWithActiveTimers[subtask.id] && tasksWithActiveTimers[subtask.id].length > 0 && (
+                                                                            <Badge variant="secondary" className="bg-[#fdab3d]/10 text-[#fdab3d] hover:bg-[#fdab3d]/20 border-none text-[10px] h-5 px-1.5 flex items-center gap-1">
+                                                                                <Timer className="h-3 w-3 animate-pulse" />
+                                                                                In Progress by {tasksWithActiveTimers[subtask.id][0].name?.split(' ')[0] || 'User'}
+                                                                            </Badge>
+                                                                        )}
+
+                                                                        <div className="ml-auto opacity-0 group-hover/subtask:opacity-100">
+                                                                            <button onClick={() => handleDeleteSubtask(task.id, subtask.id)} className="text-muted-foreground hover:text-destructive p-1">
+                                                                                <X className="h-3 w-3" />
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="p-2 border-x border-border/50"></td>
+                                                                <td className="p-2 border-x border-border/50"></td>
+                                                                <td className="p-2 border-x border-border/50"></td>
+                                                                <td className="p-2 border-x border-border/50"></td>
+                                                                <td className="p-2"></td>
+                                                            </tr>
+                                                        )
+                                                    })}
+                                                    {hasMore && !isExpanded && (
+                                                        <tr className="bg-muted/5 hover:bg-muted/10 cursor-pointer" onClick={() => setExpandedSubtasks(prev => ({ ...prev, [task.id]: true }))}>
+                                                            <td className="p-2 pl-12 border-e border-border/50 relative">
+                                                                {/* Hierarchy Line Continuing to this "Show More" item */}
+                                                                <div className="absolute left-[36px] top-0 bottom-1/2 w-[1px] bg-border/50"></div>
+                                                                <div className="absolute left-[36px] top-1/2 w-4 h-[1px] bg-border/50"></div>
+
+                                                                <div className="flex items-center gap-2 pl-6">
+                                                                    <span className="text-xs text-muted-foreground hover:text-primary font-medium">
+                                                                        Show {subtasks.length - 5} more subtasks...
+                                                                    </span>
+                                                                </div>
+                                                            </td>
+                                                            <td colSpan={5}></td>
+                                                        </tr>
+                                                    )}
+                                                </>
+                                            )
+                                        })()}
                                     </>
                                 ))
                             )}
                         </tbody>
                     </table>
-                </div >
-            </CardContent >
+                </div>
+            </CardContent>
 
             <TaskDetailDialog
                 task={selectedTask}
@@ -1251,6 +1288,15 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                 }}
                 onTaskCreated={() => {
                     router.refresh()
+                }}
+                onOptimisticTaskCreate={(updatedTask) => {
+                    setTasks(prev => {
+                        const exists = prev.some(t => t.id === updatedTask.id)
+                        if (exists) {
+                            return prev.map(t => t.id === updatedTask.id ? { ...t, ...updatedTask } : t)
+                        }
+                        return [updatedTask, ...prev]
+                    })
                 }}
                 currentUserId={currentUserId}
             />

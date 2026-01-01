@@ -150,6 +150,7 @@ export default async function TasksPage() {
     // Create a map of task IDs to users who are actively working on them
     const tasksWithActiveTimers = new Map<string, Array<{ id: string; name: string | null }>>()
     activeTimeEntries.forEach(entry => {
+        // Map for main tasks
         entry.tasks.forEach(task => {
             const existing = tasksWithActiveTimers.get(task.id) || []
             // Avoid duplicates
@@ -158,6 +159,15 @@ export default async function TasksPage() {
             }
             tasksWithActiveTimers.set(task.id, existing)
         })
+
+        // Map for subtask if exists
+        if (entry.subtaskId) {
+            const existingSub = tasksWithActiveTimers.get(entry.subtaskId) || []
+            if (!existingSub.some(u => u.id === entry.user.id)) {
+                existingSub.push({ id: entry.user.id, name: entry.user.name })
+            }
+            tasksWithActiveTimers.set(entry.subtaskId, existingSub)
+        }
     })
 
     return (

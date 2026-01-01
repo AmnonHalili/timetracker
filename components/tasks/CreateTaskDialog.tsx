@@ -231,15 +231,15 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
             }
         }
 
-        // Optimistic update for create mode - close dialog immediately and add task optimistically
-        if (mode === 'create' && onOptimisticTaskCreate) {
-            const tempTask = {
-                id: `temp-${Date.now()}`, // Temporary ID
+        // Optimistic update for create OR edit mode
+        if (onOptimisticTaskCreate) {
+            const optimisticTask = {
+                id: mode === 'edit' && task ? task.id : `temp-${Date.now()}`,
                 title,
                 priority,
                 deadline: finalDeadline ? new Date(finalDeadline) : null,
                 description: description || null,
-                status: "TODO",
+                status: mode === 'edit' && task ? task.status : "TODO",
                 assignees: finalAssignedToIds.map(id => {
                     const user = users.find(u => u.id === id)
                     return {
@@ -248,20 +248,26 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                         email: user?.email || null
                     }
                 }),
-                createdAt: new Date(),
-                updatedAt: new Date()
+                // Preserve existing or new
+                createdAt: mode === 'edit' && task ? task.createdAt : new Date(),
+                updatedAt: new Date(),
+                // Preserve subtasks if editing
+                subtasks: mode === 'edit' && task ? task.subtasks : []
             }
-            onOptimisticTaskCreate(tempTask)
+
+            onOptimisticTaskCreate(optimisticTask)
             setIsOpen(false)
 
-            // Reset form immediately
-            setTitle("")
-            setAssignedToIds([])
-            setShowToMe(true) // Always default to true, independent of Assign To
-            setPriority("LOW")
-            setDeadline("")
-            setDeadlineTime("")
-            setDescription("")
+            // Reset form immediately if creating, but not strict for edit as modal closes
+            if (mode === 'create') {
+                setTitle("")
+                setAssignedToIds([])
+                setShowToMe(true)
+                setPriority("LOW")
+                setDeadline("")
+                setDeadlineTime("")
+                setDescription("")
+            }
         } else {
             setLoading(true)
         }
