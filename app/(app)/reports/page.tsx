@@ -142,7 +142,7 @@ export default async function ReportsPage({
         })
 
         // Map to remove removedAt from the final projectUsers array (for compatibility)
-        projectUsers = sortedUsers.map(({ removedAt: _removedAt, ...user }) => ({ id: user.id, name: user.name, email: user.email }))
+        projectUsers = sortedUsers.map(user => ({ id: user.id, name: user.name, email: user.email }))
 
         // If userId param is present, verify it belongs to the visible scope
         // Note: "all" is handled separately for export, but we still show a single user's report on screen
