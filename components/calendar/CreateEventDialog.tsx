@@ -290,7 +290,7 @@ export function CreateEventDialog({
                 ? new Date(endDate).toISOString()
                 : new Date(`${endDate}T${endTime}`).toISOString()
 
-            const url = mode === 'edit' ? `/api/events/${event.id}` : "/api/events"
+            const url = mode === 'edit' ? `/api/events/${event?.id}` : "/api/events"
             const method = mode === 'edit' ? "PATCH" : "POST"
 
             const res = await fetch(url, {
