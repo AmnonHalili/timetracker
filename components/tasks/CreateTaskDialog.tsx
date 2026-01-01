@@ -31,6 +31,8 @@ interface CreateTaskDialogProps {
         description: string | null
         status: string
         assignees: Array<{ id: string; name: string | null; email: string | null; managerId?: string | null; role?: string }>
+        checklist: Array<{ id: string; text: string; isDone: boolean }>
+        subtasks?: Array<{ id: string; title: string; isDone: boolean }>
         createdAt: Date
         updatedAt: Date
     }) => void

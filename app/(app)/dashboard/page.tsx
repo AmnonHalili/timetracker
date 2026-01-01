@@ -54,6 +54,7 @@ export default async function DashboardPage() {
 
             createdAt: true,
             projectId: true, // Required for team status logic
+            managerId: true, // Required for hierarchy logic
             pendingProjectId: true, // Required for pending banner
             timeEntries: {
                 select: {
@@ -165,47 +166,76 @@ export default async function DashboardPage() {
 
     // Fetch team status for all project members
     if (user.projectId) {
-        const projectUsers = await prisma.user.findMany({
-            where: {
-                projectId: user.projectId,
-                status: "ACTIVE",
-                NOT: { id: user.id } // Exclude self from team view
-            },
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                role: true,
-                jobTitle: true,
-                timeEntries: {
-                    where: { endTime: null },
-                    select: {
-                        id: true,
-                        userId: true,
-                        startTime: true,
-                        endTime: true,
-                        description: true,
-                        isManual: true,
-                        createdAt: true,
-                        updatedAt: true,
-                        subtaskId: true,
-                        // location fields deprecated/moved to Workday
-                        breaks: {
-                            where: { endTime: null },
-                            select: {
-                                id: true,
-                                timeEntryId: true,
-                                startTime: true,
-                                endTime: true,
-                                reason: true,
-                                locationLat: true,
-                                locationLng: true,
-                            }
+        // Common selection for status display
+        const userSelect = {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            jobTitle: true,
+            timeEntries: {
+                where: { endTime: null },
+                select: {
+                    id: true,
+                    userId: true,
+                    startTime: true,
+                    endTime: true,
+                    description: true,
+                    isManual: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    subtaskId: true,
+                    breaks: {
+                        where: { endTime: null },
+                        select: {
+                            id: true,
+                            timeEntryId: true,
+                            startTime: true,
+                            endTime: true,
+                            reason: true,
+                            locationLat: true,
+                            locationLng: true,
                         }
                     }
                 }
             }
-        })
+        }
+
+        // Parallel fetch for Manager, Reports, and Peers
+        const [manager, directReports, peers] = await Promise.all([
+            // Fetch Manager
+            user.managerId ? prisma.user.findUnique({
+                where: { id: user.managerId },
+                select: userSelect
+            }) : Promise.resolve(null),
+
+            // Fetch Direct Reports (Children)
+            prisma.user.findMany({
+                where: {
+                    managerId: user.id,
+                    status: "ACTIVE"
+                },
+                select: userSelect
+            }),
+
+            // Fetch Peers (Same Manager) - Only if user has a manager
+            user.managerId ? prisma.user.findMany({
+                where: {
+                    managerId: user.managerId,
+                    status: "ACTIVE",
+                    projectId: user.projectId,
+                    NOT: { id: user.id } // Exclude self
+                },
+                select: userSelect
+            }) : Promise.resolve([])
+        ])
+
+        // Combine to projectUsers
+        const projectUsers = [
+            ...(manager ? [manager] : []),
+            ...directReports,
+            ...peers
+        ]
 
         type ProjectUser = {
             id: string
