@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { ReportTable } from "@/components/reports/ReportTable"
+import { AllUsersReportTable } from "@/components/reports/AllUsersReportTable"
 import { getReportData } from "@/lib/report-service"
 import { filterVisibleUsers } from "@/lib/hierarchy-utils"
 import { ReportsPageHeader } from "@/components/reports/ReportsPageHeader"
@@ -35,13 +36,23 @@ export default async function ReportsPage({
 
     // If Admin or Manager, fetch project users and handle targetUserId
     if (["ADMIN", "MANAGER"].includes(currentUser.role) && currentUser.projectId) {
-        // Fetch all active users in the project (needed for hierarchy calculation)
+        const today = new Date()
+        const currentMonth = searchParams.month ? parseInt(searchParams.month) : today.getMonth()
+        const currentYear = searchParams.year ? parseInt(searchParams.year) : today.getFullYear()
+        const reportPeriodEnd = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59) // Last moment of the selected month
+
+        // Fetch all active users in the project, including removed users if removedAt is after the report period end
+        // This allows showing historical data for users who were removed
         const allProjectUsers = await prisma.user.findMany({
             where: {
                 projectId: currentUser.projectId,
-                status: "ACTIVE"
+                status: "ACTIVE",
+                OR: [
+                    { removedAt: null }, // Active users
+                    { removedAt: { gt: reportPeriodEnd } } // Users removed after the report period
+                ]
             },
-            select: { id: true, name: true, email: true, managerId: true, role: true },
+            select: { id: true, name: true, email: true, managerId: true, role: true, removedAt: true },
             orderBy: { name: "asc" }
         })
 
@@ -66,7 +77,14 @@ export default async function ReportsPage({
         )
 
         // Filter based on hierarchy + secondary manager relationships
-        const visibleUsers = filterVisibleUsers(allProjectUsers, { id: currentUser.id, role: currentUser.role }, secondaryRelations)
+        // Note: For removed users, we need to reconstruct their hierarchy at the time they were active
+        // For simplicity, we'll use current hierarchy structure but filter removed users appropriately
+        const visibleUsers = filterVisibleUsers(
+            allProjectUsers.map(u => ({ ...u, removedAt: undefined })), // Remove removedAt for filterVisibleUsers
+            { id: currentUser.id, role: currentUser.role }, 
+            secondaryRelations
+        ).map(userId => allProjectUsers.find(u => u.id === userId)!)
+            .filter(Boolean)
 
         // Sort by hierarchy: admins first, then managers, then employees
         // Within same role, sort by hierarchy level (0 = top level)
@@ -108,7 +126,8 @@ export default async function ReportsPage({
             return (a.name || '').localeCompare(b.name || '')
         })
 
-        projectUsers = sortedUsers
+        // Map to remove removedAt from the final projectUsers array (for compatibility)
+        projectUsers = sortedUsers.map(({ removedAt, ...user }) => ({ id: user.id, name: user.name, email: user.email }))
 
         // If userId param is present, verify it belongs to the visible scope
         // Note: "all" is handled separately for export, but we still show a single user's report on screen
@@ -123,7 +142,62 @@ export default async function ReportsPage({
     const today = new Date()
     const currentMonth = searchParams.month ? parseInt(searchParams.month) : today.getMonth()
     const currentYear = searchParams.year ? parseInt(searchParams.year) : today.getFullYear()
+    const isAllUsersSelected = searchParams.userId === "all" && ["ADMIN", "MANAGER"].includes(currentUser.role)
 
+    // Calculate the end date of the selected period
+    const reportPeriodEnd = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59) // Last moment of the selected month
+
+    // Handle "all users" view
+    if (isAllUsersSelected && projectUsers.length > 0) {
+        // Fetch report data for all visible users
+        const allUsersData = await Promise.all(
+            projectUsers.map(async (user) => {
+                const userData = await getReportData(user.id, currentYear, currentMonth)
+                if (!userData) return null
+                return {
+                    userId: user.id,
+                    userName: user.name,
+                    userEmail: user.email,
+                    days: userData.report.days,
+                    totalMonthlyHours: userData.report.totalMonthlyHours,
+                    totalTargetHours: userData.report.totalTargetHours,
+                }
+            })
+        )
+
+        // Filter out null values (users without data)
+        const validUsersData = allUsersData.filter((data): data is NonNullable<typeof data> => data !== null)
+
+        return (
+            <div className="container mx-auto p-4 md:p-8 space-y-8">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <ReportsPageHeader />
+                    <ReportsControls
+                        projectUsers={projectUsers}
+                        targetUserId={targetUserId}
+                        loggedInUserId={session.user.id}
+                        currentYear={currentYear}
+                        currentMonth={currentMonth}
+                    />
+                </div>
+
+                <AIInsightsNotification />
+
+                {validUsersData.length === 0 ? (
+                    <div className="text-center py-12 bg-muted/20 rounded-lg border border-dashed">
+                        <p className="text-muted-foreground">No reports available for this period yet.</p>
+                    </div>
+                ) : (
+                    <AllUsersReportTable 
+                        usersData={validUsersData} 
+                        showWarnings={currentUser.role === "ADMIN"} 
+                    />
+                )}
+            </div>
+        )
+    }
+
+    // Single user view (existing logic)
     const data = await getReportData(targetUserId, currentYear, currentMonth)
 
     if (!data) return <div>User not found</div>

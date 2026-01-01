@@ -22,6 +22,7 @@ model User {
   workMode               WorkMode             @default(TIME_BASED)
   createdAt              DateTime             @default(now())
   updatedAt              DateTime             @updatedAt
+  removedAt              DateTime?            // When user was removed from project
   image                  String?
   resetToken             String?
   resetTokenExpiry       DateTime?

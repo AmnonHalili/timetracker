@@ -139,13 +139,15 @@ export async function DELETE(req: Request) {
         }
 
         // Remove user from team instead of deleting
-        // Set projectId to null, clear manager relationships, but keep the user account active
+        // Set removedAt to current time, clear manager relationships, but keep projectId for history
+        // Keep the user account active so they can still log in
         await prisma.user.update({
             where: { id: userId },
             data: {
-                projectId: null,
+                removedAt: new Date(),
                 managerId: null,
                 sharedChiefGroupId: null,
+                // Keep projectId so we can show historical reports
                 // Keep status as ACTIVE so they can still log in
                 // They will see the "join or create team" screen
             }
