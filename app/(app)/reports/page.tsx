@@ -51,13 +51,13 @@ export default async function ReportsPage({
                     projectId: currentUser.projectId,
                     status: "ACTIVE",
                     OR: [
-                        { removedAt: null }, // Active users
-                        { removedAt: { gt: reportPeriodEnd } } // Users removed after the report period
+                        { removedAt: null } as any, // Active users
+                        { removedAt: { gt: reportPeriodEnd } } as any // Users removed after the report period
                     ]
                 },
-                select: { id: true, name: true, email: true, managerId: true, role: true, removedAt: true },
-                orderBy: { name: "asc" }
-            })
+                select: { id: true, name: true, email: true, managerId: true, role: true, removedAt: true } as never,
+                orderBy: { name: "asc" } as never
+            }) as unknown as Array<{ id: string; name: string | null; email: string; managerId: string | null; role: string; removedAt: Date | null }>
         } catch {
             // Fallback: if removedAt field doesn't exist yet (migration not run), fetch all active users
             const users = await prisma.user.findMany({
@@ -98,8 +98,8 @@ export default async function ReportsPage({
             allProjectUsers.map(u => ({ ...u, removedAt: undefined })), // Remove removedAt for filterVisibleUsers
             { id: currentUser.id, role: currentUser.role },
             secondaryRelations
-        ).map(userId => allProjectUsers.find(u => u.id === userId)!)
-            .filter(Boolean)
+        ).map(vUser => allProjectUsers.find(u => u.id === vUser.id)!)
+            .filter(Boolean) as Array<{ id: string; name: string | null; email: string; managerId: string | null; role: string; removedAt: Date | null }>
 
         // Sort by hierarchy: admins first, then managers, then employees
         // Within same role, sort by hierarchy level (0 = top level)
