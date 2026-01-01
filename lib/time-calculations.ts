@@ -54,7 +54,7 @@ export function calculateBalance(
     })
 
     // Calculate hours from workdays
-    workdaysByDay.forEach((dayWorkdays, _dayKey) => {
+    workdaysByDay.forEach((dayWorkdays) => {
         // Prefer active workday (workdayEndTime is null) over completed ones
         const activeWorkday = dayWorkdays.find(w => !w.workdayEndTime)
         const dayWorkday = activeWorkday || dayWorkdays[0] // Use first if no active one (should be sorted desc)
