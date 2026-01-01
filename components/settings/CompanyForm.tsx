@@ -23,10 +23,6 @@ export function CompanyForm({ initialName, initialWorkMode = 'TIME_BASED', proje
     const { t, dir } = useLanguage()
     const [isLoading, setIsLoading] = useState(false)
     const [name, setName] = useState(initialName)
-    // Filter out PROJECT_BASED since it's deprecated, default to TIME_BASED
-    const [workMode, setWorkMode] = useState<'OUTPUT_BASED' | 'TIME_BASED'>(
-        initialWorkMode === 'PROJECT_BASED' ? 'TIME_BASED' : initialWorkMode
-    )
 
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -36,7 +32,7 @@ export function CompanyForm({ initialName, initialWorkMode = 'TIME_BASED', proje
             const res = await fetch(`/api/projects/${projectId}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, workMode }),
+                body: JSON.stringify({ name }),
             })
 
             if (!res.ok) throw new Error("Failed to update workspace settings")
@@ -91,31 +87,6 @@ export function CompanyForm({ initialName, initialWorkMode = 'TIME_BASED', proje
                         <p className="text-xs text-muted-foreground">
                             {t('workspace.teamCodeDescription')}
                         </p>
-                    </div>
-
-                    <div className="space-y-4">
-                        <Label>{t('workspace.workCalculationMode')}</Label>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div
-                                className={`p-4 rounded-lg border-2 transition-all cursor-pointer hover:border-muted-foreground/50 ${workMode === 'TIME_BASED' ? 'border-primary bg-primary/5' : 'border-muted'}`}
-                                onClick={() => !isLoading && setWorkMode('TIME_BASED')}
-                            >
-                                <div className="font-semibold mb-1">{t('workspace.timeBased')}</div>
-                                <div className="text-sm text-muted-foreground">
-                                    {t('workspace.timeBasedDescription')}
-                                </div>
-                            </div>
-
-                            <div
-                                className={`p-4 rounded-lg border-2 transition-all cursor-pointer hover:border-muted-foreground/50 ${workMode === 'OUTPUT_BASED' ? 'border-primary bg-primary/5' : 'border-muted'}`}
-                                onClick={() => !isLoading && setWorkMode('OUTPUT_BASED')}
-                            >
-                                <div className="font-semibold mb-1">{t('workspace.outputBased')}</div>
-                                <div className="text-sm text-muted-foreground">
-                                    {t('workspace.outputBasedDescription')}
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </CardContent>
                 <CardFooter className="border-t px-6 py-4">

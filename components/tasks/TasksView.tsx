@@ -336,10 +336,11 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
     const getFilterLabel = (type: string, value: string) => {
         if (type === 'status') {
             const labels: Record<string, string> = {
-                'TODO': 'Open',
-                'IN_PROGRESS': 'In Progress',
-                'DONE': 'Completed',
-                'OVERDUE': 'Overdue'
+                'TODO': t('tasks.statusTodo'),
+                'IN_PROGRESS': t('tasks.statusInProgress'),
+                'DONE': t('tasks.statusDone'),
+                'OVERDUE': t('tasks.statusOverdue'),
+                'BLOCKED': t('tasks.statusBlocked')
             }
             return labels[value] || value
         }
@@ -1046,7 +1047,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                             <div className="flex items-center gap-1">
                                                                 <Plus className="h-3 w-3 text-muted-foreground/60" />
                                                                 <Input
-                                                                    placeholder="Add subtask..."
+                                                                    placeholder={t('tasks.addSubtaskPlaceholder')}
                                                                     value={newSubtaskTitle[task.id] || ""}
                                                                     onChange={(e) => setNewSubtaskTitle(prev => ({ ...prev, [task.id]: e.target.value }))}
                                                                     onKeyDown={(e) => {
@@ -1128,7 +1129,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                 h-8 w-full max-w-[140px] mx-auto flex items-center justify-center gap-1.5 text-xs font-semibold shadow-sm p-2 rounded-md border
                                                 ${getPriorityColor(task.priority)}
                                             `}>
-                                                <span className="capitalize">{task.priority.toLowerCase()}</span>
+                                                <span>{task.priority === 'HIGH' ? t('tasks.priorityHigh') : task.priority === 'MEDIUM' ? t('tasks.priorityMedium') : t('tasks.priorityLow')}</span>
                                             </div>
                                         </td>
 
@@ -1188,13 +1189,13 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                 {isPast(new Date(task.deadline || '')) && !isToday(new Date(task.deadline || '')) && task.status !== 'DONE' && <AlertCircle className="h-3.5 w-3.5" />}
 
                                                 <span className="truncate">
-                                                    {task.status === 'DONE' ? 'Done' :
-                                                        isPast(new Date(task.deadline || '')) && !isToday(new Date(task.deadline || '')) && task.status !== 'DONE' ? 'Overdue' :
+                                                    {task.status === 'DONE' ? t('tasks.statusDone') :
+                                                        isPast(new Date(task.deadline || '')) && !isToday(new Date(task.deadline || '')) && task.status !== 'DONE' ? t('tasks.statusOverdue') :
                                                             (tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0 && !stoppedTimers.has(task.id))
                                                                 ? (tasksWithActiveTimers[task.id].length > 1
                                                                     ? `${tasksWithActiveTimers[task.id].length} users on it`
                                                                     : `${tasksWithActiveTimers[task.id][0].name?.split(' ')[0] || 'User'} is on it`)
-                                                                : 'TO DO'
+                                                                : t('tasks.statusTodo')
                                                     }
                                                 </span>
                                             </div>
@@ -1422,10 +1423,10 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                             <label className="text-sm font-medium mb-2 block">Status</label>
                             <div className="space-y-2">
                                 {[
-                                    { value: 'TODO', label: 'Open' },
-                                    { value: 'IN_PROGRESS', label: 'In Progress' },
-                                    { value: 'DONE', label: 'Completed' },
-                                    { value: 'OVERDUE', label: 'Overdue' }
+                                    { value: 'TODO', label: t('tasks.statusTodo') },
+                                    { value: 'IN_PROGRESS', label: t('tasks.statusInProgress') },
+                                    { value: 'DONE', label: t('tasks.statusDone') },
+                                    { value: 'OVERDUE', label: t('tasks.statusOverdue') }
                                 ].map(status => (
                                     <div key={status.value} className="flex items-center space-x-2">
                                         <Checkbox

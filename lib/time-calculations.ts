@@ -1,4 +1,4 @@
-import { TimeEntry, User, WorkMode } from "@prisma/client"
+import { TimeEntry, User, WorkMode, Workday } from "@prisma/client"
 import { eachDayOfInterval, isSameDay, startOfDay, startOfMonth } from "date-fns"
 
 export type BalanceResult = {
@@ -21,9 +21,10 @@ type UserWithEntries = User & {
 
 export function calculateBalance(
     user: UserWithEntries,
-    referenceDate: Date = new Date()
+    referenceDate: Date = new Date(),
+    workdays: Pick<Workday, 'workdayStartTime' | 'workdayEndTime'>[] = []
 ): BalanceResult {
-    const { dailyTarget, workDays, timeEntries } = user
+    const { dailyTarget, workDays } = user
     // Prefer Project setting, fall back to User setting (legacy), default to TIME_BASED
     const workMode = user.project?.workMode || user.workMode || 'TIME_BASED'
 
@@ -33,41 +34,46 @@ export function calculateBalance(
     // 1. Determine Timeframe: Start of current Month -> Reference Date (Today)
     const monthStart = startOfMonth(referenceDate)
 
-    // 2. Calculate Actual Hours (Work performed in this month)
+    // 2. Calculate Actual Hours (Work performed in this month) - Based on workdays (Start Day / End Day)
     let totalWorkedHours = 0
     let todayWorked = 0
 
-    timeEntries.forEach((entry) => {
-        const start = new Date(entry.startTime)
-        // Only count entries that STARTED in this month (or overlap? usually safe to assume start date determines month attribution)
-        // Strict consistency: Include any time worked *during* this month.
-        // Simplification: Filter by start time >= monthStart.
-        if (start < monthStart) return
-
-        const end = entry.endTime ? new Date(entry.endTime) : referenceDate
-
-        if (end < start) return
-
-        let durationMs = end.getTime() - start.getTime()
-
-        // If OUTPUT_BASED (Net Work), subtract valid breaks
-        if (workMode === 'OUTPUT_BASED' && entry.breaks && entry.breaks.length > 0) {
-            entry.breaks.forEach(brk => {
-                const breakStart = new Date(brk.startTime)
-                const breakEnd = brk.endTime ? new Date(brk.endTime) : referenceDate
-
-                if (breakEnd > breakStart) {
-                    durationMs -= (breakEnd.getTime() - breakStart.getTime())
-                }
-            })
+    // Group workdays by day to handle multiple workdays per day (prefer active ones)
+    const workdaysByDay = new Map<string, Pick<Workday, 'workdayStartTime' | 'workdayEndTime'>[]>()
+    
+    workdays.forEach((workday) => {
+        const workdayStart = new Date(workday.workdayStartTime)
+        // Only count workdays that started in this month
+        if (workdayStart < monthStart) return
+        
+        const dayKey = startOfDay(workdayStart).toISOString()
+        if (!workdaysByDay.has(dayKey)) {
+            workdaysByDay.set(dayKey, [])
         }
+        workdaysByDay.get(dayKey)!.push(workday)
+    })
 
-        const durationHours = Math.max(0, durationMs) / (1000 * 60 * 60)
-
-        totalWorkedHours += durationHours
-
-        if (isSameDay(start, referenceDate)) {
-            todayWorked += durationHours
+    // Calculate hours from workdays
+    workdaysByDay.forEach((dayWorkdays, dayKey) => {
+        // Prefer active workday (workdayEndTime is null) over completed ones
+        const activeWorkday = dayWorkdays.find(w => !w.workdayEndTime)
+        const dayWorkday = activeWorkday || dayWorkdays[0] // Use first if no active one (should be sorted desc)
+        
+        const workdayStartTime = new Date(dayWorkday.workdayStartTime)
+        const workdayEndTime = dayWorkday.workdayEndTime ? new Date(dayWorkday.workdayEndTime) : null
+        
+        // Calculate duration from workday (Start Day to End Day, or current time if active)
+        if (workdayStartTime) {
+            const endTime = workdayEndTime || (isSameDay(workdayStartTime, referenceDate) ? referenceDate : null)
+            
+            if (endTime) {
+                const durationHours = (endTime.getTime() - workdayStartTime.getTime()) / (1000 * 60 * 60)
+                totalWorkedHours += Math.max(0, durationHours)
+                
+                if (isSameDay(workdayStartTime, referenceDate)) {
+                    todayWorked += Math.max(0, durationHours)
+                }
+            }
         }
     })
 

@@ -10,7 +10,7 @@ import { LiveTeamStatusWidget } from "@/components/dashboard/LiveTeamStatusWidge
 import { TimePunchHeader } from "@/components/dashboard/TimePunchHeader"
 
 import { User, TimeEntry, Task, TimeBreak, Workday } from "@prisma/client"
-import { startOfDay, endOfDay } from "date-fns"
+import { startOfDay, endOfDay, startOfMonth } from "date-fns"
 
 type DashboardUser = User & {
     timeEntries: (TimeEntry & {
@@ -85,10 +85,13 @@ export default async function DashboardPage() {
         },
     })) as unknown as DashboardUser
 
-    // Fetch workdays separately to avoid Prisma client issues until migration is run
+    // Fetch workdays for the current month for balance calculation
+    const monthStart = startOfMonth(today)
+    let monthlyWorkdays: Pick<Workday, 'workdayStartTime' | 'workdayEndTime'>[] = []
     let activeWorkday = null
+    
     try {
-        const workdays = await prisma.workday.findMany({
+        const todayWorkdays = await prisma.workday.findMany({
             where: {
                 userId: session.user.id,
                 workdayStartTime: {
@@ -106,7 +109,25 @@ export default async function DashboardPage() {
             },
             take: 1,
         })
-        activeWorkday = workdays.find(w => !w.workdayEndTime) || null
+        activeWorkday = todayWorkdays.find(w => !w.workdayEndTime) || null
+
+        // Fetch all workdays for the current month
+        monthlyWorkdays = await prisma.workday.findMany({
+            where: {
+                userId: session.user.id,
+                workdayStartTime: {
+                    gte: monthStart,
+                    lte: today,
+                },
+            },
+            select: {
+                workdayStartTime: true,
+                workdayEndTime: true,
+            },
+            orderBy: {
+                workdayStartTime: 'desc',
+            },
+        })
     } catch (error) {
         // If Workday model doesn't exist yet, workday will be null
         console.warn("Workday model not available yet:", error)
@@ -128,7 +149,8 @@ export default async function DashboardPage() {
 
 
     // Use accumulated deficit for remaining hours (per user definition)
-    const stats = calculateBalance(user)
+    // Calculate based on workdays (Start Day / End Day) instead of time entries
+    const stats = calculateBalance(user, today, monthlyWorkdays)
     const remainingHours = stats.accumulatedDeficit
 
     // Fetch available tasks for the user with subtasks

@@ -28,6 +28,10 @@ export const metadata: Metadata = {
   description: "Simple time tracking and task management for small projects, growing teams, and large companies. One platform that scales with your business.",
   metadataBase: new URL('https://collabo-web.com'),
   manifest: "/manifest.json",
+  themeColor: "#ffffff",
+  appleWebApp: {
+    statusBarStyle: "default",
+  },
   icons: {
     icon: [
       { url: "/collabologocut.png", media: "(prefers-color-scheme: light)", type: "image/png", sizes: "32x32" },
