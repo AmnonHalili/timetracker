@@ -51,8 +51,8 @@ export default async function ReportsPage({
                     projectId: currentUser.projectId,
                     status: "ACTIVE",
                     OR: [
-                        { removedAt: null } as any, // Active users
-                        { removedAt: { gt: reportPeriodEnd } } as any // Users removed after the report period
+                        { removedAt: null } as never, // Active users
+                        { removedAt: { gt: reportPeriodEnd } } as never // Users removed after the report period
                     ]
                 },
                 select: { id: true, name: true, email: true, managerId: true, role: true, removedAt: true } as never,
