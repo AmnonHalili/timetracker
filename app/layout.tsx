@@ -24,8 +24,8 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Collabo | Teamtracker",
-  description: "The simplest time tracker and task manager for small businesses and freelancers. Track hours, manage projects, and collaborate without the complexity. Start for free.",
+  title: "Collabo | Time Tracking & Task Management for Teams & Companies",
+  description: "Simple time tracking and task management for small projects, growing teams, and large companies. One platform that scales with your business.",
   metadataBase: new URL('https://collabo-web.com'),
   manifest: "/manifest.json",
   icons: {
@@ -47,6 +47,28 @@ export const metadata: Metadata = {
         url: "/collabospecialnoback.png",
       },
     ],
+  },
+  openGraph: {
+    title: "Collabo | Time Tracking & Task Management for Teams & Companies",
+    description: "Simple time tracking and task management for small projects, growing teams, and large companies. One platform that scales with your business.",
+    url: "https://collabo-web.com",
+    siteName: "Collabo",
+    images: [
+      {
+        url: "/collabologo.png",
+        width: 1200,
+        height: 630,
+        alt: "Collabo Logo",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Collabo | Time Tracking & Task Management for Teams & Companies",
+    description: "Simple time tracking and task management for small projects, growing teams, and large companies. One platform that scales with your business.",
+    images: ["/collabologo.png"],
   },
   verification: {
     google: "pD0VM3NjqBMRzZegnSIGRHan7ruRQ0SzdQfrzRgSjmU",
