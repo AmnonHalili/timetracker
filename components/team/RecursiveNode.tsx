@@ -174,7 +174,7 @@ export function RecursiveNode({ node, allUsers, onAddClick, depth = 0, hideConne
                             )}
 
                             {/* Vertical connection to child */}
-                            <div className="h-8 w-[2px] bg-slate-300 dark:bg-slate-600" />
+                            <div className="h-8 w-[1px] bg-slate-300 dark:bg-slate-600" />
 
                             <RecursiveNode
                                 key={child.id}

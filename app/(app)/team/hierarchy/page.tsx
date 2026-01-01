@@ -5,7 +5,7 @@ import { RecursiveNode } from "@/components/team/RecursiveNode"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { AddChildDialog } from "@/components/team/AddChildDialog"
 import { User } from "@prisma/client"
-import { Loader2, Pencil, ZoomIn, ZoomOut, Network, ArrowRight, Crosshair } from "lucide-react"
+import { Loader2, Pencil, ZoomIn, ZoomOut, Network, ArrowRight, Crosshair, Eye } from "lucide-react"
 import { toast } from "sonner"
 import { useSession } from "next-auth/react"
 import { useLanguage } from "@/lib/useLanguage"
@@ -161,19 +161,52 @@ export default function HierarchyPage() {
         fitToScreen()
     }
 
-    // Handle mouse wheel for zoom
+    // Handle mouse wheel for zoom with mouse point focus
     const handleWheel = (e: React.WheelEvent) => {
         // Prevent default scrolling
         e.preventDefault()
 
+        // Get the container element
+        const container = document.querySelector('[data-hierarchy-container]') as HTMLElement
+        if (!container) return
+
+        const parentContainer = container.parentElement
+        if (!parentContainer) return
+
+        // Get parent container's bounding rect (the viewport)
+        const parentRect = parentContainer.getBoundingClientRect()
+
+        // Get mouse position in viewport coordinates (relative to parent)
+        const mouseX = e.clientX - parentRect.left
+        const mouseY = e.clientY - parentRect.top
+
+        // Get container's current bounding rect (after current transform)
+        const containerRect = container.getBoundingClientRect()
+
+        // Calculate the point in the container's unscaled local coordinate space
+        // With transform-origin '0 0', the transform is simpler:
+        // screenX = panX + localX * zoom
+        // So: localX = (screenX - panX) / zoom
+        
+        const localX = (mouseX - panPosition.x) / zoomLevel
+        const localY = (mouseY - panPosition.y) / zoomLevel
+
         // Zoom based on wheel direction
-        // deltaY > 0 means scrolling down (zoom out), deltaY < 0 means scrolling up (zoom in)
         const delta = e.deltaY > 0 ? -zoomStep : zoomStep
-        setZoomLevel(prev => {
-            const newZoom = prev + delta
-            // Clamp between baseZoom and maxZoom
-            return Math.max(baseZoom, Math.min(newZoom, maxZoom))
-        })
+        const oldZoom = zoomLevel
+        const newZoom = Math.max(baseZoom, Math.min(zoomLevel + delta, maxZoom))
+
+        // If zoom didn't change, don't update
+        if (oldZoom === newZoom) return
+
+        // Calculate new pan to keep the same point under the mouse
+        // mouseX = newPanX + localX * newZoom
+        // newPanX = mouseX - localX * newZoom
+        const newPanX = mouseX - localX * newZoom
+        const newPanY = mouseY - localY * newZoom
+
+        setZoomLevel(newZoom)
+        setPanPosition({ x: newPanX, y: newPanY })
     }
 
     // Handle mouse down for dragging
@@ -497,7 +530,7 @@ export default function HierarchyPage() {
                                 onClick={handleZoomReset}
                                 className="bg-background/50 backdrop-blur-sm gap-2 h-8 px-2"
                             >
-                                <Network className="h-4 w-4" />
+                                <Eye className="h-4 w-4" />
                                 <span className="hidden sm:inline">{t('hierarchy.overview')}</span>
                             </Button>
                             <Button
@@ -582,7 +615,7 @@ export default function HierarchyPage() {
                     width: 'fit-content',
                     minWidth: '100%',
                     transform: `translate(${panPosition.x}px, ${panPosition.y}px) scale(${zoomLevel})`,
-                    transformOrigin: 'top center',
+                    transformOrigin: '0 0',
                     cursor: isDragging ? 'grabbing' : 'grab',
                     userSelect: 'none',
                     opacity: isInitialized ? 1 : 0,
@@ -740,7 +773,7 @@ export default function HierarchyPage() {
                                             </div>
 
                                             {/* Vertical line up to the Project Bus (from center of group) */}
-                                            <div className="h-8 w-[2px] bg-slate-300 dark:bg-slate-600 absolute -top-8 left-1/2 -translate-x-1/2" />
+                                            <div className="h-8 w-[1px] bg-slate-300 dark:bg-slate-600 absolute -top-8 left-1/2 -translate-x-1/2" />
 
                                             {/* Horizontal connector to siblings */}
                                             {groupIndex < grouped.length - 1 && (
@@ -828,7 +861,7 @@ export default function HierarchyPage() {
                                                 )}
 
                                                 {/* Vertical line up to the Project Bus */}
-                                                <div className="h-8 w-[2px] bg-slate-300 dark:bg-slate-600 absolute -top-8" />
+                                                <div className="h-8 w-[1px] bg-slate-300 dark:bg-slate-600 absolute -top-8" />
                                                 <RecursiveNode
                                                     node={rootNode}
                                                     allUsers={users}
