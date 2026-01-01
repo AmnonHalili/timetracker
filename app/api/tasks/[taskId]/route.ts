@@ -44,7 +44,7 @@ export async function PATCH(
 
     try {
         const body = await req.json()
-        const { title, description, status, isCompleted, priority, deadline, assignedToIds } = body
+        const { title, description, status, isCompleted, priority, startDate, deadline, assignedToIds } = body
 
         // If status/isCompleted update logic needs to be preserved:
         let newStatus = status
@@ -101,6 +101,7 @@ export async function PATCH(
         if (newStatus !== undefined) updateData.status = newStatus
         if (isCompleted !== undefined) updateData.isCompleted = newStatus === "DONE"
         if (priority !== undefined) updateData.priority = priority
+        if (startDate !== undefined) updateData.startDate = startDate ? new Date(startDate) : null
         if (deadline !== undefined) updateData.deadline = deadline ? new Date(deadline) : null
 
         // Handle assignee updates if provided

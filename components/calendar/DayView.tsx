@@ -31,6 +31,7 @@ interface DayViewProps {
     tasks: Array<{
         id: string
         title: string
+        startDate?: Date | string | null
         deadline: Date | string | null
         priority: string
         status: string
@@ -57,25 +58,103 @@ export function DayView({ date, events, tasks, projectId, onOptimisticEventCreat
     const hours = eachHourOfInterval({ start: dayStart, end: dayEnd })
 
     // Process tasks into event-like objects
+    // Task appears on day if: (has startDate and deadline: day is between them) OR (only deadline: day is deadline) OR (only startDate: day >= startDate)
     const taskEvents = tasks
-        .filter(t => t.deadline && isSameDay(new Date(t.deadline), date) && t.status !== 'DONE')
+        .filter(t => {
+            if (t.status === 'DONE') return false
+            const taskStartDate = (t as any).startDate ? new Date((t as any).startDate) : null
+            const taskDeadline = t.deadline ? new Date(t.deadline) : null
+            
+            // Normalize dates to start of day for comparison (ignore time component)
+            const dayStart = new Date(date)
+            dayStart.setHours(0, 0, 0, 0)
+            
+            // Task is active on this day if:
+            // 1. Has startDate and deadline: day is between startDate and deadline (date only, ignore time)
+            // 2. Has only deadline: day is deadline (date only)
+            // 3. Has only startDate: day >= startDate (date only)
+            if (taskStartDate && taskDeadline) {
+                const startDateOnly = new Date(taskStartDate)
+                startDateOnly.setHours(0, 0, 0, 0)
+                const deadlineOnly = new Date(taskDeadline)
+                deadlineOnly.setHours(0, 0, 0, 0)
+                return dayStart >= startDateOnly && dayStart <= deadlineOnly
+            } else if (taskDeadline) {
+                return isSameDay(taskDeadline, date)
+            } else if (taskStartDate) {
+                const startDateOnly = new Date(taskStartDate)
+                startDateOnly.setHours(0, 0, 0, 0)
+                return dayStart >= startDateOnly
+            }
+            return false
+        })
         .map(t => {
+            const taskStartDate = (t as any).startDate ? new Date((t as any).startDate) : null
+            const taskDeadline = t.deadline ? new Date(t.deadline) : null
+            
+            // If task has both startDate and deadline, show as a time range
+            if (taskStartDate && taskDeadline) {
+                // Check if times are at midnight (date-only)
+                const startIsMidnight = taskStartDate.getUTCHours() === 0 && taskStartDate.getUTCMinutes() === 0 && taskStartDate.getUTCSeconds() === 0
+                const deadlineIsMidnight = taskDeadline.getUTCHours() === 0 && taskDeadline.getUTCMinutes() === 0 && taskDeadline.getUTCSeconds() === 0
+                
+                return {
+                    id: t.id,
+                    title: t.title,
+                    description: t.description || `Status: ${t.status} | Priority: ${t.priority}`,
+                    startTime: taskStartDate,
+                    endTime: taskDeadline,
+                    allDay: startIsMidnight && deadlineIsMidnight, // All day only if both are midnight
+                    type: "TASK_TIME",
+                    location: null,
+                    createdBy: { name: "System", email: "" },
+                    participants: t.assignees.map(a => ({ user: a }))
+                }
+            } else if (taskDeadline) {
+                // Only deadline - show as a point in time
+                const deadline = new Date(taskDeadline)
+                const isUtcMidnight = deadline.getUTCHours() === 0 && deadline.getUTCMinutes() === 0 && deadline.getUTCSeconds() === 0
+                
+                return {
+                    id: t.id,
+                    title: t.title,
+                    description: t.description || `Status: ${t.status} | Priority: ${t.priority}`,
+                    startTime: deadline,
+                    endTime: new Date(deadline), // Same as startTime to show only deadline time
+                    allDay: isUtcMidnight,
+                    type: "TASK_TIME",
+                    location: null,
+                    createdBy: { name: "System", email: "" },
+                    participants: t.assignees.map(a => ({ user: a }))
+                }
+            } else if (taskStartDate) {
+                // Only startDate - show as starting point
+                const startDate = new Date(taskStartDate)
+                const isUtcMidnight = startDate.getUTCHours() === 0 && startDate.getUTCMinutes() === 0 && startDate.getUTCSeconds() === 0
+                
+                return {
+                    id: t.id,
+                    title: t.title,
+                    description: t.description || `Status: ${t.status} | Priority: ${t.priority}`,
+                    startTime: startDate,
+                    endTime: new Date(startDate), // Same as startTime
+                    allDay: isUtcMidnight,
+                    type: "TASK_TIME",
+                    location: null,
+                    createdBy: { name: "System", email: "" },
+                    participants: t.assignees.map(a => ({ user: a }))
+                }
+            }
+            
+            // Fallback (shouldn't happen due to filter above)
             const deadline = new Date(t.deadline!)
-            // Detect "Date Only" (stored as UTC Midnight)
-            // If the time is exactly 00:00:00.000Z, we treat it as All Day (User likely picked just a date)
-            const isUtcMidnight = deadline.getUTCHours() === 0 && deadline.getUTCMinutes() === 0 && deadline.getUTCSeconds() === 0
-
-            // For tasks with deadlines, show only the deadline time (not a duration)
-            // Set endTime equal to startTime so it appears as a point in time
-            const endTime = new Date(deadline)
-
             return {
                 id: t.id,
                 title: t.title,
                 description: t.description || `Status: ${t.status} | Priority: ${t.priority}`,
                 startTime: deadline,
-                endTime: endTime, // Same as startTime to show only deadline time
-                allDay: isUtcMidnight, // Use UTC check to catch date-only inputs
+                endTime: new Date(deadline),
+                allDay: true,
                 type: "TASK_TIME",
                 location: null,
                 createdBy: { name: "System", email: "" },

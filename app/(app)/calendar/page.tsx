@@ -37,14 +37,41 @@ export default async function CalendarPage({
         select: { role: true, projectId: true }
     })
 
-    const whereClause: {
-        deadline: { gte: Date; lte: Date };
-        assignees?: { some: { projectId: string } | { id: string } };
-    } = {
-        deadline: {
-            gte: monthStart,
-            lte: monthEnd
-        }
+    // Tasks are active in this month if:
+    // 1. deadline is in this month, OR
+    // 2. startDate is in this month, OR
+    // 3. startDate is before month and deadline is after month (task spans the month), OR
+    // 4. Only deadline exists and is in this month, OR
+    // 5. Only startDate exists and is in this month or before
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const whereClause: any = {
+        OR: [
+            // Deadline in this month
+            { deadline: { gte: monthStart, lte: monthEnd } },
+            // StartDate in this month
+            { startDate: { gte: monthStart, lte: monthEnd } },
+            // Task spans the month (startDate before, deadline after)
+            {
+                AND: [
+                    { startDate: { lte: monthEnd } },
+                    { deadline: { gte: monthStart } }
+                ]
+            },
+            // Only deadline (no startDate) in this month
+            {
+                AND: [
+                    { deadline: { gte: monthStart, lte: monthEnd } },
+                    { startDate: null }
+                ]
+            },
+            // Only startDate (no deadline) in this month or before
+            {
+                AND: [
+                    { startDate: { lte: monthEnd } },
+                    { deadline: null }
+                ]
+            }
+        ]
     }
 
     // If Admin and in a project, fetch all project tasks. Otherwise, just own tasks.
@@ -67,6 +94,7 @@ export default async function CalendarPage({
         select: {
             id: true,
             title: true,
+            startDate: true,
             deadline: true,
             priority: true,
             status: true,

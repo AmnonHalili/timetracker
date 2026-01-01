@@ -60,6 +60,7 @@ interface TasksViewProps {
         title: string;
         status: string;
         priority: string;
+        startDate?: Date | string | null;
         deadline: Date | string | null;
         description: string | null;
         assignees: Array<{ id: string; name: string | null }>;
@@ -151,29 +152,46 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
             }
         }
 
-        // Deadline filter
-        if (filters.deadline.length > 0 && task.deadline) {
-            const deadline = new Date(task.deadline)
+        // Deadline filter - now considers both startDate and deadline
+        if (filters.deadline.length > 0) {
             const today = new Date()
             today.setHours(0, 0, 0, 0)
             const weekEnd = endOfWeek(today, { weekStartsOn: 0 })
 
+            // Check if task is active today (between startDate and deadline, or just deadline if no startDate)
+            const taskStartDate = task.startDate ? new Date(task.startDate) : null
+            const taskDeadline = task.deadline ? new Date(task.deadline) : null
+            
+            // Task is active today if:
+            // 1. Has startDate and deadline: today is between startDate and deadline
+            // 2. Has only deadline: today is deadline
+            // 3. Has only startDate: today is >= startDate
+            const isActiveToday = 
+                (taskStartDate && taskDeadline && today >= taskStartDate && today <= taskDeadline) ||
+                (!taskStartDate && taskDeadline && isToday(taskDeadline)) ||
+                (taskStartDate && !taskDeadline && today >= taskStartDate)
+
             let matchesDeadline = false
-            if (filters.deadline.includes('today') && isToday(deadline)) {
+            if (filters.deadline.includes('today')) {
+                if (isActiveToday) {
+                    matchesDeadline = true
+                } else if (taskDeadline && isToday(taskDeadline)) {
+                    matchesDeadline = true
+                }
+            }
+            if (filters.deadline.includes('overdue') && taskDeadline && isPast(taskDeadline) && !isToday(taskDeadline)) {
                 matchesDeadline = true
             }
-            if (filters.deadline.includes('overdue') && isPast(deadline) && !isToday(deadline)) {
-                matchesDeadline = true
-            }
-            if (filters.deadline.includes('thisWeek') && isWithinInterval(deadline, { start: today, end: weekEnd })) {
-                matchesDeadline = true
+            if (filters.deadline.includes('thisWeek')) {
+                if (taskDeadline && isWithinInterval(taskDeadline, { start: today, end: weekEnd })) {
+                    matchesDeadline = true
+                } else if (taskStartDate && isWithinInterval(taskStartDate, { start: today, end: weekEnd })) {
+                    matchesDeadline = true
+                }
             }
             if (!matchesDeadline) {
                 return false
             }
-        } else if (filters.deadline.length > 0 && !task.deadline) {
-            // If filtering by deadline but task has no deadline, exclude it
-            return false
         }
 
         // Priority filter
@@ -948,22 +966,20 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                 <th className="h-10 px-4 text-center font-normal text-muted-foreground w-[140px] bg-muted/20">
                                     {t('tasks.priority') || 'Priority'}
                                 </th>
-                                {/* Deadline */}
+                                {/* Date */}
                                 <th className="h-10 px-4 text-center font-normal text-muted-foreground w-[150px] bg-muted/20">
-                                    {t('tasks.deadline') || 'Deadline'}
+                                    {t('tasks.date') || 'Date'}
                                 </th>
                                 {/* Status */}
-                                <th className="h-10 px-4 text-center font-normal text-muted-foreground w-[140px] bg-muted/20">
+                                <th className="h-10 px-4 text-center font-normal text-muted-foreground w-[140px] bg-muted/20 last:rounded-tr-lg">
                                     {t('tasks.status')}
                                 </th>
-                                {/* Actions */}
-                                <th className="h-10 px-4 w-[50px] bg-muted/20 last:rounded-tr-lg"></th>
                             </tr>
                         </thead>
                         {filteredTasks.length === 0 ? (
                             <tbody>
                                 <tr>
-                                    <td colSpan={6} className="p-8 text-center text-muted-foreground italic">
+                                    <td colSpan={5} className="p-8 text-center text-muted-foreground italic">
                                         No tasks found.
                                     </td>
                                 </tr>
@@ -984,9 +1000,22 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                 <div className="flex flex-col min-w-0 flex-1">
                                                     <span
                                                         className={`font-medium truncate cursor-pointer hover:underline hover:text-primary ${task.status === 'DONE' ? 'line-through text-muted-foreground' : ''}`}
-                                                        onClick={() => {
-                                                            setEditingTask(task)
-                                                            setIsEditDialogOpen(true)
+                                                        onClick={async () => {
+                                                            setSelectedTask(task)
+                                                            setIsDetailOpen(true)
+                                                            // Fetch time entries for this task
+                                                            try {
+                                                                const response = await fetch(`/api/tasks/${task.id}/time-entries`)
+                                                                if (response.ok) {
+                                                                    const data = await response.json()
+                                                                    setTaskTimeEntries(data || [])
+                                                                } else {
+                                                                    setTaskTimeEntries([])
+                                                                }
+                                                            } catch (error) {
+                                                                console.error('Failed to fetch time entries:', error)
+                                                                setTaskTimeEntries([])
+                                                            }
                                                         }}
                                                     >
                                                         {task.title}
@@ -1031,6 +1060,46 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                         )}
                                                     </div>
                                                 </div>
+
+                                                {/* Actions Menu - Same as subtasks */}
+                                                {(isAdmin || (currentUserId && task.assignees.some(a => a.id === currentUserId))) && (
+                                                    <div className="ml-auto opacity-0 group-hover:opacity-100">
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <button className="text-muted-foreground hover:text-primary p-1">
+                                                                    <MoreVertical className="h-4 w-4" />
+                                                                </button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                {tasksWithActiveTimers[task.id]?.some(u => u.id === currentUserId) && !stoppedTimers.has(task.id) ? (
+                                                                    <DropdownMenuItem onClick={() => handleStopWorking(task.id)}>
+                                                                        <Square className="h-4 w-4 mr-2" />
+                                                                        Stop Working
+                                                                    </DropdownMenuItem>
+                                                                ) : (
+                                                                    <DropdownMenuItem onClick={() => handleStartWorking(task.id)}>
+                                                                        <Play className="h-4 w-4 mr-2" />
+                                                                        {t('tasks.startWorking')}
+                                                                    </DropdownMenuItem>
+                                                                )}
+                                                                <DropdownMenuItem onClick={() => {
+                                                                    setEditingTask(task)
+                                                                    setIsEditDialogOpen(true)
+                                                                }}>
+                                                                    <Pencil className="h-4 w-4 mr-2" />
+                                                                    {t('tasks.edit')}
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem
+                                                                    onClick={() => handleDelete(task.id)}
+                                                                    className="text-destructive focus:text-destructive"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4 mr-2" />
+                                                                    {t('tasks.delete')}
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    </div>
+                                                )}
                                             </div>
                                         </td>
 
@@ -1063,17 +1132,41 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                             </div>
                                         </td>
 
-                                        {/* Deadline */}
+                                        {/* Date */}
                                         <td className="p-2 align-middle text-center border-r border-border/50">
-                                            {task.deadline ? (
-                                                <div className={`
-                                                    flex items-center justify-center gap-1.5 text-xs
-                                                    ${isPast(new Date(task.deadline)) && !isToday(new Date(task.deadline)) && task.status !== 'DONE'
-                                                        ? 'text-destructive font-medium'
-                                                        : 'text-muted-foreground'
-                                                    }`}>
-                                                    <Calendar className="h-3.5 w-3.5" />
-                                                    {format(new Date(task.deadline), 'MMM d')}
+                                            {(task.startDate || task.deadline) ? (
+                                                <div className="flex flex-col items-center justify-center gap-0.5 text-xs">
+                                                    {task.startDate && task.deadline ? (
+                                                        <>
+                                                            <div className="text-muted-foreground">
+                                                                {format(new Date(task.startDate), 'MMM d')}
+                                                            </div>
+                                                            <span className="text-muted-foreground/50">-</span>
+                                                            <div className={`
+                                                                flex items-center gap-1
+                                                                ${isPast(new Date(task.deadline)) && !isToday(new Date(task.deadline)) && task.status !== 'DONE'
+                                                                    ? 'text-destructive font-medium'
+                                                                    : 'text-muted-foreground'
+                                                                }`}>
+                                                                <Calendar className="h-3 w-3" />
+                                                                {format(new Date(task.deadline), 'MMM d')}
+                                                            </div>
+                                                        </>
+                                                    ) : task.deadline ? (
+                                                        <div className={`
+                                                            flex items-center gap-1
+                                                            ${isPast(new Date(task.deadline)) && !isToday(new Date(task.deadline)) && task.status !== 'DONE'
+                                                                ? 'text-destructive font-medium'
+                                                                : 'text-muted-foreground'
+                                                            }`}>
+                                                            <Calendar className="h-3 w-3" />
+                                                            {format(new Date(task.deadline), 'MMM d')}
+                                                        </div>
+                                                    ) : task.startDate ? (
+                                                        <div className="text-muted-foreground">
+                                                            {format(new Date(task.startDate), 'MMM d')}
+                                                        </div>
+                                                    ) : null}
                                                 </div>
                                             ) : (
                                                 <span className="text-muted-foreground/30 text-xs">-</span>
@@ -1081,7 +1174,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                         </td>
 
                                         {/* Status */}
-                                        <td className="p-1 align-middle text-center border-r border-border/50">
+                                        <td className="p-1 align-middle text-center">
                                             <div
                                                 className={`
                                                     h-8 w-full max-w-[140px] mx-auto flex items-center justify-center gap-2 text-xs font-semibold text-white shadow-sm rounded-md transition-all
@@ -1105,46 +1198,6 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                     }
                                                 </span>
                                             </div>
-                                        </td>
-
-                                        {/* Actions Column */}
-                                        <td className="p-2 align-middle text-center">
-                                            {(isAdmin || (currentUserId && task.assignees.some(a => a.id === currentUserId))) && (
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <MoreVertical className="h-4 w-4" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        {tasksWithActiveTimers[task.id]?.some(u => u.id === currentUserId) && !stoppedTimers.has(task.id) ? (
-                                                            <DropdownMenuItem onClick={() => handleStopWorking(task.id)}>
-                                                                <Square className="h-4 w-4 mr-2" />
-                                                                Stop Working
-                                                            </DropdownMenuItem>
-                                                        ) : (
-                                                            <DropdownMenuItem onClick={() => handleStartWorking(task.id)}>
-                                                                <Play className="h-4 w-4 mr-2" />
-                                                                {t('tasks.startWorking')}
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                        <DropdownMenuItem onClick={() => {
-                                                            setEditingTask(task)
-                                                            setIsEditDialogOpen(true)
-                                                        }}>
-                                                            <Pencil className="h-4 w-4 mr-2" />
-                                                            {t('tasks.edit')}
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            onClick={() => handleDelete(task.id)}
-                                                            className="text-destructive focus:text-destructive"
-                                                        >
-                                                            <Trash2 className="h-4 w-4 mr-2" />
-                                                            {t('tasks.delete')}
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            )}
                                         </td>
                                     </tr>
 

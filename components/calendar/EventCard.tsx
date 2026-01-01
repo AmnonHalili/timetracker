@@ -244,8 +244,19 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
                         {event.allDay ? (
                             <span>{event.type === 'TASK_TIME' ? 'Deadline: Today' : 'All day'}</span>
                         ) : event.type === 'TASK_TIME' ? (
-                            // For tasks, show only the deadline time (not a time range)
-                            <span>Deadline: {formatTimeWithAMPM(start)}</span>
+                            // For tasks: if start and end are different, show time range (startDate to deadline)
+                            // Otherwise show only deadline time
+                            (() => {
+                                const startTime = new Date(start).getTime()
+                                const endTime = new Date(end).getTime()
+                                const isTimeRange = startTime !== endTime
+                                
+                                return isTimeRange ? (
+                                    <span>Start: {formatTimeWithAMPM(start)} - Deadline: {formatTimeWithAMPM(end)}</span>
+                                ) : (
+                                    <span>Deadline: {formatTimeWithAMPM(start)}</span>
+                                )
+                            })()
                         ) : (
                             <span>
                                 {formatTimeWithAMPM(start)} - {formatTimeWithAMPM(end)}

@@ -158,6 +158,7 @@ model Task {
   description String?
   status      TaskStatus      @default(TODO)
   priority    TaskPriority    @default(MEDIUM)
+  startDate   DateTime?       // Start date for the task
   deadline    DateTime?
   isCompleted Boolean         @default(false)
   createdAt   DateTime        @default(now())

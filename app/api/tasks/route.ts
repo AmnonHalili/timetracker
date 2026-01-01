@@ -27,7 +27,7 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json()
-        const { title, assignedToIds, priority, deadline, description } = body
+        const { title, assignedToIds, priority, startDate, deadline, description } = body
 
         // Validate permissions  
         // ADMIN: Can assign to anyone in project
@@ -86,6 +86,7 @@ export async function POST(req: Request) {
                     connect: (assignedToIds as string[]).map(id => ({ id }))
                 },
                 priority: priority || "MEDIUM",
+                startDate: startDate ? new Date(startDate) : null,
                 deadline: deadline ? new Date(deadline) : null,
                 description,
                 status: "TODO"

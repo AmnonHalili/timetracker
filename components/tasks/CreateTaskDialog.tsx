@@ -27,6 +27,7 @@ interface CreateTaskDialogProps {
         id: string
         title: string
         priority: string
+        startDate: Date | null
         deadline: Date | null
         description: string | null
         status: string
@@ -56,6 +57,8 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
     const [title, setTitle] = useState("")
     const [assignedToIds, setAssignedToIds] = useState<string[]>([])
     const [priority, setPriority] = useState("LOW")
+    const [startDate, setStartDate] = useState("")
+    const [startDateTime, setStartDateTime] = useState("")
     const [deadline, setDeadline] = useState("")
     const [deadlineTime, setDeadlineTime] = useState("")
     const [description, setDescription] = useState("")
@@ -162,6 +165,24 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                 setDescription(task.description || "")
                 setPriority(task.priority || "LOW")
 
+                if (task.startDate) {
+                    const d = new Date(task.startDate)
+                    setStartDate(d.toISOString().split('T')[0])
+                    // Only set time if it's not midnight (or if we have a way to know it was set, but for now assumption is if time part exists)
+                    // Check if it's not midnight (UTC) which we treat as "date only"
+                    if (!(d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && d.getUTCSeconds() === 0)) {
+                        // Format local time
+                        const hours = String(d.getHours()).padStart(2, '0')
+                        const minutes = String(d.getMinutes()).padStart(2, '0')
+                        setStartDateTime(`${hours}:${minutes}`)
+                    } else {
+                        setStartDateTime("")
+                    }
+                } else {
+                    setStartDate("")
+                    setStartDateTime("")
+                }
+
                 if (task.deadline) {
                     const d = new Date(task.deadline)
                     setDeadline(d.toISOString().split('T')[0])
@@ -194,6 +215,8 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                 setAssignedToIds([])
                 setShowToMe(true) // Always default to true, independent of Assign To
                 setPriority("LOW")
+                setStartDate("")
+                setStartDateTime("")
                 setDeadline("")
                 setDeadlineTime("")
                 setDescription("")
@@ -203,6 +226,16 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+
+        let finalStartDate = null;
+        if (startDate) {
+            if (startDateTime) {
+                finalStartDate = new Date(`${startDate}T${startDateTime}:00`).toISOString()
+            } else {
+                // Start of day UTC for date-only
+                finalStartDate = new Date(startDate).toISOString()
+            }
+        }
 
         let finalDeadline = null;
         if (deadline) {
@@ -239,6 +272,7 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                 id: mode === 'edit' && task ? task.id : `temp-${Date.now()}`,
                 title,
                 priority,
+                startDate: finalStartDate ? new Date(finalStartDate) : null,
                 deadline: finalDeadline ? new Date(finalDeadline) : null,
                 description: description || null,
                 status: mode === 'edit' && task ? task.status : "TODO",
@@ -268,6 +302,8 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                 setAssignedToIds([])
                 setShowToMe(true)
                 setPriority("LOW")
+                setStartDate("")
+                setStartDateTime("")
                 setDeadline("")
                 setDeadlineTime("")
                 setDescription("")
@@ -289,6 +325,7 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                     title,
                     assignedToIds: finalAssignedToIds,
                     priority,
+                    startDate: finalStartDate,
                     deadline: finalDeadline,
                     description
                 }),
@@ -436,6 +473,29 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                                         <SelectItem value="HIGH">{t('tasks.priorityHigh')}</SelectItem>
                                     </SelectContent>
                                 </Select>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="startDate">
+                                {t('tasks.startDate') || 'Start Date'}
+                            </Label>
+                            <div className="col-span-3 flex gap-2">
+                                <Input
+                                    id="startDate"
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="flex-1"
+                                />
+                                <Input
+                                    id="startDate-time"
+                                    type="time"
+                                    value={startDateTime}
+                                    onChange={(e) => setStartDateTime(e.target.value)}
+                                    className="w-32"
+                                    placeholder={t('tasks.startDate') || 'Start Date'}
+                                    aria-label={t('tasks.startDate') || 'Start Date'}
+                                />
                             </div>
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">

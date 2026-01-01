@@ -133,9 +133,16 @@ export default async function DashboardPage() {
 
     // Fetch available tasks for the user with subtasks
     // Match logic from Tasks page: ADMINs see all project tasks, others see only assigned tasks
+    // Exclude DONE tasks from timer selection
     const tasksWhere = user.role === 'ADMIN'
-        ? { assignees: { some: { projectId: user.projectId || null } } }
-        : { assignees: { some: { id: user.id } } }
+        ? { 
+            assignees: { some: { projectId: user.projectId || null } },
+            status: { not: 'DONE' } // Exclude DONE tasks from timer
+        }
+        : { 
+            assignees: { some: { id: user.id } },
+            status: { not: 'DONE' } // Exclude DONE tasks from timer
+        }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let tasks: any[] = []
