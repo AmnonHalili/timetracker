@@ -14,6 +14,7 @@ import { toast } from "sonner"
 import { useSession } from "next-auth/react"
 import { useLanguage } from "@/lib/useLanguage"
 import { filterHierarchyGroup } from "@/lib/hierarchy-utils"
+import { cn } from "@/lib/utils"
 
 interface BaseCalendarEvent {
     id: string
@@ -54,7 +55,7 @@ export function CreateEventDialog({
 }: CreateEventDialogProps) {
     const router = useRouter()
     const { data: session } = useSession()
-    const { t } = useLanguage()
+    const { t, isRTL } = useLanguage()
     const [loading, setLoading] = useState(false)
 
     // Form state
@@ -377,11 +378,17 @@ export function CreateEventDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto [&>button]:left-4 [&>button]:right-auto">
+            <DialogContent
+                className={cn(
+                    "sm:max-w-[500px] max-h-[90vh] overflow-y-auto",
+                    isRTL ? "[&>button]:left-4 [&>button]:right-auto" : "[&>button]:right-4 [&>button]:left-auto"
+                )}
+                dir={isRTL ? "rtl" : "ltr"}
+            >
                 <form onSubmit={handleSubmit}>
-                    <DialogHeader className="text-right">
-                        <DialogTitle className="text-right">{mode === 'edit' ? t('calendar.editEvent') : t('calendar.createNewEvent')}</DialogTitle>
-                        <DialogDescription className="text-right">
+                    <DialogHeader className={isRTL ? "text-right" : "text-left"}>
+                        <DialogTitle className={isRTL ? "text-right" : "text-left"}>{mode === 'edit' ? t('calendar.editEvent') : t('calendar.createNewEvent')}</DialogTitle>
+                        <DialogDescription className={isRTL ? "text-right" : "text-left"}>
                             {mode === 'edit' ? t('calendar.updateEventDetails') : t('calendar.addEventToCalendar')}
                         </DialogDescription>
                     </DialogHeader>
@@ -556,7 +563,7 @@ export function CreateEventDialog({
 
                     </div>
 
-                    <DialogFooter className="justify-end">
+                    <DialogFooter className={cn("gap-2", isRTL ? "justify-start" : "justify-end")}>
                         <Button
                             type="button"
                             variant="outline"
@@ -566,8 +573,8 @@ export function CreateEventDialog({
                             {t('calendar.cancel')}
                         </Button>
                         <Button type="submit" disabled={loading}>
-                            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {mode === 'edit' ? <Pencil className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
+                            {loading && <Loader2 className={cn(isRTL ? "ml-2" : "mr-2", "h-4 w-4 animate-spin")} />}
+                            {mode === 'edit' ? <Pencil className={cn(isRTL ? "ml-2" : "mr-2", "h-4 w-4")} /> : <Plus className={cn(isRTL ? "ml-2" : "mr-2", "h-4 w-4")} />}
                             {mode === 'edit' ? t('calendar.editEvent') : t('calendar.createEvent')}
                         </Button>
                     </DialogFooter>

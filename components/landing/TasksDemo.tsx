@@ -4,11 +4,13 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, CheckCircle2, AlertCircle, Plus } from "lucide-react"
 import { format, isPast, isToday } from "date-fns"
+import { he } from "date-fns/locale"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { useLanguage } from "@/lib/useLanguage"
 
 export function TasksDemo() {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
+  const dateLocale = language === 'he' ? he : undefined
 
   // Demo tasks data - matching the real screen structure
   const demoTasks = [
@@ -90,7 +92,7 @@ export function TasksDemo() {
       return (
         <div className="h-8 w-full max-w-[140px] mx-auto flex items-center justify-center gap-2 text-[10px] md:text-xs font-semibold text-white bg-[#00c875] rounded-md shadow-sm">
           <CheckCircle2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
-          <span>Done</span>
+          <span>{t('tasks.statusDone')}</span>
         </div>
       )
     }
@@ -99,7 +101,7 @@ export function TasksDemo() {
       return (
         <div className="h-8 w-full max-w-[140px] mx-auto flex items-center justify-center gap-2 text-[10px] md:text-xs font-semibold text-white bg-[#e2445c] rounded-md shadow-sm">
           <AlertCircle className="h-3 w-3 md:h-3.5 md:w-3.5" />
-          <span>Overdue</span>
+          <span>{t('tasks.statusOverdue')}</span>
         </div>
       )
     }
@@ -107,14 +109,14 @@ export function TasksDemo() {
     if (task.status === 'TODO') {
       return (
         <div className="h-8 w-full max-w-[140px] mx-auto flex items-center justify-center gap-2 text-[10px] md:text-xs font-semibold text-white bg-[#c4c4c4] rounded-md shadow-sm">
-          <span>TO DO</span>
+          <span>{t('tasks.statusTodo')}</span>
         </div>
       )
     }
 
     return (
       <div className="h-8 w-full max-w-[140px] mx-auto flex items-center justify-center gap-2 text-[10px] md:text-xs font-semibold text-white bg-[#fdab3d] rounded-md shadow-sm">
-        <span>Working</span>
+        <span>{t('tasks.statusInProgress')}</span>
       </div>
     )
   }
@@ -124,17 +126,17 @@ export function TasksDemo() {
       {/* Header Info - Desktop Only */}
       <div className="hidden md:flex flex-row items-baseline justify-between mb-4 px-1">
         <div className="flex items-baseline gap-2">
-          <h2 className="text-2xl font-bold tracking-tight">Tasks</h2>
-          <p className="text-xs text-muted-foreground whitespace-nowrap">Manage team tasks</p>
+          <h2 className="text-2xl font-bold tracking-tight">{t('tasks.title')}</h2>
+          <p className="text-xs text-muted-foreground whitespace-nowrap">{t('tasks.manageTeamTasks')}</p>
         </div>
         <div className="flex items-center gap-2 scale-90 origin-right">
           <div className="h-8 px-2 rounded-md border border-input bg-background flex items-center gap-1.5 text-xs font-medium text-muted-foreground shadow-sm uppercase tracking-tight">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-filter"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>
-            Filters
+            {t('tasks.filters')}
           </div>
           <div className="h-8 px-2 rounded-md border border-input bg-background flex items-center gap-1.5 text-xs font-medium text-muted-foreground shadow-sm uppercase tracking-tight">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-up-down"><path d="m21 16-4 4-4-4" /><path d="M17 20V4" /><path d="m3 8 4-4 4 4" /><path d="M7 4v16" /></svg>
-            Sort
+            {t('tasks.sort')}
           </div>
         </div>
       </div>
@@ -142,16 +144,16 @@ export function TasksDemo() {
       {/* Desktop Table - No Scrollbars */}
       <div className="hidden md:block w-full overflow-hidden">
         <div className="flex items-center gap-2 mb-3">
-          <h3 className="text-base font-bold text-primary/80">All Tasks (4)</h3>
+          <h3 className="text-base font-bold text-primary/80">{t('tasks.allTasksCount').replace('{count}', demoTasks.length.toString())}</h3>
         </div>
         <table className="w-full table-fixed border-collapse">
           <thead>
             <tr className="border-b border-border/50">
-              <th className="w-[42%] h-8 px-2 text-left font-normal text-muted-foreground text-[10px] uppercase tracking-wider bg-muted/10">{t('tasks.title') || 'Tasks'}</th>
-              <th className="w-[12%] h-8 px-1 text-center font-normal text-muted-foreground text-[10px] uppercase tracking-wider bg-muted/10">Assign</th>
-              <th className="w-[12%] h-8 px-1 text-center font-normal text-muted-foreground text-[10px] uppercase tracking-wider bg-muted/10">Pri</th>
-              <th className="w-[16%] h-8 px-1 text-center font-normal text-muted-foreground text-[10px] uppercase tracking-wider bg-muted/10">Deadline</th>
-              <th className="w-[18%] h-8 px-1 text-center font-normal text-muted-foreground text-[10px] uppercase tracking-wider bg-muted/10">Status</th>
+              <th className="w-[42%] h-8 px-2 text-left font-normal text-muted-foreground text-[10px] uppercase tracking-wider bg-muted/10">{t('tasks.title')}</th>
+              <th className="w-[12%] h-8 px-1 text-center font-normal text-muted-foreground text-[10px] uppercase tracking-wider bg-muted/10">{t('tasks.assignedTo')}</th>
+              <th className="w-[12%] h-8 px-1 text-center font-normal text-muted-foreground text-[10px] uppercase tracking-wider bg-muted/10">{t('tasks.priorityShort')}</th>
+              <th className="w-[16%] h-8 px-1 text-center font-normal text-muted-foreground text-[10px] uppercase tracking-wider bg-muted/10">{t('tasks.deadline')}</th>
+              <th className="w-[18%] h-8 px-1 text-center font-normal text-muted-foreground text-[10px] uppercase tracking-wider bg-muted/10">{t('tasks.status')}</th>
             </tr>
           </thead>
           <tbody>
@@ -166,8 +168,8 @@ export function TasksDemo() {
                         {task.title}
                       </span>
                       <div className="flex items-center gap-1.5 mb-0.5">
-                        <span className="text-[9px] text-muted-foreground font-medium opacity-80 whitespace-nowrap overflow-hidden">Subtasks</span>
-                        <span className="text-[9px] text-muted-foreground opacity-60 whitespace-nowrap">• {task.subtasks.filter(s => s.isDone).length}/{task.subtasks.length} done</span>
+                        <span className="text-[9px] text-muted-foreground font-medium opacity-80 whitespace-nowrap overflow-hidden">{t('tasks.subtask')}</span>
+                        <span className="text-[9px] text-muted-foreground opacity-60 whitespace-nowrap">• {t('tasks.subtasksDone').replace('{done}', task.subtasks.filter(s => s.isDone).length.toString()).replace('{total}', task.subtasks.length.toString())}</span>
                       </div>
                     </div>
                   </div>
@@ -198,7 +200,7 @@ export function TasksDemo() {
                   {task.deadline ? (
                     <div className="flex items-center justify-center gap-1 text-[10px] text-muted-foreground font-medium">
                       <Calendar className="h-3 w-3" />
-                      {format(new Date(task.deadline), 'MMM d')}
+                      {format(new Date(task.deadline), 'MMM d', { locale: dateLocale })}
                     </div>
                   ) : (
                     <span className="text-muted-foreground/30 text-[10px]">-</span>
@@ -220,8 +222,8 @@ export function TasksDemo() {
       {/* Mobile Card-Like View */}
       <div className="md:hidden space-y-3 px-1 h-full overflow-hidden">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-lg font-bold tracking-tight">Tasks</h2>
-          <Badge variant="outline" className="text-[9px] font-bold py-0 h-5 px-2">4 Total</Badge>
+          <h2 className="text-lg font-bold tracking-tight">{t('tasks.title')}</h2>
+          <Badge variant="outline" className="text-[9px] font-bold py-0 h-5 px-2">{t('tasks.totalCount').replace('{count}', demoTasks.length.toString())}</Badge>
         </div>
 
         {demoTasks.slice(0, 3).map((task) => (
@@ -236,9 +238,9 @@ export function TasksDemo() {
                   <div className="flex items-center gap-2 text-[10px] text-muted-foreground overflow-hidden">
                     <span className="flex items-center gap-1 whitespace-nowrap bg-muted/30 px-1.5 py-0.5 rounded-sm">
                       <Calendar className="h-2.5 w-2.5" />
-                      {task.deadline ? format(new Date(task.deadline), 'MMM d') : '-'}
+                      {task.deadline ? format(new Date(task.deadline), 'MMM d', { locale: dateLocale }) : '-'}
                     </span>
-                    <span className="opacity-70 truncate">{task.subtasks.filter(s => s.isDone).length}/{task.subtasks.length} subtasks</span>
+                    <span className="opacity-70 truncate">{t('tasks.subtasksDone').replace('{done}', task.subtasks.filter(s => s.isDone).length.toString()).replace('{total}', task.subtasks.length.toString())}</span>
                   </div>
                 </div>
               </div>
@@ -269,7 +271,7 @@ export function TasksDemo() {
         {/* Placeholder for Add Task on Mobile */}
         <div className="border border-dashed border-border/40 rounded-lg p-3 flex items-center justify-center gap-2 text-muted-foreground/30 bg-muted/5">
           <Plus className="h-3 w-3" />
-          <span className="text-[10px] font-bold uppercase tracking-wider">Add Task</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider">{t('tasks.addTask')}</span>
         </div>
       </div>
     </div>

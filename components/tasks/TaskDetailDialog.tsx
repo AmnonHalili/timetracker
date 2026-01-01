@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button"
 import { Calendar, Clock, Users, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react"
 import { format } from "date-fns"
+import { he } from "date-fns/locale"
 import { useLanguage } from "@/lib/useLanguage"
 
 interface TaskDetailDialogProps {
@@ -39,7 +40,8 @@ interface TaskDetailDialogProps {
 }
 
 export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }: TaskDetailDialogProps) {
-    const { t } = useLanguage()
+    const { t, language } = useLanguage()
+    const dateLocale = language === 'he' ? he : undefined
     const [showTimeHistory, setShowTimeHistory] = useState(false)
 
     if (!task) return null
@@ -142,7 +144,7 @@ export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }:
                             <h3 className="text-sm font-semibold mb-2">{t('tasks.deadline')}</h3>
                             <div className="flex items-center gap-2 text-sm">
                                 <Calendar className="h-4 w-4" />
-                                {format(new Date(task.deadline), 'dd/MM/yyyy')}
+                                {format(new Date(task.deadline), 'dd/MM/yyyy', { locale: dateLocale })}
                             </div>
                         </div>
                     )}
@@ -326,7 +328,7 @@ export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }:
                                                                 <p className="text-xs text-muted-foreground mt-1">{entry.description}</p>
                                                             )}
                                                             <p className="text-xs text-muted-foreground mt-1">
-                                                                {format(start, 'dd/MM/yyyy HH:mm')} - {format(end, 'HH:mm')}
+                                                                {format(start, 'dd/MM/yyyy HH:mm', { locale: dateLocale })} - {format(end, 'HH:mm', { locale: dateLocale })}
                                                             </p>
                                                         </div>
                                                         <span className="font-medium">{durationStr}</span>

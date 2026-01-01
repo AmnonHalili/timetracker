@@ -4,6 +4,7 @@ import { useState, useMemo } from "react"
 import { DailyReport } from "@/lib/report-calculations"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { format, getDay, isToday, isYesterday, startOfDay } from "date-fns"
+import { he } from "date-fns/locale"
 import { cn, formatHoursMinutes } from "@/lib/utils"
 import { useLanguage } from "@/lib/useLanguage"
 import { ChevronDown, ChevronUp, Loader2 } from "lucide-react"
@@ -31,7 +32,8 @@ interface ReportTableProps {
 }
 
 export function ReportTable({ days, userId }: ReportTableProps) {
-    const { t, isRTL } = useLanguage()
+    const { t, isRTL, language } = useLanguage()
+    const dateLocale = language === 'he' ? he : undefined
     const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set())
     const [dayEntries, setDayEntries] = useState<Record<string, { entries: TimeEntry[], loading: boolean }>>({})
 
@@ -178,7 +180,7 @@ export function ReportTable({ days, userId }: ReportTableProps) {
                                             ) : (
                                                 <ChevronDown className="h-4 w-4 text-muted-foreground" />
                                             )}
-                                            {format(day.date, "dd/MM/yyyy")}
+                                            {format(day.date, "dd/MM/yyyy", { locale: dateLocale })}
                                         </div>
                                     </TableCell>
                                     <TableCell className={cn(isRTL ? "text-right" : "text-left", "w-[18%]")}>{getDayName(day.date)}</TableCell>

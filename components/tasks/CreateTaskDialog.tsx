@@ -19,6 +19,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Plus, Pencil } from "lucide-react"
 import { useLanguage } from "@/lib/useLanguage"
+import { cn } from "@/lib/utils"
 
 interface CreateTaskDialogProps {
     users: { id: string; name: string | null; email: string | null; managerId?: string | null; role?: string }[]
@@ -47,7 +48,7 @@ interface CreateTaskDialogProps {
 
 export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimisticTaskCreate, task, mode = 'create', open: controlledOpen, onOpenChange: setControlledOpen, currentUserId }: CreateTaskDialogProps) {
     const router = useRouter()
-    const { t } = useLanguage()
+    const { t, isRTL } = useLanguage()
     const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
 
     // Use controlled state if provided, otherwise internal state
@@ -375,11 +376,17 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                     </Button>
                 </DialogTrigger>
             )}
-            <DialogContent className="sm:max-w-[425px]" dir="ltr">
+            <DialogContent
+                className={cn(
+                    "sm:max-w-[425px]",
+                    isRTL && "[&>button]:left-4 [&>button]:right-auto"
+                )}
+                dir={isRTL ? "rtl" : "ltr"}
+            >
                 <form onSubmit={handleSubmit}>
-                    <DialogHeader className="text-left">
-                        <DialogTitle className="text-left">{mode === 'edit' ? t('tasks.edit') : t('tasks.createNewTask')}</DialogTitle>
-                        <DialogDescription className="text-left">
+                    <DialogHeader className={isRTL ? "text-right" : "text-left"}>
+                        <DialogTitle className={isRTL ? "text-right" : "text-left"}>{mode === 'edit' ? t('tasks.edit') : t('tasks.createNewTask')}</DialogTitle>
+                        <DialogDescription className={isRTL ? "text-right" : "text-left"}>
                             {mode === 'edit' ? t('tasks.edit') : t('tasks.assignNewTask')}
                         </DialogDescription>
                     </DialogHeader>
@@ -522,12 +529,12 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                             </div>
                         </div>
                     </div>
-                    <DialogFooter className="justify-end gap-2">
+                    <DialogFooter className={cn("gap-2", isRTL ? "justify-start" : "justify-end")}>
                         <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
                             {t('common.cancel')}
                         </Button>
                         <Button type="submit" disabled={loading}>
-                            {mode === 'edit' ? <Pencil className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
+                            {mode === 'edit' ? <Pencil className={cn(isRTL ? "ml-2" : "mr-2", "h-4 w-4")} /> : <Plus className={cn(isRTL ? "ml-2" : "mr-2", "h-4 w-4")} />}
                             {mode === 'edit' ? t('tasks.edit') : t('tasks.create')}
                         </Button>
                     </DialogFooter>

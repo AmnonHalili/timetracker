@@ -67,7 +67,9 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
         end: endDate,
     })
 
-    const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+    const weekDays: Array<'days.sunday' | 'days.monday' | 'days.tuesday' | 'days.wednesday' | 'days.thursday' | 'days.friday' | 'days.saturday'> = [
+        'days.sunday', 'days.monday', 'days.tuesday', 'days.wednesday', 'days.thursday', 'days.friday', 'days.saturday'
+    ]
 
     const [createDialogOpen, setCreateDialogOpen] = useState(false)
     const [selectedDate, setSelectedDate] = useState<Date>(new Date())
@@ -84,7 +86,7 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
             <div className="grid grid-cols-7 gap-1 text-center mb-2">
                 {weekDays.map((day) => (
                     <div key={day} className="text-sm font-medium text-muted-foreground uppercase py-2">
-                        {day}
+                        {t(day).substring(0, 3)}
                     </div>
                 ))}
             </div>
@@ -142,7 +144,6 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                     const maxVisibleItems = 6
                     const visibleItems = sortedItems.slice(0, maxVisibleItems)
                     const remainingCount = Math.max(0, sortedItems.length - maxVisibleItems)
-
                     const hoursWorked = dailyData?.totalDurationHours || 0
                     const isTargetMet = dailyData?.status === 'MET'
 
@@ -226,7 +227,7 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                                     })}
                                     {remainingCount > 0 && (
                                         <div className="text-[10px] text-muted-foreground font-medium shrink-0">
-                                            +{remainingCount}
+                                            +{remainingCount} {t('calendar.clickToAddEvent')}
                                         </div>
                                     )}
                                 </div>

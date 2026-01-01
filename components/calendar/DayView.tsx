@@ -136,7 +136,7 @@ export function DayView({ date, events, tasks, projectId, onOptimisticEventCreat
             {/* All-day events section */}
             {allDayEvents.length > 0 && (
                 <div className="space-y-2">
-                    <h4 className="text-sm font-medium text-muted-foreground">All Day</h4>
+                    <h4 className="text-sm font-medium text-muted-foreground">{t('calendar.allDay')}</h4>
                     <div className="space-y-1">
                         {allDayEvents.map(event => (
                             <EventCard
@@ -206,7 +206,7 @@ export function DayView({ date, events, tasks, projectId, onOptimisticEventCreat
                                             handleHourClick(hour)
                                         }}
                                     >
-                                        <span className="text-xs text-muted-foreground">Click to add event</span>
+                                        <span className="text-xs text-muted-foreground">{t('calendar.clickToAddEvent')}</span>
                                     </div>
                                 )}
                             </div>

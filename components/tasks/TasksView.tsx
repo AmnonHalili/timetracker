@@ -25,6 +25,7 @@ import {
     DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { format, isPast, isToday, endOfWeek, isWithinInterval } from "date-fns"
+import { he } from "date-fns/locale"
 import { TaskDetailDialog } from "./TaskDetailDialog"
 import { CreateTaskDialog } from "./CreateTaskDialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -76,7 +77,8 @@ interface TasksViewProps {
 
 export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWithActiveTimers = {} }: TasksViewProps) {
     const router = useRouter()
-    const { t, isRTL } = useLanguage()
+    const { t, isRTL, language } = useLanguage()
+    const dateLocale = language === 'he' ? he : undefined
     const [tasks, setTasks] = useState(initialTasks)
     const [newSubtaskTitle, setNewSubtaskTitle] = useState<Record<string, string>>({})
     const [editingSubtask, setEditingSubtask] = useState<{ taskId: string; subtaskId: string } | null>(null)
@@ -161,12 +163,12 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
             // Check if task is active today (between startDate and deadline, or just deadline if no startDate)
             const taskStartDate = task.startDate ? new Date(task.startDate) : null
             const taskDeadline = task.deadline ? new Date(task.deadline) : null
-            
+
             // Task is active today if:
             // 1. Has startDate and deadline: today is between startDate and deadline
             // 2. Has only deadline: today is deadline
             // 3. Has only startDate: today is >= startDate
-            const isActiveToday = 
+            const isActiveToday =
                 (taskStartDate && taskDeadline && today >= taskStartDate && today <= taskDeadline) ||
                 (!taskStartDate && taskDeadline && isToday(taskDeadline)) ||
                 (taskStartDate && !taskDeadline && today >= taskStartDate)
@@ -346,17 +348,17 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
         }
         if (type === 'deadline') {
             const labels: Record<string, string> = {
-                'today': 'Today',
-                'thisWeek': 'This week',
-                'overdue': 'Overdue'
+                'today': t('timeEntries.today'),
+                'thisWeek': t('landing.thisWeek') || 'This week',
+                'overdue': t('tasks.statusOverdue')
             }
             return labels[value] || value
         }
         if (type === 'priority') {
             const labels: Record<string, string> = {
-                'high': 'High',
-                'medium': 'Medium',
-                'low': 'Low'
+                'high': t('tasks.priorityHigh'),
+                'medium': t('tasks.priorityMedium'),
+                'low': t('tasks.priorityLow')
             }
             return labels[value] || value
         }
@@ -843,12 +845,12 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="smart">{t('tasks.sort')}</SelectItem>
-                            <SelectItem value="deadline-near">By deadline: Closest → Farthest</SelectItem>
-                            <SelectItem value="deadline-far">By deadline: Farthest → Closest</SelectItem>
-                            <SelectItem value="priority-high">By priority: High → Low</SelectItem>
-                            <SelectItem value="priority-low">By priority: Low → High</SelectItem>
-                            <SelectItem value="created-new">By time: Newest → Oldest</SelectItem>
-                            <SelectItem value="created-old">By time: Oldest → Newest</SelectItem>
+                            <SelectItem value="deadline-near">{t('tasks.sortByDeadlineNear')}</SelectItem>
+                            <SelectItem value="deadline-far">{t('tasks.sortByDeadlineFar')}</SelectItem>
+                            <SelectItem value="priority-high">{t('tasks.sortByPriorityHigh')}</SelectItem>
+                            <SelectItem value="priority-low">{t('tasks.sortByPriorityLow')}</SelectItem>
+                            <SelectItem value="created-new">{t('tasks.sortByCreatedNew')}</SelectItem>
+                            <SelectItem value="created-old">{t('tasks.sortByCreatedOld')}</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -917,7 +919,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                         ))}
                         {filters.assignedToMe && (
                             <Badge variant="secondary" className="h-6 text-xs px-2">
-                                Assigned to me
+                                {t('tasks.assignedToMe')}
                                 <button
                                     onClick={() => setFilters(prev => ({ ...prev, assignedToMe: false }))}
                                     className="ml-1.5 hover:bg-muted-foreground/20 rounded-full p-0.5"
@@ -928,7 +930,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                         )}
                         {filters.createdByMe && (
                             <Badge variant="secondary" className="h-6 text-xs px-2">
-                                Tasks I created
+                                {t('tasks.tasksICreated')}
                                 <button
                                     onClick={() => setFilters(prev => ({ ...prev, createdByMe: false }))}
                                     className="ml-1.5 hover:bg-muted-foreground/20 rounded-full p-0.5"
@@ -981,7 +983,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                             <tbody>
                                 <tr>
                                     <td colSpan={5} className="p-8 text-center text-muted-foreground italic">
-                                        No tasks found.
+                                        {t('tasks.noTasksFound')}
                                     </td>
                                 </tr>
                             </tbody>
@@ -1036,12 +1038,12 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                                     <div className={`w-1.5 h-1.5 rounded-full ${visibleSubtasksMap[task.id] ? 'bg-primary' : 'bg-muted-foreground/40'}`}></div>
                                                                     <span className="font-medium">
                                                                         {visibleSubtasksMap[task.id]
-                                                                            ? `Hide ${localSubtasks[task.id].length} subtasks`
-                                                                            : `Show ${localSubtasks[task.id].length} subtasks`}
+                                                                            ? t('tasks.hideSubtasks').replace('{count}', localSubtasks[task.id].length.toString())
+                                                                            : t('tasks.showSubtasks').replace('{count}', localSubtasks[task.id].length.toString())}
                                                                     </span>
                                                                 </button>
                                                                 <span>•</span>
-                                                                <span>{localSubtasks[task.id].filter(st => st.isDone).length}/{localSubtasks[task.id].length} done</span>
+                                                                <span>{t('tasks.subtasksDone').replace('{done}', localSubtasks[task.id].filter(st => st.isDone).length.toString()).replace('{total}', localSubtasks[task.id].length.toString())}</span>
                                                             </div>
                                                         ) : (
                                                             <div className="flex items-center gap-1">
@@ -1075,7 +1077,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                                 {tasksWithActiveTimers[task.id]?.some(u => u.id === currentUserId) && !stoppedTimers.has(task.id) ? (
                                                                     <DropdownMenuItem onClick={() => handleStopWorking(task.id)}>
                                                                         <Square className="h-4 w-4 mr-2" />
-                                                                        Stop Working
+                                                                        {t('tasks.stopWorking')}
                                                                     </DropdownMenuItem>
                                                                 ) : (
                                                                     <DropdownMenuItem onClick={() => handleStartWorking(task.id)}>
@@ -1140,7 +1142,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                     {task.startDate && task.deadline ? (
                                                         <>
                                                             <div className="text-muted-foreground">
-                                                                {format(new Date(task.startDate), 'MMM d')}
+                                                                {format(new Date(task.startDate), 'MMM d', { locale: dateLocale })}
                                                             </div>
                                                             <span className="text-muted-foreground/50">-</span>
                                                             <div className={`
@@ -1150,7 +1152,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                                     : 'text-muted-foreground'
                                                                 }`}>
                                                                 <Calendar className="h-3 w-3" />
-                                                                {format(new Date(task.deadline), 'MMM d')}
+                                                                {format(new Date(task.deadline), 'MMM d', { locale: dateLocale })}
                                                             </div>
                                                         </>
                                                     ) : task.deadline ? (
@@ -1161,11 +1163,11 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                                 : 'text-muted-foreground'
                                                             }`}>
                                                             <Calendar className="h-3 w-3" />
-                                                            {format(new Date(task.deadline), 'MMM d')}
+                                                            {format(new Date(task.deadline), 'MMM d', { locale: dateLocale })}
                                                         </div>
                                                     ) : task.startDate ? (
                                                         <div className="text-muted-foreground">
-                                                            {format(new Date(task.startDate), 'MMM d')}
+                                                            {format(new Date(task.startDate), 'MMM d', { locale: dateLocale })}
                                                         </div>
                                                     ) : null}
                                                 </div>
@@ -1193,8 +1195,8 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                         isPast(new Date(task.deadline || '')) && !isToday(new Date(task.deadline || '')) && task.status !== 'DONE' ? t('tasks.statusOverdue') :
                                                             (tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0 && !stoppedTimers.has(task.id))
                                                                 ? (tasksWithActiveTimers[task.id].length > 1
-                                                                    ? `${tasksWithActiveTimers[task.id].length} users on it`
-                                                                    : `${tasksWithActiveTimers[task.id][0].name?.split(' ')[0] || 'User'} is on it`)
+                                                                    ? t('tasks.usersWorking').replace('{count}', tasksWithActiveTimers[task.id].length.toString())
+                                                                    : t('tasks.userIsWorking').replace('{name}', tasksWithActiveTimers[task.id][0].name?.split(' ')[0] || 'User'))
                                                                 : t('tasks.statusTodo')
                                                     }
                                                 </span>
@@ -1260,8 +1262,8 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                                     {tasksWithActiveTimers[subtask.id] && tasksWithActiveTimers[subtask.id].length > 0 && (
                                                                         <Badge variant="secondary" className="bg-[#fdab3d]/10 text-[#fdab3d] hover:bg-[#fdab3d]/20 border-none text-[10px] h-5 px-1.5 flex items-center gap-1">
                                                                             {tasksWithActiveTimers[subtask.id].length > 1
-                                                                                ? `${tasksWithActiveTimers[subtask.id].length} users on it`
-                                                                                : `${tasksWithActiveTimers[subtask.id][0].name?.split(' ')[0] || 'User'} is on it`}
+                                                                                ? t('tasks.usersWorking').replace('{count}', tasksWithActiveTimers[subtask.id].length.toString())
+                                                                                : t('tasks.userIsWorking').replace('{name}', tasksWithActiveTimers[subtask.id][0].name?.split(' ')[0] || 'User')}
                                                                         </Badge>
                                                                     )}
 
@@ -1279,7 +1281,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                                                         className="cursor-pointer"
                                                                                     >
                                                                                         <Square className="mr-2 h-4 w-4" />
-                                                                                        Stop Working
+                                                                                        {t('tasks.stopWorking')}
                                                                                     </DropdownMenuItem>
                                                                                 ) : (
                                                                                     <DropdownMenuItem
@@ -1287,7 +1289,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                                                         className="cursor-pointer"
                                                                                     >
                                                                                         <Play className="mr-2 h-4 w-4" />
-                                                                                        Start Working
+                                                                                        {t('tasks.startWorking')}
                                                                                     </DropdownMenuItem>
                                                                                 )}
                                                                                 <DropdownMenuItem
@@ -1298,7 +1300,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                                                     className="cursor-pointer"
                                                                                 >
                                                                                     <Edit className="mr-2 h-4 w-4" />
-                                                                                    Edit Subtask
+                                                                                    {t('tasks.editSubtask')}
                                                                                 </DropdownMenuItem>
                                                                                 <DropdownMenuSeparator />
                                                                                 <DropdownMenuItem
@@ -1306,7 +1308,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                                                     className="cursor-pointer text-destructive focus:text-destructive"
                                                                                 >
                                                                                     <Trash2 className="mr-2 h-4 w-4" />
-                                                                                    Delete Subtask
+                                                                                    {t('tasks.deleteSubtask')}
                                                                                 </DropdownMenuItem>
                                                                             </DropdownMenuContent>
                                                                         </DropdownMenu>
@@ -1330,7 +1332,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
 
                                                             <div className="flex items-center gap-2 pl-6">
                                                                 <span className="text-xs text-muted-foreground hover:text-primary font-medium">
-                                                                    Show {subtasks.length - 5} more subtasks...
+                                                                    {t('tasks.showMoreSubtasks').replace('{count}', (subtasks.length - 5).toString())}
                                                                 </span>
                                                             </div>
                                                         </td>
@@ -1348,7 +1350,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                         <div className="flex items-center gap-2 pl-6">
                                                             <Plus className="h-3 w-3 text-muted-foreground/60" />
                                                             <Input
-                                                                placeholder="Add subtask..."
+                                                                placeholder={t('tasks.addSubtaskPlaceholder')}
                                                                 value={newSubtaskTitle[task.id] || ""}
                                                                 onChange={(e) => setNewSubtaskTitle(prev => ({ ...prev, [task.id]: e.target.value }))}
                                                                 onKeyDown={(e) => {
@@ -1420,7 +1422,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                     <div className="space-y-6 py-4">
                         {/* Status Filter */}
                         <div>
-                            <label className="text-sm font-medium mb-2 block">Status</label>
+                            <label className="text-sm font-medium mb-2 block">{t('tasks.status')}</label>
                             <div className="space-y-2">
                                 {[
                                     { value: 'TODO', label: t('tasks.statusTodo') },
@@ -1454,12 +1456,12 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
 
                         {/* Deadline Filter */}
                         <div>
-                            <label className="text-sm font-medium mb-2 block">Deadline</label>
+                            <label className="text-sm font-medium mb-2 block">{t('tasks.deadline')}</label>
                             <div className="space-y-2">
                                 {[
-                                    { value: 'today', label: 'Today' },
-                                    { value: 'thisWeek', label: 'This week' },
-                                    { value: 'overdue', label: 'Overdue' }
+                                    { value: 'today', label: t('timeEntries.today') },
+                                    { value: 'thisWeek', label: t('landing.thisWeek') || 'This week' },
+                                    { value: 'overdue', label: t('tasks.statusOverdue') }
                                 ].map(option => (
                                     <div key={option.value} className="flex items-center space-x-2">
                                         <Checkbox
@@ -1487,12 +1489,12 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
 
                         {/* Priority Filter */}
                         <div>
-                            <label className="text-sm font-medium mb-2 block">Priority</label>
+                            <label className="text-sm font-medium mb-2 block">{t('tasks.priority')}</label>
                             <div className="space-y-2">
                                 {[
-                                    { value: 'high', label: 'High' },
-                                    { value: 'medium', label: 'Medium' },
-                                    { value: 'low', label: 'Low' }
+                                    { value: 'high', label: t('tasks.priorityHigh') },
+                                    { value: 'medium', label: t('tasks.priorityMedium') },
+                                    { value: 'low', label: t('tasks.priorityLow') }
                                 ].map(priority => (
                                     <div key={priority.value} className="flex items-center space-x-2">
                                         <Checkbox
@@ -1520,7 +1522,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
 
                         {/* Users Filter */}
                         <div>
-                            <label className="text-sm font-medium mb-2 block">Assigned To</label>
+                            <label className="text-sm font-medium mb-2 block">{t('tasks.assignToLabel')}</label>
                             <div className="space-y-2 max-h-40 overflow-y-auto">
                                 {users.map(user => (
                                     <div key={user.id} className="flex items-center space-x-2">
@@ -1552,7 +1554,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
 
                         {/* Personal Scope Filters */}
                         <div>
-                            <label className="text-sm font-medium mb-2 block">Personal Scope</label>
+                            <label className="text-sm font-medium mb-2 block">{t('tasks.personalScope')}</label>
                             <div className="space-y-2">
                                 <div className="flex items-center space-x-2">
                                     <Checkbox
@@ -1566,7 +1568,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                         htmlFor="assignedToMe"
                                         className="text-sm cursor-pointer"
                                     >
-                                        Tasks assigned to me
+                                        {t('tasks.assignedToMe')}
                                     </label>
                                 </div>
                                 <div className="flex items-center space-x-2">
@@ -1581,7 +1583,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                         htmlFor="createdByMe"
                                         className="text-sm cursor-pointer"
                                     >
-                                        Tasks I created
+                                        {t('tasks.tasksICreated')}
                                     </label>
                                 </div>
                             </div>
