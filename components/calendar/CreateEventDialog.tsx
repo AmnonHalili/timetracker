@@ -196,7 +196,9 @@ export function CreateEventDialog({
 
                 // Populate participants
                 if (event.participants) {
-                    const participantIdsList = event.participants.map((p: { user: { id?: string } }) => p.user.id)
+                    const participantIdsList = event.participants
+                        .map((p: { user: { id?: string } }) => p.user.id)
+                        .filter((id): id is string => id !== undefined)
                     setParticipantIds(participantIdsList)
                     // Set showEventToMe if current user is in participants
                     if (session?.user?.id && participantIdsList.includes(session.user.id)) {
