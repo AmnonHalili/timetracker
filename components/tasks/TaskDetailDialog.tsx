@@ -43,13 +43,20 @@ export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }:
     const { t, language } = useLanguage()
     const dateLocale = language === 'he' ? he : undefined
     const [showTimeHistory, setShowTimeHistory] = useState(false)
+    const [expandedSubtasks, setExpandedSubtasks] = useState<Record<string, boolean>>({})
+
+    const toggleSubtask = (subtaskId: string) => {
+        setExpandedSubtasks(prev => ({
+            ...prev,
+            [subtaskId]: !prev[subtaskId]
+        }))
+    }
 
     if (!task) return null
 
     // Calculate total time spent on this task
-    const calculateTotalTime = () => {
+    const calculateTotalTimeValue = () => {
         let totalSeconds = 0
-
         timeEntries.forEach(entry => {
             if (entry.endTime) {
                 const start = new Date(entry.startTime).getTime()
@@ -57,7 +64,11 @@ export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }:
                 totalSeconds += Math.floor((end - start) / 1000)
             }
         })
+        return totalSeconds
+    }
 
+    const calculateTotalTime = () => {
+        const totalSeconds = calculateTotalTimeValue()
         const hours = Math.floor(totalSeconds / 3600)
         const minutes = Math.floor((totalSeconds % 3600) / 60)
         const seconds = totalSeconds % 60
@@ -138,16 +149,7 @@ export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }:
                         </div>
                     )}
 
-                    {/* Task Info */}
-                    {task.deadline && (
-                        <div>
-                            <h3 className="text-sm font-semibold mb-2">{t('tasks.deadline')}</h3>
-                            <div className="flex items-center gap-2 text-sm">
-                                <Calendar className="h-4 w-4" />
-                                {format(new Date(task.deadline), 'dd/MM/yyyy', { locale: dateLocale })}
-                            </div>
-                        </div>
-                    )}
+
 
                     {/* Completion Percentage - Only show if there are subtasks */}
                     {totalSubtasks > 0 && (
@@ -165,6 +167,54 @@ export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }:
                             <p className="text-xs text-muted-foreground mt-1">
                                 {subtasksDone} of {totalSubtasks} subtasks completed
                             </p>
+                        </div>
+                    )}
+
+                    {/* Users Who Worked on This Task */}
+                    {usersWhoWorked.length > 0 && (
+                        <div className="space-y-3">
+                            <h3 className="text-sm font-semibold flex items-center gap-2 text-foreground/80">
+                                <Users className="h-4 w-4" />
+                                {t('tasks.teamActivity') || "Team Activity"}
+                            </h3>
+
+                            <div className="bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden">
+                                {/* Leaderboard-style list */}
+                                <div className="divide-y divide-border/50">
+                                    {Array.from(timeByUser.values())
+                                        .sort((a, b) => b.totalSeconds - a.totalSeconds)
+                                        .map(({ user, totalSeconds }) => (
+                                            <div key={user.id} className="flex justify-between items-center p-3 hover:bg-muted/30 transition-colors group">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary ring-2 ring-background group-hover:ring-muted transition-all">
+                                                        {user.name?.substring(0, 2).toUpperCase() || "??"}
+                                                    </div>
+                                                    <span className="text-sm font-medium">{user.name || 'Unknown'}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-16 md:w-24 bg-muted/50 rounded-full h-1.5 overflow-hidden hidden sm:block">
+                                                        <div
+                                                            className="bg-primary h-full rounded-full"
+                                                            style={{ width: `${Math.min(100, (totalSeconds / calculateTotalTimeValue()) * 100)}%` }}
+                                                        />
+                                                    </div>
+                                                    <span className="text-sm font-semibold font-mono w-16 text-right">{formatTime(totalSeconds)}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                </div>
+
+                                {/* Total Time Hero Section */}
+                                <div className="p-4 bg-muted/30 border-t border-border/50 flex items-center justify-between">
+                                    <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                        <Clock className="h-4 w-4" />
+                                        {t('tasks.totalTimeSpent') || "Total Time Spent"}
+                                    </span>
+                                    <span className="text-xl font-bold font-mono tracking-tight text-primary">
+                                        {calculateTotalTime()}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     )}
 
@@ -189,7 +239,6 @@ export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }:
                                 const existing = timeBySubtask.get(entry.subtaskId)
                                 if (existing) {
                                     existing.totalSeconds += seconds
-                                    // Find or add user entry
                                     const userEntry = existing.entries.find(e => e.user.id === entry.user.id)
                                     if (userEntry) {
                                         userEntry.totalSeconds += seconds
@@ -214,75 +263,66 @@ export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }:
 
                         if (timeBySubtask.size === 0) return null
 
-                        // Sort subtasks by their original order in the task
                         const sortedSubtasks = Array.from(timeBySubtask.values()).sort((a, b) => {
                             const aIndex = task.subtasks?.findIndex(s => s.id === a.subtask.id) ?? -1
                             const bIndex = task.subtasks?.findIndex(s => s.id === b.subtask.id) ?? -1
-                            // If not found in original list, put at the end
                             if (aIndex === -1) return 1
                             if (bIndex === -1) return -1
                             return aIndex - bIndex
                         })
 
                         return (
-                            <div>
-                                <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                                    <Clock className="h-4 w-4" />
-                                    {t('tasks.timeSpentOnSubtasks')}
+                            <div className="space-y-3">
+                                <h3 className="text-sm font-semibold flex items-center gap-2 text-foreground/80">
+                                    <CheckCircle2 className="h-4 w-4" />
+                                    {t('tasks.subtaskBreakdown') || "Subtask Breakdown"}
                                 </h3>
-                                <div className="space-y-3">
+                                <div className="grid gap-2">
                                     {sortedSubtasks.map(({ subtask, entries, totalSeconds }) => (
-                                        <div key={subtask.id} className="p-3 bg-muted/50 rounded-lg">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <span className="text-sm font-medium">{subtask.title}</span>
-                                                <span className="text-sm font-semibold">{formatTime(totalSeconds)}</span>
-                                            </div>
-                                            <div className="space-y-1.5 mt-2 pl-2 border-l-2 border-muted">
-                                                {entries
-                                                    .sort((a, b) => b.totalSeconds - a.totalSeconds)
-                                                    .map(({ user, totalSeconds: userSeconds }) => (
-                                                        <div key={user.id} className="flex justify-between items-center text-xs">
-                                                            <span className="text-muted-foreground">{user.name || 'Unknown'}</span>
-                                                            <span className="font-medium">{formatTime(userSeconds)}</span>
-                                                        </div>
-                                                    ))}
-                                            </div>
+                                        <div key={subtask.id} className="bg-card border border-border/40 rounded-lg shadow-sm overflow-hidden transition-all hover:border-border/80 hover:shadow-md">
+                                            <button
+                                                onClick={() => toggleSubtask(subtask.id)}
+                                                className="w-full flex justify-between items-center p-3 hover:bg-muted/30 transition-colors"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`p-1 rounded-md transition-transform duration-200 ${expandedSubtasks[subtask.id] ? 'bg-primary/10 rotate-180' : 'bg-muted'}`}>
+                                                        <ChevronDown className={`h-3.5 w-3.5 ${expandedSubtasks[subtask.id] ? 'text-primary' : 'text-muted-foreground'}`} />
+                                                    </div>
+                                                    <span className="text-sm font-medium">{subtask.title}</span>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-xs text-muted-foreground hidden sm:inline-block">
+                                                        {entries.length} {entries.length === 1 ? 'contributor' : 'contributors'}
+                                                    </span>
+                                                    <span className="text-sm font-semibold font-mono bg-muted/50 px-2 py-0.5 rounded text-foreground/80">
+                                                        {formatTime(totalSeconds)}
+                                                    </span>
+                                                </div>
+                                            </button>
+
+                                            {expandedSubtasks[subtask.id] && (
+                                                <div className="bg-muted/10 border-t border-border/50 px-2 py-2">
+                                                    {entries
+                                                        .sort((a, b) => b.totalSeconds - a.totalSeconds)
+                                                        .map(({ user, totalSeconds: userSeconds }) => (
+                                                            <div key={user.id} className="flex justify-between items-center px-3 py-1.5 rounded-md hover:bg-background/50 text-xs transition-colors">
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="w-5 h-5 rounded-full bg-background border border-border flex items-center justify-center text-[9px] font-bold text-muted-foreground">
+                                                                        {user.name?.substring(0, 1).toUpperCase()}
+                                                                    </div>
+                                                                    <span className="text-muted-foreground">{user.name || 'Unknown'}</span>
+                                                                </div>
+                                                                <span className="font-medium font-mono text-muted-foreground/80">{formatTime(userSeconds)}</span>
+                                                            </div>
+                                                        ))}
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         )
                     })()}
-
-                    {/* Users Who Worked on This Task - Combined with Time by User */}
-                    {usersWhoWorked.length > 0 && (
-                        <div>
-                            <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                                <Users className="h-4 w-4" />
-                                Users Who Worked on This Task
-                            </h3>
-                            <div className="space-y-2">
-                                {Array.from(timeByUser.values())
-                                    .sort((a, b) => b.totalSeconds - a.totalSeconds) // Sort by time descending
-                                    .map(({ user, totalSeconds }) => (
-                                        <div key={user.id} className="flex justify-between items-center p-2 bg-muted/50 rounded">
-                                            <span className="text-sm">{user.name || 'Unknown'}</span>
-                                            <span className="text-sm font-medium">{formatTime(totalSeconds)}</span>
-                                        </div>
-                                    ))}
-                            </div>
-                            {/* Total Time Spent - Under the users list */}
-                            <div className="mt-3 pt-3 border-t">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm font-semibold flex items-center gap-2">
-                                        <Clock className="h-4 w-4" />
-                                        Total Time Spent
-                                    </span>
-                                    <span className="text-lg font-medium">{calculateTotalTime()}</span>
-                                </div>
-                            </div>
-                        </div>
-                    )}
 
 
 
