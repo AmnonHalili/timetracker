@@ -13,6 +13,7 @@ declare module "next-auth" {
             managerId?: string | null
             workDays?: number[]
             dailyTarget?: number | null
+            plan: string
         } & DefaultSession["user"]
     }
 
@@ -23,6 +24,7 @@ declare module "next-auth" {
         managerId?: string | null
         workDays?: number[]
         dailyTarget?: number | null
+        plan: string
     }
 }
 
@@ -34,5 +36,6 @@ declare module "next-auth/jwt" {
         managerId?: string | null
         workDays?: number[]
         dailyTarget?: number | null
+        plan: string
     }
 }

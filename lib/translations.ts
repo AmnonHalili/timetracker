@@ -186,6 +186,9 @@ export const translations = {
     'tasks.teamActivity': 'Team Activity',
     'tasks.totalTimeSpent': 'Total Time Spent',
     'tasks.subtaskBreakdown': 'Subtask Breakdown',
+    'tasks.details': 'Details',
+    'tasks.notes': 'Notes',
+    'tasks.files': 'Files',
 
     // Time Entries
     'timeEntries.today': 'Today',
@@ -807,6 +810,9 @@ export const translations = {
     'tasks.teamActivity': 'פעילות צוות',
     'tasks.totalTimeSpent': 'סה"כ זמן',
     'tasks.subtaskBreakdown': 'פירוט תתי-משימות',
+    'tasks.details': 'פרטים',
+    'tasks.notes': 'הערות',
+    'tasks.files': 'קבצים',
 
     // Time Entries
     'timeEntries.today': 'היום',
