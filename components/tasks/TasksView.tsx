@@ -997,7 +997,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                 <Checkbox
                                                     checked={task.status === 'DONE'}
                                                     onCheckedChange={(checked) => handleToggleTaskCompletion(task.id, checked as boolean)}
-                                                    className={`rounded-md h-5 w-5 border-2 ${getPriorityColor(task.priority).split(' ')[0].replace('bg-', 'border-').replace('text-primary-foreground', '')}`}
+                                                    className="rounded-md h-5 w-5 border-2 border-primary"
                                                 />
 
                                                 <div className="flex flex-col min-w-0 flex-1">
