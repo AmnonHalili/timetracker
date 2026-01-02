@@ -24,8 +24,8 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Collabo | Master Your Time, Lead Your Team",
-  description: "The all-in-one workspace for every team. Seamlessly track hours, manage complex projects, and lead your organization with clarity. A professional solution tailored for freelancers, startups, and established enterprises.",
+  title: "Collabo | Time Tracking & Task Management for Teams & Companies",
+  description: "Simple time tracking and task management for small projects, growing teams, and large companies. One platform that scales with your business.",
   metadataBase: new URL('https://collabo-web.com'),
   manifest: "/manifest.json",
   themeColor: "#ffffff",
@@ -53,8 +53,8 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: "Collabo | Master Your Time, Lead Your Team",
-    description: "The all-in-one workspace for every team. Seamlessly track hours, manage complex projects, and lead your organization with clarity. A professional solution tailored for freelancers, startups, and established enterprises.",
+    title: "Collabo | Time Tracking & Task Management for Teams & Companies",
+    description: "Simple time tracking and task management for small projects, growing teams, and large companies. One platform that scales with your business.",
     url: "https://collabo-web.com",
     siteName: "Collabo",
     images: [
@@ -70,8 +70,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Collabo | Master Your Time, Lead Your Team",
-    description: "The all-in-one workspace for every team. Seamlessly track hours, manage complex projects, and lead your organization with clarity. A professional solution tailored for freelancers, startups, and established enterprises.",
+    title: "Collabo | Time Tracking & Task Management for Teams & Companies",
+    description: "Simple time tracking and task management for small projects, growing teams, and large companies. One platform that scales with your business.",
     images: ["/collabologo.png"],
   },
   verification: {
@@ -125,19 +125,6 @@ export default function RootLayout({
                 document.documentElement.setAttribute('lang', savedLanguage);
               } catch (e) {}
             `,
-          }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Organization",
-              "name": "Collabo",
-              "url": "https://collabo-web.com",
-              "logo": "https://collabo-web.com/collabologocut.png",
-              "description": "The all-in-one workspace for every team. Seamlessly track hours, manage complex projects, and lead your organization with clarity. A professional solution tailored for freelancers, startups, and established enterprises."
-            })
           }}
         />
         <Providers>
