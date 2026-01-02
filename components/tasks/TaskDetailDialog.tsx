@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Calendar, Clock, Users, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react"
+import { Clock, Users, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react"
 import { format } from "date-fns"
 import { he } from "date-fns/locale"
 import { useLanguage } from "@/lib/useLanguage"
