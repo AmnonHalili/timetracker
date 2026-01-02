@@ -140,7 +140,9 @@ export const authOptions: NextAuthOptions = {
                 token.status = user.status
                 token.managerId = user.managerId
                 token.workDays = user.workDays
+                token.workDays = user.workDays
                 token.dailyTarget = user.dailyTarget
+                token.plan = user.plan
             } else if (token.id) {
                 // Subsequent request: fetch fresh role from DB to ensure sync
                 // This fixes the "Stale Admin Role" issue
@@ -152,7 +154,10 @@ export const authOptions: NextAuthOptions = {
                             status: true,
                             managerId: true,
                             workDays: true,
-                            dailyTarget: true
+                            managerId: true,
+                            workDays: true,
+                            dailyTarget: true,
+                            plan: true
                         }
                     })
                     if (freshUser) {
@@ -161,6 +166,7 @@ export const authOptions: NextAuthOptions = {
                         token.managerId = freshUser.managerId
                         token.workDays = freshUser.workDays
                         token.dailyTarget = freshUser.dailyTarget
+                        token.plan = freshUser.plan
                         // console.log("[AUTH] Refreshed Role from DB:", freshUser.role)
                     }
                 } catch (error) {
@@ -177,6 +183,7 @@ export const authOptions: NextAuthOptions = {
                 session.user.managerId = token.managerId
                 session.user.workDays = token.workDays as number[]
                 session.user.dailyTarget = token.dailyTarget as number | null
+                session.user.plan = token.plan as string
                 // Debug Log (Comment out in production later if too noisy)
                 // console.log("[AUTH] Session Callback", { email: session.user.email, role: session.user.role })
             }

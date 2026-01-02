@@ -56,6 +56,8 @@ model User {
   insightSettings        UserInsightSettings?
   workdays               Workday[]
   tasks                  Task[]               @relation("TaskToUser")
+  taskNotes              TaskNote[]
+  taskAttachments        TaskAttachment[]
 }
 
 model SecondaryManager {
@@ -165,6 +167,8 @@ model Task {
   updatedAt   DateTime        @updatedAt
   checklist   ChecklistItem[]
   subtasks    SubTaskItem[]
+  notes       TaskNote[]
+  attachments TaskAttachment[]
   timeEntries TimeEntry[]     @relation("TaskToTimeEntry")
   assignees   User[]          @relation("TaskToUser")
 }
@@ -176,6 +180,35 @@ model ChecklistItem {
   isDone    Boolean  @default(false)
   createdAt DateTime @default(now())
   task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+model TaskNote {
+  id        String   @id @default(cuid())
+  taskId    String
+  userId    String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+model TaskAttachment {
+  id        String   @id @default(cuid())
+  taskId    String
+  userId    String
+  fileName  String
+  fileType  String
+  fileKey   String   // S3 Key
+  fileUrl   String   @db.Text // Store the base S3 URL or presigned GET url logic might be dynamic
+  fileSize  Int
+  createdAt DateTime @default(now())
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
 }
 
 model SubTaskItem {

@@ -37,6 +37,7 @@ export function PricingContent() {
     const allFeatures = [
         { key: 'basicFeatures', text: t('pricing.feature.basicFeatures') },
         { key: 'userSupport', text: '' }, // Will be set dynamically per plan
+        { key: 'taskAttachments', text: "Task Attachments" }, // Temporarily hardcoded until translated
         { key: 'noAds', text: t('pricing.feature.noAds') },
     ]
 
@@ -44,6 +45,7 @@ export function PricingContent() {
     const companyFeatures = [
         { key: 'basicFeatures', text: t('pricing.feature.basicFeatures') },
         { key: 'userSupport', text: t('pricing.feature.unlimitedUsers') },
+        { key: 'taskAttachments', text: "Task Attachments" },
         { key: 'noAds', text: t('pricing.feature.noAds') },
     ]
 
@@ -88,24 +90,28 @@ export function PricingContent() {
             free: {
                 basicFeatures: true,
                 userSupport: true,
+                taskAttachments: false,
                 noAds: false, // Gray (not included)
                 perUserPricing: false,
             },
             tier1: {
                 basicFeatures: true,
                 userSupport: true,
+                taskAttachments: true,
                 noAds: true,
                 perUserPricing: false,
             },
             tier2: {
                 basicFeatures: true,
                 userSupport: true,
+                taskAttachments: true,
                 noAds: true,
                 perUserPricing: false,
             },
             tier3: {
                 basicFeatures: true,
                 userSupport: true,
+                taskAttachments: true,
                 noAds: true,
             },
         }
