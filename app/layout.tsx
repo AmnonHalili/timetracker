@@ -80,6 +80,7 @@ export const metadata: Metadata = {
 };
 
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import { CrispChat } from "@/components/CrispChat";
 
 // ... existing imports
 
@@ -94,6 +95,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${montserrat.variable} antialiased`}
       >
         <GoogleAnalytics />
+        <CrispChat />
         <script
           dangerouslySetInnerHTML={{
             __html: `
