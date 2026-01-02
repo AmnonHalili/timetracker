@@ -183,6 +183,9 @@ export const translations = {
     'tasks.personalScope': 'Personal Scope',
     'tasks.noTasksFound': 'No tasks found.',
     'tasks.showMoreSubtasks': 'Show {count} more subtasks...',
+    'tasks.teamActivity': 'Team Activity',
+    'tasks.totalTimeSpent': 'Total Time Spent',
+    'tasks.subtaskBreakdown': 'Subtask Breakdown',
 
     // Time Entries
     'timeEntries.today': 'Today',
@@ -801,6 +804,9 @@ export const translations = {
     'tasks.personalScope': 'טווח אישי',
     'tasks.noTasksFound': 'לא נמצאו משימות.',
     'tasks.showMoreSubtasks': 'הצג עוד {count} תת משימות...',
+    'tasks.teamActivity': 'פעילות צוות',
+    'tasks.totalTimeSpent': 'סה"כ זמן',
+    'tasks.subtaskBreakdown': 'פירוט תתי-משימות',
 
     // Time Entries
     'timeEntries.today': 'היום',
