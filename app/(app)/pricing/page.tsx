@@ -6,8 +6,8 @@ import { PricingContent } from "@/components/pricing/PricingContent"
 export default async function PricingPage() {
     const session = await getServerSession(authOptions)
 
-    if (!session) {
-        redirect("/login")
+    if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'MEMBER')) {
+        redirect("/dashboard")
     }
 
     return <PricingContent />

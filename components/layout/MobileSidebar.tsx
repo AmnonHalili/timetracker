@@ -8,13 +8,14 @@ import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Menu } from "lucide-react"
 import { useState } from "react"
-import { signOut } from "next-auth/react"
+import { signOut, useSession } from "next-auth/react"
 import { stopActiveTimer } from "@/lib/utils"
 import { useLanguage } from "@/lib/useLanguage"
 
 export function MobileSidebar() {
     const pathname = usePathname()
     const { t, dir } = useLanguage()
+    const { data: session } = useSession() // useSession from next-auth/react is already imported? Check imports.
     const [open, setOpen] = useState(false)
 
     const routes = [
@@ -129,19 +130,21 @@ export function MobileSidebar() {
                     </nav>
 
                     <div className="p-4 space-y-0">
-                        <Link
-                            href="/pricing"
-                            onClick={() => setOpen(false)}
-                            className={cn(
-                                "flex items-center px-4 py-3 text-base font-medium rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                                pathname === "/pricing"
-                                    ? "bg-muted text-primary"
-                                    : "text-muted-foreground hover:bg-muted/50 hover:text-primary"
-                            )}
-                            prefetch={true}
-                        >
-                            {t('nav.upgradeToPro')}
-                        </Link>
+                        {(session?.user?.role === 'ADMIN' || session?.user?.role === 'MEMBER') && (
+                            <Link
+                                href="/pricing"
+                                onClick={() => setOpen(false)}
+                                className={cn(
+                                    "flex items-center px-4 py-3 text-base font-medium rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                                    pathname === "/pricing"
+                                        ? "bg-muted text-primary"
+                                        : "text-muted-foreground hover:bg-muted/50 hover:text-primary"
+                                )}
+                                prefetch={true}
+                            >
+                                {t('nav.upgradeToPro')}
+                            </Link>
+                        )}
                         <div className="border-t my-2"></div>
                         <Button
                             variant="ghost"

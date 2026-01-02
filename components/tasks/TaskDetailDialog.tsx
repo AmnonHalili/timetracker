@@ -159,7 +159,8 @@ export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }:
                 body: JSON.stringify({
                     fileName: file.name,
                     fileType: file.type,
-                    fileSize: file.size
+                    fileSize: file.size,
+                    taskId: task.id
                 })
             })
 

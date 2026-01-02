@@ -250,7 +250,7 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
                                 const startTime = new Date(start).getTime()
                                 const endTime = new Date(end).getTime()
                                 const isTimeRange = startTime !== endTime
-                                
+
                                 return isTimeRange ? (
                                     <span>Start: {formatTimeWithAMPM(start)} - Deadline: {formatTimeWithAMPM(end)}</span>
                                 ) : (

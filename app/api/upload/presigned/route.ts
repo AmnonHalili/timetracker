@@ -35,14 +35,14 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: "Uploads are restricted to premium plans" }, { status: 403 })
         }
 
-        const { fileName, fileType, fileSize } = await req.json()
+        const { fileName, fileType, fileSize, taskId } = await req.json()
 
         // Validate file size (e.g., 5MB limit)
         if (fileSize > 5 * 1024 * 1024) {
             return NextResponse.json({ message: "File size too large (Max 5MB)" }, { status: 400 })
         }
 
-        const fileKey = `uploads/${session.user.id}/${Date.now()}-${fileName}`
+        const fileKey = `uploads/${taskId || 'general'}/${Date.now()}-${fileName}`
 
         const command = new PutObjectCommand({
             Bucket: process.env.AWS_S3_BUCKET_NAME,
