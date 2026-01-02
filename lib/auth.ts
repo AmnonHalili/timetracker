@@ -141,7 +141,6 @@ export const authOptions: NextAuthOptions = {
                 token.status = user.status
                 token.managerId = user.managerId
                 token.workDays = user.workDays
-                token.workDays = user.workDays
                 token.dailyTarget = user.dailyTarget
                 token.plan = user.plan
             } else if (token.id) {
@@ -153,8 +152,6 @@ export const authOptions: NextAuthOptions = {
                         select: {
                             role: true,
                             status: true,
-                            managerId: true,
-                            workDays: true,
                             managerId: true,
                             workDays: true,
                             dailyTarget: true,
