@@ -146,46 +146,66 @@ export const authOptions: NextAuthOptions = {
             } else if (token.id) {
                 // Subsequent request: fetch fresh role from DB to ensure sync
                 // This fixes the "Stale Admin Role" issue
-                try {
-                    const freshUser = await prisma.user.findUnique({
-                        where: { id: token.id as string },
-                        select: {
-                            role: true,
-                            status: true,
-                            managerId: true,
-                            workDays: true,
-                            dailyTarget: true,
-                            plan: true
-                        }
-                    })
-                    if (freshUser) {
-                        token.role = freshUser.role
-                        token.status = freshUser.status
-                        token.managerId = freshUser.managerId
-                        token.workDays = freshUser.workDays
-                        token.dailyTarget = freshUser.dailyTarget
-                        token.plan = freshUser.plan
-                        // console.log("[AUTH] Refreshed Role from DB:", freshUser.role)
+                const freshUser = await prisma.user.findUnique({
+                    where: { id: token.id as string },
+                    select: {
+                        role: true,
+                        status: true,
+                        managerId: true,
+                        workDays: true,
+                        dailyTarget: true,
+                        plan: true,
+                        projectId: true
                     }
-                } catch (error) {
-                    console.error("[AUTH] Error refreshing user role:", error)
+                })
+                if (freshUser) {
+                    token.role = freshUser.role
+                    token.status = freshUser.status
+                    token.managerId = freshUser.managerId
+                    token.workDays = freshUser.workDays
+                    token.dailyTarget = freshUser.dailyTarget
+
+                    // Plan Inheritance Logic
+                    let effectivePlan = freshUser.plan
+
+                    if (freshUser.role !== 'ADMIN' && freshUser.projectId) {
+                        // Find an Admin in the same project with a paid plan
+                        const projectAdmin = await prisma.user.findFirst({
+                            where: {
+                                projectId: freshUser.projectId,
+                                role: 'ADMIN',
+                                plan: { not: 'FREE' }
+                            },
+                            select: { plan: true }
+                        })
+
+                        if (projectAdmin) {
+                            effectivePlan = projectAdmin.plan
+                        }
+                    }
+
+                    token.plan = effectivePlan
+                    // console.log("[AUTH] Refreshed Role from DB:", freshUser.role)
                 }
+            } catch (error) {
+                console.error("[AUTH] Error refreshing user role:", error)
             }
+        }
             return token
-        },
-        async session({ session, token }) {
-            if (token && session.user) {
-                session.user.id = token.id
-                session.user.role = token.role
-                session.user.status = token.status
-                session.user.managerId = token.managerId
-                session.user.workDays = token.workDays as number[]
-                session.user.dailyTarget = token.dailyTarget as number | null
-                session.user.plan = token.plan as string
-                // Debug Log (Comment out in production later if too noisy)
-                // console.log("[AUTH] Session Callback", { email: session.user.email, role: session.user.role })
-            }
-            return session
-        },
     },
+    async session({ session, token }) {
+        if (token && session.user) {
+            session.user.id = token.id
+            session.user.role = token.role
+            session.user.status = token.status
+            session.user.managerId = token.managerId
+            session.user.workDays = token.workDays as number[]
+            session.user.dailyTarget = token.dailyTarget as number | null
+            session.user.plan = token.plan as string
+            // Debug Log (Comment out in production later if too noisy)
+            // console.log("[AUTH] Session Callback", { email: session.user.email, role: session.user.role })
+        }
+        return session
+    },
+},
 }
