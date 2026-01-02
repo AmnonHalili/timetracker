@@ -23,7 +23,7 @@ export async function DELETE(req: Request, { params }: { params: { taskId: strin
         })
 
         return NextResponse.json({ message: "Note deleted" })
-    } catch (error) {
+    } catch {
         return NextResponse.json({ message: "Failed to delete note" }, { status: 500 })
     }
 }

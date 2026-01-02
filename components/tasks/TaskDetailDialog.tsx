@@ -1,11 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import React from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Clock, Users, CheckCircle2, ChevronDown, ChevronUp, FileText, Paperclip, Send, Download, Trash2, StickyNote, Lock } from "lucide-react"
+import { Clock, Users, CheckCircle2, FileText, Paperclip, Send, Download, Trash2, StickyNote, Lock } from "lucide-react"
 import { format } from "date-fns"
-import { he } from "date-fns/locale"
 import { useLanguage } from "@/lib/useLanguage"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
@@ -67,9 +67,6 @@ interface Attachment {
 export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }: TaskDetailDialogProps) {
     const { t, language } = useLanguage()
     const { data: session } = useSession()
-    const dateLocale = language === 'he' ? he : undefined
-    const [showTimeHistory, setShowTimeHistory] = useState(false)
-    const [expandedSubtasks, setExpandedSubtasks] = useState<Record<string, boolean>>({})
 
     // Notes & Files State
     const [activeTab, setActiveTab] = useState("details")
@@ -81,14 +78,7 @@ export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }:
     const [submittingNote, setSubmittingNote] = useState(false)
     const [uploadingFile, setUploadingFile] = useState(false)
 
-    useEffect(() => {
-        if (open && task?.id) {
-            if (activeTab === "notes") fetchNotes()
-            if (activeTab === "files") fetchAttachments()
-        }
-    }, [open, task?.id, activeTab])
-
-    const fetchNotes = async () => {
+    const fetchNotes = React.useCallback(async () => {
         if (!task?.id) return
         setLoadingNotes(true)
         try {
@@ -100,9 +90,9 @@ export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }:
         } finally {
             setLoadingNotes(false)
         }
-    }
+    }, [task?.id])
 
-    const fetchAttachments = async () => {
+    const fetchAttachments = React.useCallback(async () => {
         if (!task?.id) return
         setLoadingAttachments(true)
         try {
@@ -114,7 +104,14 @@ export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }:
         } finally {
             setLoadingAttachments(false)
         }
-    }
+    }, [task?.id])
+
+    useEffect(() => {
+        if (open && task?.id) {
+            if (activeTab === "notes") fetchNotes()
+            if (activeTab === "files") fetchAttachments()
+        }
+    }, [open, task?.id, activeTab, fetchNotes, fetchAttachments])
 
     const handleAddNote = async () => {
         if (!newNote.trim() || !task?.id) return
@@ -225,12 +222,7 @@ export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }:
         }
     }
 
-    const toggleSubtask = (subtaskId: string) => {
-        setExpandedSubtasks(prev => ({
-            ...prev,
-            [subtaskId]: !prev[subtaskId]
-        }))
-    }
+
 
     const formatFileSize = (bytes: number) => {
         if (bytes === 0) return '0 Bytes'
@@ -446,7 +438,7 @@ export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }:
                                         <div className="grid gap-2">
                                             {/* (Re-using logic from previous implementation for subtasks) */}
                                             {(() => {
-                                                const timeBySubtask = new Map<string, any>()
+                                                const timeBySubtask = new Map<string, { subtask: { id: string; title: string }, totalSeconds: number }>()
                                                 timeEntries.forEach(entry => {
                                                     if (entry.endTime && entry.subtaskId && entry.subtask) {
                                                         const start = new Date(entry.startTime).getTime()

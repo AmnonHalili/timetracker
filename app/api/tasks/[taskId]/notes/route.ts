@@ -34,7 +34,7 @@ export async function POST(req: Request, { params }: { params: { taskId: string 
         })
 
         return NextResponse.json(note)
-    } catch (error) {
+    } catch {
         return NextResponse.json({ message: "Failed to create note" }, { status: 500 })
     }
 }
