@@ -65,7 +65,7 @@ interface Attachment {
 }
 
 export function TaskDetailDialog({ task, open, onOpenChange, timeEntries = [] }: TaskDetailDialogProps) {
-    const { t, language } = useLanguage()
+    const { t } = useLanguage()
     const { data: session } = useSession()
 
     // Notes & Files State
