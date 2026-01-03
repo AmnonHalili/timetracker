@@ -2,6 +2,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
+import { logActivity } from "@/lib/activity"
 
 export async function GET(req: Request, { params }: { params: { taskId: string } }) {
     const session = await getServerSession(authOptions)
@@ -32,6 +33,8 @@ export async function POST(req: Request, { params }: { params: { taskId: string 
             },
             include: { user: { select: { name: true, image: true } } }
         })
+
+        await logActivity(params.taskId, session.user.id, "COMMENT_ADDED", "Added a note")
 
         return NextResponse.json(note)
     } catch {

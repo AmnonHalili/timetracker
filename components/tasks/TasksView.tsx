@@ -813,6 +813,22 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
 
 
 
+    const handleTaskUpdate = (updatedFields?: Partial<TasksViewProps['initialTasks'][number]>) => {
+        if (!updatedFields) {
+            router.refresh()
+            return
+        }
+
+        // Optimistic update
+        if (selectedTask) {
+            setSelectedTask(prev => prev ? { ...prev, ...updatedFields } : null)
+        }
+        setTasks(prev => prev.map(t => t.id === selectedTask?.id ? { ...t, ...updatedFields } : t))
+
+        // Refresh server data in background
+        router.refresh()
+    }
+
     return (
 
         <Card className="border-none shadow-none">
@@ -1182,7 +1198,8 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                 className={`
                                                     h-8 w-full max-w-[140px] mx-auto flex items-center justify-center gap-2 text-xs font-semibold text-white shadow-sm rounded-md transition-all
                                                     ${task.status === 'DONE' ? 'bg-[#00c875] hover:bg-[#00c875]/90' : ''}
-                                                    ${(tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0) ? 'bg-[#fdab3d] hover:bg-[#fdab3d]/90' : ''}
+                                                    ${task.status === 'IN_PROGRESS' || (tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0) ? 'bg-[#0073ea] hover:bg-[#0060b9]' : ''}
+                                                    ${task.status === 'BLOCKED' ? 'bg-[#e2445c] hover:bg-[#c93b51]' : ''}
                                                     ${task.status === 'TODO' && !((tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0)) ? 'bg-[#c4c4c4] hover:bg-[#b0b0b0]' : ''}
                                                     ${isPast(new Date(task.deadline || '')) && !isToday(new Date(task.deadline || '')) && task.status !== 'DONE' ? 'bg-[#e2445c] hover:bg-[#d00000]' : ''}
                                                 `}
@@ -1193,11 +1210,12 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                 <span className="truncate">
                                                     {task.status === 'DONE' ? t('tasks.statusDone') :
                                                         isPast(new Date(task.deadline || '')) && !isToday(new Date(task.deadline || '')) && task.status !== 'DONE' ? t('tasks.statusOverdue') :
-                                                            (tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0 && !stoppedTimers.has(task.id))
-                                                                ? (tasksWithActiveTimers[task.id].length > 1
-                                                                    ? t('tasks.usersWorking').replace('{count}', tasksWithActiveTimers[task.id].length.toString())
-                                                                    : t('tasks.userIsWorking').replace('{name}', tasksWithActiveTimers[task.id][0].name?.split(' ')[0] || 'User'))
-                                                                : t('tasks.statusTodo')
+                                                            task.status === 'BLOCKED' ? (t('tasks.statusBlocked') || 'Blocked') :
+                                                                (tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0 && !stoppedTimers.has(task.id))
+                                                                    ? (tasksWithActiveTimers[task.id].length > 1
+                                                                        ? t('tasks.usersWorking').replace('{count}', tasksWithActiveTimers[task.id].length.toString())
+                                                                        : t('tasks.userIsWorking').replace('{name}', tasksWithActiveTimers[task.id][0].name?.split(' ')[0] || 'User'))
+                                                                    : (task.status === 'IN_PROGRESS' ? (t('tasks.statusInProgress') || 'In Progress') : t('tasks.statusTodo'))
                                                     }
                                                 </span>
                                             </div>
@@ -1385,6 +1403,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                 open={isDetailOpen}
                 onOpenChange={setIsDetailOpen}
                 timeEntries={taskTimeEntries}
+                onUpdate={handleTaskUpdate}
             />
 
             <CreateTaskDialog

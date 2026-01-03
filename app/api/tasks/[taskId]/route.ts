@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 import { getAllDescendants } from "@/lib/hierarchy-utils"
+import { logActivity } from "@/lib/activity"
 
 export async function GET(
     req: Request,
@@ -147,6 +148,32 @@ export async function PATCH(
                         type: "INFO" as const
                     }))
                 })
+            }
+        }
+
+        // --- Activity Logging ---
+        // 1. Status Change
+        if (newStatus !== undefined && newStatus !== taskToCheck.status) {
+            await logActivity(params.taskId, session.user.id, "STATUS_CHANGE", `Changed status to ${newStatus}`)
+        }
+
+        // 2. Priority Change
+        if (priority !== undefined && priority !== taskToCheck.priority) {
+            await logActivity(params.taskId, session.user.id, "PRIORITY_CHANGE", `Changed priority to ${priority}`)
+        }
+
+        // 3. User Assignment
+        if (assignedToIds) {
+            const newAssigneeIds = (assignedToIds as string[])
+            // Added users
+            const addedUsers = newAssigneeIds.filter(id => !previousAssigneeIds.includes(id))
+            if (addedUsers.length > 0) {
+                await logActivity(params.taskId, session.user.id, "ASSIGN_USER", `Assigned ${addedUsers.length} user(s)`)
+            }
+            // Removed users
+            const removedUsers = previousAssigneeIds.filter(id => !newAssigneeIds.includes(id))
+            if (removedUsers.length > 0) {
+                await logActivity(params.taskId, session.user.id, "REMOVE_USER", `Removed ${removedUsers.length} user(s)`)
             }
         }
 

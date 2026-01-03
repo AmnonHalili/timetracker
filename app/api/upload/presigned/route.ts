@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3"
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
-import { prisma } from "@/lib/prisma"
+
 
 // Validate Env Vars
 if (!process.env.AWS_REGION || !process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY || !process.env.AWS_S3_BUCKET_NAME) {
@@ -25,16 +25,14 @@ export async function POST(req: Request) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
+    // Use the plan from the session, which includes inheritance logic
+    const userPlan = session.user.plan
+
+    if (!userPlan || userPlan === 'FREE') {
+        return NextResponse.json({ message: "Uploads are restricted to premium plans" }, { status: 403 })
+    }
+
     try {
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: { plan: true }
-        })
-
-        if (!user || user.plan === 'FREE') {
-            return NextResponse.json({ message: "Uploads are restricted to premium plans" }, { status: 403 })
-        }
-
         const { fileName, fileType, fileSize, taskId } = await req.json()
 
         // Validate file size (e.g., 5MB limit)
@@ -56,6 +54,8 @@ export async function POST(req: Request) {
         return NextResponse.json({ url: signedUrl, key: fileKey })
     } catch (error) {
         console.error("Presigned URL Error:", error)
-        return NextResponse.json({ message: "Failed to generate upload URL" }, { status: 500 })
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const errorMessage = (error as any).message || "Unknown error"
+        return NextResponse.json({ message: `Failed to generate upload URL: ${errorMessage}` }, { status: 500 })
     }
 }

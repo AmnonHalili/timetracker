@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3"
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
+import { logActivity } from "@/lib/activity"
 
 const s3Client = new S3Client({
     region: process.env.AWS_REGION,
@@ -67,6 +68,8 @@ export async function POST(req: Request, { params }: { params: { taskId: string 
             Key: fileKey,
         })
         const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 })
+
+        await logActivity(params.taskId, session.user.id, "FILE_UPLOADED", `Uploaded file: ${fileName}`)
 
         return NextResponse.json({ ...attachment, fileUrl: signedUrl })
     } catch (error) {

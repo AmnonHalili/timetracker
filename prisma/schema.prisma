@@ -58,6 +58,7 @@ model User {
   tasks                  Task[]               @relation("TaskToUser")
   taskNotes              TaskNote[]
   taskAttachments        TaskAttachment[]
+  activities             TaskActivity[]
 }
 
 model SecondaryManager {
@@ -169,6 +170,7 @@ model Task {
   subtasks    SubTaskItem[]
   notes       TaskNote[]
   attachments TaskAttachment[]
+  activities  TaskActivity[]
   timeEntries TimeEntry[]     @relation("TaskToTimeEntry")
   assignees   User[]          @relation("TaskToUser")
 }
@@ -278,6 +280,20 @@ model EventReminder {
   event         Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@index([eventId])
+}
+
+model TaskActivity {
+  id        String   @id @default(cuid())
+  taskId    String
+  userId    String
+  action    String   // e.g., "STATUS_CHANGE", "ASSIGN_USER", "COMMENT_ADDED"
+  details   String?  // JSON string or simple text describing the change
+  createdAt DateTime @default(now())
+  
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
 }
 
 model Account {
