@@ -88,10 +88,10 @@ export function NotificationBell() {
         }}>
             <PopoverTrigger asChild>
                 <Button variant="ghost" className="relative h-14 w-14 p-0 [&_svg]:!size-6 md:[&_svg]:!size-10" aria-label={`${t('notifications.title')}${unreadCount > 0 ? `, ${unreadCount} ${t('notifications.unread')}` : ''}`}>
-                    <Bell className="h-6 w-6 md:h-10 md:w-10 text-muted-foreground" aria-hidden="true" />
+                    <Bell className="h-6 w-6 md:h-10 md:w-10 text-muted-foreground transition-colors hover:text-foreground" aria-hidden="true" />
                     {unreadCount > 0 && (
-                        <span className="absolute top-3.5 right-3.5 h-3 w-3 rounded-full bg-red-600 animate-pulse border-2 border-background" aria-hidden="true">
-                            <span className="sr-only">{unreadCount} {t('notifications.unread')} {t('notifications.title')}</span>
+                        <span className="absolute top-3 right-3 md:top-2 md:right-2 flex h-4 w-4 md:h-5 md:w-5 items-center justify-center rounded-full bg-destructive text-[10px] md:text-xs font-bold text-white shadow-sm ring-2 ring-background animate-in zoom-in-50 duration-300">
+                            {unreadCount > 99 ? '99+' : unreadCount}
                         </span>
                     )}
                 </Button>
