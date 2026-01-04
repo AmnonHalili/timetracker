@@ -120,6 +120,9 @@ export default function LoginPage() {
                                 {t('auth.signUp')}
                             </Link>
                         </div>
+                        <div className="text-xs text-muted-foreground text-center mt-2">
+                            <Link href="/privacy" className="hover:underline">Privacy Policy</Link>
+                        </div>
                     </CardFooter>
                 </form>
             </Card>
