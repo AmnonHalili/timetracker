@@ -26,25 +26,7 @@ export async function GET(req: NextRequest) {
         const monthStart = startOfMonth(currentDate)
         const monthEnd = endOfMonth(currentDate)
 
-        // Execute independent queries in parallel
-        const [reportData, currentUser, tasks, internalEvents] = await Promise.all([
-            // 1. Reports
-            getReportData(session.user.id, year, month),
-
-            // 2. User & Scope
-            prisma.user.findUnique({
-                where: { id: session.user.id },
-                include: { calendarSettings: true, project: true }
-            }),
-
-            // 3. Tasks - query needs logic based on user role/project, so we defer the specific query construction
-            // Actually, we need currentUser to construct the task query... 
-            // So we can't fully parallelize tasks/events without currentUser.
-            // Let's parallelize Reports and User first, then the rest.
-            // Wait, to be truly parallel we need to assume global strategy or fetch user first fast.
-            // Let's keep it simple: Fetch User first (fast), then everything else parallel.
-            null, null
-        ]);
+        // 1. Fetch User & Reports Parallel (Independent)
 
         // Re-fetching user here to respect the variable scope flow, but optimization:
         // We know we need currentUser for tasks/events permissions.
@@ -140,7 +122,9 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             dailyReports: (reportDataResult as any)?.report?.days || [],
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             tasks: tasksResult,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             events: allEvents
         })
     } catch (error) {
