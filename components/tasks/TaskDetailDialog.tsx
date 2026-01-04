@@ -18,7 +18,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
 import confetti from "canvas-confetti"
 
 interface TaskDetailDialogProps {
@@ -97,7 +96,7 @@ interface ActivityLog {
     }
 }
 
-export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntries = [], projectUsers = [], highlightNoteId = null, labels = [], allTasks = [] }: TaskDetailDialogProps) {
+export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntries = [], projectUsers = [], highlightNoteId = null, allTasks = [] }: TaskDetailDialogProps) {
     const { t } = useLanguage()
     const { data: session } = useSession()
     const currentUserId = session?.user?.id
@@ -707,6 +706,9 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
                                                                     </li>
                                                                     <li>
                                                                         <span className="font-medium text-foreground">Blocking:</span> Tasks that cannot start <em>until</em> this task is finished.
+                                                                    </li>
+                                                                    <li>
+                                                                        <span className="font-medium text-foreground">Note:</span> One&apos;s output is another&apos;s input.
                                                                     </li>
                                                                 </ul>
                                                             </div>

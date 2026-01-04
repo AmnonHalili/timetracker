@@ -126,7 +126,6 @@ export async function PATCH(
         // Handle watcher updates
         let previousWatcherIds: string[] = []
         if (watcherIds) {
-            // @ts-ignore - watcher is definitely there because we included it
             previousWatcherIds = taskToCheck.watchers ? taskToCheck.watchers.map(u => u.id) : []
             updateData.watchers = {
                 set: [], // Clear existing

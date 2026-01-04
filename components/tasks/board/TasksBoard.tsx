@@ -12,13 +12,15 @@ import {
     DragStartEvent,
     DragEndEvent,
 } from "@dnd-kit/core"
-import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable"
+import { sortableKeyboardCoordinates } from "@dnd-kit/sortable"
 import { BoardColumn } from "./BoardColumn"
 import { BoardCard } from "./BoardCard"
 import { createPortal } from "react-dom"
 
 interface TasksBoardProps {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tasks: any[]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onTaskClick: (task: any) => void
     onStatusChange: (taskId: string, newStatus: string) => Promise<void>
 }

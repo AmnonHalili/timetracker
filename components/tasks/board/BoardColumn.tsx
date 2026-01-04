@@ -7,7 +7,9 @@ import { BoardCard } from "./BoardCard"
 interface BoardColumnProps {
     id: string
     title: string
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tasks: any[]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onTaskClick: (task: any) => void
 }
 

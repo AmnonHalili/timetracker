@@ -20,7 +20,7 @@ interface BoardCardProps {
             attachments: number
         }
     }
-    onClick: (task: any) => void
+    onClick: (task: BoardCardProps['task']) => void
 }
 
 export function BoardCard({ task, onClick }: BoardCardProps) {
