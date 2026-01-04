@@ -41,6 +41,9 @@ export default async function DashboardPage() {
     const dayStart = startOfDay(today)
     const dayEnd = endOfDay(today)
 
+    // Calculate month start for filtering time entries and workdays
+    const monthStart = startOfMonth(today)
+
     const user = (await prisma.user.findUnique({
         where: { id: session.user.id },
         select: {
@@ -57,6 +60,11 @@ export default async function DashboardPage() {
             managerId: true, // Required for hierarchy logic
             pendingProjectId: true, // Required for pending banner
             timeEntries: {
+                where: {
+                    startTime: {
+                        gte: monthStart
+                    }
+                },
                 select: {
                     id: true,
                     userId: true,
@@ -86,7 +94,6 @@ export default async function DashboardPage() {
     })) as unknown as DashboardUser
 
     // Fetch workdays for the current month for balance calculation
-    const monthStart = startOfMonth(today)
     let monthlyWorkdays: Pick<Workday, 'workdayStartTime' | 'workdayEndTime'>[] = []
     let activeWorkday = null
 

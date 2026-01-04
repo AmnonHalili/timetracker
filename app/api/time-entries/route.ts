@@ -2,7 +2,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
-import { startOfDay, endOfDay } from "date-fns"
+import { startOfDay, endOfDay, startOfMonth } from "date-fns"
 // Note: Location verification is now handled by Workday, not TimeEntry
 
 // GET: Fetch currently running entry + recent history
@@ -14,8 +14,16 @@ export async function GET() {
     }
 
     try {
+        // Get current month start for filtering
+        const monthStart = startOfMonth(new Date())
+
         const entries = await prisma.timeEntry.findMany({
-            where: { userId: session.user.id },
+            where: {
+                userId: session.user.id,
+                startTime: {
+                    gte: monthStart
+                }
+            },
             select: {
                 id: true,
                 userId: true,
@@ -179,17 +187,17 @@ export async function POST(req: Request) {
             // Match if: same task IDs (or both have no tasks), same subtaskId, and same description
             const matchingEntry = existingEntries.find(entry => {
                 const entryTaskIds = entry.tasks.map(t => t.id).sort()
-                const taskIdsMatch = 
+                const taskIdsMatch =
                     (activeTaskIds.length === 0 && entryTaskIds.length === 0) ||
-                    (activeTaskIds.length === entryTaskIds.length && 
-                     activeTaskIds.every((id, idx) => id === entryTaskIds[idx]))
-                
+                    (activeTaskIds.length === entryTaskIds.length &&
+                        activeTaskIds.every((id, idx) => id === entryTaskIds[idx]))
+
                 // Match by description - both must be null/empty or both must be the same
                 const entryDesc = entry.description?.trim() || null
-                const descriptionMatch = 
+                const descriptionMatch =
                     (!activeDescription && !entryDesc) ||
                     (activeDescription && entryDesc && activeDescription === entryDesc)
-                
+
                 return taskIdsMatch && descriptionMatch
             })
 
@@ -197,7 +205,7 @@ export async function POST(req: Request) {
                 // Merge with existing entry
                 const existingStart = new Date(matchingEntry.startTime)
                 const existingEnd = matchingEntry.endTime ? new Date(matchingEntry.endTime) : null
-                
+
                 // Keep earliest start time
                 const mergedStart = existingStart < startTime ? existingStart : startTime
                 // Use latest end time
@@ -421,17 +429,17 @@ export async function POST(req: Request) {
             // Find matching entry by task context and description
             const matchingEntry = existingEntries.find(entry => {
                 const existingTaskIds = entry.tasks.map(t => t.id).sort()
-                const taskIdsMatch = 
+                const taskIdsMatch =
                     (entryTaskIds.length === 0 && existingTaskIds.length === 0) ||
-                    (entryTaskIds.length === existingTaskIds.length && 
-                     entryTaskIds.every((id, idx) => id === existingTaskIds[idx]))
-                
+                    (entryTaskIds.length === existingTaskIds.length &&
+                        entryTaskIds.every((id, idx) => id === existingTaskIds[idx]))
+
                 // Match by description - both must be null/empty or both must be the same
                 const existingDesc = entry.description?.trim() || null
-                const descriptionMatch = 
+                const descriptionMatch =
                     (!entryDescription && !existingDesc) ||
                     (entryDescription && existingDesc && entryDescription === existingDesc)
-                
+
                 return taskIdsMatch && descriptionMatch
             })
 
@@ -439,7 +447,7 @@ export async function POST(req: Request) {
                 // Merge with existing entry
                 const existingStart = new Date(matchingEntry.startTime)
                 const existingEnd = matchingEntry.endTime ? new Date(matchingEntry.endTime) : null
-                
+
                 // Keep earliest start time
                 const mergedStart = existingStart < startTime ? existingStart : startTime
                 // Use latest end time
