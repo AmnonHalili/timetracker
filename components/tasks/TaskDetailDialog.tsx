@@ -4,14 +4,15 @@ import { useState, useEffect, useMemo } from "react"
 import React from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Clock, Users, CheckCircle2, MessageSquare, Paperclip, Send } from "lucide-react"
+import { Clock, Users, CheckCircle2, MessageSquare, Paperclip, Send, FileText, X, AtSign } from "lucide-react"
 import { useLanguage } from "@/lib/useLanguage"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
-// import { useSession } from "next-auth/react"
+import { useSession } from "next-auth/react"
 import { UnifiedTimeline, UnifiedActivityItem } from "./UnifiedTimeline"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface TaskDetailDialogProps {
     task: {
@@ -43,6 +44,8 @@ interface TaskDetailDialogProps {
             name: string | null
         }
     }>
+    projectUsers?: Array<{ id: string; name: string | null; email: string | null }>
+    highlightNoteId?: string | null
 }
 
 interface Note {
@@ -50,6 +53,7 @@ interface Note {
     content: string
     createdAt: string
     user: {
+        id: string
         name: string | null
         image: string | null
     }
@@ -62,7 +66,9 @@ interface Attachment {
     fileSize: number
     createdAt: string
     user: {
+        id: string
         name: string | null
+        image?: string | null
     }
 }
 
@@ -72,12 +78,13 @@ interface ActivityLog {
     details: string | null
     createdAt: string
     user: {
+        id: string
         name: string | null
         image: string | null
     }
 }
 
-export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntries = [] }: TaskDetailDialogProps) {
+export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntries = [], projectUsers = [], highlightNoteId = null }: TaskDetailDialogProps) {
     const { t } = useLanguage()
     // const { data: session } = useSession()
 
@@ -88,9 +95,17 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
     const [activities, setActivities] = useState<ActivityLog[]>([])
 
     const [newNote, setNewNote] = useState("")
+    const [pendingFiles, setPendingFiles] = useState<File[]>([])
     const [loading, setLoading] = useState(false)
     const [submittingNote, setSubmittingNote] = useState(false)
     const [uploadingFile, setUploadingFile] = useState(false)
+    const textareaRef = React.useRef<HTMLTextAreaElement>(null)
+
+    // Mention State
+    const [mentionSearch, setMentionSearch] = useState("")
+    const [showMentions, setShowMentions] = useState(false)
+    const [mentionIndex, setMentionIndex] = useState(0)
+    const [cursorPosition, setCursorPosition] = useState(0)
 
     // Local state for status (synced with task prop initially, updated on change)
     const [status, setStatus] = useState(task?.status || "TODO")
@@ -101,7 +116,67 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
         }
     }, [task?.status])
 
-    const fetchAllUpdates = React.useCallback(async () => {
+    // Mention Logic
+    const filteredMentions = useMemo(() => {
+        if (!projectUsers) return []
+        if (!mentionSearch) return projectUsers
+        return projectUsers.filter(u =>
+            u.name?.toLowerCase().includes(mentionSearch.toLowerCase())
+        )
+    }, [mentionSearch, projectUsers])
+
+    const handleNoteChange = (val: string, cursorIdx: number) => {
+        setNewNote(val)
+        setCursorPosition(cursorIdx)
+
+        const beforeCursor = val.slice(0, cursorIdx)
+        const lastAt = beforeCursor.lastIndexOf("@")
+
+        if (lastAt !== -1 && (lastAt === 0 || /\s/.test(beforeCursor[lastAt - 1]))) {
+            const search = beforeCursor.slice(lastAt + 1)
+            if (!/\s/.test(search)) {
+                setMentionSearch(search)
+                setShowMentions(true)
+                setMentionIndex(0)
+            } else {
+                setShowMentions(false)
+            }
+        } else {
+            setShowMentions(false)
+        }
+    }
+
+    const insertMention = (userName: string) => {
+        const lastAt = newNote.lastIndexOf("@", cursorPosition - 1)
+        const beforeAt = newNote.slice(0, lastAt)
+        const afterCursor = newNote.slice(cursorPosition)
+        const updatedNote = beforeAt + "@" + userName + " " + afterCursor
+        setNewNote(updatedNote)
+        setShowMentions(false)
+        setMentionSearch("")
+    }
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (!showMentions) return
+
+        if (e.key === "ArrowDown") {
+            e.preventDefault()
+            setMentionIndex(prev => (prev + 1) % filteredMentions.length)
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault()
+            setMentionIndex(prev => (prev - 1 + filteredMentions.length) % filteredMentions.length)
+        } else if (e.key === "Enter" && filteredMentions.length > 0) {
+            e.preventDefault()
+            insertMention(filteredMentions[mentionIndex].name || "")
+        } else if (e.key === "Escape") {
+            setShowMentions(false)
+        }
+    }
+
+    const { data: session } = useSession()
+    const currentUserId = session?.user?.id
+
+    const fetchAllUpdates = useMemo(() => async () => {
         if (!task?.id) return
         setLoading(true)
         try {
@@ -136,7 +211,11 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
                 id: note.id,
                 type: 'note',
                 createdAt: note.createdAt,
-                user: note.user,
+                user: {
+                    id: note.user.id,
+                    name: note.user.name,
+                    image: note.user.image
+                },
                 content: note.content
             })
         })
@@ -147,7 +226,11 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
                 id: file.id,
                 type: 'file',
                 createdAt: file.createdAt,
-                user: { name: file.user.name, image: null }, // Attachments user might lack image in current API
+                user: {
+                    id: file.user.id,
+                    name: file.user.name,
+                    image: file.user.image || null
+                },
                 fileName: file.fileName,
                 fileUrl: file.fileUrl,
                 fileSize: file.fileSize
@@ -164,7 +247,11 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
                 id: act.id,
                 type: 'activity',
                 createdAt: act.createdAt,
-                user: act.user,
+                user: {
+                    id: act.user.id,
+                    name: act.user.name,
+                    image: act.user.image
+                },
                 action: act.action,
                 details: act.details
             })
@@ -194,66 +281,123 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
         }
     }
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0]
-        if (!file || !task?.id) return
+    const handleTriggerMention = () => {
+        const space = newNote.length > 0 && !newNote.endsWith(" ") ? " " : ""
+        const updated = newNote + space + "@"
+        setNewNote(updated)
+        setShowMentions(true)
+        setMentionSearch("")
 
-        setUploadingFile(true)
+        // Focus textarea and put cursor at end
+        setTimeout(() => {
+            if (textareaRef.current) {
+                textareaRef.current.focus()
+                const len = updated.length
+                textareaRef.current.setSelectionRange(len, len)
+                setCursorPosition(len)
+            }
+        }, 0)
+    }
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || [])
+        if (files.length === 0) return
+        setPendingFiles([...pendingFiles, ...files])
+        e.target.value = "" // Reset input
+    }
+
+    const removePendingFile = (index: number) => {
+        setPendingFiles(pendingFiles.filter((_, i) => i !== index))
+    }
+
+    const handleSendMessage = async () => {
+        if ((!newNote.trim() && pendingFiles.length === 0) || !task?.id) return
+        setSubmittingNote(true)
+
         try {
-            // 1. Get Presigned URL
-            const presignRes = await fetch("/api/upload/presigned", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    fileName: file.name,
-                    fileType: file.type,
-                    fileSize: file.size,
-                    taskId: task.id
+            // 1. Upload Files first if any
+            const uploadedAttachments: any[] = []
+            for (const file of pendingFiles) {
+                setUploadingFile(true)
+                try {
+                    // Get Presigned URL
+                    const presignRes = await fetch("/api/upload/presigned", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            fileName: file.name,
+                            fileType: file.type,
+                            fileSize: file.size,
+                            taskId: task.id
+                        })
+                    })
+
+                    if (!presignRes.ok) throw new Error(`Presign failed for ${file.name}`)
+                    const { url, key } = await presignRes.json()
+
+                    // Upload to S3
+                    const uploadRes = await fetch(url, {
+                        method: "PUT",
+                        body: file,
+                        headers: { "Content-Type": file.type }
+                    })
+                    if (!uploadRes.ok) throw new Error(`Upload failed for ${file.name}`)
+
+                    // Save Metadata
+                    const saveRes = await fetch(`/api/tasks/${task.id}/attachments`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            fileName: file.name,
+                            fileType: file.type,
+                            fileSize: file.size,
+                            fileKey: key
+                        })
+                    })
+                    if (saveRes.ok) {
+                        const attachment = await saveRes.json()
+                        uploadedAttachments.push(attachment)
+                    }
+                } catch (err) {
+                    console.error(err)
+                    alert(`Failed to upload ${file.name}`)
+                } finally {
+                    setUploadingFile(false)
+                }
+            }
+
+            // Update attachments state if any were uploaded
+            if (uploadedAttachments.length > 0) {
+                setAttachments(prev => [...uploadedAttachments, ...prev])
+            }
+
+            // 2. Send Note if text exists
+            if (newNote.trim()) {
+                const res = await fetch(`/api/tasks/${task.id}/notes`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ content: newNote })
                 })
-            })
-
-            if (!presignRes.ok) {
-                const error = await presignRes.json()
-                alert(error.message || "Upload failed")
-                return
+                if (res.ok) {
+                    const note = await res.json()
+                    setNotes(prev => [note, ...prev])
+                }
             }
 
-            const { url, key } = await presignRes.json()
-
-            // 2. Upload to S3
-            const uploadRes = await fetch(url, {
-                method: "PUT",
-                body: file,
-                headers: { "Content-Type": file.type }
-            })
-
-            if (!uploadRes.ok) {
-                throw new Error("Failed to upload to storage")
+            // Sync with timeline/activity
+            if (activeTab === "chat") {
+                fetchAllUpdates()
             }
 
-            // 3. Save Metadata
-            const saveRes = await fetch(`/api/tasks/${task.id}/attachments`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    fileName: file.name,
-                    fileType: file.type,
-                    fileSize: file.size,
-                    fileKey: key
-                })
-            })
-
-            if (saveRes.ok) {
-                const attachment = await saveRes.json()
-                setAttachments([attachment, ...attachments])
-            }
+            // 3. Clear state
+            setNewNote("")
+            setPendingFiles([])
 
         } catch (error) {
             console.error(error)
-            alert("Upload failed. Please try again.")
+            alert("Something went wrong while sending.")
         } finally {
-            setUploadingFile(false)
-            e.target.value = "" // Reset input
+            setSubmittingNote(false)
         }
     }
 
@@ -461,18 +605,77 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
 
                         <TabsContent value="chat" className="mt-0 h-full flex flex-col">
                             <div className="flex-1 overflow-hidden p-6 pb-2">
-                                <UnifiedTimeline items={unifiedTimeline} isLoading={loading} />
+                                <UnifiedTimeline
+                                    taskId={task.id}
+                                    items={unifiedTimeline}
+                                    isLoading={loading}
+                                    currentUserId={currentUserId}
+                                    onUpdate={fetchAllUpdates}
+                                    highlightNoteId={highlightNoteId}
+                                />
                             </div>
 
                             {/* Unified Composer */}
                             <div className="border-t bg-background p-4 z-10 shrink-0">
                                 <div className="space-y-4">
-                                    <Textarea
-                                        placeholder="Type a message..."
-                                        value={newNote}
-                                        onChange={(e) => setNewNote(e.target.value)}
-                                        className="min-h-[80px]"
-                                    />
+                                    {/* Pending Files Preview */}
+                                    {pendingFiles.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 pb-2">
+                                            {pendingFiles.map((file, idx) => (
+                                                <div key={idx} className="flex items-center gap-2 bg-muted/50 px-2 py-1 rounded border text-xs group">
+                                                    <FileText className="h-3 w-3 text-blue-500" />
+                                                    <span className="max-w-[150px] truncate">{file.name}</span>
+                                                    <button
+                                                        onClick={() => removePendingFile(idx)}
+                                                        className="p-0.5 rounded-full hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors ml-1"
+                                                    >
+                                                        <X className="h-3 w-3" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    <div className="relative">
+                                        <Textarea
+                                            ref={textareaRef}
+                                            placeholder="Type a message..."
+                                            value={newNote}
+                                            onChange={(e) => handleNoteChange(e.target.value, e.target.selectionStart)}
+                                            onKeyDown={handleKeyDown}
+                                            className="min-h-[80px]"
+                                        />
+
+                                        {/* Mention Suggestions */}
+                                        {showMentions && filteredMentions.length > 0 && (
+                                            <div className="absolute bottom-full left-0 mb-2 w-64 bg-popover border rounded-lg shadow-xl z-50 overflow-hidden animate-in slide-in-from-bottom-2 duration-200">
+                                                <div className="p-2 border-b bg-muted/50 text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex justify-between items-center">
+                                                    <span>{t('tasks.mentionUser')}</span>
+                                                    <span className="text-[9px] flex gap-2">
+                                                        <span>↑↓ to navigate</span>
+                                                        <span>↵ to select</span>
+                                                    </span>
+                                                </div>
+                                                <div className="max-h-48 overflow-y-auto">
+                                                    {filteredMentions.map((u, i) => (
+                                                        <div
+                                                            key={u.id}
+                                                            className={`flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors ${i === mentionIndex ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+                                                            onClick={() => insertMention(u.name || "")}
+                                                        >
+                                                            <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold">
+                                                                {u.name?.substring(0, 2).toUpperCase() || "??"}
+                                                            </div>
+                                                            <div className="flex flex-col min-w-0">
+                                                                <span className="text-sm font-medium truncate">{u.name}</span>
+                                                                <span className={`text-[10px] truncate ${i === mentionIndex ? "text-primary-foreground/70" : "text-muted-foreground"}`}>{u.email}</span>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                     <div className="flex justify-between items-center">
                                         {/* File Upload Button */}
                                         <div className="flex items-center">
@@ -480,19 +683,46 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
                                                 type="file"
                                                 id="chat-file-upload"
                                                 className="hidden"
+                                                multiple
                                                 onChange={handleFileUpload}
-                                                disabled={uploadingFile}
+                                                disabled={submittingNote}
                                             />
-                                            <label htmlFor="chat-file-upload" className={`cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9 ${uploadingFile ? "opacity-50" : ""}`}>
+                                            <label htmlFor="chat-file-upload" className={`cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9 ${submittingNote ? "opacity-50 cursor-not-allowed" : ""}`}>
                                                 <Paperclip className="h-4 w-4" />
                                             </label>
                                             {uploadingFile && <span className="text-xs text-muted-foreground ml-2">Uploading...</span>}
                                         </div>
 
-                                        <Button onClick={handleAddNote} disabled={submittingNote || !newNote.trim()} size="sm">
-                                            {submittingNote ? "Sending..." : "Send"}
-                                            <Send className="ml-2 h-3 w-3" />
-                                        </Button>
+                                        <div className="flex items-center gap-1">
+                                            <TooltipProvider>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-9 w-9 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
+                                                            onClick={handleTriggerMention}
+                                                            disabled={submittingNote}
+                                                        >
+                                                            <AtSign className="h-4 w-4" />
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>{t('tasks.mentionSomeone')}</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
+
+                                            <Button
+                                                onClick={handleSendMessage}
+                                                disabled={submittingNote || (!newNote.trim() && pendingFiles.length === 0)}
+                                                size="sm"
+                                                className="bg-primary hover:bg-primary/90 shadow-md transition-all duration-200"
+                                            >
+                                                {submittingNote ? "Sending..." : "Send"}
+                                                <Send className="ml-2 h-3 w-3" />
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

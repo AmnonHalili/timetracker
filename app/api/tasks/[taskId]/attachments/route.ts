@@ -22,7 +22,7 @@ export async function GET(req: Request, { params }: { params: { taskId: string }
     const attachments = await prisma.taskAttachment.findMany({
         where: { taskId: params.taskId },
         orderBy: { createdAt: 'desc' },
-        include: { user: { select: { name: true, image: true } } }
+        include: { user: { select: { id: true, name: true, image: true } } }
     })
 
     // Generate signed URLs for each attachment

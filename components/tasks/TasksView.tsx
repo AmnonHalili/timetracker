@@ -1,7 +1,7 @@
 "use client"
 
 
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useState, useEffect, useRef } from "react"
 import { Trash2, Calendar, Plus, MoreVertical, Pencil, Play, Square, CheckCircle2, AlertCircle, Edit } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -92,6 +92,8 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [selectedTask, setSelectedTask] = useState<TasksViewProps['initialTasks'][0] | null>(null)
     const [isDetailOpen, setIsDetailOpen] = useState(false)
+    const searchParams = useSearchParams()
+    const [deepLinkNoteId, setDeepLinkNoteId] = useState<string | null>(null)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [taskTimeEntries, setTaskTimeEntries] = useState<Array<{
         id: string
@@ -137,6 +139,27 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
         })
         setLocalSubtasks(subtasksMap)
     }, [initialTasks])
+
+    useEffect(() => {
+        const taskId = searchParams.get('taskId')
+        const noteId = searchParams.get('noteId')
+
+        if (taskId && tasks.length > 0) {
+            const task = tasks.find(t => t.id === taskId)
+            if (task && (!selectedTask || selectedTask.id !== taskId)) {
+                setSelectedTask(task)
+                setIsDetailOpen(true)
+                setDeepLinkNoteId(noteId)
+
+                // Fetch time entries for this task
+                fetch(`/api/tasks/${taskId}/time-entries`).then(res => {
+                    if (res.ok) return res.json()
+                }).then(data => {
+                    if (data) setTaskTimeEntries(data)
+                })
+            }
+        }
+    }, [searchParams, tasks, selectedTask])
 
 
 
@@ -1401,9 +1424,19 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
             <TaskDetailDialog
                 task={selectedTask}
                 open={isDetailOpen}
-                onOpenChange={setIsDetailOpen}
+                onOpenChange={(open) => {
+                    setIsDetailOpen(open)
+                    if (!open) {
+                        setDeepLinkNoteId(null)
+                        // Clear search params to avoid re-opening on refresh
+                        const newUrl = window.location.pathname
+                        window.history.replaceState({}, '', newUrl)
+                    }
+                }}
                 timeEntries={taskTimeEntries}
                 onUpdate={handleTaskUpdate}
+                projectUsers={users}
+                highlightNoteId={deepLinkNoteId}
             />
 
             <CreateTaskDialog
