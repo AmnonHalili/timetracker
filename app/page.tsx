@@ -22,8 +22,10 @@ export default async function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <LandingPageContent />
-      <footer className="py-6 text-center text-sm text-gray-500">
+      <footer className="py-6 text-center text-sm text-gray-500 space-x-4">
         <a href="/privacy" className="hover:underline">Privacy Policy</a>
+        <span>&bull;</span>
+        <a href="/terms" className="hover:underline">Terms of Service</a>
       </footer>
       <AccessibilityButton />
     </div>
