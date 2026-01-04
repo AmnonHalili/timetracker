@@ -46,11 +46,22 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
         }
 
-        const settings = await prisma.calendarSettings.findUnique({
-            where: { userId: session.user.id }
-        })
+        const [settings, googleAccount] = await Promise.all([
+            prisma.calendarSettings.findUnique({
+                where: { userId: session.user.id }
+            }),
+            prisma.account.findFirst({
+                where: { userId: session.user.id, provider: "google" }
+            })
+        ])
 
-        return NextResponse.json(settings || { isGoogleCalendarSyncEnabled: false, syncMode: "FULL_DETAILS" })
+        return NextResponse.json({
+            ...settings,
+            isGoogleCalendarSyncEnabled: settings?.isGoogleCalendarSyncEnabled ?? false,
+            syncMode: settings?.syncMode ?? "FULL_DETAILS",
+            isGoogleLinked: !!googleAccount,
+            hasRefreshToken: !!googleAccount?.refresh_token
+        })
     } catch (error) {
         console.error("Error fetching calendar settings:", error)
         return NextResponse.json({ error: "Internal server error" }, { status: 500 })

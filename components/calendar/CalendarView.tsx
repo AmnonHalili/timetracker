@@ -76,22 +76,30 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
     const [loadingSettings, setLoadingSettings] = useState(false)
 
     // Fetch settings on mount
+    const [isGoogleLinked, setIsGoogleLinked] = useState(false)
+    const [hasRefreshToken, setHasRefreshToken] = useState(false)
+
+    // Fetch settings and linked status
     useEffect(() => {
-        if (session?.user?.id) {
-            setLoadingSettings(true)
-            fetch('/api/calendar/settings')
-                .then(res => res.json())
-                .then(data => {
-                    if (data && !data.error) {
-                        setSyncSettings({
-                            isGoogleCalendarSyncEnabled: data.isGoogleCalendarSyncEnabled,
-                            syncMode: data.syncMode
-                        })
-                    }
-                })
-                .finally(() => setLoadingSettings(false))
+        const fetchSettings = async () => {
+            try {
+                const res = await fetch('/api/calendar/settings')
+                if (res.ok) {
+                    const data = await res.json()
+                    setSyncSettings({
+                        isGoogleCalendarSyncEnabled: data.isGoogleCalendarSyncEnabled,
+                        syncMode: data.syncMode || "FULL_DETAILS"
+                    })
+                    setIsGoogleLinked(data.isGoogleLinked)
+                    setHasRefreshToken(data.hasRefreshToken)
+                }
+            } catch (error) {
+                console.error("Failed to fetch settings", error)
+            }
         }
-    }, [session?.user?.id])
+        fetchSettings()
+    }, [])
+
 
 
     // Reset optimistic state when server data changes
@@ -150,8 +158,9 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
     }
 
     const handleConnectGoogle = async () => {
+        toast.loading("Redirecting to Google for authorization...")
         // Trigger NextAuth sign in with Google provider and extra scopes
-        signIn('google', {
+        await signIn('google', {
             callbackUrl: window.location.href,
             redirect: true,
         })
@@ -243,7 +252,13 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                                         checked={syncSettings.isGoogleCalendarSyncEnabled}
                                         onCheckedChange={(checked: boolean) => {
                                             if (checked) {
-                                                handleConnectGoogle()
+                                                if (isGoogleLinked && hasRefreshToken) {
+                                                    // If already linked and valid, just enable
+                                                    handleUpdateSettings({ isGoogleCalendarSyncEnabled: true })
+                                                } else {
+                                                    // Start OAuth flow (force re-auth if missing token)
+                                                    handleConnectGoogle()
+                                                }
                                             } else {
                                                 handleUpdateSettings({ isGoogleCalendarSyncEnabled: false })
                                             }
