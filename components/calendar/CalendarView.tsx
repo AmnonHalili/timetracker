@@ -62,7 +62,7 @@ interface CalendarViewProps {
 
 export function CalendarView({ initialDate, data, projectId }: CalendarViewProps) {
     const { t, isRTL } = useLanguage()
-    const { data: session } = useSession()
+    // const { data: session } = useSession() // Unused
     const [view, setView] = useState<'month' | 'day'>('month')
     const [currentDate, setCurrentDate] = useState(initialDate)
     const [optimisticEvents, setOptimisticEvents] = useState<CalendarEvent[]>([])

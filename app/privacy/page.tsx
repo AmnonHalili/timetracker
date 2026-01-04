@@ -18,7 +18,7 @@ export default function PrivacyPolicy() {
                     <section>
                         <h2 className="text-xl font-semibold text-gray-900 mb-3">1. Introduction</h2>
                         <p className="leading-relaxed">
-                            Welcome to <strong>Collabo</strong> ("we", "our", or "us"). We are committed to protecting your personal information and your right to privacy.
+                            Welcome to <strong>Collabo</strong> (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;). We are committed to protecting your personal information and your right to privacy.
                             Collabo is a productivity and time-tracking application designed to help you manage your tasks and schedule efficiently.
                         </p>
                     </section>
@@ -32,7 +32,7 @@ export default function PrivacyPolicy() {
                         <ul className="list-disc pl-5 space-y-2">
                             <li><strong>Account Data:</strong> Names, email addresses, and passwords (encrypted).</li>
                             <li><strong>Productivity Data:</strong> Tasks, project details, and time logs you create within the app.</li>
-                            <li><strong>Google Data:</strong> If you choose to connect your Google Calendar, we access your calendar events labeled as "read-only" to display them within our interface.</li>
+                            <li><strong>Google Data:</strong> If you choose to connect your Google Calendar, we access your calendar events labeled as &quot;read-only&quot; to display them within our interface.</li>
                         </ul>
                     </section>
 
@@ -61,7 +61,7 @@ export default function PrivacyPolicy() {
                     <section>
                         <h2 className="text-xl font-semibold text-gray-900 mb-3">4. Google API Services User Data Policy</h2>
                         <p className="leading-relaxed italic border-l-4 border-gray-300 pl-4 py-2 bg-gray-50">
-                            "Collabo's use and transfer to any other app of information received from Google APIs will adhere to <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline inline-flex items-center gap-1">Google API Services User Data Policy <ExternalLink className="h-3 w-3" /></a>, including the Limited Use requirements."
+                            &quot;Collabo&apos;s use and transfer to any other app of information received from Google APIs will adhere to <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline inline-flex items-center gap-1">Google API Services User Data Policy <ExternalLink className="h-3 w-3" /></a>, including the Limited Use requirements.&quot;
                         </p>
                     </section>
 

@@ -52,9 +52,8 @@ interface EventCardProps {
     showDelete?: boolean
 }
 
-type EventWithType = EventCardProps['event'] & {
-    isHoliday?: boolean;
-}
+
+// Removed unused type EventWithType
 
 const eventTypeColors = {
     MEETING: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
@@ -165,7 +164,7 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
             <div
                 className={cn(
                     "relative rounded-md border transition-all group p-2 space-y-1",
-                    // @ts-ignore
+                    // @ts-expect-error - Event type key access
                     (event.isHoliday ? eventTypeColors.HOLIDAY : (eventTypeColors[event.type as keyof typeof eventTypeColors] || "bg-gray-100 text-gray-700")),
                     onClick && "cursor-pointer hover:shadow-md",
                     sizeClasses[size]
