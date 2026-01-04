@@ -29,7 +29,7 @@ export async function PATCH(req: Request, { params }: { params: { taskId: string
 
         // Handle Mentions on update
         const mentionRegex = /@([a-zA-Z0-9\u0590-\u05FF]+)/g
-        const mentionNames = Array.from(content.matchAll(mentionRegex), (m: any) => m[1])
+        const mentionNames = Array.from(content.matchAll(mentionRegex), (m: RegExpMatchArray) => m[1])
 
         if (mentionNames.length > 0) {
             const task = await prisma.task.findUnique({

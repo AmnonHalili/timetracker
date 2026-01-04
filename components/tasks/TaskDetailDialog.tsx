@@ -266,24 +266,6 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
     }, [notes, attachments, activities])
 
 
-    const handleAddNote = async () => {
-        if (!newNote.trim() || !task?.id) return
-        setSubmittingNote(true)
-        try {
-            const res = await fetch(`/api/tasks/${task.id}/notes`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ content: newNote })
-            })
-            if (res.ok) {
-                const note = await res.json()
-                setNotes([note, ...notes])
-                setNewNote("")
-            }
-        } finally {
-            setSubmittingNote(false)
-        }
-    }
 
     const handleTriggerMention = () => {
         const space = newNote.length > 0 && !newNote.endsWith(" ") ? " " : ""
@@ -320,7 +302,7 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
 
         try {
             // 1. Upload Files first if any
-            const uploadedAttachments: any[] = []
+            const uploadedAttachments: Attachment[] = []
             for (const file of pendingFiles) {
                 setUploadingFile(true)
                 try {

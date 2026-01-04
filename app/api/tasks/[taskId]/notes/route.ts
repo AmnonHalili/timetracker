@@ -36,7 +36,7 @@ export async function POST(req: Request, { params }: { params: { taskId: string 
 
         // Handle Mentions
         const mentionRegex = /@([a-zA-Z0-9\u0590-\u05FF]+)/g // Basic mention regex (no spaces for now)
-        const mentionNames = Array.from(content.matchAll(mentionRegex), (m: any) => m[1])
+        const mentionNames = Array.from(content.matchAll(mentionRegex), (m: RegExpMatchArray) => m[1])
 
         if (mentionNames.length > 0) {
             // Find users in the same project who might have these names
