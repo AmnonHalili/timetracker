@@ -34,7 +34,7 @@ export default async function CalendarPage({
     // Determine task fetch scope
     const currentUser = await prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { role: true, projectId: true }
+        select: { role: true, projectId: true, calendarSettings: true }
     })
 
     // Tasks are active in this month if:
@@ -157,11 +157,60 @@ export default async function CalendarPage({
         }
     })
 
+    let allEvents = [...events]
+
+    // Google Calendar Sync
+    if (currentUser?.calendarSettings?.isGoogleCalendarSyncEnabled) {
+        console.log(`[SSR] Google Sync Enabled. Fetching events...`)
+        try {
+            const { getValidGoogleClient } = await import("@/lib/google-calendar")
+            const calendar = await getValidGoogleClient(session.user.id)
+
+            // Fetch events
+            const googleRes = await calendar.events.list({
+                calendarId: 'primary',
+                timeMin: monthStart.toISOString(),
+                timeMax: monthEnd.toISOString(),
+                singleEvents: true,
+                orderBy: 'startTime'
+            })
+
+            console.log(`[SSR] Google Events fetched:`, googleRes.data.items?.length)
+
+            const googleEvents = googleRes.data.items || []
+
+            // Transform Google Events to internal format
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const transformedGoogleEvents = googleEvents.map((gEvent: any) => {
+                const isBusyOnly = currentUser.calendarSettings?.syncMode === 'BUSY_ONLY'
+
+                return {
+                    id: gEvent.id,
+                    title: isBusyOnly ? 'Busy' : (gEvent.summary || '(No Title)'),
+                    description: isBusyOnly ? null : gEvent.description,
+                    startTime: gEvent.start?.dateTime || gEvent.start?.date,
+                    endTime: gEvent.end?.dateTime || gEvent.end?.date,
+                    allDay: !gEvent.start?.dateTime, // If no dateTime, it's an all-day event
+                    type: 'EXTERNAL', // Special type for frontend styling
+                    location: isBusyOnly ? null : gEvent.location,
+                    isExternal: true, // Flag for frontend
+                    source: 'google'
+                }
+            })
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            allEvents = [...allEvents, ...(transformedGoogleEvents as any)]
+
+        } catch (error) {
+            console.error("Failed to sync Google Calendar (SSR):", error)
+        }
+    }
+
     const data = {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         dailyReports: (reportData as any)?.report?.days || [],
         tasks: tasks,
-        events: events
+        events: allEvents
     }
 
     return (
