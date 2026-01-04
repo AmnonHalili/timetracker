@@ -33,7 +33,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     const [activeProject, setActiveProject] = useState<Project | null>(null)
     const [isLoading, setIsLoading] = useState(true)
 
-    const refreshProjects = async () => {
+    const refreshProjects = React.useCallback(async () => {
         if (status !== "authenticated") {
             setIsLoading(false)
             return
@@ -60,11 +60,11 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [status, session?.user?.projectId, activeProject])
 
     useEffect(() => {
         refreshProjects()
-    }, [status, session?.user?.projectId])
+    }, [refreshProjects])
 
     const switchProject = async (projectId: string) => {
         const loadingToast = toast.loading("Switching workspace...")

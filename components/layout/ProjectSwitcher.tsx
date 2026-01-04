@@ -26,7 +26,6 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -55,7 +54,7 @@ export function ProjectSwitcher({ className }: { className?: string }) {
             await createProject(projectName)
             setShowCreateDialog(false)
             setProjectName("")
-        } catch (error) {
+        } catch {
             // Error handled in provider
         } finally {
             setIsSubmitting(false)
@@ -69,7 +68,7 @@ export function ProjectSwitcher({ className }: { className?: string }) {
             await joinProject(joinCode)
             setShowJoinDialog(false)
             setJoinCode("")
-        } catch (error) {
+        } catch {
             // Error handled in provider
         } finally {
             setIsSubmitting(false)
