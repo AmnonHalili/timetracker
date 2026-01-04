@@ -4,9 +4,15 @@ import { useState, useEffect } from "react"
 import { MonthGrid } from "./MonthGrid"
 import { DayView } from "./DayView"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react"
+import { ChevronLeft, ChevronRight, ArrowLeft, Settings, Calendar as CalendarIcon, Loader2 } from "lucide-react"
 import { addMonths, subMonths, addDays, subDays } from "date-fns"
 import { useLanguage } from "@/lib/useLanguage"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+import { signIn, useSession } from "next-auth/react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { toast } from "sonner"
 
 type CalendarEvent = {
     id: string;
@@ -24,6 +30,8 @@ type CalendarEvent = {
     participants?: Array<{
         user: { name: string; email: string };
     }>;
+    isExternal?: boolean;
+    source?: 'google' | 'other';
 }
 
 interface CalendarViewProps {
@@ -50,6 +58,7 @@ interface CalendarViewProps {
 
 export function CalendarView({ initialDate, data, projectId }: CalendarViewProps) {
     const { t, isRTL } = useLanguage()
+    const { data: session } = useSession()
     const [view, setView] = useState<'month' | 'day'>('month')
     const [currentDate, setCurrentDate] = useState(initialDate)
     const [optimisticEvents, setOptimisticEvents] = useState<CalendarEvent[]>([])
@@ -57,6 +66,33 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
     // Client-side data fetching state
     const [calendarData, setCalendarData] = useState(data)
     const [isLoading, setIsLoading] = useState(false)
+
+    // Settings State
+    const [settingsOpen, setSettingsOpen] = useState(false)
+    const [syncSettings, setSyncSettings] = useState({
+        isGoogleCalendarSyncEnabled: false,
+        syncMode: 'FULL_DETAILS'
+    })
+    const [loadingSettings, setLoadingSettings] = useState(false)
+
+    // Fetch settings on mount
+    useEffect(() => {
+        if (session?.user?.id) {
+            setLoadingSettings(true)
+            fetch('/api/calendar/settings')
+                .then(res => res.json())
+                .then(data => {
+                    if (data && !data.error) {
+                        setSyncSettings({
+                            isGoogleCalendarSyncEnabled: data.isGoogleCalendarSyncEnabled,
+                            syncMode: data.syncMode
+                        })
+                    }
+                })
+                .finally(() => setLoadingSettings(false))
+        }
+    }, [session?.user?.id])
+
 
     // Reset optimistic state when server data changes
     useEffect(() => {
@@ -66,10 +102,6 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
     // Fetch data when month changes
     useEffect(() => {
         const loadData = async () => {
-            // To prevent initial double fetch:
-            // This condition checks if the current date is the same as the initial date
-            // AND if the calendarData state is still the initial data prop.
-            // This prevents refetching on the very first render if the initial data is already provided.
             if (currentDate.getTime() === initialDate.getTime() && calendarData === data) {
                 return
             }
@@ -87,8 +119,6 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
         }
 
         loadData()
-        // The effect should re-run when currentDate changes.
-        // initialDate and data are stable props, calendarData is state updated by this effect.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentDate, initialDate, data])
 
@@ -119,6 +149,44 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
         setCurrentDate(new Date())
     }
 
+    const handleConnectGoogle = async () => {
+        // Trigger NextAuth sign in with Google provider and extra scopes
+        signIn('google', {
+            callbackUrl: window.location.href,
+            redirect: true,
+        })
+    }
+
+    const handleUpdateSettings = async (updates: Partial<typeof syncSettings>) => {
+        const newSettings = { ...syncSettings, ...updates }
+        setSyncSettings(newSettings)
+
+        try {
+            const res = await fetch('/api/calendar/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newSettings)
+            })
+
+            if (!res.ok) throw new Error("Failed to update settings")
+
+            toast.success("Settings updated")
+
+            // Refetch calendar data to reflect changes (e.g. busy mode or enabled/disabled)
+            const calendarRes = await fetch(`/api/calendar?month=${currentDate.getMonth()}&year=${currentDate.getFullYear()}`)
+            if (calendarRes.ok) {
+                const newData = await calendarRes.json()
+                setCalendarData(newData)
+            }
+
+        } catch (error) {
+            console.error(error)
+            toast.error("Failed to save settings")
+            // Revert on error
+            setSyncSettings(syncSettings)
+        }
+    }
+
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -146,33 +214,95 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                     </h2>
                 </div>
 
-                {/* Navigation Controls */}
-                <div className="flex items-center border rounded-md bg-background shadow-sm">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={view === 'month'
-                            ? (isRTL ? handleNextMonth : handlePrevMonth)
-                            : (isRTL ? handleNextDay : handlePrevDay)
-                        }
-                    >
-                        {isRTL ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-                    </Button>
-                    <div className="w-[1px] h-6 bg-border" />
-                    <Button variant="ghost" size="icon" onClick={handleToday}>
-                        <span className="text-xs font-medium px-2">{t('calendar.today')}</span>
-                    </Button>
-                    <div className="w-[1px] h-6 bg-border" />
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={view === 'month'
-                            ? (isRTL ? handlePrevMonth : handleNextMonth)
-                            : (isRTL ? handlePrevDay : handleNextDay)
-                        }
-                    >
-                        {isRTL ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                    </Button>
+                <div className="flex items-center gap-2">
+                    {/* Settings Dialog */}
+                    <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" size="icon">
+                                <Settings className="h-4 w-4" />
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Calendar Settings</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-6 py-4">
+                                <div className="flex items-center justify-between space-x-2">
+                                    <div className="space-y-1">
+                                        <Label className="text-base">Google Calendar Sync</Label>
+                                        <p className="text-sm text-muted-foreground">
+                                            Sync events from your Google Calendar.
+                                            {!syncSettings.isGoogleCalendarSyncEnabled && (
+                                                <span className="block text-xs text-yellow-600 mt-1">
+                                                    Requires signing in with Google.
+                                                </span>
+                                            )}
+                                        </p>
+                                    </div>
+                                    <Switch
+                                        checked={syncSettings.isGoogleCalendarSyncEnabled}
+                                        onCheckedChange={(checked: boolean) => {
+                                            if (checked) {
+                                                handleConnectGoogle()
+                                            } else {
+                                                handleUpdateSettings({ isGoogleCalendarSyncEnabled: false })
+                                            }
+                                        }}
+                                    />
+                                </div>
+
+                                {syncSettings.isGoogleCalendarSyncEnabled && (
+                                    <div className="space-y-2">
+                                        <Label>Privacy Mode</Label>
+                                        <Select
+                                            value={syncSettings.syncMode}
+                                            onValueChange={(val) => handleUpdateSettings({ syncMode: val })}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="FULL_DETAILS">Show Full Details</SelectItem>
+                                                <SelectItem value="BUSY_ONLY">Show as &quot;Busy&quot; Only</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="text-xs text-muted-foreground">
+                                            &quot;Busy Only&quot; hides event titles and details from other users.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+
+                    {/* Navigation Controls */}
+                    <div className="flex items-center border rounded-md bg-background shadow-sm">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={view === 'month'
+                                ? (isRTL ? handleNextMonth : handlePrevMonth)
+                                : (isRTL ? handleNextDay : handlePrevDay)
+                            }
+                        >
+                            {isRTL ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+                        </Button>
+                        <div className="w-[1px] h-6 bg-border" />
+                        <Button variant="ghost" size="icon" onClick={handleToday}>
+                            <span className="text-xs font-medium px-2">{t('calendar.today')}</span>
+                        </Button>
+                        <div className="w-[1px] h-6 bg-border" />
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={view === 'month'
+                                ? (isRTL ? handlePrevMonth : handleNextMonth)
+                                : (isRTL ? handlePrevDay : handleNextDay)
+                            }
+                        >
+                            {isRTL ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                        </Button>
+                    </div>
                 </div>
             </div>
 

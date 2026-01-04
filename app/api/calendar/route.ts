@@ -3,7 +3,8 @@ import { prisma } from "@/lib/prisma"
 import { getReportData } from "@/lib/report-service"
 import { getServerSession } from "next-auth"
 import { NextRequest, NextResponse } from "next/server"
-import { startOfMonth, endOfMonth } from "date-fns"
+import { startOfMonth, endOfMonth, parseISO } from "date-fns"
+import { getValidGoogleClient } from "@/lib/google-calendar"
 
 export const dynamic = "force-dynamic"
 
@@ -32,7 +33,7 @@ export async function GET(req: NextRequest) {
         // 2. Fetch User & determine scope
         const currentUser = await prisma.user.findUnique({
             where: { id: session.user.id },
-            select: { role: true, projectId: true }
+            include: { calendarSettings: true, project: true } // Fetch settings and project
         })
 
         // 3. Tasks
@@ -77,7 +78,7 @@ export async function GET(req: NextRequest) {
             }
         })
 
-        // 4. Events
+        // 4. Internal Events
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const eventWhereClause: any = {
             startTime: { gte: monthStart },
@@ -90,7 +91,7 @@ export async function GET(req: NextRequest) {
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const events = await (prisma as any).event.findMany({
+        const internalEvents = await (prisma as any).event.findMany({
             where: eventWhereClause,
             select: {
                 id: true,
@@ -125,11 +126,71 @@ export async function GET(req: NextRequest) {
             }
         })
 
+        let allEvents = [...internalEvents]
+
+        // 5. Google Calendar Sync
+        if (currentUser?.calendarSettings?.isGoogleCalendarSyncEnabled) {
+            console.log(`[API] Google Sync Enabled. Fetching events...`)
+            try {
+                // Check cache first (Simple cache: if lastSyncedAt < 5 mins ago, use cached events)
+                // NOTE: For now, we are skipping complex cache logic and just fetching fresh data for reliability
+                // But we will use the `getValidGoogleClient` which handles token refresh efficiently.
+
+                const calendar = await getValidGoogleClient(session.user.id)
+
+                // Fetch events
+                // Note: timeMin/timeMax need to be RFC3339 strings
+                const googleRes = await calendar.events.list({
+                    calendarId: 'primary',
+                    timeMin: monthStart.toISOString(),
+                    timeMax: monthEnd.toISOString(),
+                    singleEvents: true,
+                    orderBy: 'startTime'
+                })
+
+                console.log(`[API] Google Events fetched:`, googleRes.data.items?.length)
+
+                const googleEvents = googleRes.data.items || []
+
+                // Transform Google Events to internal format
+                const transformedGoogleEvents = googleEvents.map((gEvent: any) => {
+                    const isBusyOnly = currentUser.calendarSettings?.syncMode === 'BUSY_ONLY'
+
+                    return {
+                        id: gEvent.id,
+                        title: isBusyOnly ? 'Busy' : (gEvent.summary || '(No Title)'),
+                        description: isBusyOnly ? null : gEvent.description,
+                        startTime: gEvent.start?.dateTime || gEvent.start?.date,
+                        endTime: gEvent.end?.dateTime || gEvent.end?.date,
+                        allDay: !gEvent.start?.dateTime, // If no dateTime, it's an all-day event
+                        type: 'EXTERNAL', // Special type for frontend styling
+                        location: isBusyOnly ? null : gEvent.location,
+                        isExternal: true, // Flag for frontend
+                        source: 'google'
+                    }
+                })
+
+                allEvents = [...allEvents, ...transformedGoogleEvents]
+
+                // Ideally update lastSyncedAt here without blocking
+                /*
+                await prisma.calendarSettings.update({
+                    where: { userId: session.user.id },
+                    data: { lastSyncedAt: new Date() }
+                })
+                */
+
+            } catch (error) {
+                console.error("Failed to sync Google Calendar:", error)
+                // Don't fail the whole request, just log and continue with internal events
+            }
+        }
+
         return NextResponse.json({
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             dailyReports: (reportData as any)?.report?.days || [],
             tasks,
-            events
+            events: allEvents
         })
     } catch (error) {
         console.error("Error fetching calendar data:", error)

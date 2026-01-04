@@ -59,6 +59,7 @@ const eventTypeColors = {
     BREAK: "bg-gray-500/10 text-gray-700 border-gray-500/20",
     PERSONAL: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
     OTHER: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
+    EXTERNAL: "bg-orange-100/50 text-orange-700 border-orange-200",
 }
 
 const eventTypeBadgeColors = {
@@ -68,6 +69,7 @@ const eventTypeBadgeColors = {
     BREAK: "bg-gray-500/10 text-gray-700 border-gray-500/20",
     PERSONAL: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
     OTHER: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
+    EXTERNAL: "bg-orange-100 text-orange-700 border-orange-200",
 }
 
 export function EventCard({ event, onClick, size = 'md', showDelete = false }: EventCardProps) {
@@ -187,7 +189,7 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
                     </div>
 
                     {/* Actions Menu (Edit/Delete) - absolutely positioned */}
-                    {showDelete && (
+                    {showDelete && event.type !== 'EXTERNAL' && (
                         <div className="absolute right-2 top-1/2 -translate-y-[52%] z-10 opacity-0 group-hover:opacity-100 transition-opacity">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>

@@ -60,6 +60,7 @@ model User {
   taskAttachments        TaskAttachment[]
   activities             TaskActivity[]
   watchedTasks           Task[]               @relation("TaskWatchers")
+  calendarSettings       CalendarSettings?
 }
 
 model SecondaryManager {
@@ -488,4 +489,23 @@ enum Plan {
   TIER1
   TIER2
   TIER3
+}
+
+enum SyncMode {
+  FULL_DETAILS
+  BUSY_ONLY
+}
+
+model CalendarSettings {
+  id                          String    @id @default(cuid())
+  userId                      String    @unique
+  isGoogleCalendarSyncEnabled Boolean   @default(false)
+  syncedCalendarIds           String[]  @default(["primary"])
+  syncMode                    SyncMode  @default(FULL_DETAILS)
+  lastSyncedAt                DateTime?
+  syncToken                   String?
+  googleEventsCache           Json?     // Cache for external events to reduce latency
+  createdAt                   DateTime  @default(now())
+  updatedAt                   DateTime  @updatedAt
+  user                        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

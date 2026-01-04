@@ -20,6 +20,14 @@ export const authOptions: NextAuthOptions = {
             clientId: process.env.GOOGLE_CLIENT_ID!,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
             allowDangerousEmailAccountLinking: true,
+            authorization: {
+                params: {
+                    scope: "openid email profile https://www.googleapis.com/auth/calendar.readonly",
+                    prompt: "consent",
+                    access_type: "offline",
+                    response_type: "code"
+                }
+            }
         }),
         CredentialsProvider({
             name: "Credentials",
