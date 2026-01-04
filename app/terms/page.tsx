@@ -44,7 +44,7 @@ export default function TermsOfService() {
                         </p>
                         <ul className="list-disc pl-5 space-y-2">
                             <li>We will access your calendar data solely to display it within the Collabo interface.</li>
-                            <li>Our use of data is governed by our <Link href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link> and strictly adheres to Google's Limited Use Policy.</li>
+                            <li>Our use of data is governed by our <Link href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link> and strictly adheres to Google&apos;s Limited Use Policy.</li>
                             <li>You can revoke our access at any time via your Google Account security settings.</li>
                         </ul>
                     </section>

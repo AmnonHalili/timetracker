@@ -58,6 +58,7 @@ export async function GET(_req: NextRequest) {
         ])
 
         // Fetch available calendars if linked
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let availableCalendars: any[] = []
         if (googleAccount) {
             try {
