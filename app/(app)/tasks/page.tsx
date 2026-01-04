@@ -32,6 +32,10 @@ export default async function TasksPage() {
             where,
             include: {
                 assignees: true,
+                watchers: { select: { id: true, name: true, image: true } },
+                labels: true,
+                blocking: { select: { id: true, title: true, status: true } },
+                blockedBy: { select: { id: true, title: true, status: true } },
                 checklist: { orderBy: { createdAt: 'asc' } },
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
@@ -50,6 +54,10 @@ export default async function TasksPage() {
                 where,
                 include: {
                     assignees: true,
+                    watchers: { select: { id: true, name: true, image: true } },
+                    labels: true,
+                    blocking: { select: { id: true, title: true, status: true } },
+                    blockedBy: { select: { id: true, title: true, status: true } },
                     checklist: { orderBy: { createdAt: 'asc' } }
                 },
                 orderBy: { createdAt: "desc" }
@@ -170,6 +178,16 @@ export default async function TasksPage() {
         }
     })
 
+    // Fetch Project Labels
+    let labels: { id: string; name: string; color: string }[] = []
+    if (currentUser?.projectId) {
+        labels = await prisma.taskLabel.findMany({
+            where: { projectId: currentUser.projectId },
+            orderBy: { name: 'asc' },
+            select: { id: true, name: true, color: true }
+        })
+    }
+
     return (
         <TasksPageWithOptimisticUpdate
             isAdmin={isAdmin || isManager}
@@ -177,6 +195,7 @@ export default async function TasksPage() {
             currentUserId={session.user.id}
             initialTasks={tasks}
             tasksWithActiveTimers={Object.fromEntries(tasksWithActiveTimers)}
+            labels={labels}
         />
     )
 }

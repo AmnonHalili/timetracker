@@ -4,15 +4,21 @@ import { useState, useEffect, useMemo } from "react"
 import React from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Clock, Users, CheckCircle2, MessageSquare, Paperclip, Send, FileText, X, AtSign } from "lucide-react"
+import { Clock, Users, CheckCircle2, MessageSquare, Paperclip, Send, FileText, X, AtSign, Link2, Plus, Info } from "lucide-react"
 import { useLanguage } from "@/lib/useLanguage"
+import { toast } from "sonner"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { UnifiedTimeline, UnifiedActivityItem } from "./UnifiedTimeline"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
 import confetti from "canvas-confetti"
 
 interface TaskDetailDialogProps {
@@ -24,6 +30,10 @@ interface TaskDetailDialogProps {
         priority: string
         deadline: Date | string | null
         assignees: Array<{ id: string; name: string | null }>
+        watchers?: Array<{ id: string; name: string | null; image?: string | null }>
+        labels?: Array<{ id: string; name: string; color: string }>
+        blocking?: Array<{ id: string; title: string; status: string }>
+        blockedBy?: Array<{ id: string; title: string; status: string }>
         checklist: Array<{ id: string; text: string; isDone: boolean }>
         subtasks?: Array<{ id: string; title: string; isDone: boolean }>
     } | null
@@ -47,6 +57,8 @@ interface TaskDetailDialogProps {
     }>
     projectUsers?: Array<{ id: string; name: string | null; email: string | null }>
     highlightNoteId?: string | null
+    labels?: Array<{ id: string; name: string; color: string }>
+    allTasks?: Array<{ id: string; title: string; status: string }>
 }
 
 interface Note {
@@ -85,10 +97,11 @@ interface ActivityLog {
     }
 }
 
-export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntries = [], projectUsers = [], highlightNoteId = null }: TaskDetailDialogProps) {
+export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntries = [], projectUsers = [], highlightNoteId = null, labels = [], allTasks = [] }: TaskDetailDialogProps) {
     const { t } = useLanguage()
     const { data: session } = useSession()
     const currentUserId = session?.user?.id
+    const router = useRouter()
 
     // Notes & Files State
     const [activeTab, setActiveTab] = useState("details")
@@ -477,14 +490,93 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
         }
     })
 
+
+    const handleAddDependency = async (type: 'BLOCKING' | 'BLOCKED_BY', targetTaskId: string) => {
+        if (!task || !allTasks) return
+
+        const targetTask = allTasks.find(t => t.id === targetTaskId)
+        if (!targetTask) return
+
+        const currentBlocking = task.blocking || []
+        const currentBlockedBy = task.blockedBy || []
+        let updatePayload = {}
+
+        if (type === 'BLOCKING') {
+            if (currentBlocking.some(t => t.id === targetTaskId)) return
+            const newBlocking = [...currentBlocking, targetTask]
+            onUpdate?.({ blocking: newBlocking })
+            updatePayload = { blockingIds: newBlocking.map(t => t.id) }
+        } else {
+            if (currentBlockedBy.some(t => t.id === targetTaskId)) return
+            const newBlockedBy = [...currentBlockedBy, targetTask]
+            onUpdate?.({ blockedBy: newBlockedBy })
+            updatePayload = { blockedByIds: newBlockedBy.map(t => t.id) }
+        }
+
+        try {
+            const res = await fetch(`/api/tasks/${task.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(updatePayload)
+            })
+            if (!res.ok) throw new Error("Failed to update dependencies")
+            router.refresh()
+        } catch (error) {
+            console.error(error)
+            toast.error("Failed to add dependency")
+        }
+    }
+
+    const handleRemoveDependency = async (type: 'BLOCKING' | 'BLOCKED_BY', targetTaskId: string) => {
+        if (!task) return
+
+        const currentBlocking = task.blocking || []
+        const currentBlockedBy = task.blockedBy || []
+        let updatePayload = {}
+
+        if (type === 'BLOCKING') {
+            const newBlocking = currentBlocking.filter(t => t.id !== targetTaskId)
+            onUpdate?.({ blocking: newBlocking })
+            updatePayload = { blockingIds: newBlocking.map(t => t.id) }
+        } else {
+            const newBlockedBy = currentBlockedBy.filter(t => t.id !== targetTaskId)
+            onUpdate?.({ blockedBy: newBlockedBy })
+            updatePayload = { blockedByIds: newBlockedBy.map(t => t.id) }
+        }
+
+        try {
+            const res = await fetch(`/api/tasks/${task.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(updatePayload)
+            })
+            if (!res.ok) throw new Error("Failed to remove dependency")
+            router.refresh()
+        } catch (error) {
+            console.error(error)
+            toast.error("Failed to remove dependency")
+        }
+    }
+
     if (!task) return null
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-2xl h-[600px] max-h-[90vh] flex flex-col p-0 gap-0 data-[state=open]:animate-in data-[state=closed]:animate-out fade-in-0 zoom-in-95 slide-in-from-bottom-[48%] duration-200">
                 <DialogHeader className="p-6 pb-2 flex flex-row items-center justify-between space-y-0">
-                    <DialogTitle className="text-2xl truncate pr-4">{task.title}</DialogTitle>
-                    <div className="shrink-0 mr-8">
+                    <div className="flex flex-col gap-1 pr-4 truncate flex-1">
+                        <DialogTitle className="text-2xl truncate">{task.title}</DialogTitle>
+                        {task.labels && task.labels.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                                {task.labels.map(label => (
+                                    <Badge key={label.id} variant="outline" className="px-1 py-0 text-[10px] h-4 font-normal" style={{ borderColor: label.color, color: label.color }}>
+                                        {label.name}
+                                    </Badge>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    <div className="shrink-0 mr-8 flex items-center gap-2">
                         <Select value={status} onValueChange={handleStatusChange}>
                             <SelectTrigger className="w-[140px] h-8">
                                 <SelectValue placeholder="Status" />
@@ -594,6 +686,117 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
                                             </div>
                                         </div>
                                     )}
+
+                                    <div className="space-y-4">
+                                        <h3 className="text-sm font-semibold flex items-center gap-2 text-foreground/80">
+                                            <Link2 className="h-4 w-4" />
+                                            Dependencies
+                                            <TooltipProvider>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                                                    </TooltipTrigger>
+                                                    <TooltipContent className="max-w-xs p-4 bg-popover border-border shadow-xl">
+                                                        <div className="space-y-3">
+                                                            <h4 className="font-semibold text-sm">Task Dependencies</h4>
+                                                            <div className="space-y-2 text-xs text-muted-foreground">
+                                                                <p>Reference tasks that are related to this one's progress:</p>
+                                                                <ul className="list-disc pl-4 space-y-1">
+                                                                    <li>
+                                                                        <span className="font-medium text-foreground">Blocked By:</span> Tasks that must be completed <em>before</em> this task can start.
+                                                                    </li>
+                                                                    <li>
+                                                                        <span className="font-medium text-foreground">Blocking:</span> Tasks that cannot start <em>until</em> this task is finished.
+                                                                    </li>
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {/* Blocked By */}
+                                            <div className="border rounded-md p-3 space-y-2">
+                                                <div className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1">
+                                                    Blocked By
+                                                    {task.blockedBy && task.blockedBy.length > 0 && <Badge variant="secondary" className="h-4 px-1 text-[10px]">{task.blockedBy.length}</Badge>}
+                                                </div>
+                                                <div className="space-y-1">
+                                                    {task.blockedBy?.map(t => (
+                                                        <div key={t.id} className="flex items-center justify-between text-sm bg-muted/50 p-2 rounded group">
+                                                            <span className="truncate flex-1 mr-2">{t.title}</span>
+                                                            <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleRemoveDependency('BLOCKED_BY', t.id)}>
+                                                                <X className="w-3 h-3" />
+                                                            </Button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <Button variant="outline" size="sm" className="w-full text-xs dashed h-7">
+                                                            <Plus className="w-3 h-3 mr-1" /> Add
+                                                        </Button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="p-0" align="start">
+                                                        <Command>
+                                                            <CommandInput placeholder="Search task..." />
+                                                            <CommandList>
+                                                                <CommandEmpty>No task found.</CommandEmpty>
+                                                                <CommandGroup>
+                                                                    {allTasks?.filter(t => t.id !== task.id && !task.blockedBy?.some(dep => dep.id === t.id)).map(t => (
+                                                                        <CommandItem key={t.id} onSelect={() => handleAddDependency('BLOCKED_BY', t.id)}>
+                                                                            <span>{t.title}</span>
+                                                                        </CommandItem>
+                                                                    ))}
+                                                                </CommandGroup>
+                                                            </CommandList>
+                                                        </Command>
+                                                    </PopoverContent>
+                                                </Popover>
+                                            </div>
+
+                                            {/* Blocking */}
+                                            <div className="border rounded-md p-3 space-y-2">
+                                                <div className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1">
+                                                    Blocking
+                                                    {task.blocking && task.blocking.length > 0 && <Badge variant="secondary" className="h-4 px-1 text-[10px]">{task.blocking.length}</Badge>}
+                                                </div>
+                                                <div className="space-y-1">
+                                                    {task.blocking?.map(t => (
+                                                        <div key={t.id} className="flex items-center justify-between text-sm bg-muted/50 p-2 rounded group">
+                                                            <span className="truncate flex-1 mr-2">{t.title}</span>
+                                                            <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleRemoveDependency('BLOCKING', t.id)}>
+                                                                <X className="w-3 h-3" />
+                                                            </Button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <Button variant="outline" size="sm" className="w-full text-xs dashed h-7">
+                                                            <Plus className="w-3 h-3 mr-1" /> Add
+                                                        </Button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="p-0" align="start">
+                                                        <Command>
+                                                            <CommandInput placeholder="Search task..." />
+                                                            <CommandList>
+                                                                <CommandEmpty>No task found.</CommandEmpty>
+                                                                <CommandGroup>
+                                                                    {allTasks?.filter(t => t.id !== task.id && !task.blocking?.some(dep => dep.id === t.id)).map(t => (
+                                                                        <CommandItem key={t.id} onSelect={() => handleAddDependency('BLOCKING', t.id)}>
+                                                                            <span>{t.title}</span>
+                                                                        </CommandItem>
+                                                                    ))}
+                                                                </CommandGroup>
+                                                            </CommandList>
+                                                        </Command>
+                                                    </PopoverContent>
+                                                </Popover>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </ScrollArea>
                         </TabsContent>

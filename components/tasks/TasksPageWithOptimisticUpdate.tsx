@@ -16,11 +16,16 @@ interface TasksPageWithOptimisticUpdateProps {
         deadline: Date | string | null;
         description: string | null;
         assignees: Array<{ id: string; name: string | null }>;
+        watchers?: Array<{ id: string; name: string | null; image?: string | null }>;
+        labels?: Array<{ id: string; name: string; color: string }>;
+        blocking?: Array<{ id: string; title: string; status: string }>;
+        blockedBy?: Array<{ id: string; title: string; status: string }>;
         checklist: Array<{ id: string; text: string; isDone: boolean }>;
         subtasks?: Array<{ id: string; title: string; isDone: boolean }>;
         createdAt?: Date | string;
     }>
     tasksWithActiveTimers?: Record<string, Array<{ id: string; name: string | null }>>
+    labels?: Array<{ id: string; name: string; color: string }>
 }
 
 export function TasksPageWithOptimisticUpdate({
@@ -28,7 +33,8 @@ export function TasksPageWithOptimisticUpdate({
     users,
     currentUserId,
     initialTasks,
-    tasksWithActiveTimers
+    tasksWithActiveTimers,
+    labels
 }: TasksPageWithOptimisticUpdateProps) {
     const [tasks, setTasks] = useState(initialTasks)
 
@@ -81,6 +87,7 @@ export function TasksPageWithOptimisticUpdate({
                 isAdmin={isAdmin}
                 currentUserId={currentUserId}
                 tasksWithActiveTimers={tasksWithActiveTimers}
+                labels={labels}
             />
         </div>
     )

@@ -59,6 +59,7 @@ model User {
   taskNotes              TaskNote[]
   taskAttachments        TaskAttachment[]
   activities             TaskActivity[]
+  watchedTasks           Task[]               @relation("TaskWatchers")
 }
 
 model SecondaryManager {
@@ -91,6 +92,7 @@ model Project {
   events                Event[]
   groups                Group[]
   users                 User[]
+  taskLabels            TaskLabel[]
 }
 
 model Group {
@@ -173,6 +175,10 @@ model Task {
   activities  TaskActivity[]
   timeEntries TimeEntry[]     @relation("TaskToTimeEntry")
   assignees   User[]          @relation("TaskToUser")
+  watchers    User[]          @relation("TaskWatchers")
+  labels      TaskLabel[]
+  blocking    Task[]          @relation("TaskDependencies")
+  blockedBy   Task[]          @relation("TaskDependencies")
 }
 
 model ChecklistItem {
@@ -211,6 +217,18 @@ model TaskAttachment {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
+}
+
+model TaskLabel {
+  id        String   @id @default(cuid())
+  name      String
+  color     String
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks     Task[]
+
+  @@unique([projectId, name])
+  @@index([projectId])
 }
 
 model SubTaskItem {

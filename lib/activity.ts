@@ -11,6 +11,11 @@ export type ActivityAction =
     | "TASK_CREATED"
     | "TASK_DELETED"
     | "DEADLINE_CHANGE"
+    | "WATCH_TASK"
+    | "UNWATCH_TASK"
+    | "LABEL_CHANGE"
+    | "DEPENDENCY_ADD"
+    | "DEPENDENCY_REMOVE"
 
 export async function logActivity(
     taskId: string,

@@ -45,7 +45,7 @@ export async function PATCH(
 
     try {
         const body = await req.json()
-        const { title, description, status, isCompleted, priority, startDate, deadline, assignedToIds } = body
+        const { title, description, status, isCompleted, priority, startDate, deadline, assignedToIds, watcherIds, labelIds, blockingIds, blockedByIds } = body
 
         // If status/isCompleted update logic needs to be preserved:
         let newStatus = status
@@ -56,7 +56,13 @@ export async function PATCH(
         // Get task to check permissions
         const taskToCheck = await prisma.task.findUnique({
             where: { id: params.taskId },
-            include: { assignees: { select: { id: true } } }
+            include: {
+                assignees: { select: { id: true } },
+                watchers: { select: { id: true } },
+                labels: { select: { id: true } },
+                blocking: { select: { id: true } },
+                blockedBy: { select: { id: true } }
+            }
         })
 
         if (!taskToCheck) return NextResponse.json({ message: "Task not found" }, { status: 404 })
@@ -117,6 +123,39 @@ export async function PATCH(
             }
         }
 
+        // Handle watcher updates
+        let previousWatcherIds: string[] = []
+        if (watcherIds) {
+            // @ts-ignore - watcher is definitely there because we included it
+            previousWatcherIds = taskToCheck.watchers ? taskToCheck.watchers.map(u => u.id) : []
+            updateData.watchers = {
+                set: [], // Clear existing
+                connect: (watcherIds as string[]).map(id => ({ id }))
+            }
+        }
+
+        // Handle label updates
+        if (labelIds) {
+            updateData.labels = {
+                set: [], // Clear existing
+                connect: (labelIds as string[]).map(id => ({ id }))
+            }
+        }
+
+        // Handle dependency updates
+        if (blockingIds) {
+            updateData.blocking = {
+                set: [],
+                connect: (blockingIds as string[]).map(id => ({ id }))
+            }
+        }
+        if (blockedByIds) {
+            updateData.blockedBy = {
+                set: [],
+                connect: (blockedByIds as string[]).map(id => ({ id }))
+            }
+        }
+
         const task = await prisma.task.update({
             where: { id: params.taskId },
             data: updateData,
@@ -127,6 +166,20 @@ export async function PATCH(
                         name: true,
                         image: true
                     }
+                },
+                watchers: {
+                    select: {
+                        id: true,
+                        name: true,
+                        image: true
+                    }
+                },
+                labels: true,
+                blocking: {
+                    select: { id: true, title: true, status: true }
+                },
+                blockedBy: {
+                    select: { id: true, title: true, status: true }
                 }
             }
         })
@@ -175,6 +228,32 @@ export async function PATCH(
             if (removedUsers.length > 0) {
                 await logActivity(params.taskId, session.user.id, "REMOVE_USER", `Removed ${removedUsers.length} user(s)`)
             }
+        }
+
+        // 4. Watcher Changes
+        if (watcherIds) {
+            const newWatcherIds = (watcherIds as string[])
+            const addedWatchers = newWatcherIds.filter(id => !previousWatcherIds.includes(id))
+            if (addedWatchers.length > 0) {
+                await logActivity(params.taskId, session.user.id, "WATCH_TASK", `Added ${addedWatchers.length} watcher(s)`)
+            }
+            const removedWatchers = previousWatcherIds.filter(id => !newWatcherIds.includes(id))
+            if (removedWatchers.length > 0) {
+                await logActivity(params.taskId, session.user.id, "UNWATCH_TASK", `Removed ${removedWatchers.length} watcher(s)`)
+            }
+        }
+
+        // 5. Label Changes
+        if (labelIds) {
+            await logActivity(params.taskId, session.user.id, "LABEL_CHANGE", `Updated labels`)
+        }
+
+        // 6. Dependency Changes
+        if (blockingIds) {
+            await logActivity(params.taskId, session.user.id, "DEPENDENCY_ADD", `Updated blocking dependencies`)
+        }
+        if (blockedByIds) {
+            await logActivity(params.taskId, session.user.id, "DEPENDENCY_ADD", `Updated blocked by dependencies`)
         }
 
         return NextResponse.json(task)
