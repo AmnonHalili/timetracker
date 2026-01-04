@@ -85,7 +85,7 @@ export default function PrivacyPolicy() {
                             If you have questions or comments about this policy, you may email us at:
                         </p>
                         <div className="mt-2 text-lg font-medium text-gray-900">
-                            support@collabo-web.com
+                            collabo.timetracker@gmail.com
                         </div>
                     </section>
 

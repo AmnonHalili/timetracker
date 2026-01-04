@@ -76,7 +76,7 @@ export default function TermsOfService() {
                             If you have any questions about these Terms, please contact us at:
                         </p>
                         <div className="mt-2 text-lg font-medium text-gray-900">
-                            support@collabo-web.com
+                            collabo.timetracker@gmail.com
                         </div>
                     </section>
 
