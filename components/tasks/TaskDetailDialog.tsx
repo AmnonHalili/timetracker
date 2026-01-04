@@ -699,7 +699,7 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
                                                         <div className="space-y-3">
                                                             <h4 className="font-semibold text-sm">Task Dependencies</h4>
                                                             <div className="space-y-2 text-xs text-muted-foreground">
-                                                                <p>Reference tasks that are related to this one's progress:</p>
+                                                                <p>Reference tasks that are related to this one&apos;s progress:</p>
                                                                 <ul className="list-disc pl-4 space-y-1">
                                                                     <li>
                                                                         <span className="font-medium text-foreground">Blocked By:</span> Tasks that must be completed <em>before</em> this task can start.
