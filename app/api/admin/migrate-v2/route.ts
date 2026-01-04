@@ -21,24 +21,47 @@ export async function GET(request: Request) {
             total: users.length,
             created: 0,
             errors: 0,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             details: [] as any[]
         }
 
         for (const user of users) {
-            // ...
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (e: any) {
-            console.error(`Error migrating user ${user.email}:`, e)
-            results.errors++
-            results.details.push({ email: user.email, error: e.message })
+            if (!user.projectId) continue
+
+            try {
+                // Check if membership already persists
+                const existing = await prisma.projectMember.findUnique({
+                    where: {
+                        userId_projectId: {
+                            userId: user.id,
+                            projectId: user.projectId
+                        }
+                    }
+                })
+
+                if (!existing) {
+                    await prisma.projectMember.create({
+                        data: {
+                            userId: user.id,
+                            projectId: user.projectId,
+                            role: user.role, // Assuming Role enum matches
+                            status: user.status, // Assuming Status enum matches
+                            managerId: user.managerId,
+                            workDays: user.workDays,
+                            dailyTarget: user.dailyTarget
+                        }
+                    })
+                    results.created++
+                }
+            } catch (e: any) {
+                console.error(`Error migrating user ${user.email}:`, e)
+                results.errors++
+                results.details.push({ email: user.email, error: e.message })
+            }
         }
-    }
 
         return NextResponse.json({ success: true, results })
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-} catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-}
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
+    }
 }

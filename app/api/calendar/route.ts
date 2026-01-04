@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { getReportData } from "@/lib/report-service"
 import { getServerSession } from "next-auth"
 import { NextRequest, NextResponse } from "next/server"
-import { startOfMonth, endOfMonth } from "date-fns"
+import { startOfMonth, endOfMonth, parseISO } from "date-fns"
 import { getValidGoogleClient } from "@/lib/google-calendar"
 
 export const dynamic = "force-dynamic"
@@ -130,14 +130,14 @@ export async function GET(req: NextRequest) {
 
         // 5. Google Calendar Sync
         if (currentUser?.calendarSettings?.isGoogleCalendarSyncEnabled) {
-            console.log(`[API] Google Sync Enabled.Fetching events...`)
+            console.log(`[API] Google Sync Enabled. Fetching events...`)
             try {
                 const calendar = await getValidGoogleClient(session.user.id)
                 const calendarIds = currentUser.calendarSettings.syncedCalendarIds.length > 0
                     ? currentUser.calendarSettings.syncedCalendarIds
                     : ['primary']
 
-                console.log(`[API] Fetching from calendars: `, calendarIds)
+                console.log(`[API] Fetching from calendars:`, calendarIds)
 
                 const calendarPromises = calendarIds.map(async (calendarId) => {
                     try {
@@ -167,7 +167,7 @@ export async function GET(req: NextRequest) {
                             }
                         })
                     } catch (err) {
-                        console.error(`[API] Failed to fetch events for calendar ${calendarId}: `, err)
+                        console.error(`[API] Failed to fetch events for calendar ${calendarId}:`, err)
                         return []
                     }
                 })
@@ -175,7 +175,7 @@ export async function GET(req: NextRequest) {
                 const results = await Promise.all(calendarPromises)
                 const allGoogleEvents = results.flat()
 
-                console.log(`[API] Total Google Events fetched: `, allGoogleEvents.length)
+                console.log(`[API] Total Google Events fetched:`, allGoogleEvents.length)
 
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 allEvents = [...allEvents, ...(allGoogleEvents as any)]

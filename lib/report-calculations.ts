@@ -133,7 +133,7 @@ export function getMonthlyReport(
             if (workdayStartTime) {
                 const endTime = workdayEndTime || (isSameDay(day, today) ? new Date() : null)
                 if (endTime) {
-                    const duration = (endTime.getTime() - workdayStartTime.getTime()) / (1000 * 60 * 60)
+                    let duration = (endTime.getTime() - workdayStartTime.getTime()) / (1000 * 60 * 60)
                     dailyDuration = Math.max(0, duration)
                     sessionStrings.push(`${format(workdayStartTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}`)
                 } else {
