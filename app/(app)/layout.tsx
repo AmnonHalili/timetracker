@@ -7,15 +7,38 @@ import { AdBanner } from "@/components/ads/AdBanner"
 
 import { HeartbeatTracker } from "@/components/auth/HeartbeatTracker"
 
-export default function AppLayout({
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
+
+export default async function AppLayout({
     children,
 }: {
     children: React.ReactNode
 }) {
+    const session = await getServerSession(authOptions)
+
+    // Fetch projects for the switcher
+    let projects: any[] = []
+    if (session?.user?.id) {
+        const memberships = await prisma.projectMember.findMany({
+            where: { userId: session.user.id },
+            include: { project: true }
+        })
+
+        projects = memberships.map((m: any) => ({
+            label: m.project.name,
+            value: m.projectId,
+            plan: "Free", // TODO: Get from project/subscription
+            initials: m.project.name.substring(0, 2).toUpperCase(),
+            image: m.project.logo
+        }))
+    }
+
     return (
         <div className="flex h-screen overflow-hidden bg-background">
             <HeartbeatTracker />
-            <Sidebar />
+            <Sidebar projects={projects} />
             <main className="flex-1 overflow-y-scroll" id="main-content" role="main">
                 <AppHeader />
                 <div className="px-8 pb-8 pt-2">

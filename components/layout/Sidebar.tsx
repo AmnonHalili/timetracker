@@ -10,7 +10,14 @@ import { useSession, signOut } from "next-auth/react"
 import { stopActiveTimer } from "@/lib/utils"
 import { useLanguage } from "@/lib/useLanguage"
 
-export function Sidebar() {
+import { ProjectSwitcher } from "@/components/layout/ProjectSwitcher"
+
+export interface SidebarProps {
+    projects?: any[] // Using any[] temporarily to avoid strict type coupling or define specific type
+    // Better: define minimal type
+}
+
+export function Sidebar({ projects = [] }: { projects?: any[] }) {
     const pathname = usePathname()
     const { t } = useLanguage()
     const { data: session } = useSession()
@@ -123,7 +130,14 @@ export function Sidebar() {
                 </Link>
             </div>
 
-            <nav className="flex-1 overflow-y-auto py-6" aria-label="Primary navigation">
+            <div className="px-4 py-2">
+                <ProjectSwitcher
+                    projects={projects}
+                    currentProjectId={session?.user?.projectId}
+                />
+            </div>
+
+            <nav className="flex-1 overflow-y-auto py-4" aria-label="Primary navigation">
                 <div className="space-y-1 px-4">
                     {routes.map((route) => (
                         <Link

@@ -133,71 +133,89 @@ export const authOptions: NextAuthOptions = {
     },
     callbacks: {
         async jwt({ token, user, trigger, session }) {
-            // Debug Log
-            // console.log("[AUTH] JWT Callback Triggered", { trigger, hasUser: !!user, hasSession: !!session })
-
             if (trigger === "update" && session) {
-                console.log("[AUTH] Session Update Triggered", session.user)
                 return { ...token, ...session.user }
             }
 
             if (user) {
-                // Initial sign in
-                console.log("[AUTH] User Login", { id: user.id, email: user.email, role: user.role })
+                // Initial login - populate from user object (legacy/global)
                 token.id = user.id
-                token.role = user.role
-                token.status = user.status
-                token.managerId = user.managerId
-                token.workDays = user.workDays
-                token.dailyTarget = user.dailyTarget
-                token.plan = user.plan
-            } else if (token.id) {
-                // Subsequent request: fetch fresh role from DB to ensure sync
-                // This fixes the "Stale Admin Role" issue
+                token.name = user.name
+                token.email = user.email
+                // Logic below will refresh from DB anyway for consistency
+            }
+
+            // Always fetch fresh data to support context switching/role updates
+            if (token.id) {
                 try {
                     const freshUser = await prisma.user.findUnique({
                         where: { id: token.id as string },
                         select: {
-                            role: true,
-                            status: true,
-                            managerId: true,
-                            workDays: true,
-                            dailyTarget: true,
+                            id: true,
+                            projectId: true, // This is now the "Active Project"
                             plan: true,
-                            projectId: true
+                            role: true // Fallback
                         }
                     })
+
                     if (freshUser) {
-                        token.role = freshUser.role
-                        token.status = freshUser.status
-                        token.managerId = freshUser.managerId
-                        token.workDays = freshUser.workDays
-                        token.dailyTarget = freshUser.dailyTarget
+                        let activeProjectId = freshUser.projectId;
 
-                        // Plan Inheritance Logic
-                        let effectivePlan = freshUser.plan
-
-                        if (freshUser.role !== 'ADMIN' && freshUser.projectId) {
-                            // Find an Admin in the same project with a paid plan
-                            const projectAdmin = await prisma.user.findFirst({
-                                where: {
-                                    projectId: freshUser.projectId,
-                                    role: 'ADMIN',
-                                    plan: { not: 'FREE' }
-                                },
-                                select: { plan: true }
-                            })
-
-                            if (projectAdmin) {
-                                effectivePlan = projectAdmin.plan
+                        // If no active project, try to find one
+                        if (!activeProjectId) {
+                            const firstMember = await prisma.projectMember.findFirst({
+                                where: { userId: freshUser.id }
+                            });
+                            if (firstMember) {
+                                activeProjectId = firstMember.projectId;
+                                // Optional: Update user to set this as default?
+                                // await prisma.user.update({ where: { id: freshUser.id }, data: { projectId: activeProjectId } })
                             }
                         }
 
-                        token.plan = effectivePlan
-                        // console.log("[AUTH] Refreshed Role from DB:", freshUser.role)
+                        if (activeProjectId) {
+                            const member = await prisma.projectMember.findUnique({
+                                where: {
+                                    userId_projectId: {
+                                        userId: freshUser.id,
+                                        projectId: activeProjectId
+                                    }
+                                }
+                            });
+
+                            if (member) {
+                                token.role = member.role;
+                                token.status = member.status;
+                                token.managerId = member.managerId;
+                                token.workDays = member.workDays;
+                                token.dailyTarget = member.dailyTarget;
+                                token.projectId = activeProjectId;
+
+                                // Plan inheritance logic (Scoped to Active Project)
+                                let effectivePlan = freshUser.plan;
+                                if (member.role !== 'ADMIN') {
+                                    const projectAdmin = await prisma.projectMember.findFirst({
+                                        where: {
+                                            projectId: activeProjectId,
+                                            role: 'ADMIN'
+                                        },
+                                        include: { user: { select: { plan: true } } }
+                                    });
+                                    if (projectAdmin?.user?.plan && projectAdmin.user.plan !== 'FREE') {
+                                        effectivePlan = projectAdmin.user.plan;
+                                    }
+                                }
+                                token.plan = effectivePlan;
+                            }
+                        } else {
+                            // User has no projects at all
+                            // Fallback to legacy fields or clear them
+                            token.role = freshUser.role; // Use global role if exists (likely from signup)
+                            token.projectId = null;
+                        }
                     }
                 } catch (error) {
-                    console.error("[AUTH] Error refreshing user role:", error)
+                    console.error("[AUTH] Error refreshing user context:", error)
                 }
             }
             return token
@@ -211,8 +229,8 @@ export const authOptions: NextAuthOptions = {
                 session.user.workDays = token.workDays as number[]
                 session.user.dailyTarget = token.dailyTarget as number | null
                 session.user.plan = token.plan as string
-                // Debug Log (Comment out in production later if too noisy)
-                // console.log("[AUTH] Session Callback", { email: session.user.email, role: session.user.role })
+                // @ts-ignore
+                session.user.projectId = token.projectId as string | null
             }
             return session
         },
