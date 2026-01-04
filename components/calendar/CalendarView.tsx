@@ -441,7 +441,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
             </div>
 
             {/* Calendar Grid */}
-            <div className="bg-background rounded-lg shadow ring-1 ring-black ring-opacity-5">
+            <div className="bg-background">
                 {view === 'month' ? (
                     <MonthGrid
                         date={currentDate}
