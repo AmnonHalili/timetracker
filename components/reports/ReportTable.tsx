@@ -150,8 +150,7 @@ export function ReportTable({ days, userId }: ReportTableProps) {
                     <TableRow>
                         <TableHead className={cn(isRTL ? "text-right" : "text-left", "w-[12%]")}>{t('reports.date')}</TableHead>
                         <TableHead className={cn(isRTL ? "text-right" : "text-left", "w-[18%]")}>{t('reports.day')}</TableHead>
-                        <TableHead className={cn(isRTL ? "text-right" : "text-left", "w-[22%]")}>{t('reports.startTime')}</TableHead>
-                        <TableHead className={cn(isRTL ? "text-right" : "text-left", "w-[22%]")}>{t('reports.endTime')}</TableHead>
+                        <TableHead className={cn(isRTL ? "text-right" : "text-left", "w-[44%]")}>{t('reports.sessions') || "Sessions"}</TableHead>
                         <TableHead className={cn(isRTL ? "text-left" : "text-right", "w-[22%]")}>{t('reports.totalHours')}</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -184,11 +183,8 @@ export function ReportTable({ days, userId }: ReportTableProps) {
                                         </div>
                                     </TableCell>
                                     <TableCell className={cn(isRTL ? "text-right" : "text-left", "w-[18%]")}>{getDayName(day.date)}</TableCell>
-                                    <TableCell className={cn(isRTL ? "text-right" : "text-left", "w-[22%]")}>
-                                        {day.startTime ? format(day.startTime, "HH:mm") : "-"}
-                                    </TableCell>
-                                    <TableCell className={cn(isRTL ? "text-right" : "text-left", "w-[22%]")}>
-                                        {day.endTime ? format(day.endTime, "HH:mm") : (day.startTime ? "---" : "-")}
+                                    <TableCell className={cn(isRTL ? "text-right" : "text-left", "w-[44%]")}>
+                                        {day.formattedSessions}
                                     </TableCell>
                                     <TableCell className={cn(isRTL ? "text-left" : "text-right", "font-mono", "w-[22%]")}>
                                         {formatHoursMinutes(day.totalDurationHours)}

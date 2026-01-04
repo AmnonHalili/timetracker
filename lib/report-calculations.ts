@@ -14,6 +14,7 @@ export type DailyReport = {
     totalDurationHours: number
     status: 'MET' | 'MISSED' | 'OFF' | 'PENDING'
     hasManualEntries: boolean
+    formattedSessions: string
 }
 
 export type MonthlyReport = {
@@ -77,17 +78,67 @@ export function getMonthlyReport(
             workdayEndTime = dayWorkday.workdayEndTime ? new Date(dayWorkday.workdayEndTime) : null
         }
 
-        // Calculate total duration from workday (Start Day to End Day)
-        // This is the total workday duration, not the sum of task entries
-        let dailyDuration = 0
+        // REMOVED LEGACY LOGIC THAT OVERWROTE dailyDuration
+        // The new logic above calculates dailyDuration from all entries.
+        // We do NOT want to overwrite it with "workday" duration anymore unless we fell back to it.
 
+        /*
         if (workdayStartTime) {
-            // If workday hasn't ended yet (workdayEndTime is null), calculate up to now
-            // Otherwise, use the workdayEndTime
-            const endTime = workdayEndTime || (isSameDay(day, today) ? new Date() : null)
+            // ... (legacy logic removed to avoid conflict)
+        }
+        */
 
-            if (endTime) {
-                dailyDuration = (endTime.getTime() - workdayStartTime.getTime()) / (1000 * 60 * 60)
+
+
+        // Check for time entries (tasks/sessions)
+        const dayEntries = entries.filter(e => isSameDay(new Date(e.startTime), day))
+        dayEntries.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+
+        const hasManualEntries = dayEntries.some(e => e.isManual)
+
+        // Calculate total duration from ALL entries for the day (not just main workday)
+        let dailyDuration = 0
+        const sessionStrings: string[] = []
+
+        dayEntries.forEach(entry => {
+            const start = new Date(entry.startTime)
+            const end = entry.endTime ? new Date(entry.endTime) : (isSameDay(day, today) ? new Date() : null)
+
+            if (end) {
+                // Determine duration
+                let duration = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
+
+                // Subtract breaks if supported in future/data
+                if (entry.breaks) {
+                    entry.breaks.forEach(b => {
+                        const bStart = new Date(b.startTime).getTime()
+                        const bEnd = b.endTime ? new Date(b.endTime).getTime() : Date.now()
+                        duration -= (bEnd - bStart) / (1000 * 60 * 60)
+                    })
+                }
+
+                dailyDuration += Math.max(0, duration) // ensure no negative duration
+
+                // Format string: HH:mm-HH:mm
+                sessionStrings.push(`${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`)
+            } else {
+                sessionStrings.push(`${format(start, 'HH:mm')} - ...`)
+            }
+        })
+
+        // If no entries but we have a main workday (fallback for backward compatibility or simple start/end usage without tasks)
+        // Actually, requirement says "show all sessions". If there are entries, we use them.
+        // If there are NO entries but there IS a workday (Start Day - End Day), we should usage that as a single session.
+        if (dayEntries.length === 0 && dayWorkday) {
+            if (workdayStartTime) {
+                const endTime = workdayEndTime || (isSameDay(day, today) ? new Date() : null)
+                if (endTime) {
+                    let duration = (endTime.getTime() - workdayStartTime.getTime()) / (1000 * 60 * 60)
+                    dailyDuration = Math.max(0, duration)
+                    sessionStrings.push(`${format(workdayStartTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}`)
+                } else {
+                    sessionStrings.push(`${format(workdayStartTime, 'HH:mm')} - ...`)
+                }
             }
         }
 
@@ -109,19 +160,18 @@ export function getMonthlyReport(
             }
         }
 
-        // Check for manual entries (from time entries, not workday)
-        const dayEntries = entries.filter(e => isSameDay(new Date(e.startTime), day))
-        const hasManualEntries = dayEntries.some(e => e.isManual)
+        const formattedSessions = sessionStrings.length > 0 ? sessionStrings.join(", ") : "-"
 
         return {
             date: day,
             dayName: format(day, 'EEEE'),
             isWorkDay,
-            startTime: workdayStartTime, // From Start Day button
-            endTime: workdayEndTime, // From End Day button
+            startTime: workdayStartTime, // Keep legacy or first punch? Not strictly needed for UI if we use formattedSessions
+            endTime: workdayEndTime,
             totalDurationHours: dailyDuration,
             status,
-            hasManualEntries
+            hasManualEntries,
+            formattedSessions
         }
     })
 
