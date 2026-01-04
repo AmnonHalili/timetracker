@@ -22,7 +22,7 @@ interface TasksPageHeaderProps {
 
 export function TasksPageHeader({ isAdmin, users, currentUserId, onOptimisticTaskCreate }: TasksPageHeaderProps) {
     const { t } = useLanguage()
-    
+
     return (
         <div className="flex justify-between items-center">
             <div>
