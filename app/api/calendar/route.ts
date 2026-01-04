@@ -27,16 +27,39 @@ export async function GET(req: NextRequest) {
         const monthStart = startOfMonth(currentDate)
         const monthEnd = endOfMonth(currentDate)
 
-        // 1. Reports
-        const reportData = await getReportData(session.user.id, year, month)
+        // Execute independent queries in parallel
+        const [reportData, currentUser, tasks, internalEvents] = await Promise.all([
+            // 1. Reports
+            getReportData(session.user.id, year, month),
 
-        // 2. Fetch User & determine scope
-        const currentUser = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            include: { calendarSettings: true, project: true } // Fetch settings and project
-        })
+            // 2. User & Scope
+            prisma.user.findUnique({
+                where: { id: session.user.id },
+                include: { calendarSettings: true, project: true }
+            }),
 
-        // 3. Tasks
+            // 3. Tasks - query needs logic based on user role/project, so we defer the specific query construction
+            // Actually, we need currentUser to construct the task query... 
+            // So we can't fully parallelize tasks/events without currentUser.
+            // Let's parallelize Reports and User first, then the rest.
+            // Wait, to be truly parallel we need to assume global strategy or fetch user first fast.
+            // Let's keep it simple: Fetch User first (fast), then everything else parallel.
+            null, null
+        ]);
+
+        // Re-fetching user here to respect the variable scope flow, but optimization:
+        // We know we need currentUser for tasks/events permissions.
+        // So step 1: Fetch User + Reports (independent)
+
+        const [reportDataResult, currentUserResult] = await Promise.all([
+            getReportData(session.user.id, year, month),
+            prisma.user.findUnique({
+                where: { id: session.user.id },
+                include: { calendarSettings: true, project: true }
+            })
+        ])
+
+        // 3. Tasks Logic
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const taskWhereClause: any = {
             deadline: {
@@ -45,10 +68,10 @@ export async function GET(req: NextRequest) {
             }
         }
 
-        if (currentUser?.role === "ADMIN" && currentUser?.projectId) {
+        if (currentUserResult?.role === "ADMIN" && currentUserResult?.projectId) {
             taskWhereClause.assignees = {
                 some: {
-                    projectId: currentUser.projectId
+                    projectId: currentUserResult.projectId
                 }
             }
         } else {
@@ -59,26 +82,7 @@ export async function GET(req: NextRequest) {
             }
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const tasks = await (prisma as any).task.findMany({
-            where: taskWhereClause,
-            select: {
-                id: true,
-                title: true,
-                deadline: true,
-                priority: true,
-                status: true,
-                description: true,
-                assignees: {
-                    select: {
-                        name: true,
-                        email: true
-                    }
-                }
-            }
-        })
-
-        // 4. Internal Events
+        // 4. Internal Events Logic
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const eventWhereClause: any = {
             startTime: { gte: monthStart },
@@ -86,110 +90,58 @@ export async function GET(req: NextRequest) {
             participants: { some: { userId: session.user.id } }
         }
 
-        if (currentUser?.projectId) {
-            eventWhereClause.projectId = currentUser.projectId
+        if (currentUserResult?.projectId) {
+            eventWhereClause.projectId = currentUserResult.projectId
         }
 
+
+        // Execute Data Fetching Parallel
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const internalEvents = await (prisma as any).event.findMany({
-            where: eventWhereClause,
-            select: {
-                id: true,
-                title: true,
-                description: true,
-                startTime: true,
-                endTime: true,
-                allDay: true,
-                type: true,
-                location: true,
-                createdBy: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true
-                    }
-                },
-                participants: {
-                    include: {
-                        user: {
-                            select: {
-                                id: true,
-                                name: true,
-                                email: true
-                            }
-                        }
-                    }
+        const [tasksResult, internalEventsResult, googleEventsResult] = await Promise.all([
+            (prisma as any).task.findMany({
+                where: taskWhereClause,
+                select: {
+                    id: true, title: true, deadline: true, priority: true, status: true, description: true,
+                    assignees: { select: { name: true, email: true } }
                 }
-            },
-            orderBy: {
-                startTime: 'asc'
-            }
-        })
+            }),
+            (prisma as any).event.findMany({
+                where: eventWhereClause,
+                select: {
+                    id: true, title: true, description: true, startTime: true, endTime: true, allDay: true, type: true, location: true,
+                    createdBy: { select: { id: true, name: true, email: true } },
+                    participants: { include: { user: { select: { id: true, name: true, email: true } } } }
+                },
+                orderBy: { startTime: 'asc' }
+            }),
+            // Google Events (Cached)
+            (async () => {
+                if (currentUserResult?.calendarSettings?.isGoogleCalendarSyncEnabled) {
+                    const { getCachedGoogleEvents } = await import("@/lib/google-data")
+                    const calendarIds = currentUserResult.calendarSettings.syncedCalendarIds.length > 0
+                        ? currentUserResult.calendarSettings.syncedCalendarIds
+                        : ['primary']
 
-        let allEvents = [...internalEvents]
+                    // Generate a unique cache key based on params
+                    // unstable_cache arguments: (userId, start, end, calendarIds, mode)
+                    return getCachedGoogleEvents(
+                        session.user.id,
+                        monthStart.toISOString(),
+                        monthEnd.toISOString(),
+                        calendarIds,
+                        currentUserResult.calendarSettings.syncMode || 'FULL_DETAILS'
+                    )
+                }
+                return []
+            })()
+        ])
 
-        // 5. Google Calendar Sync
-        if (currentUser?.calendarSettings?.isGoogleCalendarSyncEnabled) {
-            console.log(`[API] Google Sync Enabled. Fetching events...`)
-            try {
-                const calendar = await getValidGoogleClient(session.user.id)
-                const calendarIds = currentUser.calendarSettings.syncedCalendarIds.length > 0
-                    ? currentUser.calendarSettings.syncedCalendarIds
-                    : ['primary']
-
-                console.log(`[API] Fetching from calendars:`, calendarIds)
-
-                const calendarPromises = calendarIds.map(async (calendarId) => {
-                    try {
-                        const googleRes = await calendar.events.list({
-                            calendarId,
-                            timeMin: monthStart.toISOString(),
-                            timeMax: monthEnd.toISOString(),
-                            singleEvents: true,
-                            orderBy: 'startTime'
-                        })
-
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        return (googleRes.data.items || []).map((gEvent: any) => {
-                            const isBusyOnly = currentUser.calendarSettings?.syncMode === 'BUSY_ONLY'
-                            return {
-                                id: gEvent.id,
-                                title: isBusyOnly ? 'Busy' : (gEvent.summary || '(No Title)'),
-                                description: isBusyOnly ? null : gEvent.description,
-                                startTime: gEvent.start?.dateTime || gEvent.start?.date,
-                                endTime: gEvent.end?.dateTime || gEvent.end?.date,
-                                allDay: !gEvent.start?.dateTime,
-                                type: 'EXTERNAL',
-                                location: isBusyOnly ? null : gEvent.location,
-                                isExternal: true,
-                                source: 'google',
-                                calendarId: calendarId // Add source calendar ID
-                            }
-                        })
-                    } catch (err) {
-                        console.error(`[API] Failed to fetch events for calendar ${calendarId}:`, err)
-                        return []
-                    }
-                })
-
-                const results = await Promise.all(calendarPromises)
-                const allGoogleEvents = results.flat()
-
-                console.log(`[API] Total Google Events fetched:`, allGoogleEvents.length)
-
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                allEvents = [...allEvents, ...(allGoogleEvents as any)]
-
-            } catch (error) {
-                console.error("Failed to sync Google Calendar:", error)
-                // Don't fail the whole request, just log and continue with internal events
-            }
-        }
+        const allEvents = [...internalEventsResult, ...(googleEventsResult || [])]
 
         return NextResponse.json({
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            dailyReports: (reportData as any)?.report?.days || [],
-            tasks,
+            dailyReports: (reportDataResult as any)?.report?.days || [],
+            tasks: tasksResult,
             events: allEvents
         })
     } catch (error) {

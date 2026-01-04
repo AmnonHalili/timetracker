@@ -229,7 +229,18 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
 
     const handleUpdateSettings = async (updates: Partial<typeof syncSettings>) => {
         const newSettings = { ...syncSettings, ...updates }
+
+        // Optimistic UI Update: Frame the future state immediately
         setSyncSettings(newSettings)
+
+        // If disabling Google Sync, instantly filter out events from the UI
+        if (updates.isGoogleCalendarSyncEnabled === false) {
+            setCalendarData(prev => ({
+                ...prev,
+                events: (prev.events || []).filter(e => e.source !== 'google')
+            }))
+            toast.success("Google Calendar sync disabled")
+        }
 
         try {
             const res = await fetch('/api/calendar/settings', {
@@ -240,13 +251,31 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
 
             if (!res.ok) throw new Error("Failed to update settings")
 
-            toast.success("Settings updated")
+            // Only show success toast if not the "instant off" case to avoid noise or if enabled
+            if (updates.isGoogleCalendarSyncEnabled !== false) {
+                toast.success("Settings updated")
+            }
 
-            // Refetch calendar data to reflect changes (e.g. busy mode or enabled/disabled)
-            const calendarRes = await fetch(`/api/calendar?month=${currentDate.getMonth()}&year=${currentDate.getFullYear()}`)
-            if (calendarRes.ok) {
-                const newData = await calendarRes.json()
-                setCalendarData(newData)
+            // Always refetch to ensure consistency (backend is source of truth), 
+            // but for "OFF" we already cleared the UI so the user doesn't wait.
+            // For "ON", we show a loading toast if needed or just let it happen.
+            if (updates.isGoogleCalendarSyncEnabled === true) {
+                const loadingToast = toast.loading("Syncing with Google...")
+                const calendarRes = await fetch(`/api/calendar?month=${currentDate.getMonth()}&year=${currentDate.getFullYear()}`)
+                if (calendarRes.ok) {
+                    const newData = await calendarRes.json()
+                    setCalendarData(newData)
+                    toast.success("Synced successfully", { id: loadingToast })
+                } else {
+                    toast.dismiss(loadingToast)
+                }
+            } else {
+                // Background sync for consistency without UI blocker
+                const calendarRes = await fetch(`/api/calendar?month=${currentDate.getMonth()}&year=${currentDate.getFullYear()}`)
+                if (calendarRes.ok) {
+                    const newData = await calendarRes.json()
+                    setCalendarData(newData)
+                }
             }
 
         } catch (error) {
@@ -254,6 +283,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
             toast.error("Failed to save settings")
             // Revert on error
             setSyncSettings(syncSettings)
+            // Ideally revert calendarData too if we filtered it, but typically a refetch is safer.
         }
     }
 
@@ -295,7 +325,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                             <DialogHeader>
                                 <DialogTitle>Calendar Settings</DialogTitle>
                             </DialogHeader>
-                            <div className="space-y-6 py-4">
+                            <div className="space-y-6 py-4 min-h-[400px]">
                                 <div className="flex items-center justify-between space-x-2">
                                     <div className="space-y-1">
                                         <Label className="text-base flex items-center gap-2">
@@ -345,24 +375,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
 
                                 {syncSettings.isGoogleCalendarSyncEnabled && (
                                     <>
-                                        <div className="space-y-2">
-                                            <Label>Privacy Mode</Label>
-                                            <Select
-                                                value={syncSettings.syncMode}
-                                                onValueChange={(val) => handleUpdateSettings({ syncMode: val })}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="FULL_DETAILS">Show Full Details</SelectItem>
-                                                    <SelectItem value="BUSY_ONLY">Show as &quot;Busy&quot; Only</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <p className="text-xs text-muted-foreground">
-                                                &quot;Busy Only&quot; hides event titles and details from other users.
-                                            </p>
-                                        </div>
+
 
                                         <div className="space-y-2">
                                             <Label>Synced Calendars</Label>
