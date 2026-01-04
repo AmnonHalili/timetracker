@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { MonthGrid } from "./MonthGrid"
 import { DayView } from "./DayView"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, ArrowLeft, Settings, Calendar as CalendarIcon, Loader2, PartyPopper } from "lucide-react"
+import { ChevronLeft, ChevronRight, ArrowLeft, Settings, PartyPopper } from "lucide-react"
 import { addMonths, subMonths, addDays, subDays, startOfMonth, endOfMonth } from "date-fns"
 import { useLanguage } from "@/lib/useLanguage"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -12,7 +12,6 @@ import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { signIn, useSession } from "next-auth/react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import { getHolidaysForRange } from "@/lib/holidays"
 
@@ -192,7 +191,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
     }, [currentDate, initialDate, data])
 
 
-    const mergedEvents = [...(calendarData.events || []), ...optimisticEvents]
+
 
     const addOptimisticEvent = (newEvent: CalendarEvent) => {
         setOptimisticEvents(prev => [...prev, newEvent])

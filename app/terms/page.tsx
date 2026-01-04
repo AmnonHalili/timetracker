@@ -17,7 +17,7 @@ export default function TermsOfService() {
                     <section>
                         <h2 className="text-xl font-semibold text-gray-900 mb-3">1. Acceptance of Terms</h2>
                         <p className="leading-relaxed">
-                            By accessing and using <strong>Collabo</strong> ("the Service"), you accept and agree to be bound by the terms and provision of this agreement. In addition, when using this Service to access Google Calendar features, you shall be subject to any posted guidelines or rules applicable to such services.
+                            By accessing and using <strong>Collabo</strong> (&quot;the Service&quot;), you accept and agree to be bound by the terms and provision of this agreement. In addition, when using this Service to access Google Calendar features, you shall be subject to any posted guidelines or rules applicable to such services.
                         </p>
                     </section>
 

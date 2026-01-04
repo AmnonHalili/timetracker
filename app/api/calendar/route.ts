@@ -3,8 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { getReportData } from "@/lib/report-service"
 import { getServerSession } from "next-auth"
 import { NextRequest, NextResponse } from "next/server"
-import { startOfMonth, endOfMonth, parseISO } from "date-fns"
-import { getValidGoogleClient } from "@/lib/google-calendar"
+import { startOfMonth, endOfMonth } from "date-fns"
 
 export const dynamic = "force-dynamic"
 
