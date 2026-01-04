@@ -1576,7 +1576,11 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                         <div>
                             <label className="text-sm font-medium mb-2 block">{t('tasks.assignToLabel')}</label>
                             <div className="space-y-2 max-h-40 overflow-y-auto">
-                                {users.map(user => (
+                                {[...users].sort((a, b) => {
+                                    if (a.id === currentUserId) return -1;
+                                    if (b.id === currentUserId) return 1;
+                                    return 0;
+                                }).map(user => (
                                     <div key={user.id} className="flex items-center space-x-2">
                                         <Checkbox
                                             id={`user-filter-${user.id}`}
