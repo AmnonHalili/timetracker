@@ -4,8 +4,8 @@ import { useState, useEffect } from "react"
 import { MonthGrid } from "./MonthGrid"
 import { DayView } from "./DayView"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, ArrowLeft, Settings, Calendar as CalendarIcon, Loader2 } from "lucide-react"
-import { addMonths, subMonths, addDays, subDays } from "date-fns"
+import { ChevronLeft, ChevronRight, ArrowLeft, Settings, Calendar as CalendarIcon, Loader2, PartyPopper } from "lucide-react"
+import { addMonths, subMonths, addDays, subDays, startOfMonth, endOfMonth } from "date-fns"
 import { useLanguage } from "@/lib/useLanguage"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch"
@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label"
 import { signIn, useSession } from "next-auth/react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
+import { getHolidaysForRange } from "@/lib/holidays"
 
 type CalendarEvent = {
     id: string;
@@ -34,6 +35,8 @@ type CalendarEvent = {
     isExternal?: boolean;
     source?: 'google' | 'other';
     calendarId?: string;
+    isHoliday?: boolean;
+    color?: string;
 }
 
 interface CalendarViewProps {
@@ -68,6 +71,54 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
     // Client-side data fetching state
     const [calendarData, setCalendarData] = useState(data)
     const [isLoading, setIsLoading] = useState(false)
+
+    // Local Holidays State
+    const [showHolidays, setShowHolidays] = useState(false)
+
+    // Calculate Holidays
+    const [holidayEvents, setHolidayEvents] = useState<CalendarEvent[]>([])
+
+    // Calculate Holidays effect
+    useEffect(() => {
+        async function fetchHolidays() {
+            if (!showHolidays) {
+                setHolidayEvents([])
+                return
+            }
+
+            const start = startOfMonth(currentDate)
+            const end = endOfMonth(currentDate)
+            // Add a buffer to ensure we cover edge cases or view transitions
+            const bufferStart = subDays(start, 7)
+            const bufferEnd = addDays(end, 7)
+
+            const toastId = toast.loading("Syncing holidays...")
+
+
+            try {
+                const rawHolidays = await getHolidaysForRange(bufferStart, bufferEnd)
+                // Server actions serialize Dates to strings, so we must parse them back
+                const holidays = rawHolidays.map((h: any) => ({
+                    ...h,
+                    startTime: new Date(h.startTime),
+                    endTime: new Date(h.endTime)
+                }))
+
+                setHolidayEvents(holidays)
+
+                if (holidays.length > 0) {
+                    toast.success(`Found ${holidays.length} holidays`, { id: toastId })
+                } else {
+                    toast.info("No holidays found for this month", { id: toastId })
+                }
+            } catch (error) {
+                console.error("Failed to fetch holidays", error)
+                toast.error("Failed to sync holidays", { id: toastId })
+            }
+        }
+
+        fetchHolidays()
+    }, [currentDate, showHolidays])
 
     // Settings State
     const [settingsOpen, setSettingsOpen] = useState(false)
@@ -234,7 +285,6 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                 </div>
 
                 <div className="flex items-center gap-2">
-                    {/* Settings Dialog */}
                     <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
                         <DialogTrigger asChild>
                             <Button variant="outline" size="icon">
@@ -246,6 +296,23 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                                 <DialogTitle>Calendar Settings</DialogTitle>
                             </DialogHeader>
                             <div className="space-y-6 py-4">
+                                <div className="flex items-center justify-between space-x-2">
+                                    <div className="space-y-1">
+                                        <Label className="text-base flex items-center gap-2">
+                                            <PartyPopper className="h-4 w-4" />
+                                            Show Holidays
+                                        </Label>
+                                        <p className="text-sm text-muted-foreground">
+                                            Show local holidays (Israel) on the calendar.
+                                        </p>
+                                    </div>
+                                    <Switch
+                                        checked={showHolidays}
+                                        onCheckedChange={setShowHolidays}
+                                    />
+                                </div>
+                                <div className="border-t" />
+
                                 <div className="flex items-center justify-between space-x-2">
                                     <div className="space-y-1">
                                         <Label className="text-base">Google Calendar Sync</Label>
@@ -349,13 +416,16 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                                 : (isRTL ? handleNextDay : handlePrevDay)
                             }
                         >
-                            {isRTL ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+                            <ChevronLeft className={`h-4 w-4 ${isRTL ? 'rotate-180' : ''}`} />
                         </Button>
-                        <div className="w-[1px] h-6 bg-border" />
-                        <Button variant="ghost" size="icon" onClick={handleToday}>
-                            <span className="text-xs font-medium px-2">{t('calendar.today')}</span>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-sm font-medium border-x rounded-none px-3"
+                            onClick={handleToday}
+                        >
+                            {t('calendar.today')}
                         </Button>
-                        <div className="w-[1px] h-6 bg-border" />
                         <Button
                             variant="ghost"
                             size="icon"
@@ -364,41 +434,47 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                                 : (isRTL ? handlePrevDay : handleNextDay)
                             }
                         >
-                            {isRTL ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                            <ChevronRight className={`h-4 w-4 ${isRTL ? 'rotate-180' : ''}`} />
                         </Button>
                     </div>
                 </div>
             </div>
 
-            {view === 'month' ? (
-                <MonthGrid
-                    date={currentDate}
-                    data={{ ...calendarData, events: mergedEvents }}
-                    onDayClick={(day) => {
-                        setCurrentDate(day)
-                        setView('day')
-                        // No URL update
-                    }}
-                    projectId={projectId}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    onOptimisticEventCreate={(event: any) => {
-                        addOptimisticEvent(event)
-                    }}
-                    isLoading={isLoading}
-                />
-            ) : (
-                <DayView
-                    date={currentDate}
-                    events={mergedEvents}
-                    tasks={calendarData.tasks || []}
-                    projectId={projectId}
-                    onBack={() => setView('month')}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    onOptimisticEventCreate={(event: any) => {
-                        addOptimisticEvent(event)
-                    }}
-                />
-            )}
+            {/* Calendar Grid */}
+            <div className="bg-background rounded-lg shadow ring-1 ring-black ring-opacity-5">
+                {view === 'month' ? (
+                    <MonthGrid
+                        date={currentDate}
+                        data={{
+                            ...calendarData,
+                            events: [...(calendarData.events || []), ...optimisticEvents, ...holidayEvents]
+                        }}
+                        onDayClick={(day) => {
+                            setCurrentDate(day)
+                            setView('day')
+                            // No URL update
+                        }}
+                        projectId={projectId}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        onOptimisticEventCreate={(event: any) => {
+                            addOptimisticEvent(event)
+                        }}
+                        isLoading={isLoading}
+                    />
+                ) : (
+                    <DayView
+                        date={currentDate}
+                        events={[...(calendarData.events || []), ...optimisticEvents, ...holidayEvents]}
+                        tasks={calendarData.tasks || []}
+                        projectId={projectId}
+                        onBack={() => setView('month')}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        onOptimisticEventCreate={(event: any) => {
+                            addOptimisticEvent(event)
+                        }}
+                    />
+                )}
+            </div>
         </div>
     )
 }

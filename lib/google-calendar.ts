@@ -84,15 +84,25 @@ export async function getUserCalendars(userId: string) {
             minAccessRole: "reader"
         })
 
-        return list.data.items?.map(item => ({
-            id: item.id,
-            summary: item.summary,
-            description: item.description,
-            backgroundColor: item.backgroundColor,
-            foregroundColor: item.foregroundColor,
-            primary: item.primary,
-            accessRole: item.accessRole
-        })) || []
+        return list.data.items
+            ?.filter(item => {
+                const isHoliday = item.id?.includes('holiday@group.v.calendar.google.com') ||
+                    item.summary?.toLowerCase().includes('holiday') ||
+                    item.summary?.includes('חגים')
+
+                const isContact = item.id?.includes('addressbook#contacts@group.v.calendar.google.com')
+
+                return !isHoliday && !isContact
+            })
+            .map(item => ({
+                id: item.id,
+                summary: item.summary,
+                description: item.description,
+                backgroundColor: item.backgroundColor,
+                foregroundColor: item.foregroundColor,
+                primary: item.primary,
+                accessRole: item.accessRole
+            })) || []
 
     } catch (error) {
         console.error("Failed to fetch user calendars", error)

@@ -18,6 +18,7 @@ interface CalendarEvent {
     allDay: boolean
     type: string
     location?: string | null
+    isHoliday?: boolean
     createdBy?: {
         name: string
         email: string

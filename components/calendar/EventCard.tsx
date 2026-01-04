@@ -52,6 +52,10 @@ interface EventCardProps {
     showDelete?: boolean
 }
 
+type EventWithType = EventCardProps['event'] & {
+    isHoliday?: boolean;
+}
+
 const eventTypeColors = {
     MEETING: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
     APPOINTMENT: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
@@ -60,6 +64,7 @@ const eventTypeColors = {
     PERSONAL: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
     OTHER: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
     EXTERNAL: "bg-orange-100/50 text-orange-700 border-orange-200",
+    HOLIDAY: "bg-yellow-50 border-yellow-200 text-yellow-700",
 }
 
 const eventTypeBadgeColors = {
@@ -70,6 +75,7 @@ const eventTypeBadgeColors = {
     PERSONAL: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
     OTHER: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
     EXTERNAL: "bg-orange-100 text-orange-700 border-orange-200",
+    HOLIDAY: "bg-yellow-100 text-yellow-700 border-yellow-200",
 }
 
 export function EventCard({ event, onClick, size = 'md', showDelete = false }: EventCardProps) {
@@ -159,7 +165,8 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
             <div
                 className={cn(
                     "relative rounded-md border transition-all group p-2 space-y-1",
-                    eventTypeColors[event.type as keyof typeof eventTypeColors] || "bg-gray-100 text-gray-700",
+                    // @ts-ignore
+                    (event.isHoliday ? eventTypeColors.HOLIDAY : (eventTypeColors[event.type as keyof typeof eventTypeColors] || "bg-gray-100 text-gray-700")),
                     onClick && "cursor-pointer hover:shadow-md",
                     sizeClasses[size]
                 )}

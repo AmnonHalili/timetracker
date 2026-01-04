@@ -28,8 +28,11 @@ interface MonthGridEvent {
     allDay: boolean;
     type: string;
     isTask?: boolean;
+    isHoliday?: boolean;
     assignees?: Array<{ name: string; email: string }>;
 }
+
+
 
 interface MonthGridProps {
     date: Date
@@ -197,10 +200,15 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                                 <div className="hidden md:flex flex-col space-y-0.5 flex-1 min-h-0 mt-1 overflow-hidden">
                                     {/* Events and Tasks - sorted by time */}
                                     {visibleItems.map((item) => {
-                                        // Determine colors: tasks use TASK_TIME color, events use their type color
-                                        const itemColors = item.isTask
-                                            ? "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20"
-                                            : (eventTypeColors[item.type] || eventTypeColors.OTHER)
+                                        // Determine colors:
+                                        let itemColors = eventTypeColors.OTHER
+                                        if (item.isTask) {
+                                            itemColors = "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20"
+                                        } else if (item.isHoliday) {
+                                            itemColors = eventTypeColors.HOLIDAY
+                                        } else {
+                                            itemColors = eventTypeColors[item.type] || eventTypeColors.OTHER
+                                        }
 
                                         // For tasks, include assignees in tooltip
                                         const taskAssignees = item.isTask ? item.assignees : null

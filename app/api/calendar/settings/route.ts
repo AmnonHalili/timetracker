@@ -24,12 +24,12 @@ export async function POST(req: NextRequest) {
                 userId: session.user.id,
                 isGoogleCalendarSyncEnabled: isGoogleCalendarSyncEnabled ?? false,
                 syncMode: syncMode ?? "FULL_DETAILS",
-                syncedCalendarIds: syncedCalendarIds ?? ["primary"]
+                syncedCalendarIds: syncedCalendarIds ? Array.from(new Set(syncedCalendarIds)) : ["primary"]
             },
             update: {
                 isGoogleCalendarSyncEnabled,
                 syncMode,
-                syncedCalendarIds
+                syncedCalendarIds: syncedCalendarIds ? Array.from(new Set(syncedCalendarIds)) : undefined
             }
         })
 
