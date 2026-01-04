@@ -24,10 +24,10 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Collabo | Time Tracking & Task Management for Teams & Companies",
+  title: "Collabo | Teamtracker",
   description: "Simple time tracking and task management for small projects, growing teams, and large companies. One platform that scales with your business.",
   metadataBase: new URL('https://collabo-web.com'),
-  manifest: "/manifest.json",
+  manifest: "/site.webmanifest",
   themeColor: "#ffffff",
   appleWebApp: {
     statusBarStyle: "default",
@@ -42,8 +42,8 @@ export const metadata: Metadata = {
       { url: "/collabologocutwhite.png", media: "(prefers-color-scheme: dark)", type: "image/png" },
     ],
     apple: [
-      { url: "/collabologocut.png", media: "(prefers-color-scheme: light)", type: "image/png", sizes: "180x180" },
-      { url: "/collabologocutwhite.png", media: "(prefers-color-scheme: dark)", type: "image/png", sizes: "180x180" },
+      { url: "/pwa-setup-icon.png", media: "(prefers-color-scheme: light)", type: "image/png", sizes: "180x180" },
+      { url: "/pwa-setup-icon.png", media: "(prefers-color-scheme: dark)", type: "image/png", sizes: "180x180" },
     ],
     other: [
       {
@@ -53,13 +53,13 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: "Collabo | Time Tracking & Task Management for Teams & Companies",
+    title: "Collabo | Teamtracker",
     description: "Simple time tracking and task management for small projects, growing teams, and large companies. One platform that scales with your business.",
     url: "https://collabo-web.com",
     siteName: "Collabo",
     images: [
       {
-        url: "/collabologo.png",
+        url: "/collabospecialnoback.png",
         width: 1200,
         height: 630,
         alt: "Collabo Logo",
@@ -70,9 +70,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Collabo | Time Tracking & Task Management for Teams & Companies",
+    title: "Collabo | Teamtracker",
     description: "Simple time tracking and task management for small projects, growing teams, and large companies. One platform that scales with your business.",
-    images: ["/collabologo.png"],
+    images: ["/collabospecialnoback.png"],
   },
   verification: {
     google: "pD0VM3NjqBMRzZegnSIGRHan7ruRQ0SzdQfrzRgSjmU",
