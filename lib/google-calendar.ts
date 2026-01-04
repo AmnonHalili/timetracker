@@ -1,3 +1,4 @@
+
 import { google } from "googleapis"
 import { prisma } from "@/lib/prisma"
 
@@ -73,4 +74,28 @@ export async function getValidGoogleClient(userId: string) {
 
     console.log(`[GoogleCalendar] Client ready.`)
     return google.calendar({ version: "v3", auth: oauth2Client })
+}
+
+export async function getUserCalendars(userId: string) {
+    try {
+        const client = await getValidGoogleClient(userId)
+
+        const list = await client.calendarList.list({
+            minAccessRole: "reader"
+        })
+
+        return list.data.items?.map(item => ({
+            id: item.id,
+            summary: item.summary,
+            description: item.description,
+            backgroundColor: item.backgroundColor,
+            foregroundColor: item.foregroundColor,
+            primary: item.primary,
+            accessRole: item.accessRole
+        })) || []
+
+    } catch (error) {
+        console.error("Failed to fetch user calendars", error)
+        return []
+    }
 }

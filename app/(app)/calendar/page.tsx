@@ -166,40 +166,52 @@ export default async function CalendarPage({
             const { getValidGoogleClient } = await import("@/lib/google-calendar")
             const calendar = await getValidGoogleClient(session.user.id)
 
-            // Fetch events
-            const googleRes = await calendar.events.list({
-                calendarId: 'primary',
-                timeMin: monthStart.toISOString(),
-                timeMax: monthEnd.toISOString(),
-                singleEvents: true,
-                orderBy: 'startTime'
-            })
+            const calendarIds = currentUser.calendarSettings.syncedCalendarIds.length > 0
+                ? currentUser.calendarSettings.syncedCalendarIds
+                : ['primary']
 
-            console.log(`[SSR] Google Events fetched:`, googleRes.data.items?.length)
+            console.log(`[SSR] Fetching from calendars:`, calendarIds)
 
-            const googleEvents = googleRes.data.items || []
+            const calendarPromises = calendarIds.map(async (calendarId) => {
+                try {
+                    const googleRes = await calendar.events.list({
+                        calendarId,
+                        timeMin: monthStart.toISOString(),
+                        timeMax: monthEnd.toISOString(),
+                        singleEvents: true,
+                        orderBy: 'startTime'
+                    })
 
-            // Transform Google Events to internal format
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const transformedGoogleEvents = googleEvents.map((gEvent: any) => {
-                const isBusyOnly = currentUser.calendarSettings?.syncMode === 'BUSY_ONLY'
-
-                return {
-                    id: gEvent.id,
-                    title: isBusyOnly ? 'Busy' : (gEvent.summary || '(No Title)'),
-                    description: isBusyOnly ? null : gEvent.description,
-                    startTime: gEvent.start?.dateTime || gEvent.start?.date,
-                    endTime: gEvent.end?.dateTime || gEvent.end?.date,
-                    allDay: !gEvent.start?.dateTime, // If no dateTime, it's an all-day event
-                    type: 'EXTERNAL', // Special type for frontend styling
-                    location: isBusyOnly ? null : gEvent.location,
-                    isExternal: true, // Flag for frontend
-                    source: 'google'
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    return (googleRes.data.items || []).map((gEvent: any) => {
+                        const isBusyOnly = currentUser.calendarSettings?.syncMode === 'BUSY_ONLY'
+                        return {
+                            id: gEvent.id,
+                            title: isBusyOnly ? 'Busy' : (gEvent.summary || '(No Title)'),
+                            description: isBusyOnly ? null : gEvent.description,
+                            startTime: gEvent.start?.dateTime || gEvent.start?.date,
+                            endTime: gEvent.end?.dateTime || gEvent.end?.date,
+                            allDay: !gEvent.start?.dateTime,
+                            type: 'EXTERNAL',
+                            location: isBusyOnly ? null : gEvent.location,
+                            isExternal: true,
+                            source: 'google',
+                            calendarId: calendarId
+                        }
+                    })
+                } catch (err) {
+                    console.error(`[SSR] Failed to fetch events for calendar ${calendarId}:`, err)
+                    return []
                 }
             })
 
+            const results = await Promise.all(calendarPromises)
+            const allGoogleEvents = results.flat()
+
+            console.log(`[SSR] Total Google Events fetched:`, allGoogleEvents.length)
+
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            allEvents = [...allEvents, ...(transformedGoogleEvents as any)]
+            allEvents = [...allEvents, ...(allGoogleEvents as any)]
 
         } catch (error) {
             console.error("Failed to sync Google Calendar (SSR):", error)

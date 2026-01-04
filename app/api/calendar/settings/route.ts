@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json()
-        const { isGoogleCalendarSyncEnabled, syncMode } = body
+        const { isGoogleCalendarSyncEnabled, syncMode, syncedCalendarIds } = body
 
         // Validate syncMode if present
         if (syncMode && !["FULL_DETAILS", "BUSY_ONLY"].includes(syncMode)) {
@@ -24,11 +24,12 @@ export async function POST(req: NextRequest) {
                 userId: session.user.id,
                 isGoogleCalendarSyncEnabled: isGoogleCalendarSyncEnabled ?? false,
                 syncMode: syncMode ?? "FULL_DETAILS",
-                syncedCalendarIds: ["primary"]
+                syncedCalendarIds: syncedCalendarIds ?? ["primary"]
             },
             update: {
                 isGoogleCalendarSyncEnabled,
                 syncMode,
+                syncedCalendarIds
             }
         })
 
@@ -55,12 +56,25 @@ export async function GET(req: NextRequest) {
             })
         ])
 
+        // Fetch available calendars if linked
+        let availableCalendars: any[] = []
+        if (googleAccount) {
+            try {
+                const { getUserCalendars } = await import("@/lib/google-calendar")
+                availableCalendars = await getUserCalendars(session.user.id)
+            } catch (e) {
+                console.error("Failed to fetch user calendars", e)
+            }
+        }
+
         return NextResponse.json({
             ...settings,
             isGoogleCalendarSyncEnabled: settings?.isGoogleCalendarSyncEnabled ?? false,
             syncMode: settings?.syncMode ?? "FULL_DETAILS",
+            syncedCalendarIds: settings?.syncedCalendarIds ?? ["primary"],
             isGoogleLinked: !!googleAccount,
-            hasRefreshToken: !!googleAccount?.refresh_token
+            hasRefreshToken: !!googleAccount?.refresh_token,
+            availableCalendars
         })
     } catch (error) {
         console.error("Error fetching calendar settings:", error)

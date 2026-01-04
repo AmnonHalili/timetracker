@@ -132,53 +132,53 @@ export async function GET(req: NextRequest) {
         if (currentUser?.calendarSettings?.isGoogleCalendarSyncEnabled) {
             console.log(`[API] Google Sync Enabled. Fetching events...`)
             try {
-                // Check cache first (Simple cache: if lastSyncedAt < 5 mins ago, use cached events)
-                // NOTE: For now, we are skipping complex cache logic and just fetching fresh data for reliability
-                // But we will use the `getValidGoogleClient` which handles token refresh efficiently.
-
                 const calendar = await getValidGoogleClient(session.user.id)
+                const calendarIds = currentUser.calendarSettings.syncedCalendarIds.length > 0
+                    ? currentUser.calendarSettings.syncedCalendarIds
+                    : ['primary']
 
-                // Fetch events
-                // Note: timeMin/timeMax need to be RFC3339 strings
-                const googleRes = await calendar.events.list({
-                    calendarId: 'primary',
-                    timeMin: monthStart.toISOString(),
-                    timeMax: monthEnd.toISOString(),
-                    singleEvents: true,
-                    orderBy: 'startTime'
-                })
+                console.log(`[API] Fetching from calendars:`, calendarIds)
 
-                console.log(`[API] Google Events fetched:`, googleRes.data.items?.length)
+                const calendarPromises = calendarIds.map(async (calendarId) => {
+                    try {
+                        const googleRes = await calendar.events.list({
+                            calendarId,
+                            timeMin: monthStart.toISOString(),
+                            timeMax: monthEnd.toISOString(),
+                            singleEvents: true,
+                            orderBy: 'startTime'
+                        })
 
-                const googleEvents = googleRes.data.items || []
-
-                // Transform Google Events to internal format
-                const transformedGoogleEvents = googleEvents.map((gEvent: any) => {
-                    const isBusyOnly = currentUser.calendarSettings?.syncMode === 'BUSY_ONLY'
-
-                    return {
-                        id: gEvent.id,
-                        title: isBusyOnly ? 'Busy' : (gEvent.summary || '(No Title)'),
-                        description: isBusyOnly ? null : gEvent.description,
-                        startTime: gEvent.start?.dateTime || gEvent.start?.date,
-                        endTime: gEvent.end?.dateTime || gEvent.end?.date,
-                        allDay: !gEvent.start?.dateTime, // If no dateTime, it's an all-day event
-                        type: 'EXTERNAL', // Special type for frontend styling
-                        location: isBusyOnly ? null : gEvent.location,
-                        isExternal: true, // Flag for frontend
-                        source: 'google'
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        return (googleRes.data.items || []).map((gEvent: any) => {
+                            const isBusyOnly = currentUser.calendarSettings?.syncMode === 'BUSY_ONLY'
+                            return {
+                                id: gEvent.id,
+                                title: isBusyOnly ? 'Busy' : (gEvent.summary || '(No Title)'),
+                                description: isBusyOnly ? null : gEvent.description,
+                                startTime: gEvent.start?.dateTime || gEvent.start?.date,
+                                endTime: gEvent.end?.dateTime || gEvent.end?.date,
+                                allDay: !gEvent.start?.dateTime,
+                                type: 'EXTERNAL',
+                                location: isBusyOnly ? null : gEvent.location,
+                                isExternal: true,
+                                source: 'google',
+                                calendarId: calendarId // Add source calendar ID
+                            }
+                        })
+                    } catch (err) {
+                        console.error(`[API] Failed to fetch events for calendar ${calendarId}:`, err)
+                        return []
                     }
                 })
 
-                allEvents = [...allEvents, ...transformedGoogleEvents]
+                const results = await Promise.all(calendarPromises)
+                const allGoogleEvents = results.flat()
 
-                // Ideally update lastSyncedAt here without blocking
-                /*
-                await prisma.calendarSettings.update({
-                    where: { userId: session.user.id },
-                    data: { lastSyncedAt: new Date() }
-                })
-                */
+                console.log(`[API] Total Google Events fetched:`, allGoogleEvents.length)
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                allEvents = [...allEvents, ...(allGoogleEvents as any)]
 
             } catch (error) {
                 console.error("Failed to sync Google Calendar:", error)

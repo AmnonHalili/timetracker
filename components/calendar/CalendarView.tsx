@@ -9,6 +9,7 @@ import { addMonths, subMonths, addDays, subDays } from "date-fns"
 import { useLanguage } from "@/lib/useLanguage"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { signIn, useSession } from "next-auth/react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -32,6 +33,7 @@ type CalendarEvent = {
     }>;
     isExternal?: boolean;
     source?: 'google' | 'other';
+    calendarId?: string;
 }
 
 interface CalendarViewProps {
@@ -69,10 +71,16 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
 
     // Settings State
     const [settingsOpen, setSettingsOpen] = useState(false)
-    const [syncSettings, setSyncSettings] = useState({
+    const [syncSettings, setSyncSettings] = useState<{
+        isGoogleCalendarSyncEnabled: boolean;
+        syncMode: string;
+        syncedCalendarIds?: string[];
+    }>({
         isGoogleCalendarSyncEnabled: false,
-        syncMode: 'FULL_DETAILS'
+        syncMode: 'FULL_DETAILS',
+        syncedCalendarIds: []
     })
+    const [availableCalendars, setAvailableCalendars] = useState<any[]>([])
     const [loadingSettings, setLoadingSettings] = useState(false)
 
     // Fetch settings on mount
@@ -88,10 +96,12 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                     const data = await res.json()
                     setSyncSettings({
                         isGoogleCalendarSyncEnabled: data.isGoogleCalendarSyncEnabled,
-                        syncMode: data.syncMode || "FULL_DETAILS"
+                        syncMode: data.syncMode || "FULL_DETAILS",
+                        syncedCalendarIds: data.syncedCalendarIds || ["primary"]
                     })
                     setIsGoogleLinked(data.isGoogleLinked)
                     setHasRefreshToken(data.hasRefreshToken)
+                    setAvailableCalendars(data.availableCalendars || [])
                 }
             } catch (error) {
                 console.error("Failed to fetch settings", error)
@@ -267,24 +277,63 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                                 </div>
 
                                 {syncSettings.isGoogleCalendarSyncEnabled && (
-                                    <div className="space-y-2">
-                                        <Label>Privacy Mode</Label>
-                                        <Select
-                                            value={syncSettings.syncMode}
-                                            onValueChange={(val) => handleUpdateSettings({ syncMode: val })}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="FULL_DETAILS">Show Full Details</SelectItem>
-                                                <SelectItem value="BUSY_ONLY">Show as &quot;Busy&quot; Only</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <p className="text-xs text-muted-foreground">
-                                            &quot;Busy Only&quot; hides event titles and details from other users.
-                                        </p>
-                                    </div>
+                                    <>
+                                        <div className="space-y-2">
+                                            <Label>Privacy Mode</Label>
+                                            <Select
+                                                value={syncSettings.syncMode}
+                                                onValueChange={(val) => handleUpdateSettings({ syncMode: val })}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="FULL_DETAILS">Show Full Details</SelectItem>
+                                                    <SelectItem value="BUSY_ONLY">Show as &quot;Busy&quot; Only</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <p className="text-xs text-muted-foreground">
+                                                &quot;Busy Only&quot; hides event titles and details from other users.
+                                            </p>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label>Synced Calendars</Label>
+                                            {availableCalendars.length > 0 ? (
+                                                <div className="space-y-2 border rounded-md p-3 max-h-40 overflow-y-auto">
+                                                    {availableCalendars.map((cal) => (
+                                                        <div key={cal.id} className="flex items-center space-x-2">
+                                                            <Checkbox
+                                                                id={cal.id}
+                                                                checked={syncSettings.syncedCalendarIds?.includes(cal.id)}
+                                                                onCheckedChange={(checked) => {
+                                                                    const currentIds = syncSettings.syncedCalendarIds || []
+                                                                    const newIds = checked
+                                                                        ? [...currentIds, cal.id]
+                                                                        : currentIds.filter(id => id !== cal.id)
+
+                                                                    // Optimistic update
+                                                                    setSyncSettings(prev => ({ ...prev, syncedCalendarIds: newIds }))
+                                                                    handleUpdateSettings({ syncedCalendarIds: newIds })
+                                                                }}
+                                                            />
+                                                            <label
+                                                                htmlFor={cal.id}
+                                                                className="text-sm cursor-pointer select-none leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                                                style={{ color: cal.foregroundColor, }} // Optional coloring
+                                                            >
+                                                                {cal.summary} {cal.primary && <span className="text-xs text-muted-foreground ml-1">(Primary)</span>}
+                                                            </label>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="text-sm text-muted-foreground italic">
+                                                    {isGoogleLinked ? "Loading calendars..." : "Connect Google Calendar to see available calendars."}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </>
                                 )}
                             </div>
                         </DialogContent>
