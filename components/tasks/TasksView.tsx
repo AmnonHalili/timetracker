@@ -31,6 +31,7 @@ import { CreateTaskDialog } from "./CreateTaskDialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Filter, X, ArrowUpDown } from "lucide-react"
 import { useLanguage } from "@/lib/useLanguage"
+import confetti from "canvas-confetti"
 
 const getPriorityColor = (priority: string) => {
     // Dynamic theme-based colors using CSS variables (handled by Tailwind)
@@ -399,6 +400,14 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
 
         // Optimistic update - update task status
         setTasks(tasks.map(t => t.id === taskId ? { ...t, status: newStatus } : t))
+
+        if (checked) {
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 }
+            })
+        }
 
         // If marking as DONE, also mark all subtasks as done optimistically
         if (checked && localSubtasks[taskId]) {

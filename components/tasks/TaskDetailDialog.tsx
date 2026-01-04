@@ -13,6 +13,7 @@ import { useSession } from "next-auth/react"
 import { UnifiedTimeline, UnifiedActivityItem } from "./UnifiedTimeline"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import confetti from "canvas-confetti"
 
 interface TaskDetailDialogProps {
     task: {
@@ -390,6 +391,14 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
     const handleStatusChange = async (newStatus: string) => {
         if (!task?.id) return
         setStatus(newStatus) // Optimistic update
+        if (newStatus === 'DONE') {
+            confetti({
+                particleCount: 150,
+                spread: 60,
+                origin: { y: 0.6 }
+            })
+        }
+
         try {
             const res = await fetch(`/api/tasks/${task.id}`, {
                 method: "PATCH",
@@ -472,7 +481,7 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl h-[600px] max-h-[90vh] flex flex-col p-0 gap-0">
+            <DialogContent className="max-w-2xl h-[600px] max-h-[90vh] flex flex-col p-0 gap-0 data-[state=open]:animate-in data-[state=closed]:animate-out fade-in-0 zoom-in-95 slide-in-from-bottom-[48%] duration-200">
                 <DialogHeader className="p-6 pb-2 flex flex-row items-center justify-between space-y-0">
                     <DialogTitle className="text-2xl truncate pr-4">{task.title}</DialogTitle>
                     <div className="shrink-0 mr-8">
@@ -590,16 +599,42 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
                         </TabsContent>
 
                         <TabsContent value="chat" className="mt-0 h-full flex flex-col">
-                            <div className="flex-1 overflow-hidden p-6 pb-2">
-                                <UnifiedTimeline
-                                    taskId={task.id}
-                                    items={unifiedTimeline}
-                                    isLoading={loading}
-                                    currentUserId={currentUserId}
-                                    onUpdate={fetchAllUpdates}
-                                    highlightNoteId={highlightNoteId}
-                                />
-                            </div>
+                            {loading ? (
+                                <div className="p-6 space-y-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-10 w-10 rounded-full bg-muted animate-pulse" />
+                                        <div className="space-y-2 flex-1">
+                                            <div className="h-4 w-1/4 bg-muted animate-pulse rounded" />
+                                            <div className="h-4 w-3/4 bg-muted animate-pulse rounded" />
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-10 w-10 rounded-full bg-muted animate-pulse" />
+                                        <div className="space-y-2 flex-1">
+                                            <div className="h-4 w-1/4 bg-muted animate-pulse rounded" />
+                                            <div className="h-4 w-1/2 bg-muted animate-pulse rounded" />
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-10 w-10 rounded-full bg-muted animate-pulse" />
+                                        <div className="space-y-2 flex-1">
+                                            <div className="h-4 w-1/3 bg-muted animate-pulse rounded" />
+                                            <div className="h-4 w-full bg-muted animate-pulse rounded" />
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex-1 overflow-hidden p-6 pb-2">
+                                    <UnifiedTimeline
+                                        taskId={task.id}
+                                        items={unifiedTimeline}
+                                        isLoading={loading}
+                                        currentUserId={currentUserId}
+                                        onUpdate={fetchAllUpdates}
+                                        highlightNoteId={highlightNoteId}
+                                    />
+                                </div>
+                            )}
 
                             {/* Unified Composer */}
                             <div className="border-t bg-background p-4 z-10 shrink-0">
