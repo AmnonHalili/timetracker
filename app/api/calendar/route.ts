@@ -79,6 +79,7 @@ export async function GET(req: NextRequest) {
         // Execute Data Fetching Parallel
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const [tasksResult, internalEventsResult, googleEventsResult] = await Promise.all([
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (prisma as any).task.findMany({
                 where: taskWhereClause,
                 select: {
@@ -86,6 +87,7 @@ export async function GET(req: NextRequest) {
                     assignees: { select: { name: true, email: true } }
                 }
             }),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (prisma as any).event.findMany({
                 where: eventWhereClause,
                 select: {
