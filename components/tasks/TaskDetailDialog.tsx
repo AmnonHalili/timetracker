@@ -86,7 +86,8 @@ interface ActivityLog {
 
 export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntries = [], projectUsers = [], highlightNoteId = null }: TaskDetailDialogProps) {
     const { t } = useLanguage()
-    // const { data: session } = useSession()
+    const { data: session } = useSession()
+    const currentUserId = session?.user?.id
 
     // Notes & Files State
     const [activeTab, setActiveTab] = useState("details")
@@ -118,12 +119,18 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
 
     // Mention Logic
     const filteredMentions = useMemo(() => {
-        if (!projectUsers) return []
-        if (!mentionSearch) return projectUsers
-        return projectUsers.filter(u =>
+        if (!projectUsers || !task?.assignees || !currentUserId) return []
+
+        const assignedIds = new Set(task.assignees.map(a => a.id))
+        const mentionableUsers = projectUsers.filter(u => assignedIds.has(u.id) && u.id !== currentUserId)
+
+        if (mentionableUsers.length === 0) return []
+        if (!mentionSearch) return mentionableUsers
+
+        return mentionableUsers.filter(u =>
             u.name?.toLowerCase().includes(mentionSearch.toLowerCase())
         )
-    }, [mentionSearch, projectUsers])
+    }, [mentionSearch, projectUsers, task?.assignees, currentUserId])
 
     const handleNoteChange = (val: string, cursorIdx: number) => {
         setNewNote(val)
@@ -172,9 +179,6 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
             setShowMentions(false)
         }
     }
-
-    const { data: session } = useSession()
-    const currentUserId = session?.user?.id
 
     const fetchAllUpdates = useMemo(() => async () => {
         if (!task?.id) return
