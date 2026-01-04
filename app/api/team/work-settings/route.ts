@@ -27,7 +27,7 @@ export async function PATCH(req: Request) {
             return NextResponse.json({ message: "User ID is required" }, { status: 400 })
         }
 
-        if (typeof dailyTarget !== 'number' || dailyTarget < 0) {
+        if (dailyTarget !== null && (typeof dailyTarget !== 'number' || dailyTarget < 0)) {
             return NextResponse.json({ message: "Invalid daily target" }, { status: 400 })
         }
 

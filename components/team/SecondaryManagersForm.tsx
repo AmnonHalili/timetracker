@@ -1,7 +1,7 @@
 "use client"
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
@@ -64,6 +64,16 @@ export function SecondaryManagersForm({
         }))
     )
     const [saving, setSaving] = useState(false)
+    const [isInitialized, setIsInitialized] = useState(false)
+
+    // Notify parent of changes whenever selectedManagers changes
+    useEffect(() => {
+        if (isInitialized) {
+            onSave(selectedManagers)
+        } else {
+            setIsInitialized(true)
+        }
+    }, [selectedManagers, onSave, isInitialized])
 
     const handleAddManager = (managerId: string) => {
         if (!managerId || selectedManagers.some(m => m.managerId === managerId)) return
