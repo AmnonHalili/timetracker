@@ -120,6 +120,7 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                                 allDay: isUtcMidnight,
                                 type: "TASK_TIME",
                                 isTask: true, // Flag to identify tasks
+                                isHoliday: false,
                                 assignees: t.assignees
                             }
                         })
@@ -156,7 +157,7 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                         TASK_TIME: "bg-green-50 border-green-200 text-green-700",
                         BREAK: "bg-gray-50 border-gray-200 text-gray-700",
                         PERSONAL: "bg-pink-50 border-pink-200 text-pink-700",
-                        OTHER: "bg-orange-50 border-orange-200 text-orange-700",
+                        HOLIDAY: "bg-teal-50 border-teal-200 text-teal-700",
                     }
 
                     // Check if there are any events or tasks for this day (for mobile indicator)

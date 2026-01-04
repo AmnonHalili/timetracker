@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { PricingContent } from "@/components/pricing/PricingContent"
 
+export const dynamic = 'force-dynamic'
+
 export default async function PricingPage() {
     const session = await getServerSession(authOptions)
 
