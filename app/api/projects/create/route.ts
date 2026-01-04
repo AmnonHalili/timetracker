@@ -54,6 +54,7 @@ export async function POST(request: Request) {
 
         return NextResponse.json({ success: true, project: result })
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
         console.error("Error creating project:", error)
         return NextResponse.json({ error: error.message }, { status: 500 })

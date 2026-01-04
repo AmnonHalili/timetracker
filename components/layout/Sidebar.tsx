@@ -13,10 +13,12 @@ import { useLanguage } from "@/lib/useLanguage"
 import { ProjectSwitcher } from "@/components/layout/ProjectSwitcher"
 
 export interface SidebarProps {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     projects?: any[] // Using any[] temporarily to avoid strict type coupling or define specific type
     // Better: define minimal type
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function Sidebar({ projects = [] }: { projects?: any[] }) {
     const pathname = usePathname()
     const { t } = useLanguage()

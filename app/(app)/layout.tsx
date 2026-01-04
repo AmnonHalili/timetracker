@@ -19,6 +19,7 @@ export default async function AppLayout({
     const session = await getServerSession(authOptions)
 
     // Fetch projects for the switcher
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let projects: any[] = []
     if (session?.user?.id) {
         const memberships = await prisma.projectMember.findMany({
@@ -26,6 +27,7 @@ export default async function AppLayout({
             include: { project: true }
         })
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         projects = memberships.map((m: any) => ({
             label: m.project.name,
             value: m.projectId,

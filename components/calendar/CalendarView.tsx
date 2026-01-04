@@ -4,14 +4,14 @@ import { useState, useEffect } from "react"
 import { MonthGrid } from "./MonthGrid"
 import { DayView } from "./DayView"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, ArrowLeft, Settings, Calendar as CalendarIcon, Loader2, PartyPopper } from "lucide-react"
+import { ChevronLeft, ChevronRight, ArrowLeft, Settings, PartyPopper } from "lucide-react"
 import { addMonths, subMonths, addDays, subDays, startOfMonth, endOfMonth } from "date-fns"
 import { useLanguage } from "@/lib/useLanguage"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import { signIn, useSession } from "next-auth/react"
+import { signIn } from "next-auth/react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import { getHolidaysForRange } from "@/lib/holidays"
@@ -63,7 +63,6 @@ interface CalendarViewProps {
 
 export function CalendarView({ initialDate, data, projectId }: CalendarViewProps) {
     const { t, isRTL } = useLanguage()
-    const { data: session } = useSession()
     const [view, setView] = useState<'month' | 'day'>('month')
     const [currentDate, setCurrentDate] = useState(initialDate)
     const [optimisticEvents, setOptimisticEvents] = useState<CalendarEvent[]>([])
@@ -98,6 +97,8 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
             try {
                 const rawHolidays = await getHolidaysForRange(bufferStart, bufferEnd)
                 // Server actions serialize Dates to strings, so we must parse them back
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const holidays = rawHolidays.map((h: any) => ({
                     ...h,
                     startTime: new Date(h.startTime),
@@ -132,7 +133,6 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
         syncedCalendarIds: []
     })
     const [availableCalendars, setAvailableCalendars] = useState<any[]>([])
-    const [loadingSettings, setLoadingSettings] = useState(false)
 
     // Fetch settings on mount
     const [isGoogleLinked, setIsGoogleLinked] = useState(false)
@@ -191,8 +191,6 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentDate, initialDate, data])
 
-
-    const mergedEvents = [...(calendarData.events || []), ...optimisticEvents]
 
     const addOptimisticEvent = (newEvent: CalendarEvent) => {
         setOptimisticEvents(prev => [...prev, newEvent])

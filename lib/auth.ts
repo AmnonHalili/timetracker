@@ -229,7 +229,7 @@ export const authOptions: NextAuthOptions = {
                 session.user.workDays = token.workDays as number[]
                 session.user.dailyTarget = token.dailyTarget as number | null
                 session.user.plan = token.plan as string
-                // @ts-ignore
+                // @ts-expect-error - session types extended
                 session.user.projectId = token.projectId as string | null
             }
             return session
