@@ -14,7 +14,6 @@ declare module "next-auth" {
             workDays?: number[]
             dailyTarget?: number | null
             plan: string
-            projectId: string | null
         } & DefaultSession["user"]
     }
 
@@ -26,7 +25,6 @@ declare module "next-auth" {
         workDays?: number[]
         dailyTarget?: number | null
         plan: string
-        projectId?: string | null
     }
 }
 
@@ -39,6 +37,5 @@ declare module "next-auth/jwt" {
         workDays?: number[]
         dailyTarget?: number | null
         plan: string
-        projectId?: string | null
     }
 }

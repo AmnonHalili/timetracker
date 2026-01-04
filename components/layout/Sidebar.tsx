@@ -12,12 +12,7 @@ import { useLanguage } from "@/lib/useLanguage"
 
 import { ProjectSwitcher } from "@/components/layout/ProjectSwitcher"
 
-export interface SidebarProps {
-    projects?: any[] // Using any[] temporarily to avoid strict type coupling or define specific type
-    // Better: define minimal type
-}
-
-export function Sidebar({ projects = [] }: { projects?: any[] }) {
+export function Sidebar() {
     const pathname = usePathname()
     const { t } = useLanguage()
     const { data: session } = useSession()
@@ -131,10 +126,7 @@ export function Sidebar({ projects = [] }: { projects?: any[] }) {
             </div>
 
             <div className="px-4 py-2">
-                <ProjectSwitcher
-                    projects={projects}
-                    currentProjectId={session?.user?.projectId}
-                />
+                <ProjectSwitcher />
             </div>
 
             <nav className="flex-1 overflow-y-auto py-4" aria-label="Primary navigation">
