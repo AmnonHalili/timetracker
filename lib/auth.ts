@@ -151,6 +151,7 @@ export const authOptions: NextAuthOptions = {
                 token.workDays = user.workDays
                 token.dailyTarget = user.dailyTarget
                 token.plan = user.plan
+                token.projectId = user.projectId
             } else if (token.id) {
                 // Subsequent request: fetch fresh role from DB to ensure sync
                 // This fixes the "Stale Admin Role" issue
@@ -173,6 +174,7 @@ export const authOptions: NextAuthOptions = {
                         token.managerId = freshUser.managerId
                         token.workDays = freshUser.workDays
                         token.dailyTarget = freshUser.dailyTarget
+                        token.projectId = freshUser.projectId
 
                         // Plan Inheritance Logic
                         let effectivePlan = freshUser.plan
@@ -211,6 +213,7 @@ export const authOptions: NextAuthOptions = {
                 session.user.workDays = token.workDays as number[]
                 session.user.dailyTarget = token.dailyTarget as number | null
                 session.user.plan = token.plan as string
+                session.user.projectId = token.projectId as string | null
                 // Debug Log (Comment out in production later if too noisy)
                 // console.log("[AUTH] Session Callback", { email: session.user.email, role: session.user.role })
             }

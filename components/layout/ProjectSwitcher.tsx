@@ -19,121 +19,317 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-
-// Mock Data for UI Visualization
-const teams = [
-    {
-        label: "Flaminga",
-        value: "flaminga",
-        plan: "Free",
-        initials: "FL",
-        image: "/flamingo.png"
-    },
-]
-
-type Team = {
-    label: string
-    value: string
-    plan: string
-    initials: string
-    image: string | null
-}
+import { useProject } from "@/components/providers/ProjectProvider"
 
 export function ProjectSwitcher({ className }: { className?: string }) {
+    const { projects, activeProject, switchProject, createProject, joinProject, isLoading } = useProject()
+
+    // Switcher State
     const [open, setOpen] = React.useState(false)
-    const [selectedTeam, setSelectedTeam] = React.useState<Team>(teams[0])
+
+    // Dialog States
+    const [showCreateDialog, setShowCreateDialog] = React.useState(false)
+    const [showJoinDialog, setShowJoinDialog] = React.useState(false)
+
+    // Form States
+    const [projectName, setProjectName] = React.useState("")
+    const [joinCode, setJoinCode] = React.useState("")
+    const [isSubmitting, setIsSubmitting] = React.useState(false)
+
+    const handleCreateProject = async () => {
+        if (!projectName.trim()) return
+        setIsSubmitting(true)
+        try {
+            await createProject(projectName)
+            setShowCreateDialog(false)
+            setProjectName("")
+        } catch (error) {
+            // Error handled in provider
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    const handleJoinProject = async () => {
+        if (!joinCode.trim()) return
+        setIsSubmitting(true)
+        try {
+            await joinProject(joinCode)
+            setShowJoinDialog(false)
+            setJoinCode("")
+        } catch (error) {
+            // Error handled in provider
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    // Helper to render the command items consistently
+    const renderCommandItems = () => (
+        <>
+            <CommandItem
+                onSelect={() => {
+                    setOpen(false)
+                    setShowCreateDialog(true)
+                }}
+                className="cursor-pointer"
+            >
+                <PlusCircle className="mr-2 h-5 w-5" />
+                Create Team
+            </CommandItem>
+            <CommandItem
+                onSelect={() => {
+                    setOpen(false)
+                    setShowJoinDialog(true)
+                }}
+                className="cursor-pointer"
+            >
+                <Building2 className="mr-2 h-5 w-5" />
+                Join Team
+            </CommandItem>
+        </>
+    )
+
+    // Handle "No Project" state
+    if (!activeProject && !isLoading) {
+        return (
+            <>
+                <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={open}
+                            className={cn("w-full justify-between h-12 px-3 border-dashed", className)}
+                        >
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                                <PlusCircle className="h-5 w-5" />
+                                <span className="text-sm font-medium">Select Workspace</span>
+                            </div>
+                            <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[200px] p-0" align="start">
+                        <Command>
+                            <CommandList>
+                                <CommandGroup>
+                                    {renderCommandItems()}
+                                </CommandGroup>
+                            </CommandList>
+                        </Command>
+                    </PopoverContent>
+                </Popover>
+
+                <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Create Team</DialogTitle>
+                            <DialogDescription>
+                                Add a new workspace to manage projects and tasks.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-2 pb-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="name">Team Name</Label>
+                                <Input
+                                    id="name"
+                                    placeholder="Acme Inc."
+                                    value={projectName}
+                                    onChange={(e) => setProjectName(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancel</Button>
+                            <Button onClick={handleCreateProject} disabled={isSubmitting}>
+                                {isSubmitting ? "Creating..." : "Create Team"}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                <Dialog open={showJoinDialog} onOpenChange={setShowJoinDialog}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Join Team</DialogTitle>
+                            <DialogDescription>
+                                Enter the invite code shared by your team administrator.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-2 pb-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="code">Invite Code</Label>
+                                <Input
+                                    id="code"
+                                    placeholder="Enter code"
+                                    value={joinCode}
+                                    onChange={(e) => setJoinCode(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setShowJoinDialog(false)}>Cancel</Button>
+                            <Button onClick={handleJoinProject} disabled={isSubmitting}>
+                                {isSubmitting ? "Sending Request..." : "Join Team"}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </>
+        )
+    }
+
+    if (isLoading) {
+        return <div className="h-12 w-full bg-muted animate-pulse rounded-md" />
+    }
 
     return (
-        <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-                <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={open}
-                    aria-label="Select a team"
-                    className={cn("w-full justify-between h-12 px-3 border-dashed", className)}
-                >
-                    <div className="flex items-center gap-2 text-left truncate">
-                        <Avatar className="h-6 w-6">
-                            {selectedTeam.image && (
-                                <AvatarImage
-                                    src={selectedTeam.image}
-                                    alt={selectedTeam.label}
-                                    className="object-cover"
-                                />
-                            )}
-                            <AvatarFallback className="text-[10px]">{selectedTeam.initials}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex flex-col gap-0.5 truncate">
-                            <span className="truncate text-sm font-medium leading-none">{selectedTeam.label}</span>
-                            <span className="truncate text-xs text-muted-foreground">{selectedTeam.plan}</span>
+        <>
+            <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                    <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={open}
+                        aria-label="Select a team"
+                        className={cn("w-full justify-between h-12 px-3", className)}
+                    >
+                        <div className="flex items-center gap-2 text-left truncate">
+                            <Avatar className="h-6 w-6">
+                                {activeProject?.logo && (
+                                    <AvatarImage
+                                        src={activeProject.logo}
+                                        alt={activeProject.name}
+                                        className="object-cover"
+                                    />
+                                )}
+                                <AvatarFallback className="text-[10px]">{activeProject?.name?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col gap-0.5 truncate">
+                                <span className="truncate text-sm font-medium leading-none">{activeProject?.name}</span>
+                                <span className="truncate text-xs text-muted-foreground">{activeProject?.plan || "Free"}</span>
+                            </div>
+                        </div>
+                        <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0" align="start">
+                    <Command>
+                        <CommandList>
+                            <CommandInput placeholder="Search team..." />
+                            <CommandEmpty>No team found.</CommandEmpty>
+                            <CommandGroup heading="Teams">
+                                {projects.map((project) => (
+                                    <CommandItem
+                                        key={project.id}
+                                        onSelect={() => {
+                                            if (project.id !== activeProject?.id) {
+                                                switchProject(project.id)
+                                            }
+                                            setOpen(false)
+                                        }}
+                                        className="text-sm"
+                                    >
+                                        <Avatar className="mr-2 h-5 w-5">
+                                            {project.logo && (
+                                                <AvatarImage
+                                                    src={project.logo}
+                                                    alt={project.name}
+                                                    className="grayscale"
+                                                />
+                                            )}
+                                            <AvatarFallback className="text-[10px]">{project.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                        </Avatar>
+                                        {project.name}
+                                        <Check
+                                            className={cn(
+                                                "ml-auto h-4 w-4",
+                                                activeProject?.id === project.id
+                                                    ? "opacity-100"
+                                                    : "opacity-0"
+                                            )}
+                                        />
+                                    </CommandItem>
+                                ))}
+                            </CommandGroup>
+                        </CommandList>
+                        <CommandSeparator />
+                        <CommandList>
+                            <CommandGroup>
+                                {renderCommandItems()}
+                            </CommandGroup>
+                        </CommandList>
+                    </Command>
+                </PopoverContent>
+            </Popover>
+
+            <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Create Team</DialogTitle>
+                        <DialogDescription>
+                            Add a new workspace to manage projects and tasks.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2 pb-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="name">Team Name</Label>
+                            <Input
+                                id="name"
+                                placeholder="Acme Inc."
+                                value={projectName}
+                                onChange={(e) => setProjectName(e.target.value)}
+                            />
                         </div>
                     </div>
-                    <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0" align="start">
-                <Command>
-                    <CommandList>
-                        <CommandInput placeholder="Search team..." />
-                        <CommandEmpty>No team found.</CommandEmpty>
-                        <CommandGroup>
-                            {teams.map((team) => (
-                                <CommandItem
-                                    key={team.value}
-                                    onSelect={() => {
-                                        setSelectedTeam(team)
-                                        setOpen(false)
-                                    }}
-                                    className="text-sm"
-                                >
-                                    <Avatar className="mr-2 h-5 w-5">
-                                        {team.image && (
-                                            <AvatarImage
-                                                src={team.image}
-                                                alt={team.label}
-                                                className="grayscale"
-                                            />
-                                        )}
-                                        <AvatarFallback className="text-[10px]">{team.initials}</AvatarFallback>
-                                    </Avatar>
-                                    {team.label}
-                                    <Check
-                                        className={cn(
-                                            "ml-auto h-4 w-4",
-                                            selectedTeam.value === team.value
-                                                ? "opacity-100"
-                                                : "opacity-0"
-                                        )}
-                                    />
-                                </CommandItem>
-                            ))}
-                        </CommandGroup>
-                    </CommandList>
-                    <CommandSeparator />
-                    <CommandList>
-                        <CommandGroup>
-                            <CommandItem
-                                onSelect={() => {
-                                    setOpen(false)
-                                }}
-                            >
-                                <PlusCircle className="mr-2 h-5 w-5" />
-                                Create Team
-                            </CommandItem>
-                            <CommandItem
-                                onSelect={() => {
-                                    setOpen(false)
-                                }}
-                            >
-                                <Building2 className="mr-2 h-5 w-5" />
-                                Join Team
-                            </CommandItem>
-                        </CommandGroup>
-                    </CommandList>
-                </Command>
-            </PopoverContent>
-        </Popover>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancel</Button>
+                        <Button onClick={handleCreateProject} disabled={isSubmitting}>
+                            {isSubmitting ? "Creating..." : "Create Team"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={showJoinDialog} onOpenChange={setShowJoinDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Join Team</DialogTitle>
+                        <DialogDescription>
+                            Enter the invite code shared by your team administrator.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2 pb-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="code">Invite Code</Label>
+                            <Input
+                                id="code"
+                                placeholder="Enter code"
+                                value={joinCode}
+                                onChange={(e) => setJoinCode(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowJoinDialog(false)}>Cancel</Button>
+                        <Button onClick={handleJoinProject} disabled={isSubmitting}>
+                            {isSubmitting ? "Sending Request..." : "Join Team"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
     )
 }
