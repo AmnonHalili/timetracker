@@ -34,6 +34,8 @@ export default async function ReportsPage({
         select: { id: true, role: true, projectId: true }
     })
 
+    console.log(`[ReportsPage] Render for user ${session.user.id}. DB ProjectId: ${currentUser?.projectId}. Params ProjectId: ${currentUser?.projectId}`)
+
     if (!currentUser) redirect("/login")
 
     // If Admin or Manager, fetch project users and handle targetUserId
