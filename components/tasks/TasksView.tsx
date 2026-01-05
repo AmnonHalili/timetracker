@@ -143,7 +143,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
         users: [],
     })
     const [sortBy, setSortBy] = useState<string>("smart")
-    const [viewMode, setViewMode] = useState<'list' | 'board'>('list')
+    const [viewMode] = useState<'list' | 'board'>('list')
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [taskToDelete, setTaskToDelete] = useState<string | null>(null)
 
@@ -1295,11 +1295,11 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                     <div
                                                         className={`
                                                     h-8 w-full max-w-[140px] mx-auto flex items-center justify-center gap-2 text-xs font-semibold shadow-sm rounded-md transition-all
-                                                    ${task.status === 'DONE' ? 'bg-[#00c875] hover:bg-[#00c875]/90 text-white' : 
-                                                    isPast(new Date(task.deadline || '')) && !isToday(new Date(task.deadline || '')) && task.status !== 'DONE' ? 'bg-[#e2445c] hover:bg-[#d00000] text-white' :
-                                                    task.status === 'IN_PROGRESS' || (tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0) ? 'bg-[#fdab3d] hover:bg-[#fdab3d]/90 text-white' :
-                                                    task.status === 'BLOCKED' ? 'bg-[#e2445c] hover:bg-[#c93b51] text-white' :
-                                                    task.status === 'TODO' && !((tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0)) ? 'bg-muted hover:bg-muted/80 text-muted-foreground' : ''}
+                                                    ${task.status === 'DONE' ? 'bg-[#00c875] hover:bg-[#00c875]/90 text-white' :
+                                                                isPast(new Date(task.deadline || '')) && !isToday(new Date(task.deadline || '')) && task.status !== 'DONE' ? 'bg-[#e2445c] hover:bg-[#d00000] text-white' :
+                                                                    task.status === 'IN_PROGRESS' || (tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0) ? 'bg-[#fdab3d] hover:bg-[#fdab3d]/90 text-white' :
+                                                                        task.status === 'BLOCKED' ? 'bg-[#e2445c] hover:bg-[#c93b51] text-white' :
+                                                                            task.status === 'TODO' && !((tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0)) ? 'bg-muted hover:bg-muted/80 text-muted-foreground' : ''}
                                                 `}
                                                     >
                                                         {task.status === 'DONE' && <CheckCircle2 className="h-3.5 w-3.5" />}

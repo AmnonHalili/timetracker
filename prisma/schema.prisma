@@ -204,8 +204,8 @@ model Task {
   activities  TaskActivity[]
   attachments TaskAttachment[]
   notes       TaskNote[]
-  Task_A      Task[]           @relation("TaskDependencies")
-  Task_B      Task[]           @relation("TaskDependencies")
+  blocking    Task[]           @relation("TaskDependencies")
+  blockedBy   Task[]           @relation("TaskDependencies")
   labels      TaskLabel[]      @relation("TaskToTaskLabel")
   timeEntries TimeEntry[]      @relation("TaskToTimeEntry")
   assignees   User[]           @relation("TaskToUser")

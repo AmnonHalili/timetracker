@@ -1,6 +1,11 @@
 import { prisma } from "@/lib/prisma"
 import { getMonthlyReport } from "@/lib/report-calculations"
 import { startOfMonth, endOfMonth } from "date-fns"
+import { TimeEntry, TimeBreak, Workday } from "@prisma/client"
+
+type TimeEntryWithBreaks = TimeEntry & {
+    breaks?: TimeBreak[]
+}
 
 export async function getReportData(userId: string, year: number, month: number, projectId?: string | null) {
     const reportDate = new Date(year, month, 1) // First day of selected month
@@ -11,21 +16,21 @@ export async function getReportData(userId: string, year: number, month: number,
         where: { id: userId },
         select: {
             id: true,
-            name: true,
             email: true,
+            name: true,
             role: true,
-            jobTitle: true,
             dailyTarget: true,
             workDays: true,
             weeklyHours: true,
             createdAt: true,
+            projectId: true,
             timeEntries: {
                 where: {
                     startTime: {
                         gte: start,
                         lte: end,
                     },
-                    projectId: projectId
+                    projectId: projectId,
                 },
                 orderBy: {
                     startTime: 'asc'
@@ -33,6 +38,7 @@ export async function getReportData(userId: string, year: number, month: number,
                 select: {
                     id: true,
                     userId: true,
+                    projectId: true,
                     startTime: true,
                     endTime: true,
                     description: true,
@@ -68,6 +74,7 @@ export async function getReportData(userId: string, year: number, month: number,
                     id: true,
                     workdayStartTime: true,
                     workdayEndTime: true,
+                    projectId: true,
                 },
             },
         },
@@ -79,23 +86,20 @@ export async function getReportData(userId: string, year: number, month: number,
     // Limit end by today (end of today)
     const today = new Date()
 
-    // For "Project Start", we might want project creation date if user joined later but is visualizing project?
-    // Requirement: "from the day the project or user account was opened".
-    // Let's use user.createdAt as per requirement for "Simple User" or "Project".
-    // If project exists, we should maybe check project.createdAt? 
-    // "start from the day the project OR the simple user...". 
-    // If user has project, maybe project date? 
-    // Let's stick to user.createdAt as safe default, user usually created with project or after.
+    // Map user relations to match getMonthlyReport requirements
+    const entries = (user.timeEntries as unknown) as TimeEntryWithBreaks[]
+    const workdays = (user.workdays as unknown) as Pick<Workday, 'workdayStartTime' | 'workdayEndTime'>[]
+    const weeklyHours = (user.weeklyHours as unknown) as Record<string, number> | null
 
     const report = getMonthlyReport(
-        user.timeEntries,
-        user.workdays || [],
+        entries,
+        workdays,
         reportDate,
         user.dailyTarget ?? 0,
         user.workDays,
         user.createdAt,
         today,
-        user.weeklyHours
+        weeklyHours
     )
 
     return {

@@ -33,12 +33,12 @@ function getHoursForDay(
             return hours
         }
     }
-    
+
     // Fallback to legacy format: workDays + dailyTarget
     if (user.workDays && user.workDays.includes(dayOfWeek)) {
         return user.dailyTarget ?? 0
     }
-    
+
     return 0
 }
 
@@ -47,9 +47,6 @@ export function calculateBalance(
     referenceDate: Date = new Date(),
     workdays: Pick<Workday, 'workdayStartTime' | 'workdayEndTime'>[] = []
 ): BalanceResult {
-    const { workDays } = user
-    // workMode check removed as it was unused
-
     // 1. Determine Timeframe: Start of current Month -> Reference Date (Today)
     const monthStart = startOfMonth(referenceDate)
 

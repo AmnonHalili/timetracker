@@ -103,9 +103,9 @@ function ProfileForm({ user }: ProfileFormProps) {
     }
 
     // Calculate if we should show the badge for work preferences
-    const hasWorkPreferences = user.weeklyHours 
+    const hasWorkPreferences = user.weeklyHours
         ? Object.keys(user.weeklyHours).length > 0 && Object.values(user.weeklyHours).some(h => h > 0)
-        : (user.workDays?.length > 0 && user.dailyTarget)
+        : ((user.workDays?.length ?? 0) > 0 && !!user.dailyTarget)
     const showPreferencesBadge = user.role === 'ADMIN' &&
         !user.managerId &&
         !hasWorkPreferences
@@ -126,10 +126,10 @@ function ProfileForm({ user }: ProfileFormProps) {
         if (!canEditPreferences) return
         setSelectedDays(prev => {
             const isSelected = prev.includes(day)
-            const newSelected = isSelected 
+            const newSelected = isSelected
                 ? prev.filter(d => d !== day).sort((a, b) => a - b)
                 : [...prev, day].sort((a, b) => a - b)
-            
+
             // Update weeklyHours: remove if unselected, add with default if selected
             setWeeklyHours(currentHours => {
                 const updated = { ...currentHours }
@@ -142,7 +142,7 @@ function ProfileForm({ user }: ProfileFormProps) {
                 }
                 return updated
             })
-            
+
             return newSelected
         })
     }
@@ -151,7 +151,7 @@ function ProfileForm({ user }: ProfileFormProps) {
         if (!canEditPreferences) return
         const hoursNum = hours === "" ? 0 : parseFloat(hours)
         if (isNaN(hoursNum) || hoursNum < 0) return
-        
+
         setWeeklyHours(prev => {
             const updated = { ...prev }
             if (hoursNum === 0) {
@@ -217,7 +217,7 @@ function ProfileForm({ user }: ProfileFormProps) {
                     weeklyHoursToSend[day] = weeklyHours[day]
                 }
             })
-            
+
             const res = await fetch("/api/user/preferences", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },

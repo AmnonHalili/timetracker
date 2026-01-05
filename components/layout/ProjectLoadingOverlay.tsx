@@ -1,7 +1,6 @@
 "use client"
 
 import { useProject } from "@/components/providers/ProjectProvider"
-import { createPortal } from "react-dom"
 import { useEffect, useState } from "react"
 
 export function ProjectLoadingOverlay() {

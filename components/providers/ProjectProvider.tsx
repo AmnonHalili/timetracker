@@ -71,7 +71,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         } finally {
             setIsLoading(false)
         }
-    }, [status, session?.user?.projectId])
+    }, [status, session?.user?.projectId, activeProject])
 
     useEffect(() => {
         refreshProjects()

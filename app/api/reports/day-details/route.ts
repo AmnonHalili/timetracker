@@ -120,6 +120,7 @@ export async function GET(req: Request) {
             id: true,
             startTime: true,
             endTime: true,
+            projectId: true,
             description: true,
             isManual: true,
             subtaskId: true,

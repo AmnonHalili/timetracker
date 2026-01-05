@@ -22,7 +22,7 @@ export default async function TasksPage() {
 
     // Fetch Tasks
     // Strict Project Isolation
-    const where: any = {
+    const where: import("@prisma/client").Prisma.TaskWhereInput = {
         projectId: currentUser?.projectId // Ensure task belongs to current project
     }
 

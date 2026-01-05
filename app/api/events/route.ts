@@ -68,7 +68,6 @@ export async function POST(req: NextRequest) {
                 allDay,
                 type,
                 location,
-                location,
                 projectId: projectId || session.user.projectId, // Use provided or fallback to active
                 createdById: session.user.id,
                 recurrence: recurrence as RecurrenceType | null,

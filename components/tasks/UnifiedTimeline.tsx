@@ -76,9 +76,12 @@ type GroupedItem = {
 }
 
 export function UnifiedTimeline({ taskId, items, isLoading, currentUserId, onUpdate, highlightNoteId }: UnifiedTimelineProps) {
+    const { t } = useLanguage()
     const [editingNoteId, setEditingNoteId] = React.useState<string | null>(null)
     const [editContent, setEditContent] = React.useState("")
     const [isUpdating, setIsUpdating] = React.useState(false)
+    const [itemToDelete, setItemToDelete] = React.useState<{ type: 'note' | 'file', id: string } | null>(null)
+    const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
 
     // Scroll to highlight
     React.useEffect(() => {
@@ -149,15 +152,15 @@ export function UnifiedTimeline({ taskId, items, isLoading, currentUserId, onUpd
         setDeleteDialogOpen(false)
 
         try {
-            const endpoint = type === 'note' 
+            const endpoint = type === 'note'
                 ? `/api/tasks/${taskId}/notes/${id}`
                 : `/api/tasks/${taskId}/attachments/${id}`
-            
+
             const res = await fetch(endpoint, {
                 method: 'DELETE'
             })
             if (res.ok) {
-                toast.success(type === 'note' 
+                toast.success(type === 'note'
                     ? (t('tasks.messageDeleted') || "Message deleted")
                     : (t('tasks.fileDeleted') || "File deleted"))
                 if (onUpdate) onUpdate()
@@ -262,177 +265,177 @@ export function UnifiedTimeline({ taskId, items, isLoading, currentUserId, onUpd
 
     return (
         <>
-        <ScrollArea className="h-full pr-4">
-            <div className="space-y-6 pl-2">
-                {groupedItems.map((group, index) => {
-                    const isLast = index === groupedItems.length - 1
-                    const isOwnMessage = currentUserId && group.user.id === currentUserId
-                    const isEditing = editingNoteId === group.id
+            <ScrollArea className="h-full pr-4">
+                <div className="space-y-6 pl-2">
+                    {groupedItems.map((group, index) => {
+                        const isLast = index === groupedItems.length - 1
+                        const isOwnMessage = currentUserId && group.user.id === currentUserId
+                        const isEditing = editingNoteId === group.id
 
-                    return (
-                        <div key={group.id} className="relative flex gap-4 group/item">
-                            {/* Vertical Line */}
-                            {!isLast && (
-                                <div className="absolute left-[19px] top-10 bottom-[-24px] w-[2px] bg-border" />
-                            )}
+                        return (
+                            <div key={group.id} className="relative flex gap-4 group/item">
+                                {/* Vertical Line */}
+                                {!isLast && (
+                                    <div className="absolute left-[19px] top-10 bottom-[-24px] w-[2px] bg-border" />
+                                )}
 
-                            <Avatar className="w-10 h-10 border border-border flex-shrink-0 z-10">
-                                <AvatarImage src={group.user.image || ""} />
-                                <AvatarFallback>{group.user.name?.[0] || "?"}</AvatarFallback>
-                            </Avatar>
+                                <Avatar className="w-10 h-10 border border-border flex-shrink-0 z-10">
+                                    <AvatarImage src={group.user.image || ""} />
+                                    <AvatarFallback>{group.user.name?.[0] || "?"}</AvatarFallback>
+                                </Avatar>
 
-                            <div className="space-y-1 pt-1 flex-1 min-w-0">
-                                <div className="flex items-center justify-between gap-2">
-                                    <div className="flex items-center gap-2">
-                                        <span className="font-medium text-sm text-foreground">
-                                            {group.user.name || "Unknown User"}
-                                        </span>
-                                        <span className="text-xs text-muted-foreground">
-                                            {format(new Date(group.createdAt), "MMM d, h:mm a")}
-                                        </span>
+                                <div className="space-y-1 pt-1 flex-1 min-w-0">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-medium text-sm text-foreground">
+                                                {group.user.name || "Unknown User"}
+                                            </span>
+                                            <span className="text-xs text-muted-foreground">
+                                                {format(new Date(group.createdAt), "MMM d, h:mm a")}
+                                            </span>
+                                        </div>
+
+                                        {group.type === 'message' && isOwnMessage && !isEditing && (
+                                            <div className="opacity-0 group-hover/item:opacity-100 transition-opacity">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                                                            <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end" className="w-32">
+                                                        {group.content && (
+                                                            <DropdownMenuItem onClick={() => {
+                                                                setEditingNoteId(group.id)
+                                                                setEditContent(group.content || "")
+                                                            }}>
+                                                                <Pencil className="mr-2 h-4 w-4" />
+                                                                <span>Edit</span>
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                        <DropdownMenuItem
+                                                            onClick={() => handleDeleteNote(group.id)}
+                                                            className="text-destructive focus:text-destructive"
+                                                        >
+                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                            <span>Delete</span>
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </div>
+                                        )}
                                     </div>
 
-                                    {group.type === 'message' && isOwnMessage && !isEditing && (
-                                        <div className="opacity-0 group-hover/item:opacity-100 transition-opacity">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7">
-                                                        <MoreVertical className="h-4 w-4 text-muted-foreground" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="w-32">
-                                                    {group.content && (
-                                                        <DropdownMenuItem onClick={() => {
-                                                            setEditingNoteId(group.id)
-                                                            setEditContent(group.content || "")
-                                                        }}>
-                                                            <Pencil className="mr-2 h-4 w-4" />
-                                                            <span>Edit</span>
-                                                        </DropdownMenuItem>
-                                                    )}
-                                                    <DropdownMenuItem
-                                                        onClick={() => handleDeleteNote(group.id)}
-                                                        className="text-destructive focus:text-destructive"
-                                                    >
-                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                        <span>Delete</span>
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
+                                    {group.type === 'message' && (
+                                        <div className="space-y-2 mt-1">
+                                            {isEditing ? (
+                                                <div className="space-y-2 bg-muted/30 p-3 rounded-lg border border-primary/20">
+                                                    <Textarea
+                                                        value={editContent}
+                                                        onChange={(e) => setEditContent(e.target.value)}
+                                                        className="min-h-[80px] text-sm bg-background"
+                                                    />
+                                                    <div className="flex justify-end gap-2">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => setEditingNoteId(null)}
+                                                            disabled={isUpdating}
+                                                        >
+                                                            Cancel
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => handleUpdateNote(group.id)}
+                                                            disabled={isUpdating || !editContent.trim()}
+                                                        >
+                                                            {isUpdating ? "Saving..." : "Save"}
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                group.content && (
+                                                    <div id={`note-${group.id}`} className="bg-muted/50 p-3 rounded-lg text-sm whitespace-pre-wrap border border-border/50 transition-all duration-500">
+                                                        {renderContent(group.content)}
+                                                    </div>
+                                                )
+                                            )}
+                                            {group.files && group.files.length > 0 && (
+                                                <div className="grid gap-2">
+                                                    {group.files.map(file => (
+                                                        <div key={file.id} className="flex items-center justify-between p-3 bg-card border rounded-lg group/file hover:bg-muted/20 transition-colors">
+                                                            <div className="flex items-center gap-3 overflow-hidden">
+                                                                <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                                                                    <FileText className="h-4 w-4 text-blue-500" />
+                                                                </div>
+                                                                <div className="min-w-0">
+                                                                    <p className="text-sm font-medium truncate">{file.fileName}</p>
+                                                                    <p className="text-xs text-muted-foreground">
+                                                                        {formatFileSize(file.fileSize || 0)}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-1">
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                                                                    <a href={file.fileUrl} target="_blank" rel="noopener noreferrer" download>
+                                                                        <Download className="h-4 w-4 text-muted-foreground" />
+                                                                    </a>
+                                                                </Button>
+                                                                {isOwnMessage && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-8 w-8 opacity-0 group-hover/file:opacity-100 hover:text-destructive transition-all"
+                                                                        onClick={() => handleDeleteAttachment(file.id)}
+                                                                    >
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                    </Button>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {group.type === 'activity' && (
+                                        <div className="text-sm text-muted-foreground italic flex items-center gap-2">
+                                            <Activity className="w-3 h-3" />
+                                            {formatAction(group.action || "", group.details)}
                                         </div>
                                     )}
                                 </div>
-
-                                {group.type === 'message' && (
-                                    <div className="space-y-2 mt-1">
-                                        {isEditing ? (
-                                            <div className="space-y-2 bg-muted/30 p-3 rounded-lg border border-primary/20">
-                                                <Textarea
-                                                    value={editContent}
-                                                    onChange={(e) => setEditContent(e.target.value)}
-                                                    className="min-h-[80px] text-sm bg-background"
-                                                />
-                                                <div className="flex justify-end gap-2">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => setEditingNoteId(null)}
-                                                        disabled={isUpdating}
-                                                    >
-                                                        Cancel
-                                                    </Button>
-                                                    <Button
-                                                        size="sm"
-                                                        onClick={() => handleUpdateNote(group.id)}
-                                                        disabled={isUpdating || !editContent.trim()}
-                                                    >
-                                                        {isUpdating ? "Saving..." : "Save"}
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            group.content && (
-                                                <div id={`note-${group.id}`} className="bg-muted/50 p-3 rounded-lg text-sm whitespace-pre-wrap border border-border/50 transition-all duration-500">
-                                                    {renderContent(group.content)}
-                                                </div>
-                                            )
-                                        )}
-                                        {group.files && group.files.length > 0 && (
-                                            <div className="grid gap-2">
-                                                {group.files.map(file => (
-                                                    <div key={file.id} className="flex items-center justify-between p-3 bg-card border rounded-lg group/file hover:bg-muted/20 transition-colors">
-                                                        <div className="flex items-center gap-3 overflow-hidden">
-                                                            <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
-                                                                <FileText className="h-4 w-4 text-blue-500" />
-                                                            </div>
-                                                            <div className="min-w-0">
-                                                                <p className="text-sm font-medium truncate">{file.fileName}</p>
-                                                                <p className="text-xs text-muted-foreground">
-                                                                    {formatFileSize(file.fileSize || 0)}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center gap-1">
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                                                                <a href={file.fileUrl} target="_blank" rel="noopener noreferrer" download>
-                                                                    <Download className="h-4 w-4 text-muted-foreground" />
-                                                                </a>
-                                                            </Button>
-                                                            {isOwnMessage && (
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-8 w-8 opacity-0 group-hover/file:opacity-100 hover:text-destructive transition-all"
-                                                                    onClick={() => handleDeleteAttachment(file.id)}
-                                                                >
-                                                                    <Trash2 className="h-4 w-4" />
-                                                                </Button>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
-                                {group.type === 'activity' && (
-                                    <div className="text-sm text-muted-foreground italic flex items-center gap-2">
-                                        <Activity className="w-3 h-3" />
-                                        {formatAction(group.action || "", group.details)}
-                                    </div>
-                                )}
                             </div>
-                        </div>
-                    )
-                })}
-            </div>
-        </ScrollArea>
+                        )
+                    })}
+                </div>
+            </ScrollArea>
 
-        {/* Delete Confirmation Dialog */}
-        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>{t('common.delete')}?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        {itemToDelete?.type === 'note'
-                            ? (t('tasks.deleteMessageConfirm') || 'Are you sure you want to delete this message? This action cannot be undone.')
-                            : (t('tasks.deleteFileConfirm') || 'Are you sure you want to delete this file? This action cannot be undone.')}
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel onClick={() => setItemToDelete(null)}>
-                        {t('common.cancel')}
-                    </AlertDialogCancel>
-                    <AlertDialogAction
-                        onClick={confirmDelete}
-                        className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-                    >
-                        {t('common.delete')}
-                    </AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{t('common.delete')}?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {itemToDelete?.type === 'note'
+                                ? (t('tasks.deleteMessageConfirm') || 'Are you sure you want to delete this message? This action cannot be undone.')
+                                : (t('tasks.deleteFileConfirm') || 'Are you sure you want to delete this file? This action cannot be undone.')}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setItemToDelete(null)}>
+                            {t('common.cancel')}
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmDelete}
+                            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                        >
+                            {t('common.delete')}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     )
 }

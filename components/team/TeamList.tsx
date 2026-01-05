@@ -206,8 +206,8 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
 
     const closeDialog = () => {
         setSelectedUser(null)
-        setEditTarget("")
-        setEditDays([])
+        setEditWeeklyHours({})
+        setEditSelectedDays([])
         setShowManagerDialog(false)
         setShowChiefTypeDialog(false)
         setSelectedChiefType(null)
@@ -371,7 +371,7 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
                     weeklyHoursToSend[day] = editWeeklyHours[day]
                 }
             })
-            
+
             const workSettingsRes = await fetch("/api/team/work-settings", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
@@ -473,10 +473,10 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
     const toggleDay = (day: number) => {
         setEditSelectedDays(prev => {
             const isSelected = prev.includes(day)
-            const newSelected = isSelected 
+            const newSelected = isSelected
                 ? prev.filter(d => d !== day).sort((a, b) => a - b)
                 : [...prev, day].sort((a, b) => a - b)
-            
+
             // Update weeklyHours: remove if unselected, add with default if selected
             setEditWeeklyHours(currentHours => {
                 const updated = { ...currentHours }
@@ -489,7 +489,7 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
                 }
                 return updated
             })
-            
+
             return newSelected
         })
     }
@@ -497,7 +497,7 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
     const updateDayHours = (day: number, hours: string) => {
         const hoursNum = hours === "" ? 0 : parseFloat(hours)
         if (isNaN(hoursNum) || hoursNum < 0) return
-        
+
         setEditWeeklyHours(prev => {
             const updated = { ...prev }
             if (hoursNum === 0) {
