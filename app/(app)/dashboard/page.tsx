@@ -179,32 +179,51 @@ export default async function DashboardPage() {
             isRemoteWork: user.project.isRemoteWork
         } : null
 
+    const hasWorkPreferences = (user.workDays && user.workDays.length > 0) ||
+        (user.dailyTarget !== null && user.dailyTarget > 0)
+    const showStats = hasWorkPreferences
+    const showTeamStatus = !!user.projectId
+    const showSidebar = showStats || showTeamStatus
+
     return (
-        <div className="flex flex-col gap-6">
-            <TimePunchHeader
-                activeWorkday={activeWorkday}
-                workLocation={workLocation}
-            />
+        <div className="w-full">
+            <div className={`grid grid-cols-1 ${showSidebar ? "xl:grid-cols-[1fr_300px] lg:grid-cols-[1fr_280px]" : ""} gap-6 items-start`}>
+                <div className="flex flex-col gap-6 min-w-0">
+                    <TimePunchHeader
+                        activeWorkday={activeWorkday}
+                        workLocation={workLocation}
+                    />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatsWidget
-                    extraHours={balanceData.monthlyOvertime}
-                    remainingHours={balanceData.accumulatedDeficit}
-                    activeEntryStartTime={activeEntry?.startTime}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    isPaused={(activeEntry as any)?.breaks?.some((b: any) => !b.endTime)}
-                />
-                <LiveTeamStatusWidget />
+                    <DashboardContent
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        activeEntry={activeEntry as any}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        historyEntries={user.timeEntries as any}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        tasks={tasks as any}
+                    />
+                </div>
+
+                {showSidebar && (
+                    <div className="flex flex-col gap-6 lg:sticky lg:top-6">
+                        {showStats && (
+                            <StatsWidget
+                                extraHours={balanceData.monthlyOvertime}
+                                remainingHours={balanceData.accumulatedDeficit}
+                                activeEntryStartTime={activeEntry?.startTime}
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                isPaused={(activeEntry as any)?.breaks?.some((b: any) => !b.endTime)}
+                            />
+                        )}
+
+                        {showTeamStatus && (
+                            <div className="hidden lg:block">
+                                <LiveTeamStatusWidget />
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
-
-            <DashboardContent
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                activeEntry={activeEntry as any}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                historyEntries={user.timeEntries as any}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                tasks={tasks as any}
-            />
         </div>
     )
 }
