@@ -5,6 +5,8 @@ import { Role, Status } from "@prisma/client"
 import { createNotification } from "@/lib/create-notification"
 import { validatePassword } from "@/lib/password-validation"
 
+import { validateEmail } from "@/lib/email-validation"
+
 export async function POST(req: Request) {
     try {
         const { email, password, name, role, projectName } = await req.json()
@@ -12,6 +14,14 @@ export async function POST(req: Request) {
         if (!email || !password || !name) {
             return NextResponse.json(
                 { message: "Missing required fields" },
+                { status: 400 }
+            )
+        }
+
+        const emailValidation = await validateEmail(email)
+        if (!emailValidation.isValid) {
+            return NextResponse.json(
+                { message: emailValidation.message },
                 { status: 400 }
             )
         }

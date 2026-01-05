@@ -5,6 +5,8 @@ import { NextResponse } from "next/server"
 import nodemailer from "nodemailer"
 import crypto from "crypto"
 
+import { validateEmail } from "@/lib/email-validation"
+
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions)
 
@@ -26,6 +28,14 @@ export async function POST(req: Request) {
 
         if (!email) {
             return NextResponse.json({ message: "Email is required" }, { status: 400 })
+        }
+
+        const emailValidation = await validateEmail(email)
+        if (!emailValidation.isValid) {
+            return NextResponse.json(
+                { message: emailValidation.message },
+                { status: 400 }
+            )
         }
 
         // Only ADMIN can invite ADMINs
