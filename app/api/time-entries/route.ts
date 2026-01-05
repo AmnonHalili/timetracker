@@ -515,6 +515,7 @@ export async function POST(req: Request) {
                 const entry = await prisma.timeEntry.create({
                     data: {
                         userId: session.user.id,
+                        projectId: session.user.projectId, // Fix: Associate manual entry with current project
                         startTime: startTime,
                         endTime: endTime,
                         description,

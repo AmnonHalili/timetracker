@@ -19,6 +19,7 @@ type DashboardUser = User & {
         subtask?: { id: string; title: string } | null
     })[]
     workdays?: Workday[]
+    weeklyHours?: any
     pendingProjectId?: string | null
     project?: {
         workMode: "OUTPUT_BASED" | "TIME_BASED" | "PROJECT_BASED"
@@ -101,6 +102,7 @@ export default async function DashboardPage() {
         const todayWorkdays = await prisma.workday.findMany({
             where: {
                 userId: session.user.id,
+                projectId: session.user.projectId, // Strict project isolation
                 workdayStartTime: {
                     gte: dayStart,
                     lte: dayEnd,
@@ -122,6 +124,7 @@ export default async function DashboardPage() {
         monthlyWorkdays = await prisma.workday.findMany({
             where: {
                 userId: session.user.id,
+                projectId: session.user.projectId, // Strict project isolation
                 workdayStartTime: {
                     gte: monthStart,
                     lte: today,

@@ -23,6 +23,7 @@ export async function GET() {
             activeWorkday = await prisma.workday.findFirst({
                 where: {
                     userId: session.user.id,
+                    projectId: session.user.projectId, // Strict project isolation
                     workdayStartTime: {
                         gte: dayStart,
                         lte: dayEnd,
@@ -76,6 +77,7 @@ export async function POST(req: Request) {
                 activeWorkday = await prisma.workday.findFirst({
                     where: {
                         userId: session.user.id,
+                        projectId: session.user.projectId, // Strict project isolation
                         workdayStartTime: {
                             gte: dayStart,
                             lte: dayEnd,
@@ -90,13 +92,13 @@ export async function POST(req: Request) {
                 // Workday model doesn't exist yet
                 console.warn("Workday model not available:", modelError)
                 return NextResponse.json(
-                    { message: "Workday feature not available yet. Please run: npx prisma db push --accept-data-loss && npx prisma generate" },
+                    { message: "Workday availability check failed. Database migration might be pending." },
                     { status: 503 }
                 )
             }
 
             if (activeWorkday) {
-                return NextResponse.json({ message: "Workday already started" }, { status: 400 })
+                return NextResponse.json({ message: "Workday already started for this project" }, { status: 400 })
             }
 
             // Check if work location is required
@@ -153,6 +155,7 @@ export async function POST(req: Request) {
                 newWorkday = await prisma.workday.create({
                     data: {
                         userId: session.user.id,
+                        projectId: session.user.projectId, // Save project ID
                         workdayStartTime: new Date(),
                         locationRequired,
                         startLocationLat: location?.latitude || null,
@@ -170,7 +173,7 @@ export async function POST(req: Request) {
                 // Workday model doesn't exist yet
                 console.warn("Workday model not available:", modelError)
                 return NextResponse.json(
-                    { message: "Workday feature not available yet. Please run: npx prisma db push --accept-data-loss && npx prisma generate" },
+                    { message: "Failed to start workday. Database migration might be pending." },
                     { status: 503 }
                 )
             }
@@ -189,6 +192,7 @@ export async function POST(req: Request) {
                 activeWorkday = await prisma.workday.findFirst({
                     where: {
                         userId: session.user.id,
+                        projectId: session.user.projectId, // Strict project isolation
                         workdayStartTime: {
                             gte: dayStart,
                             lte: dayEnd,
@@ -204,13 +208,13 @@ export async function POST(req: Request) {
                 // Workday model doesn't exist yet
                 console.warn("Workday model not available:", modelError)
                 return NextResponse.json(
-                    { message: "Workday feature not available yet. Please run: npx prisma db push --accept-data-loss && npx prisma generate" },
+                    { message: "Workday check failed. Database migration might be pending." },
                     { status: 503 }
                 )
             }
 
             if (!activeWorkday) {
-                return NextResponse.json({ message: "No active workday found" }, { status: 400 })
+                return NextResponse.json({ message: "No active workday found for this project" }, { status: 400 })
             }
 
             // Stop any running task timers
@@ -219,6 +223,7 @@ export async function POST(req: Request) {
             await prisma.timeEntry.updateMany({
                 where: {
                     userId: session.user.id,
+                    projectId: session.user.projectId, // Strict project isolation
                     endTime: null,
                 },
                 data: {
@@ -257,7 +262,7 @@ export async function POST(req: Request) {
                 // Workday model doesn't exist yet
                 console.warn("Workday model not available:", modelError)
                 return NextResponse.json(
-                    { message: "Workday feature not available yet. Please run: npx prisma db push --accept-data-loss && npx prisma generate" },
+                    { message: "Failed to end workday. Database migration might be pending." },
                     { status: 503 }
                 )
             }
