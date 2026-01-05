@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { createContext, useContext, useEffect, useState } from "react"
+import React, { createContext, useContext, useEffect, useState, useTransition } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -18,6 +18,7 @@ type ProjectContextType = {
     projects: Project[]
     activeProject: Project | null
     isLoading: boolean
+    isSwitching: boolean
     switchProject: (projectId: string) => Promise<void>
     createProject: (name: string) => Promise<void>
     joinProject: (joinCode: string) => Promise<void>
@@ -27,11 +28,13 @@ type ProjectContextType = {
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined)
 
 export function ProjectProvider({ children }: { children: React.ReactNode }) {
-    const { data: session, status } = useSession()
+    const { data: session, status, update } = useSession()
     const router = useRouter()
     const [projects, setProjects] = useState<Project[]>([])
     const [activeProject, setActiveProject] = useState<Project | null>(null)
     const [isLoading, setIsLoading] = useState(true)
+    const [isPending, startTransition] = useTransition()
+    const optimisticProjectId = React.useRef<string | null>(null)
 
     const refreshProjects = React.useCallback(async () => {
         if (status !== "authenticated") {
@@ -48,19 +51,27 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
                 // Sync active project from session
                 if (session?.user?.projectId) {
                     const current = data.find((p: Project) => p.id === session.user.projectId)
-                    setActiveProject(current || null)
+
+                    // Only sync if we are not in an optimistic state OR if session has caught up
+                    if (!optimisticProjectId.current || optimisticProjectId.current === session.user.projectId) {
+                        setActiveProject(current || null)
+                        if (optimisticProjectId.current === session.user.projectId) {
+                            optimisticProjectId.current = null // Reset if matched
+                        }
+                    }
                 } else if (data.length > 0 && !activeProject) {
                     // Fallback: If no active project in session but user has projects (edge case),
                     // we might want to prompt them or just leave it null.
                     // For now, leaving it null to show "No Project" state.
                 }
             }
+
         } catch (error) {
             console.error("Failed to fetch projects", error)
         } finally {
             setIsLoading(false)
         }
-    }, [status, session?.user?.projectId, activeProject])
+    }, [status, session?.user?.projectId])
 
     useEffect(() => {
         refreshProjects()
@@ -79,11 +90,17 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
 
             const targetProject = projects.find(p => p.id === projectId)
             setActiveProject(targetProject || null)
+            optimisticProjectId.current = projectId // Set optimistic ID
 
             toast.success(`Switched to ${targetProject?.name}`, { id: loadingToast })
 
-            // Refresh the page to reload all server components with new context
-            router.refresh()
+            // Update the session to reflect the change immediately
+            await update({ projectId })
+
+            // Refresh the page w/ transition to track loading state
+            startTransition(() => {
+                router.refresh()
+            })
 
         } catch (error) {
             console.error(error)
@@ -112,7 +129,12 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
                 const newProject = { id: data.id, name: data.name, plan: 'FREE', logo: null, role: 'ADMIN' }
                 setProjects(prev => [...prev, newProject])
                 setActiveProject(newProject)
-                router.refresh()
+                optimisticProjectId.current = newProject.id
+                await update({ projectId: data.id })
+
+                startTransition(() => {
+                    router.refresh()
+                })
             }
 
         } catch (error) {
@@ -148,6 +170,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
             projects,
             activeProject,
             isLoading,
+            isSwitching: isPending,
             switchProject,
             createProject,
             joinProject,

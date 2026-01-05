@@ -12,6 +12,8 @@ import { ReportsControls } from "@/components/reports/ReportsControls"
 import { ReportsSummaryCards } from "@/components/reports/ReportsSummaryCards"
 import { AIInsightsNotification } from "@/components/reports/AIInsightsNotification"
 
+export const dynamic = "force-dynamic"
+
 export default async function ReportsPage({
     searchParams,
 }: {
@@ -166,7 +168,7 @@ export default async function ReportsPage({
         // Fetch report data for all visible users
         const allUsersData = await Promise.all(
             projectUsers.map(async (user) => {
-                const userData = await getReportData(user.id, currentYear, currentMonth)
+                const userData = await getReportData(user.id, currentYear, currentMonth, currentUser.projectId)
                 if (!userData) return null
                 return {
                     userId: user.id,
@@ -212,7 +214,7 @@ export default async function ReportsPage({
     }
 
     // Single user view (existing logic)
-    const data = await getReportData(targetUserId, currentYear, currentMonth)
+    const data = await getReportData(targetUserId, currentYear, currentMonth, currentUser?.projectId)
 
     if (!data) return <div>User not found</div>
     const { report } = data

@@ -22,8 +22,11 @@ export default async function TasksPage() {
 
     // Fetch Tasks
     const where = isAdmin
-        ? { assignees: { some: { projectId: currentUser?.projectId } } }
-        : { assignees: { some: { id: session.user.id } } }
+        ? { projectId: currentUser?.projectId } // Admin sees all project tasks
+        : {
+            assignees: { some: { id: session.user.id } },
+            projectId: currentUser?.projectId // Regular user sees own tasks in the project
+        }
 
     let tasks
     try {

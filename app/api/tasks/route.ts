@@ -82,6 +82,7 @@ export async function POST(req: Request) {
         const task = await prisma.task.create({
             data: {
                 title,
+                projectId: currentUser.projectId,
                 assignees: {
                     connect: (assignedToIds as string[]).map(id => ({ id }))
                 },

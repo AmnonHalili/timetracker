@@ -20,6 +20,7 @@ export async function GET() {
         const entries = await prisma.timeEntry.findMany({
             where: {
                 userId: session.user.id,
+                projectId: session.user.projectId, // Filter by active project
                 startTime: {
                     gte: monthStart
                 }
@@ -90,6 +91,7 @@ export async function POST(req: Request) {
             const newEntry = await prisma.timeEntry.create({
                 data: {
                     userId: session.user.id,
+                    projectId: session.user.projectId,
                     startTime: new Date(),
                     description,
                     isManual: false,

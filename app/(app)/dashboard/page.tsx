@@ -63,7 +63,8 @@ export default async function DashboardPage() {
                 where: {
                     startTime: {
                         gte: monthStart
-                    }
+                    },
+                    projectId: session.user.projectId
                 },
                 select: {
                     id: true,
@@ -166,10 +167,12 @@ export default async function DashboardPage() {
     const tasksWhere = user.role === 'ADMIN'
         ? {
             assignees: { some: { projectId: user.projectId || null } },
+            projectId: user.projectId, // Strict project filter
             status: { not: TaskStatus.DONE } // Exclude DONE tasks from timer
         }
         : {
             assignees: { some: { id: user.id } },
+            projectId: user.projectId, // Strict project filter
             status: { not: TaskStatus.DONE } // Exclude DONE tasks from timer
         }
 
@@ -218,7 +221,10 @@ export default async function DashboardPage() {
             role: true,
             jobTitle: true,
             timeEntries: {
-                where: { endTime: null },
+                where: {
+                    endTime: null,
+                    projectId: user.projectId
+                },
                 select: {
                     id: true,
                     userId: true,
@@ -315,7 +321,7 @@ export default async function DashboardPage() {
 
     // Determine if sidebar (Stats / Team Status) should be shown
     // Check if user has work preferences set (weeklyHours or legacy dailyTarget)
-    const hasWorkPreferences = user.weeklyHours 
+    const hasWorkPreferences = user.weeklyHours
         ? Object.keys(user.weeklyHours).length > 0 && Object.values(user.weeklyHours).some(h => h > 0)
         : (user.dailyTarget !== null && user.dailyTarget > 0)
     const showStats = hasWorkPreferences

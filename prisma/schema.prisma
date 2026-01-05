@@ -19,6 +19,7 @@ model User {
   status                 Status               @default(PENDING)
   dailyTarget            Float?
   workDays               Int[]
+  weeklyHours            Json?                // Object mapping day (0-6) to hours: {0: 8, 1: 8, 2: 8, 3: 8, 4: 8, 5: 4, 6: 0}
   workMode               WorkMode             @default(TIME_BASED)
   createdAt              DateTime             @default(now())
   updatedAt              DateTime             @updatedAt
@@ -96,6 +97,8 @@ model Project {
   users                 User[]
   taskLabels            TaskLabel[]
   members               ProjectMember[]
+  tasks                 Task[]
+  timeEntries           TimeEntry[]
 }
 
 model ProjectMember {
@@ -169,6 +172,10 @@ model TimeEntry {
   subtask     SubTaskItem? @relation(fields: [subtaskId], references: [id], onDelete: SetNull)
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   tasks       Task[]       @relation("TaskToTimeEntry")
+  projectId   String?
+  project     Project?     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
 }
 
 model TimeBreak {
@@ -204,6 +211,10 @@ model Task {
   labels      TaskLabel[]
   blocking    Task[]          @relation("TaskDependencies")
   blockedBy   Task[]          @relation("TaskDependencies")
+  projectId   String?
+  project     Project?        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
 }
 
 model ChecklistItem {

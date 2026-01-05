@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { getMonthlyReport } from "@/lib/report-calculations"
 import { startOfMonth, endOfMonth } from "date-fns"
 
-export async function getReportData(userId: string, year: number, month: number) {
+export async function getReportData(userId: string, year: number, month: number, projectId?: string | null) {
     const reportDate = new Date(year, month, 1) // First day of selected month
     const start = startOfMonth(reportDate)
     const end = endOfMonth(reportDate)
@@ -25,6 +25,7 @@ export async function getReportData(userId: string, year: number, month: number)
                         gte: start,
                         lte: end,
                     },
+                    projectId: projectId
                 },
                 orderBy: {
                     startTime: 'asc'

@@ -68,7 +68,8 @@ export async function POST(req: NextRequest) {
                 allDay,
                 type,
                 location,
-                projectId,
+                location,
+                projectId: projectId || session.user.projectId, // Use provided or fallback to active
                 createdById: session.user.id,
                 recurrence: recurrence as RecurrenceType | null,
                 recurrenceEnd: recurrenceEnd ? new Date(recurrenceEnd) : null,
@@ -141,7 +142,13 @@ export async function GET(req: NextRequest) {
             participants: { some: { userId: session.user.id } }
         }
 
-        if (projectId) {
+        // Strictly filter by projectId (from session/user, not just query param)
+        // If query param projectId is different from session.user.projectId, it might be unauthorized if we enforce strict checking.
+        // For now, let's prioritize the session project ID if the user is scoped to one.
+        if (session.user.projectId) {
+            where.projectId = session.user.projectId
+        } else if (projectId) {
+            // Fallback for admins or users without strict project scope (if applicable), though our new logic says everyone has one active project.
             where.projectId = projectId
         }
 

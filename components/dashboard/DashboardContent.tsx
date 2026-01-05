@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { ControlBar } from "./ControlBar"
 import { EntryHistory } from "./EntryHistory"
 import { InsightsWidget } from "@/components/analytics/InsightsWidget"
+import { useProject } from "@/components/providers/ProjectProvider"
 
 interface TimeEntry {
     id: string
@@ -45,12 +46,13 @@ interface DashboardContentProps {
 }
 
 export function DashboardContent({ activeEntry, historyEntries, tasks }: DashboardContentProps) {
+    const { isSwitching } = useProject()
     const router = useRouter()
     // State to hold the optimistically stopped entry
     const [optimisticStoppedEntry, setOptimisticStoppedEntry] = useState<TimeEntry | null>(null)
     // Local state for entries to allow immediate updates without full page refresh
     const [localHistoryEntries, setLocalHistoryEntries] = useState(historyEntries)
-    
+
     // Sync with server data when it changes
     useEffect(() => {
         // When server entries arrive, check if we should remove optimistic entry
@@ -65,18 +67,18 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
                 // Match by context (same tasks/subtask/description)
                 const optTaskIds = (optimisticStoppedEntry.tasks || []).map(t => t.id).sort()
                 const realTaskIds = (entry.tasks || []).map(t => t.id).sort()
-                const taskIdsMatch = 
+                const taskIdsMatch =
                     optTaskIds.length === realTaskIds.length &&
                     optTaskIds.every((id, idx) => id === realTaskIds[idx])
-                
-                const subtaskMatch = 
+
+                const subtaskMatch =
                     (!optimisticStoppedEntry.subtask && !entry.subtask) ||
                     (optimisticStoppedEntry.subtask?.id === entry.subtask?.id)
 
                 // Match by description
                 const optDesc = optimisticStoppedEntry.description?.trim() || null
                 const realDesc = entry.description?.trim() || null
-                const descriptionMatch = 
+                const descriptionMatch =
                     (!optDesc && !realDesc) ||
                     (optDesc && realDesc && optDesc === realDesc)
 
@@ -87,9 +89,9 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
                 const startTimeDiff = Math.abs(optStart - realStart)
                 const endTimeDiff = optEnd && realEnd ? Math.abs(optEnd - realEnd) : 0
                 const timesClose = startTimeDiff < 10000 && endTimeDiff < 10000 // Within 10 seconds
-                
+
                 const timesOverlap = optStart >= realStart && optEnd && realEnd && optEnd <= realEnd
-                
+
                 return timesClose || timesOverlap
             })
 
@@ -98,7 +100,7 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
                 setOptimisticStoppedEntry(null)
             }
         }
-        
+
         // Update local entries with server data
         setLocalHistoryEntries(historyEntries)
     }, [historyEntries, optimisticStoppedEntry])
@@ -128,7 +130,7 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
         const stoppedSubtaskId = stoppedEntry.subtaskId || null
         const stoppedStart = new Date(stoppedEntry.startTime)
         const stoppedEnd = new Date(stoppedEntry.endTime)
-        
+
         // Check if there's an existing entry with the same context (same day)
         const dayStart = new Date(stoppedStart)
         dayStart.setHours(0, 0, 0, 0)
@@ -139,26 +141,26 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
             const entryStart = new Date(entry.startTime)
             // Check if same day
             if (entryStart < dayStart || entryStart > dayEnd) return false
-            
+
             // Match by context (same tasks/subtask)
             const entryTaskIds = (entry.tasks || []).map(t => t.id).sort()
             const entrySubtaskId = entry.subtask?.id || null
-            
-            const taskIdsMatch = 
+
+            const taskIdsMatch =
                 stoppedTaskIds.length === entryTaskIds.length &&
                 stoppedTaskIds.every((id, idx) => id === entryTaskIds[idx])
-            
-            const subtaskMatch = 
+
+            const subtaskMatch =
                 (!stoppedSubtaskId && !entrySubtaskId) ||
                 (stoppedSubtaskId === entrySubtaskId)
-            
+
             // Match by description - both must be null/empty or both must be the same
             const stoppedDesc = stoppedEntry.description?.trim() || null
             const entryDesc = entry.description?.trim() || null
-            const descriptionMatch = 
+            const descriptionMatch =
                 (!stoppedDesc && !entryDesc) ||
                 (stoppedDesc && entryDesc && stoppedDesc === entryDesc)
-            
+
             return taskIdsMatch && subtaskMatch && descriptionMatch
         })
 
@@ -166,7 +168,7 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
             // Merge with existing entry immediately
             const existingStart = new Date(matchingEntry.startTime)
             const existingEnd = matchingEntry.endTime ? new Date(matchingEntry.endTime) : null
-            
+
             // Keep earliest start time
             const mergedStart = existingStart < stoppedStart ? existingStart : stoppedStart
             // Use latest end time
@@ -191,7 +193,7 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
                 startTime: new Date(b.startTime),
                 endTime: b.endTime ? new Date(b.endTime) : null
             }))
-            const allBreaks = gapBreak 
+            const allBreaks = gapBreak
                 ? [...existingBreaks, ...newBreaks, { startTime: gapBreak.startTime, endTime: gapBreak.endTime }]
                 : [...existingBreaks, ...newBreaks]
 
@@ -206,10 +208,10 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
             }
 
             // Update local entries immediately
-            setLocalHistoryEntries(prev => prev.map(e => 
+            setLocalHistoryEntries(prev => prev.map(e =>
                 e.id === matchingEntry.id ? mergedEntry : e
             ))
-            
+
             // Don't set optimistic entry since we merged immediately
             setOptimisticStoppedEntry(null)
         } else {
@@ -238,13 +240,13 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
     const allEntries = optimisticStoppedEntry
         ? [optimisticStoppedEntry, ...localHistoryEntries]
         : localHistoryEntries
-    
+
     // Callback to update entries immediately when merged (without full refresh)
     // This is called when the API confirms the merge - we already merged optimistically, so just sync
     const handleEntryMerged = (mergedEntry: TimeEntry) => {
         // Remove optimistic entry if exists
         setOptimisticStoppedEntry(null)
-        
+
         // Normalize the merged entry - convert string dates to Date objects for breaks
         const normalizedEntry: TimeEntry = {
             ...mergedEntry,
@@ -256,26 +258,26 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
                 endTime: b.endTime ? (typeof b.endTime === 'string' ? new Date(b.endTime) : b.endTime) : null
             }))
         }
-        
+
         // Update local entries - replace matching entry (we already merged optimistically)
         setLocalHistoryEntries(prev => {
             const mergedTaskIds = (normalizedEntry.tasks || []).map(t => t.id).sort()
             const mergedSubtaskId = normalizedEntry.subtask?.id || null
-            
+
             const existingIndex = prev.findIndex(entry => {
                 const entryTaskIds = (entry.tasks || []).map(t => t.id).sort()
                 const entrySubtaskId = entry.subtask?.id || null
-                
-                const taskIdsMatch = 
+
+                const taskIdsMatch =
                     mergedTaskIds.length === entryTaskIds.length &&
                     mergedTaskIds.every((id, idx) => id === entryTaskIds[idx])
-                const subtaskMatch = 
+                const subtaskMatch =
                     (!mergedSubtaskId && !entrySubtaskId) ||
                     (mergedSubtaskId === entrySubtaskId)
-                
+
                 return taskIdsMatch && subtaskMatch
             })
-            
+
             if (existingIndex >= 0) {
                 // Replace existing entry with server-confirmed merged one
                 const updated = [...prev]
@@ -288,7 +290,7 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
                 return [normalizedEntry, ...withoutTemp]
             }
         })
-        
+
         // Refresh in background (non-blocking) to sync with server
         startTransition(() => {
             router.refresh()
@@ -296,7 +298,15 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
     }
 
     return (
-        <>
+        <div className="relative">
+            {isSwitching && (
+                <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-50 flex items-start justify-center pt-20 h-full">
+                    <div className="flex items-center gap-3 bg-card border shadow-lg px-6 py-3 rounded-full animate-in fade-in zoom-in duration-300">
+                        <div className="h-5 w-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                        <p className="text-sm font-medium text-muted-foreground">Syncing workspace...</p>
+                    </div>
+                </div>
+            )}
             <ControlBar
                 activeEntry={activeEntry}
                 tasks={tasks}
@@ -314,7 +324,7 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
                     onOptimisticEntryCleared={handleOptimisticEntryCleared}
                 />
             </div>
-        </>
+        </div>
     )
 }
 

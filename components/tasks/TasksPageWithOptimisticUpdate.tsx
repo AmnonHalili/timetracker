@@ -73,7 +73,7 @@ export function TasksPageWithOptimisticUpdate({
     }, [])
 
     return (
-        <div className="container mx-auto space-y-8">
+        <div className="container mx-auto space-y-8 relative">
             <TasksPageHeader
                 isAdmin={isAdmin}
                 users={users}

@@ -7,6 +7,7 @@ import { AdBanner } from "@/components/ads/AdBanner"
 
 import { HeartbeatTracker } from "@/components/auth/HeartbeatTracker"
 import { ProjectProvider } from "@/components/providers/ProjectProvider"
+import { ProjectLoadingOverlay } from "@/components/layout/ProjectLoadingOverlay"
 
 export default function AppLayout({
     children,
@@ -18,7 +19,8 @@ export default function AppLayout({
             <div className="flex h-screen overflow-hidden bg-background">
                 <HeartbeatTracker />
                 <Sidebar />
-                <main className="flex-1 overflow-y-scroll" id="main-content" role="main">
+                <main className="flex-1 overflow-y-scroll relative" id="main-content" role="main">
+                    <ProjectLoadingOverlay />
                     <AppHeader />
                     <div className="px-8 pb-8 pt-2">
                         <Suspense fallback={

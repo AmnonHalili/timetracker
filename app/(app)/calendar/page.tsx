@@ -24,18 +24,18 @@ export default async function CalendarPage({
     // Create date object for the first day of the request month
     const currentDate = new Date(year, month, 1)
 
-    // Reuse report logic for daily entries
-    const reportData = await getReportData(session.user.id, year, month)
-
-    // Fetch tasks deadline in this month
-    const monthStart = startOfMonth(currentDate)
-    const monthEnd = endOfMonth(currentDate)
-
     // Determine task fetch scope
     const currentUser = await prisma.user.findUnique({
         where: { id: session.user.id },
         select: { role: true, projectId: true, calendarSettings: true }
     })
+
+    // Reuse report logic for daily entries
+    const reportData = await getReportData(session.user.id, year, month, currentUser?.projectId)
+
+    // Fetch tasks deadline in this month
+    const monthStart = startOfMonth(currentDate)
+    const monthEnd = endOfMonth(currentDate)
 
     // Tasks are active in this month if:
     // 1. deadline is in this month, OR
@@ -74,20 +74,21 @@ export default async function CalendarPage({
         ]
     }
 
-    // If Admin and in a project, fetch all project tasks. Otherwise, just own tasks.
-    if (currentUser?.role === "ADMIN" && currentUser?.projectId) {
-        whereClause.assignees = {
-            some: {
-                projectId: currentUser.projectId
-            }
-        }
-    } else {
+    // Strict Project Isolation
+    if (currentUser?.projectId) {
+        whereClause.projectId = currentUser.projectId
+    }
+
+    // Role-based visibility
+    if (currentUser?.role !== "ADMIN") {
+        // Regular users only see tasks assigned to them
         whereClause.assignees = {
             some: {
                 id: session.user.id
             }
         }
     }
+    // Admins see all tasks in the project (already filtered by projectId above)
 
     const tasks = await prisma.task.findMany({
         where: whereClause,
