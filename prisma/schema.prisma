@@ -19,11 +19,9 @@ model User {
   status                 Status               @default(PENDING)
   dailyTarget            Float?
   workDays               Int[]
-  weeklyHours            Json?                // Object mapping day (0-6) to hours: {0: 8, 1: 8, 2: 8, 3: 8, 4: 8, 5: 4, 6: 0}
   workMode               WorkMode             @default(TIME_BASED)
   createdAt              DateTime             @default(now())
   updatedAt              DateTime             @updatedAt
-  removedAt              DateTime?            // When user was removed from project
   image                  String?
   resetToken             String?
   resetTokenExpiry       DateTime?
@@ -39,16 +37,23 @@ model User {
   stripeCustomerId       String?              @unique
   stripePriceId          String?
   stripeSubscriptionId   String?              @unique
+  removedAt              DateTime?
+  weeklyHours            Json?
   accounts               Account[]
   analyticsSnapshots     AnalyticsSnapshot[]
+  calendarSettings       CalendarSettings?
   createdEvents          Event[]              @relation("CreatedEvents")
   eventParticipants      EventParticipant[]
   managedGroups          Group[]              @relation("GroupManager")
   notifications          Notification[]
+  projectMemberships     ProjectMember[]
   recommendations        Recommendation[]
   secondaryManagers      SecondaryManager[]   @relation("SecondaryManagers")
   secondaryManagedUsers  SecondaryManager[]   @relation("SecondaryManagedUsers")
   sessions               Session[]
+  activities             TaskActivity[]
+  taskAttachments        TaskAttachment[]
+  taskNotes              TaskNote[]
   timeEntries            TimeEntry[]
   group                  Group?               @relation("GroupMembers", fields: [groupId], references: [id])
   manager                User?                @relation("UserHierarchy", fields: [managerId], references: [id])
@@ -57,12 +62,7 @@ model User {
   insightSettings        UserInsightSettings?
   workdays               Workday[]
   tasks                  Task[]               @relation("TaskToUser")
-  taskNotes              TaskNote[]
-  taskAttachments        TaskAttachment[]
-  activities             TaskActivity[]
   watchedTasks           Task[]               @relation("TaskWatchers")
-  calendarSettings       CalendarSettings?
-  projectMemberships     ProjectMember[]
 }
 
 model SecondaryManager {
@@ -80,48 +80,41 @@ model SecondaryManager {
 }
 
 model Project {
-  id                    String   @id @default(cuid())
+  id                    String          @id @default(cuid())
   name                  String
-  joinCode              String   @unique @default(cuid())
+  joinCode              String          @unique @default(cuid())
   logo                  String?
-  workMode              WorkMode @default(TIME_BASED)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  workMode              WorkMode        @default(TIME_BASED)
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
   workLocationAddress   String?
   workLocationLatitude  Float?
   workLocationLongitude Float?
-  workLocationRadius    Float?   @default(150)
-  isRemoteWork          Boolean  @default(true)
+  workLocationRadius    Float?          @default(150)
+  isRemoteWork          Boolean         @default(true)
   events                Event[]
   groups                Group[]
-  users                 User[]
-  taskLabels            TaskLabel[]
   members               ProjectMember[]
   tasks                 Task[]
+  taskLabels            TaskLabel[]
   timeEntries           TimeEntry[]
+  users                 User[]
   workdays              Workday[]
 }
 
 model ProjectMember {
-  id        String   @id @default(cuid())
+  id        String       @id @default(cuid())
   userId    String
   projectId String
-  role      Role     @default(EMPLOYEE)
+  role      Role         @default(EMPLOYEE)
+  joinedAt  DateTime     @default(now())
   status    MemberStatus @default(ACTIVE)
-  joinedAt  DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project   Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, projectId])
   @@index([userId])
   @@index([projectId])
-}
-
-enum MemberStatus {
-  ACTIVE
-  PENDING
-  INVITED
-  REJECTED
 }
 
 model Group {
@@ -172,12 +165,12 @@ model TimeEntry {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   subtaskId   String?
+  projectId   String?
   breaks      TimeBreak[]
-  subtask     SubTaskItem? @relation(fields: [subtaskId], references: [id], onDelete: SetNull)
+  project     Project?     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  subtask     SubTaskItem? @relation(fields: [subtaskId], references: [id])
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   tasks       Task[]       @relation("TaskToTimeEntry")
-  projectId   String?
-  project     Project?     @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
 }
@@ -194,29 +187,29 @@ model TimeBreak {
 }
 
 model Task {
-  id          String          @id @default(cuid())
+  id          String           @id @default(cuid())
   title       String
   description String?
-  status      TaskStatus      @default(TODO)
-  priority    TaskPriority    @default(MEDIUM)
-  startDate   DateTime?       // Start date for the task
+  status      TaskStatus       @default(TODO)
+  priority    TaskPriority     @default(MEDIUM)
   deadline    DateTime?
-  isCompleted Boolean         @default(false)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  isCompleted Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  startDate   DateTime?
+  projectId   String?
   checklist   ChecklistItem[]
   subtasks    SubTaskItem[]
-  notes       TaskNote[]
-  attachments TaskAttachment[]
+  project     Project?         @relation(fields: [projectId], references: [id], onDelete: Cascade)
   activities  TaskActivity[]
-  timeEntries TimeEntry[]     @relation("TaskToTimeEntry")
-  assignees   User[]          @relation("TaskToUser")
-  watchers    User[]          @relation("TaskWatchers")
-  labels      TaskLabel[]
-  blocking    Task[]          @relation("TaskDependencies")
-  blockedBy   Task[]          @relation("TaskDependencies")
-  projectId   String?
-  project     Project?        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  attachments TaskAttachment[]
+  notes       TaskNote[]
+  Task_A      Task[]           @relation("TaskDependencies")
+  Task_B      Task[]           @relation("TaskDependencies")
+  labels      TaskLabel[]      @relation("TaskToTaskLabel")
+  timeEntries TimeEntry[]      @relation("TaskToTimeEntry")
+  assignees   User[]           @relation("TaskToUser")
+  watchers    User[]           @relation("TaskWatchers")
 
   @@index([projectId])
 }
@@ -234,7 +227,7 @@ model TaskNote {
   id        String   @id @default(cuid())
   taskId    String
   userId    String
-  content   String   @db.Text
+  content   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
@@ -249,8 +242,8 @@ model TaskAttachment {
   userId    String
   fileName  String
   fileType  String
-  fileKey   String   // S3 Key
-  fileUrl   String   @db.Text // Store the base S3 URL or presigned GET url logic might be dynamic
+  fileKey   String
+  fileUrl   String
   fileSize  Int
   createdAt DateTime @default(now())
   task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
@@ -260,12 +253,12 @@ model TaskAttachment {
 }
 
 model TaskLabel {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   name      String
   color     String
   projectId String
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  tasks     Task[]
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks     Task[]  @relation("TaskToTaskLabel")
 
   @@unique([projectId, name])
   @@index([projectId])
@@ -344,10 +337,9 @@ model TaskActivity {
   id        String   @id @default(cuid())
   taskId    String
   userId    String
-  action    String   // e.g., "STATUS_CHANGE", "ASSIGN_USER", "COMMENT_ADDED"
-  details   String?  // JSON string or simple text describing the change
+  action    String
+  details   String?
   createdAt DateTime @default(now())
-  
   task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -355,20 +347,20 @@ model TaskActivity {
 }
 
 model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
+  id                       String  @id @default(cuid())
+  userId                   String
+  type                     String
+  provider                 String
+  providerAccountId        String
+  refresh_token            String?
+  access_token             String?
+  expires_at               Int?
+  token_type               String?
+  scope                    String?
+  id_token                 String?
+  session_state            String?
   refresh_token_expires_in Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -445,6 +437,27 @@ model Recommendation {
 
   @@index([userId])
   @@index([dismissed])
+}
+
+model CalendarSettings {
+  id                          String    @id @default(cuid())
+  userId                      String    @unique
+  isGoogleCalendarSyncEnabled Boolean   @default(false)
+  syncedCalendarIds           String[]  @default(["primary"])
+  syncMode                    SyncMode  @default(FULL_DETAILS)
+  lastSyncedAt                DateTime?
+  syncToken                   String?
+  googleEventsCache           Json?
+  createdAt                   DateTime  @default(now())
+  updatedAt                   DateTime  @updatedAt
+  user                        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum MemberStatus {
+  ACTIVE
+  PENDING
+  INVITED
+  REJECTED
 }
 
 enum TaskStatus {
@@ -534,18 +547,4 @@ enum Plan {
 enum SyncMode {
   FULL_DETAILS
   BUSY_ONLY
-}
-
-model CalendarSettings {
-  id                          String    @id @default(cuid())
-  userId                      String    @unique
-  isGoogleCalendarSyncEnabled Boolean   @default(false)
-  syncedCalendarIds           String[]  @default(["primary"])
-  syncMode                    SyncMode  @default(FULL_DETAILS)
-  lastSyncedAt                DateTime?
-  syncToken                   String?
-  googleEventsCache           Json?     // Cache for external events to reduce latency
-  createdAt                   DateTime  @default(now())
-  updatedAt                   DateTime  @updatedAt
-  user                        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

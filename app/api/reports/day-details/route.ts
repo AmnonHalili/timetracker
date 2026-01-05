@@ -71,10 +71,10 @@ export async function GET(req: Request) {
         const [year, month, day] = date.split('-').map(Number)
         targetDate = new Date(year, month - 1, day, 0, 0, 0, 0) // Local timezone
     }
-    
+
     const dayStart = startOfDay(targetDate)
     const dayEnd = endOfDay(targetDate)
-    
+
     // Log for debugging
     console.log(`[day-details] Date param: ${date}, Parsed targetDate: ${targetDate.toISOString()}, DayStart: ${dayStart.toISOString()}, DayEnd: ${dayEnd.toISOString()}`)
 
@@ -86,6 +86,7 @@ export async function GET(req: Request) {
                 gte: dayStart,
                 lte: dayEnd,
             },
+            projectId: currentUser.projectId,
         },
         orderBy: {
             workdayStartTime: 'desc'
@@ -102,10 +103,11 @@ export async function GET(req: Request) {
     // Query by startTime to get all entries that started on this day
     const nextDayStart = new Date(dayEnd)
     nextDayStart.setMilliseconds(nextDayStart.getMilliseconds() + 1) // Start of next day
-    
+
     const timeEntries = await prisma.timeEntry.findMany({
         where: {
             userId: userId,
+            projectId: currentUser.projectId,
             startTime: {
                 gte: dayStart,
                 lt: nextDayStart, // Less than start of next day

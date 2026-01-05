@@ -77,12 +77,21 @@ export async function POST(req: Request) {
                     id: true,
                     userId: true,
                     startTime: true,
-                    endTime: true
+                    endTime: true,
+                    projectId: true
                 }
             })
 
             if (active) {
-                return NextResponse.json({ message: "Timer already running" }, { status: 400 })
+                if (active.projectId === session.user.projectId) {
+                    return NextResponse.json({ message: "Timer already running" }, { status: 400 })
+                }
+
+                // Active timer in another project - stop it automatically
+                await prisma.timeEntry.update({
+                    where: { id: active.id },
+                    data: { endTime: new Date() }
+                })
             }
 
             // Note: Location verification is handled by Workday, not TimeEntry

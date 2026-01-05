@@ -59,6 +59,7 @@ export async function getReportData(userId: string, year: number, month: number,
                         gte: start,
                         lte: end,
                     },
+                    projectId: projectId,
                 },
                 orderBy: {
                     workdayStartTime: 'desc' // Most recent first

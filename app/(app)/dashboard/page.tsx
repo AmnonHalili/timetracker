@@ -64,7 +64,8 @@ export default async function DashboardPage() {
                 where: {
                     startTime: {
                         gte: monthStart
-                    }
+                    },
+                    projectId: session.user.projectId // Strict project isolation
                 },
                 select: {
                     id: true,
