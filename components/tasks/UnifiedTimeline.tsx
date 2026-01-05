@@ -11,7 +11,18 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Textarea } from "@/components/ui/textarea"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
+import { useLanguage } from "@/lib/useLanguage"
 
 export type UnifiedActivityItem = {
     id: string
@@ -121,39 +132,45 @@ export function UnifiedTimeline({ taskId, items, isLoading, currentUserId, onUpd
         }
     }
 
-    const handleDeleteNote = async (noteId: string) => {
-        if (!confirm("Are you sure you want to delete this message?")) return
-        try {
-            const res = await fetch(`/api/tasks/${taskId}/notes/${noteId}`, {
-                method: 'DELETE'
-            })
-            if (res.ok) {
-                toast.success("Message deleted")
-                if (onUpdate) onUpdate()
-            } else {
-                toast.error("Failed to delete message")
-            }
-        } catch (err) {
-            console.error(err)
-            toast.error("Something went wrong")
-        }
+    const handleDeleteNote = (noteId: string) => {
+        setItemToDelete({ type: 'note', id: noteId })
+        setDeleteDialogOpen(true)
     }
 
-    const handleDeleteAttachment = async (attachmentId: string) => {
-        if (!confirm("Are you sure you want to delete this file?")) return
+    const handleDeleteAttachment = (attachmentId: string) => {
+        setItemToDelete({ type: 'file', id: attachmentId })
+        setDeleteDialogOpen(true)
+    }
+
+    const confirmDelete = async () => {
+        if (!itemToDelete) return
+
+        const { type, id } = itemToDelete
+        setDeleteDialogOpen(false)
+
         try {
-            const res = await fetch(`/api/tasks/${taskId}/attachments/${attachmentId}`, {
+            const endpoint = type === 'note' 
+                ? `/api/tasks/${taskId}/notes/${id}`
+                : `/api/tasks/${taskId}/attachments/${id}`
+            
+            const res = await fetch(endpoint, {
                 method: 'DELETE'
             })
             if (res.ok) {
-                toast.success("File deleted")
+                toast.success(type === 'note' 
+                    ? (t('tasks.messageDeleted') || "Message deleted")
+                    : (t('tasks.fileDeleted') || "File deleted"))
                 if (onUpdate) onUpdate()
             } else {
-                toast.error("Failed to delete file")
+                toast.error(type === 'note'
+                    ? (t('tasks.messageDeleteError') || "Failed to delete message")
+                    : (t('tasks.fileDeleteError') || "Failed to delete file"))
             }
         } catch (err) {
             console.error(err)
-            toast.error("Something went wrong")
+            toast.error(t('common.error') || "Something went wrong")
+        } finally {
+            setItemToDelete(null)
         }
     }
 
@@ -244,6 +261,7 @@ export function UnifiedTimeline({ taskId, items, isLoading, currentUserId, onUpd
     }
 
     return (
+        <>
         <ScrollArea className="h-full pr-4">
             <div className="space-y-6 pl-2">
                 {groupedItems.map((group, index) => {
@@ -390,6 +408,32 @@ export function UnifiedTimeline({ taskId, items, isLoading, currentUserId, onUpd
                 })}
             </div>
         </ScrollArea>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>{t('common.delete')}?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        {itemToDelete?.type === 'note'
+                            ? (t('tasks.deleteMessageConfirm') || 'Are you sure you want to delete this message? This action cannot be undone.')
+                            : (t('tasks.deleteFileConfirm') || 'Are you sure you want to delete this file? This action cannot be undone.')}
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setItemToDelete(null)}>
+                        {t('common.cancel')}
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                        onClick={confirmDelete}
+                        className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                    >
+                        {t('common.delete')}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+        </>
     )
 }
 

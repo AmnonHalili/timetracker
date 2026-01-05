@@ -108,7 +108,7 @@ export function TasksDemo() {
 
     if (task.status === 'TODO') {
       return (
-        <div className="h-8 w-full max-w-[140px] mx-auto flex items-center justify-center gap-2 text-[10px] md:text-xs font-semibold text-white bg-[#c4c4c4] rounded-md shadow-sm">
+        <div className="h-8 w-full max-w-[140px] mx-auto flex items-center justify-center gap-2 text-[10px] md:text-xs font-semibold bg-muted text-muted-foreground rounded-md shadow-sm">
           <span>{t('tasks.statusTodo')}</span>
         </div>
       )

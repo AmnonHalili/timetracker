@@ -23,6 +23,29 @@ export type MonthlyReport = {
     totalTargetHours: number
 }
 
+// Helper function to get hours for a specific day of week (0-6)
+function getHoursForDay(
+    weeklyHours: Record<string, number> | null | undefined,
+    workDays: number[],
+    dailyTarget: number,
+    dayOfWeek: number
+): number {
+    // If weeklyHours exists, use it
+    if (weeklyHours && typeof weeklyHours === 'object') {
+        const hours = weeklyHours[dayOfWeek.toString()]
+        if (typeof hours === 'number' && hours >= 0) {
+            return hours
+        }
+    }
+    
+    // Fallback to legacy format: workDays + dailyTarget
+    if (workDays && workDays.includes(dayOfWeek)) {
+        return dailyTarget
+    }
+    
+    return 0
+}
+
 export function getMonthlyReport(
     entries: TimeEntryWithBreaks[],
     workdays: Pick<Workday, 'workdayStartTime' | 'workdayEndTime'>[],
@@ -30,7 +53,8 @@ export function getMonthlyReport(
     dailyTarget: number,
     workDays: number[],
     limitStart?: Date,
-    limitEnd?: Date
+    limitEnd?: Date,
+    weeklyHours?: Record<string, number> | null
 ): MonthlyReport {
     const monthStart = startOfMonth(currentDate)
     const monthEnd = endOfMonth(currentDate)
@@ -57,7 +81,9 @@ export function getMonthlyReport(
     let totalTargetHours = 0
 
     const days: DailyReport[] = daysInMonth.map((day) => {
-        const isWorkDay = workDays.includes(getDay(day))
+        const dayOfWeek = getDay(day)
+        const hoursForDay = getHoursForDay(weeklyHours, workDays, dailyTarget, dayOfWeek)
+        const isWorkDay = hoursForDay > 0
 
         // Find workday for this day (Start Day / End Day times)
         // Prefer active workday (workdayEndTime is null) over completed ones
@@ -144,7 +170,7 @@ export function getMonthlyReport(
 
         totalMonthlyHours += dailyDuration
         if (isWorkDay && day <= today) {
-            totalTargetHours += dailyTarget
+            totalTargetHours += hoursForDay
         }
 
         // Determine Status
@@ -153,7 +179,7 @@ export function getMonthlyReport(
         if (isWorkDay) {
             if (day > today) {
                 status = 'PENDING'
-            } else if (dailyDuration >= dailyTarget) {
+            } else if (dailyDuration >= hoursForDay) {
                 status = 'MET'
             } else {
                 status = 'MISSED'

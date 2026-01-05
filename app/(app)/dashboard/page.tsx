@@ -54,7 +54,7 @@ export default async function DashboardPage() {
             jobTitle: true,
             dailyTarget: true,
             workDays: true,
-
+            weeklyHours: true,
             createdAt: true,
             projectId: true, // Required for team status logic
             managerId: true, // Required for hierarchy logic
@@ -314,7 +314,11 @@ export default async function DashboardPage() {
     }
 
     // Determine if sidebar (Stats / Team Status) should be shown
-    const showStats = user.dailyTarget !== null
+    // Check if user has work preferences set (weeklyHours or legacy dailyTarget)
+    const hasWorkPreferences = user.weeklyHours 
+        ? Object.keys(user.weeklyHours).length > 0 && Object.values(user.weeklyHours).some(h => h > 0)
+        : (user.dailyTarget !== null && user.dailyTarget > 0)
+    const showStats = hasWorkPreferences
     const showTeamStatus = !!user.projectId
     const showSidebar = showStats || showTeamStatus
 

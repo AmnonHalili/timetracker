@@ -17,6 +17,7 @@ export async function getReportData(userId: string, year: number, month: number)
             jobTitle: true,
             dailyTarget: true,
             workDays: true,
+            weeklyHours: true,
             createdAt: true,
             timeEntries: {
                 where: {
@@ -81,7 +82,8 @@ export async function getReportData(userId: string, year: number, month: number)
         user.dailyTarget ?? 0,
         user.workDays,
         user.createdAt,
-        today
+        today,
+        user.weeklyHours
     )
 
     return {

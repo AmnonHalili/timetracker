@@ -5,6 +5,18 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { useLanguage } from "@/lib/useLanguage"
+import { toast } from "sonner"
 
 interface TaskListProps {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,7 +31,10 @@ interface TaskListProps {
 
 export function TaskList({ tasks, isAdmin }: TaskListProps) {
     const router = useRouter()
+    const { t } = useLanguage()
     const [loadingId, setLoadingId] = useState<string | null>(null)
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+    const [taskToDelete, setTaskToDelete] = useState<string | null>(null)
 
     const handleToggle = async (id: string, currentStatus: boolean) => {
         setLoadingId(id)
@@ -31,10 +46,29 @@ export function TaskList({ tasks, isAdmin }: TaskListProps) {
         setLoadingId(null)
     }
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure?")) return
-        await fetch(`/api/tasks?id=${id}`, { method: "DELETE" })
-        router.refresh()
+    const handleDelete = (id: string) => {
+        setTaskToDelete(id)
+        setDeleteDialogOpen(true)
+    }
+
+    const confirmDelete = async () => {
+        if (!taskToDelete) return
+
+        const id = taskToDelete
+        setDeleteDialogOpen(false)
+
+        try {
+            const res = await fetch(`/api/tasks?id=${id}`, { method: "DELETE" })
+            if (!res.ok) {
+                throw new Error(t('tasks.deleteError') || "Failed to delete task")
+            }
+            router.refresh()
+            setTaskToDelete(null)
+        } catch (error) {
+            console.error("Failed to delete task:", error)
+            toast.error(error instanceof Error ? error.message : (t('tasks.deleteError') || "Failed to delete task"))
+            setTaskToDelete(null)
+        }
     }
 
     if (tasks.length === 0) {
@@ -73,6 +107,29 @@ export function TaskList({ tasks, isAdmin }: TaskListProps) {
                     )}
                 </div>
             ))}
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{t('common.delete')}?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('tasks.deleteConfirm') || 'Are you sure you want to delete this task? This action cannot be undone.'}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setTaskToDelete(null)}>
+                            {t('common.cancel')}
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmDelete}
+                            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                        >
+                            {t('common.delete')}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }

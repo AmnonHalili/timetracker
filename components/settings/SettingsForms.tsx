@@ -40,6 +40,7 @@ interface ProfileFormProps {
         projectId?: string | null
         dailyTarget?: number | null
         workDays?: number[]
+        weeklyHours?: Record<string, number> | null
         workMode?: 'OUTPUT_BASED' | 'TIME_BASED' | 'PROJECT_BASED'
         managerId?: string | null
     }
@@ -54,9 +55,34 @@ function ProfileForm({ user }: ProfileFormProps) {
     const fileInputRef = useRef<HTMLInputElement>(null)
     const router = useRouter()
 
-    // Preferences state
-    const [target, setTarget] = useState(user.dailyTarget?.toString() || "")
-    const [selectedDays, setSelectedDays] = useState<number[]>(user.workDays || [])
+    // Helper function to convert legacy format to weeklyHours
+    const getWeeklyHoursFromLegacy = (): Record<number, number> => {
+        if (user.weeklyHours) {
+            // Convert string keys to numbers
+            const result: Record<number, number> = {}
+            Object.entries(user.weeklyHours).forEach(([key, value]) => {
+                result[parseInt(key)] = typeof value === 'number' ? value : 0
+            })
+            return result
+        }
+        // Convert from legacy workDays + dailyTarget
+        const result: Record<number, number> = {}
+        const defaultHours = user.dailyTarget || 8
+        if (user.workDays && user.workDays.length > 0) {
+            user.workDays.forEach(day => {
+                result[day] = defaultHours
+            })
+        }
+        return result
+    }
+
+    // Preferences state - use weeklyHours (per-day hours)
+    const [weeklyHours, setWeeklyHours] = useState<Record<number, number>>(getWeeklyHoursFromLegacy())
+    const [selectedDays, setSelectedDays] = useState<number[]>(() => {
+        // Get selected days from weeklyHours (days with hours > 0)
+        const hours = getWeeklyHoursFromLegacy()
+        return Object.keys(hours).map(Number).filter(day => hours[day] > 0)
+    })
     const [workMode] = useState<'OUTPUT_BASED' | 'TIME_BASED'>(
         user.workMode === 'PROJECT_BASED' ? 'TIME_BASED' : (user.workMode || 'TIME_BASED')
     )
@@ -77,9 +103,12 @@ function ProfileForm({ user }: ProfileFormProps) {
     }
 
     // Calculate if we should show the badge for work preferences
+    const hasWorkPreferences = user.weeklyHours 
+        ? Object.keys(user.weeklyHours).length > 0 && Object.values(user.weeklyHours).some(h => h > 0)
+        : (user.workDays?.length > 0 && user.dailyTarget)
     const showPreferencesBadge = user.role === 'ADMIN' &&
         !user.managerId &&
-        (!user.workDays?.length || !user.dailyTarget)
+        !hasWorkPreferences
 
     const [jobTitle, setJobTitle] = useState(getDefaultJobTitle())
 
@@ -95,9 +124,52 @@ function ProfileForm({ user }: ProfileFormProps) {
 
     const toggleDay = (day: number) => {
         if (!canEditPreferences) return
-        setSelectedDays(prev =>
-            prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day].sort((a, b) => a - b)
-        )
+        setSelectedDays(prev => {
+            const isSelected = prev.includes(day)
+            const newSelected = isSelected 
+                ? prev.filter(d => d !== day).sort((a, b) => a - b)
+                : [...prev, day].sort((a, b) => a - b)
+            
+            // Update weeklyHours: remove if unselected, add with default if selected
+            setWeeklyHours(currentHours => {
+                const updated = { ...currentHours }
+                if (isSelected) {
+                    delete updated[day]
+                } else {
+                    // Use existing hours if available, otherwise use default from first selected day or 8
+                    const defaultHours = Object.values(currentHours)[0] || 8
+                    updated[day] = defaultHours
+                }
+                return updated
+            })
+            
+            return newSelected
+        })
+    }
+
+    const updateDayHours = (day: number, hours: string) => {
+        if (!canEditPreferences) return
+        const hoursNum = hours === "" ? 0 : parseFloat(hours)
+        if (isNaN(hoursNum) || hoursNum < 0) return
+        
+        setWeeklyHours(prev => {
+            const updated = { ...prev }
+            if (hoursNum === 0) {
+                delete updated[day]
+                // Remove from selected days if hours set to 0
+                setSelectedDays(current => current.filter(d => d !== day))
+            } else {
+                updated[day] = hoursNum
+                // Add to selected days if not already there
+                setSelectedDays(current => {
+                    if (!current.includes(day)) {
+                        return [...current, day].sort((a, b) => a - b)
+                    }
+                    return current
+                })
+            }
+            return updated
+        })
     }
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -138,12 +210,19 @@ function ProfileForm({ user }: ProfileFormProps) {
         e.preventDefault()
         setPreferencesLoading(true)
         try {
+            // Only send hours for selected days
+            const weeklyHoursToSend: Record<number, number> = {}
+            selectedDays.forEach(day => {
+                if (weeklyHours[day] && weeklyHours[day] > 0) {
+                    weeklyHoursToSend[day] = weeklyHours[day]
+                }
+            })
+            
             const res = await fetch("/api/user/preferences", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    dailyTarget: target === "" ? null : parseFloat(target),
-                    workDays: selectedDays,
+                    weeklyHours: weeklyHoursToSend,
                     workMode
                 }),
             })
@@ -264,20 +343,38 @@ function ProfileForm({ user }: ProfileFormProps) {
                             </div>
                         </div>
 
-                        <div className="space-y-1 mt-6">
-                            <Label htmlFor="target">{t('preferences.dailyTarget')}</Label>
-                            <Input
-                                id="target"
-                                type="number"
-                                step="0.5"
-                                value={target}
-                                onChange={e => setTarget(e.target.value)}
-                                disabled={!canEditPreferences}
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                {t('preferences.dailyTargetDescription')}
-                            </p>
-                        </div>
+                        {selectedDays.length > 0 && (
+                            <div className="space-y-3 mt-6">
+                                <Label>{t('preferences.dailyTarget')}</Label>
+                                <p className="text-xs text-muted-foreground">
+                                    {t('preferences.weeklyHoursDescription') || 'Set the number of work hours for each selected day. You can set different hours for different days.'}
+                                </p>
+                                <div className="space-y-2">
+                                    {selectedDays.map(day => {
+                                        const dayLabel = daysOfWeek.find(d => d.value === day)?.label || ''
+                                        return (
+                                            <div key={day} className="flex items-center gap-3">
+                                                <Label htmlFor={`hours-${day}`} className="w-24 text-sm font-medium">
+                                                    {dayLabel}
+                                                </Label>
+                                                <Input
+                                                    id={`hours-${day}`}
+                                                    type="number"
+                                                    step="0.5"
+                                                    min="0"
+                                                    value={weeklyHours[day]?.toString() || ""}
+                                                    onChange={e => updateDayHours(day, e.target.value)}
+                                                    disabled={!canEditPreferences}
+                                                    placeholder="8"
+                                                    className="w-24"
+                                                />
+                                                <span className="text-sm text-muted-foreground">{t('preferences.hours') || 'hours'}</span>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </CardContent>
                 {canEditPreferences && (

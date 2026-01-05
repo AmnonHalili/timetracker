@@ -17,6 +17,29 @@ export type BalanceResult = {
 type UserWithEntries = User & {
     timeEntries: (TimeEntry & { breaks?: { startTime: Date; endTime: Date | null }[] })[]
     project?: { workMode: WorkMode } | null
+    weeklyHours?: Record<string, number> | null
+}
+
+// Helper function to get hours for a specific day of week (0-6)
+// Uses weeklyHours if available, otherwise falls back to workDays + dailyTarget
+function getHoursForDay(
+    user: { dailyTarget?: number | null; workDays?: number[]; weeklyHours?: Record<string, number> | null },
+    dayOfWeek: number
+): number {
+    // If weeklyHours exists, use it
+    if (user.weeklyHours && typeof user.weeklyHours === 'object') {
+        const hours = user.weeklyHours[dayOfWeek.toString()]
+        if (typeof hours === 'number' && hours >= 0) {
+            return hours
+        }
+    }
+    
+    // Fallback to legacy format: workDays + dailyTarget
+    if (user.workDays && user.workDays.includes(dayOfWeek)) {
+        return user.dailyTarget ?? 0
+    }
+    
+    return 0
 }
 
 export function calculateBalance(
@@ -24,12 +47,8 @@ export function calculateBalance(
     referenceDate: Date = new Date(),
     workdays: Pick<Workday, 'workdayStartTime' | 'workdayEndTime'>[] = []
 ): BalanceResult {
-    const { dailyTarget, workDays } = user
+    const { workDays } = user
     // workMode check removed as it was unused
-
-
-    // If no daily target, we can't calculate meaningful targets
-    const effectiveDailyTarget = dailyTarget ?? 0
 
     // 1. Determine Timeframe: Start of current Month -> Reference Date (Today)
     const monthStart = startOfMonth(referenceDate)
@@ -97,8 +116,10 @@ export function calculateBalance(
         })
 
         daysToCheck.forEach((day) => {
-            if (workDays.includes(day.getDay())) {
-                totalTargetHours += effectiveDailyTarget
+            const dayOfWeek = day.getDay()
+            const hoursForDay = getHoursForDay(user, dayOfWeek)
+            if (hoursForDay > 0) {
+                totalTargetHours += hoursForDay
                 daysValid++
             }
         })

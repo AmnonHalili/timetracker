@@ -21,17 +21,35 @@ export async function PATCH(req: Request) {
     }
 
     try {
-        const { userId, dailyTarget, workDays } = await req.json()
+        const { userId, dailyTarget, workDays, weeklyHours } = await req.json()
 
         if (!userId) {
             return NextResponse.json({ message: "User ID is required" }, { status: 400 })
         }
 
+        // Validate weeklyHours if provided
+        if (weeklyHours !== undefined) {
+            if (typeof weeklyHours !== 'object' || weeklyHours === null || Array.isArray(weeklyHours)) {
+                return NextResponse.json({ message: "Invalid weekly hours format" }, { status: 400 })
+            }
+            // Validate each day (0-6) and hours (>= 0)
+            for (const [dayStr, hours] of Object.entries(weeklyHours)) {
+                const day = parseInt(dayStr)
+                if (isNaN(day) || day < 0 || day > 6) {
+                    return NextResponse.json({ message: `Invalid day: ${dayStr}` }, { status: 400 })
+                }
+                if (typeof hours !== 'number' || hours < 0) {
+                    return NextResponse.json({ message: `Invalid hours for day ${dayStr}` }, { status: 400 })
+                }
+            }
+        }
+
+        // Legacy support: still accept dailyTarget and workDays for backward compatibility
         if (dailyTarget !== null && (typeof dailyTarget !== 'number' || dailyTarget < 0)) {
             return NextResponse.json({ message: "Invalid daily target" }, { status: 400 })
         }
 
-        if (!Array.isArray(workDays) || !workDays.every((d: unknown) => typeof d === 'number' && d >= 0 && d <= 6)) {
+        if (workDays && (!Array.isArray(workDays) || !workDays.every((d: unknown) => typeof d === 'number' && d >= 0 && d <= 6))) {
             return NextResponse.json({ message: "Invalid work days" }, { status: 400 })
         }
 
@@ -59,13 +77,24 @@ export async function PATCH(req: Request) {
             return NextResponse.json({ message: "Forbidden: You don't have permission to edit work settings for this user" }, { status: 403 })
         }
 
+        const updateData: {
+            dailyTarget?: number | null
+            workDays?: number[]
+            weeklyHours?: Record<string, number>
+        } = {}
+
+        if (weeklyHours !== undefined) {
+            updateData.weeklyHours = weeklyHours
+        } else if (dailyTarget !== undefined || workDays !== undefined) {
+            // Legacy format
+            if (dailyTarget !== undefined) updateData.dailyTarget = dailyTarget
+            if (workDays !== undefined) updateData.workDays = workDays
+        }
+
         const updatedUser = await prisma.user.update({
             where: { id: userId },
-            data: {
-                dailyTarget,
-                workDays
-            },
-            select: { id: true, dailyTarget: true, workDays: true }
+            data: updateData,
+            select: { id: true, dailyTarget: true, workDays: true, weeklyHours: true }
         })
 
         return NextResponse.json({ user: updatedUser, message: "Work settings updated successfully" })

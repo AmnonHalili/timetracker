@@ -29,10 +29,21 @@ import { he } from "date-fns/locale"
 import { TaskDetailDialog } from "./TaskDetailDialog"
 import { CreateTaskDialog } from "./CreateTaskDialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Filter, X, ArrowUpDown, LayoutGrid, List as ListIcon } from "lucide-react"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Filter, X, ArrowUpDown } from "lucide-react"
 import { useLanguage } from "@/lib/useLanguage"
 import confetti from "canvas-confetti"
 import { TasksBoard } from "./board/TasksBoard"
+import { toast } from "sonner"
 
 const getPriorityColor = (priority: string) => {
     // Dynamic theme-based colors using CSS variables (handled by Tailwind)
@@ -133,6 +144,8 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
     })
     const [sortBy, setSortBy] = useState<string>("smart")
     const [viewMode, setViewMode] = useState<'list' | 'board'>('list')
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+    const [taskToDelete, setTaskToDelete] = useState<string | null>(null)
 
     // Sync local state when server data changes (e.g., after task creation)
     useEffect(() => {
@@ -514,12 +527,20 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
             setTasks(previousTasks)
             setLocalSubtasks(previousSubtasks)
             console.error("Failed to update task:", error)
-            alert("Failed to update task status")
+            toast.error(t('tasks.updateError') || "Failed to update task status")
         }
     }
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure?")) return
+    const handleDelete = (id: string) => {
+        setTaskToDelete(id)
+        setDeleteDialogOpen(true)
+    }
+
+    const confirmDelete = async () => {
+        if (!taskToDelete) return
+
+        const id = taskToDelete
+        setDeleteDialogOpen(false)
 
         // Store the deleted task for potential revert
         const deletedTask = tasks.find(t => t.id === id)
@@ -534,7 +555,6 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
             return newSubtasks
         })
 
-
         // Fire and forget - API call in background
         fetch(`/api/tasks?id=${id}`, { method: "DELETE" })
             .then(async (res) => {
@@ -543,6 +563,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                     throw new Error(data.message || "Failed to delete task")
                 }
                 router.refresh()
+                setTaskToDelete(null)
             })
             .catch((error) => {
                 console.error("Failed to delete task:", error)
@@ -557,7 +578,8 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                         return originalIndex - bIndex
                     }))
                 }
-                alert(error.message || "Failed to delete task. Please try again.")
+                toast.error(error.message || t('tasks.deleteError') || "Failed to delete task. Please try again.")
+                setTaskToDelete(null)
             })
     }
 
@@ -611,7 +633,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                     ...prev,
                     [taskId]: (prev[taskId] || []).filter(s => s.id !== tempId)
                 }))
-                alert(error instanceof Error ? error.message : "Failed to add subtask")
+                toast.error(error instanceof Error ? error.message : (t('tasks.addSubtaskError') || "Failed to add subtask"))
             })
     }
 
@@ -915,26 +937,6 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                             </Badge>
                         )}
                     </Button>
-
-                    {/* View Toggle */}
-                    <div className="flex bg-muted/50 p-1 rounded-md h-9">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setViewMode('list')}
-                            className={`h-full px-2.5 rounded-sm hover:bg-background ${viewMode === 'list' ? 'bg-background shadow-sm' : 'text-muted-foreground'}`}
-                        >
-                            <ListIcon className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setViewMode('board')}
-                            className={`h-full px-2.5 rounded-sm hover:bg-background ${viewMode === 'board' ? 'bg-background shadow-sm' : 'text-muted-foreground'}`}
-                        >
-                            <LayoutGrid className="h-4 w-4" />
-                        </Button>
-                    </div>
 
                     {/* Sort Dropdown */}
                     <Select value={sortBy} onValueChange={setSortBy}>
@@ -1292,12 +1294,12 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                 <td className="p-1 align-middle text-center">
                                                     <div
                                                         className={`
-                                                    h-8 w-full max-w-[140px] mx-auto flex items-center justify-center gap-2 text-xs font-semibold text-white shadow-sm rounded-md transition-all
-                                                    ${task.status === 'DONE' ? 'bg-[#00c875] hover:bg-[#00c875]/90' : ''}
-                                                    ${task.status === 'IN_PROGRESS' || (tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0) ? 'bg-[#0073ea] hover:bg-[#0060b9]' : ''}
-                                                    ${task.status === 'BLOCKED' ? 'bg-[#e2445c] hover:bg-[#c93b51]' : ''}
-                                                    ${task.status === 'TODO' && !((tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0)) ? 'bg-[#c4c4c4] hover:bg-[#b0b0b0]' : ''}
-                                                    ${isPast(new Date(task.deadline || '')) && !isToday(new Date(task.deadline || '')) && task.status !== 'DONE' ? 'bg-[#e2445c] hover:bg-[#d00000]' : ''}
+                                                    h-8 w-full max-w-[140px] mx-auto flex items-center justify-center gap-2 text-xs font-semibold shadow-sm rounded-md transition-all
+                                                    ${task.status === 'DONE' ? 'bg-[#00c875] hover:bg-[#00c875]/90 text-white' : 
+                                                    isPast(new Date(task.deadline || '')) && !isToday(new Date(task.deadline || '')) && task.status !== 'DONE' ? 'bg-[#e2445c] hover:bg-[#d00000] text-white' :
+                                                    task.status === 'IN_PROGRESS' || (tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0) ? 'bg-[#fdab3d] hover:bg-[#fdab3d]/90 text-white' :
+                                                    task.status === 'BLOCKED' ? 'bg-[#e2445c] hover:bg-[#c93b51] text-white' :
+                                                    task.status === 'TODO' && !((tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0)) ? 'bg-muted hover:bg-muted/80 text-muted-foreground' : ''}
                                                 `}
                                                     >
                                                         {task.status === 'DONE' && <CheckCircle2 className="h-3.5 w-3.5" />}
@@ -1736,6 +1738,29 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                     </div>
                 </DialogContent>
             </Dialog>
+
+            {/* Delete Task Confirmation Dialog */}
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{t('common.delete')}?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('tasks.deleteConfirm') || 'Are you sure you want to delete this task? This action cannot be undone.'}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setTaskToDelete(null)}>
+                            {t('common.cancel')}
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmDelete}
+                            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                        >
+                            {t('common.delete')}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </Card >
     )
 }

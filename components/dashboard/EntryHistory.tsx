@@ -13,8 +13,19 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { EditEntryDialog } from "./EditEntryDialog"
 import { useLanguage } from "@/lib/useLanguage"
+import { toast } from "sonner"
 
 interface TimeEntry {
     id: string
@@ -50,6 +61,8 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
     const [tempDescription, setTempDescription] = useState("")
     // Track IDs that are being deleted to prevent showing them during router.refresh()
     const [pendingDeletions, setPendingDeletions] = useState<Set<string>>(new Set())
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+    const [entryToDelete, setEntryToDelete] = useState<string | null>(null)
 
     useEffect(() => {
         // Filter out entries that are pending deletion to prevent them from reappearing
@@ -143,13 +156,24 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
     }
 
     const handleDelete = (id: string) => {
-        if (!confirm(t('common.delete') + "?")) return
+        setEntryToDelete(id)
+        setDeleteDialogOpen(true)
+    }
+
+    const confirmDelete = () => {
+        if (!entryToDelete) return
+
+        const id = entryToDelete
+        setDeleteDialogOpen(false)
         
         // Optimistic update - remove entry immediately from UI (BEFORE any async operations)
         const deletedEntry = localEntries.find(e => e.id === id)
         const deletedIndex = localEntries.findIndex(e => e.id === id)
         
-        if (!deletedEntry) return
+        if (!deletedEntry) {
+            setEntryToDelete(null)
+            return
+        }
         
         // Mark as pending deletion to prevent it from reappearing during router.refresh()
         setPendingDeletions(prev => new Set(prev).add(id))
@@ -173,6 +197,7 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
                         return next
                     })
                 }, 5000) // Longer delay to handle rapid deletions and ensure router.refresh() completes
+                setEntryToDelete(null)
             })
             .catch(error => {
                 // Revert on error - restore the entry at its original position
@@ -192,7 +217,8 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
                     return newEntries
                 })
                 console.error("Failed to delete entry:", error)
-                alert(t('common.error') || "Failed to delete entry. Please try again.")
+                toast.error(t('common.error') || "Failed to delete entry. Please try again.")
+                setEntryToDelete(null)
             })
     }
 
@@ -391,6 +417,29 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
                 onSave={handleDialogSave}
                 tasks={tasks}
             />
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{t('common.delete')}?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('timeEntries.deleteConfirm') || 'Are you sure you want to delete this time entry? This action cannot be undone.'}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setEntryToDelete(null)}>
+                            {t('common.cancel')}
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmDelete}
+                            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                        >
+                            {t('common.delete')}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }

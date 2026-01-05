@@ -48,6 +48,7 @@ interface User {
     image: string | null
     dailyTarget: number | null
     workDays: number[]
+    weeklyHours?: Record<string, number> | null
     createdAt: Date
     jobTitle: string | null
     managerId: string | null
@@ -71,8 +72,28 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
     useEffect(() => {
         setLocalUsers(users)
     }, [users])
-    const [editTarget, setEditTarget] = useState<string>("")
-    const [editDays, setEditDays] = useState<number[]>([])
+    // Helper function to convert legacy format to weeklyHours
+    const getWeeklyHoursFromLegacy = (user: User): Record<number, number> => {
+        if (user.weeklyHours) {
+            const result: Record<number, number> = {}
+            Object.entries(user.weeklyHours).forEach(([key, value]) => {
+                result[parseInt(key)] = typeof value === 'number' ? value : 0
+            })
+            return result
+        }
+        // Convert from legacy workDays + dailyTarget
+        const result: Record<number, number> = {}
+        const defaultHours = user.dailyTarget || 8
+        if (user.workDays && user.workDays.length > 0) {
+            user.workDays.forEach(day => {
+                result[day] = defaultHours
+            })
+        }
+        return result
+    }
+
+    const [editWeeklyHours, setEditWeeklyHours] = useState<Record<number, number>>({})
+    const [editSelectedDays, setEditSelectedDays] = useState<number[]>([])
 
     const [secondaryManagers, setSecondaryManagers] = useState<Array<{
         managerId: string
@@ -130,8 +151,9 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
         // Allow opening dialog for yourself
         if (user.id === currentUserId) {
             setSelectedUser(user)
-            setEditTarget(user.dailyTarget?.toString() || "")
-            setEditDays(user.workDays || [])
+            const hours = getWeeklyHoursFromLegacy(user)
+            setEditWeeklyHours(hours)
+            setEditSelectedDays(Object.keys(hours).map(Number).filter(day => hours[day] > 0))
             setLoadingSecondary(false)
             return
         }
@@ -152,8 +174,9 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
         }
 
         setSelectedUser(user)
-        setEditTarget(user.dailyTarget?.toString() || "")
-        setEditDays(user.workDays || [])
+        const hours = getWeeklyHoursFromLegacy(user)
+        setEditWeeklyHours(hours)
+        setEditSelectedDays(Object.keys(hours).map(Number).filter(day => hours[day] > 0))
         setPendingSecondaryManagers(null)
 
         // Fetch secondary managers
@@ -341,13 +364,20 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
         try {
             // 1. Save Work Settings
             // Check if there are changes to avoid unnecessary calls? For now just save.
+            // Only send hours for selected days
+            const weeklyHoursToSend: Record<number, number> = {}
+            editSelectedDays.forEach(day => {
+                if (editWeeklyHours[day] && editWeeklyHours[day] > 0) {
+                    weeklyHoursToSend[day] = editWeeklyHours[day]
+                }
+            })
+            
             const workSettingsRes = await fetch("/api/team/work-settings", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     userId: selectedUser.id,
-                    dailyTarget: editTarget === "" ? null : parseFloat(editTarget),
-                    workDays: editDays
+                    weeklyHours: weeklyHoursToSend
                 }),
             })
             if (!workSettingsRes.ok) throw new Error("Failed to update work settings")
@@ -441,9 +471,51 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
 
 
     const toggleDay = (day: number) => {
-        setEditDays(prev =>
-            prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day].sort((a, b) => a - b)
-        )
+        setEditSelectedDays(prev => {
+            const isSelected = prev.includes(day)
+            const newSelected = isSelected 
+                ? prev.filter(d => d !== day).sort((a, b) => a - b)
+                : [...prev, day].sort((a, b) => a - b)
+            
+            // Update weeklyHours: remove if unselected, add with default if selected
+            setEditWeeklyHours(currentHours => {
+                const updated = { ...currentHours }
+                if (isSelected) {
+                    delete updated[day]
+                } else {
+                    // Use existing hours if available, otherwise use default from first selected day or 8
+                    const defaultHours = Object.values(currentHours)[0] || 8
+                    updated[day] = defaultHours
+                }
+                return updated
+            })
+            
+            return newSelected
+        })
+    }
+
+    const updateDayHours = (day: number, hours: string) => {
+        const hoursNum = hours === "" ? 0 : parseFloat(hours)
+        if (isNaN(hoursNum) || hoursNum < 0) return
+        
+        setEditWeeklyHours(prev => {
+            const updated = { ...prev }
+            if (hoursNum === 0) {
+                delete updated[day]
+                // Remove from selected days if hours set to 0
+                setEditSelectedDays(current => current.filter(d => d !== day))
+            } else {
+                updated[day] = hoursNum
+                // Add to selected days if not already there
+                setEditSelectedDays(current => {
+                    if (!current.includes(day)) {
+                        return [...current, day].sort((a, b) => a - b)
+                    }
+                    return current
+                })
+            }
+            return updated
+        })
     }
 
 
@@ -540,7 +612,7 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
                                             key={day.value}
                                             type="button"
                                             onClick={() => toggleDay(day.value)}
-                                            className={`px-4 py-3 rounded-md text-sm font-medium transition-colors ${editDays.includes(day.value)
+                                            className={`px-4 py-3 rounded-md text-sm font-medium transition-colors ${editSelectedDays.includes(day.value)
                                                 ? 'bg-primary text-primary-foreground'
                                                 : 'bg-muted hover:bg-muted/80 text-muted-foreground'
                                                 }`}
@@ -551,31 +623,43 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="target" className={`block ${isRTL ? 'text-right' : 'text-left'}`}>{t('team.dailyTargetHours')}</Label>
-                                <Input
-                                    id="target"
-                                    type="number"
-                                    min={0}
-                                    step="0.5"
-                                    value={editTarget}
-                                    onChange={e => {
-                                        const val = e.target.value
-                                        if (!val || parseFloat(val) >= 0) {
-                                            setEditTarget(val)
-                                        }
-                                    }}
-                                    onKeyDown={(e) => {
-                                        if (e.key === '-' || e.key === 'Minus') {
-                                            e.preventDefault()
-                                        }
-                                    }}
-                                    dir="ltr"
-                                />
-                                <p className={`text-xs text-muted-foreground ${isRTL ? 'text-right' : 'text-left'}`}>
-                                    {t('team.dailyTargetDescription')}
-                                </p>
-                            </div>
+                            {editSelectedDays.length > 0 && (
+                                <div className="space-y-3">
+                                    <Label className={`block ${isRTL ? 'text-right' : 'text-left'}`}>{t('team.dailyTargetHours')}</Label>
+                                    <p className={`text-xs text-muted-foreground ${isRTL ? 'text-right' : 'text-left'}`}>
+                                        {t('preferences.weeklyHoursDescription') || 'Set the number of work hours for each selected day. You can set different hours for different days.'}
+                                    </p>
+                                    <div className="space-y-2">
+                                        {editSelectedDays.map(day => {
+                                            const dayLabel = daysOfWeek.find(d => d.value === day)?.label || ''
+                                            return (
+                                                <div key={day} className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                                                    <Label htmlFor={`hours-${day}`} className="w-24 text-sm font-medium">
+                                                        {dayLabel}
+                                                    </Label>
+                                                    <Input
+                                                        id={`hours-${day}`}
+                                                        type="number"
+                                                        step="0.5"
+                                                        min="0"
+                                                        value={editWeeklyHours[day]?.toString() || ""}
+                                                        onChange={e => updateDayHours(day, e.target.value)}
+                                                        placeholder="8"
+                                                        className="w-24"
+                                                        dir="ltr"
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === '-' || e.key === 'Minus') {
+                                                                e.preventDefault()
+                                                            }
+                                                        }}
+                                                    />
+                                                    <span className="text-sm text-muted-foreground">{t('preferences.hours') || 'hours'}</span>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            )}
                         </TabsContent>
 
                         <TabsContent value="managers" className="pt-4">
