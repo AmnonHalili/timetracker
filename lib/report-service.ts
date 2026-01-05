@@ -41,6 +41,16 @@ export async function getReportData(userId: string, year: number, month: number,
                     updatedAt: true,
                     subtaskId: true,
                     breaks: true,
+                    tasks: {
+                        where: {
+                            projectId: projectId
+                        },
+                        select: {
+                            id: true,
+                            title: true,
+                            projectId: true
+                        }
+                    }
                 },
             },
             workdays: {

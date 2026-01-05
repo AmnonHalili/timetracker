@@ -21,10 +21,15 @@ export default async function TasksPage() {
     })
 
     // Fetch Tasks
-    // Filter by assignees' projectId since Task.projectId doesn't exist in database
-    const where = isAdmin && currentUser?.projectId
-        ? { assignees: { some: { projectId: currentUser.projectId } } } // Admin sees all project tasks
-        : { assignees: { some: { id: session.user.id } } } // Regular user sees own tasks
+    // Strict Project Isolation
+    const where: any = {
+        projectId: currentUser?.projectId // Ensure task belongs to current project
+    }
+
+    if (!isAdmin) {
+        // Regular users only see tasks assigned to them WITHIN the project
+        where.assignees = { some: { id: session.user.id } }
+    }
 
     let tasks
     try {
