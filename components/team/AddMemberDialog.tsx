@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/select"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { toast } from "sonner"
 
 interface SimpleUser {
     id: string
@@ -110,10 +111,16 @@ export function AddMemberDialog({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
+        // Require manager selection for team members (EMPLOYEE role)
+        if (role === "EMPLOYEE" && (!managerId || managerId === "unassigned")) {
+            toast.error("Please select a manager for the team member. 'Reports To' is required.")
+            return
+        }
+
         // If adding a chief (ADMIN role) without a manager, require chief type selection
         if (role === "ADMIN" && (managerId === "unassigned" || !managerId)) {
             if (!chiefType) {
-                alert("Please select how this chief should be added (Partner or Independent)")
+                toast.error("Please select how this chief should be added (Partner or Independent)")
                 return
             }
         }
@@ -142,7 +149,7 @@ export function AddMemberDialog({
                     startTransition(() => {
                         router.push("/pricing")
                     })
-                    alert(data.message || "User limit exceeded. Please upgrade your plan to add more team members.")
+                    toast.error(data.message || "User limit exceeded. Please upgrade your plan to add more team members.")
                     return
                 }
 
@@ -152,7 +159,7 @@ export function AddMemberDialog({
                 throw new Error(errorMsg)
             }
 
-            await res.json()
+            const responseData = await res.json()
 
             setOpen(false)
             router.refresh()
@@ -165,9 +172,15 @@ export function AddMemberDialog({
             setChiefType(null)
             setActiveTab("employee")
 
-            alert(`✅ Invitation sent to ${email}`)
+            // Show appropriate success message
+            if (responseData.isExistingUser) {
+                toast.success(`Join request sent to ${email}`)
+            } else {
+                toast.success(`Invitation sent to ${email}`)
+            }
         } catch (error) {
-            alert(error)
+            const errorMessage = error instanceof Error ? error.message : "An error occurred"
+            toast.error(errorMessage)
         } finally {
             setLoading(false)
         }
@@ -214,7 +227,11 @@ export function AddMemberDialog({
                     </DialogDescription>
                 </DialogHeader>
 
-                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "employee" | "chief")} className="w-full">
+                <Tabs value={activeTab} onValueChange={(v) => {
+                    setActiveTab(v as "employee" | "chief")
+                    // Reset managerId when switching tabs
+                    setManagerId("")
+                }} className="w-full">
                     {isAdmin && (
                         <TabsList className="grid w-full grid-cols-2 mb-4">
                             <TabsTrigger value="employee">Team Member</TabsTrigger>
@@ -252,11 +269,12 @@ export function AddMemberDialog({
                                 />
                             </div>
 
-                            {/* Manager Selection - Shared but logic differs by role */}
-                            {!hideManagerSelect && (
+                            {/* Manager Selection - Only shown for Team Members (EMPLOYEE role) */}
+                            {!hideManagerSelect && role === "EMPLOYEE" && (
                                 <div className="grid grid-cols-4 items-center gap-4">
                                     <Label htmlFor="manager" className="text-left">
                                         Reports To
+                                        <span className="text-destructive ml-1">*</span>
                                     </Label>
                                     <div className="col-span-3">
                                         <Select
@@ -264,16 +282,13 @@ export function AddMemberDialog({
                                                 setManagerId(value)
                                             }}
                                             value={managerId || undefined}
+                                            required
                                         >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select Manager (Optional)" />
+                                            <SelectTrigger className={!managerId ? "border-destructive" : ""}>
+                                                <SelectValue placeholder="Select Manager (Required)" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {/* For Chiefs, allow "No Manager" explicitly */}
-                                                {role === "ADMIN" && isTopLevelAdmin && (
-                                                    <SelectItem value="unassigned">No Manager (Top Level)</SelectItem>
-                                                )}
-                                                {/* For Employees, usually allow all managers */}
+                                                {/* For Employees, show all managers */}
                                                 {managers.map((user) => (
                                                     <SelectItem key={user.id} value={user.id}>
                                                         {user.name} {user.jobTitle ? `- ${user.jobTitle}` : ""}
@@ -281,11 +296,9 @@ export function AddMemberDialog({
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                        {role === "EMPLOYEE" && (
-                                            <p className="text-[10px] text-muted-foreground mt-1 mx-1">
-                                                Leave empty to report to you directly.
-                                            </p>
-                                        )}
+                                        <p className="text-[10px] text-muted-foreground mt-1 mx-1">
+                                            Team members must report to a manager.
+                                        </p>
                                     </div>
                                 </div>
                             )}

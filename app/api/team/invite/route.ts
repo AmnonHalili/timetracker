@@ -108,13 +108,258 @@ export async function POST(req: Request) {
             }, { status: 402 }) // 402 Payment Required
         }
 
-        // Check if email already exists
+        // Check if email already exists (include removedAt to check if user was removed from project)
         const existingUser = await prisma.user.findUnique({
-            where: { email }
+            where: { email },
+            select: {
+                id: true,
+                email: true,
+                status: true,
+                projectId: true,
+                pendingProjectId: true,
+                removedAt: true
+            }
         })
 
+        // If user exists and is ACTIVE, send join request instead of invitation
         if (existingUser && existingUser.status === "ACTIVE") {
-            return NextResponse.json({ message: "User with this email already exists" }, { status: 400 })
+            // Check if user was removed from this project (has removedAt but same projectId)
+            const isRemovedFromThisProject = existingUser.removedAt && existingUser.projectId === currentUser.projectId
+            
+            // Check if user is already in this project (and not removed)
+            if (existingUser.projectId === currentUser.projectId && !isRemovedFromThisProject) {
+                return NextResponse.json({ 
+                    message: "This user is already a member of your project" 
+                }, { status: 400 })
+            }
+
+            // Check if user already has a pending request for this project
+            if (existingUser.pendingProjectId === currentUser.projectId) {
+                return NextResponse.json({ 
+                    message: "Join request already sent to this user" 
+                }, { status: 400 })
+            }
+
+            // If user is in another project (and not removed from it), they can't join
+            if (existingUser.projectId && existingUser.projectId !== currentUser.projectId && !existingUser.removedAt) {
+                return NextResponse.json({ 
+                    message: "This user is already a member of another project" 
+                }, { status: 400 })
+            }
+            
+            // If user was removed from this project, clear projectId first
+            if (isRemovedFromThisProject) {
+                await prisma.user.update({
+                    where: { id: existingUser.id },
+                    data: {
+                        projectId: null,
+                        removedAt: null
+                    }
+                })
+            }
+
+            // Check user limit before adding existing user directly (no pending request needed)
+            const activeUserCount = await prisma.user.count({
+                where: {
+                    projectId: currentUser.projectId,
+                    status: "ACTIVE"
+                }
+            })
+
+            const userPlan = currentUser.plan || 'FREE'
+            let planLimit = 3
+            if (userPlan === 'TIER1') planLimit = 20
+            if (userPlan === 'TIER2') planLimit = 50
+            if (userPlan === 'TIER3') planLimit = Infinity
+
+            let requiredTier: string | null = null
+            if (activeUserCount >= 3) {
+                if (activeUserCount < 20) {
+                    requiredTier = "tier1"
+                } else if (activeUserCount < 50) {
+                    requiredTier = "tier2"
+                } else {
+                    requiredTier = "tier3"
+                }
+            }
+
+            // If adding would exceed current plan limit, return error
+            if (activeUserCount >= planLimit && requiredTier) {
+                return NextResponse.json({
+                    message: "User limit exceeded. Please upgrade your plan to add more team members.",
+                    error: "USER_LIMIT_EXCEEDED",
+                    requiredTier,
+                    currentPlan: userPlan,
+                    currentUserCount: activeUserCount,
+                    limit: activeUserCount < 20 ? 20 : activeUserCount < 50 ? 50 : null
+                }, { status: 402 })
+            }
+
+            // Determine final manager ID
+            let finalManagerId: string | null = managerId === "unassigned" || !managerId ? null : managerId
+            if (role === "EMPLOYEE" && !finalManagerId) {
+                // Default to current user (inviter) as manager for employees
+                finalManagerId = currentUser.id
+            }
+
+            // Handle Chief creation logic for sharedChiefGroupId
+            let sharedChiefGroupId: string | null = null
+            if (role === "ADMIN" && chiefType) {
+                if (chiefType === "partner") {
+                    let currentUserFull: { managerId: string | null; sharedChiefGroupId?: string | null } | null
+                    try {
+                        currentUserFull = (await prisma.user.findUnique({
+                            where: { id: currentUser.id },
+                            select: { managerId: true, sharedChiefGroupId: true } as never
+                        })) as { managerId: string | null; sharedChiefGroupId?: string | null } | null
+                    } catch {
+                        currentUserFull = await prisma.user.findUnique({
+                            where: { id: currentUser.id },
+                            select: { managerId: true }
+                        })
+                        currentUserFull = currentUserFull ? { ...currentUserFull, sharedChiefGroupId: null } : null
+                    }
+
+                    if (currentUserFull?.managerId) {
+                        return NextResponse.json({
+                            message: "Only top-level chiefs can add partners. You must be a root-level chief."
+                        }, { status: 400 })
+                    }
+
+                    if (currentUserFull?.sharedChiefGroupId) {
+                        sharedChiefGroupId = currentUserFull.sharedChiefGroupId
+                    } else {
+                        sharedChiefGroupId = `shared-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+                        await prisma.user.update({
+                            where: { id: currentUser.id },
+                            data: { sharedChiefGroupId } as Record<string, unknown>
+                        })
+                    }
+
+                    finalManagerId = null
+                } else if (chiefType === "independent") {
+                    finalManagerId = null
+                    sharedChiefGroupId = null
+                }
+            }
+
+            // Add existing user directly to project (no pending request)
+            await prisma.user.update({
+                where: { id: existingUser.id },
+                data: {
+                    projectId: currentUser.projectId,
+                    managerId: finalManagerId,
+                    role: role || "EMPLOYEE",
+                    jobTitle: jobTitle || null,
+                    sharedChiefGroupId: sharedChiefGroupId || undefined,
+                    removedAt: null
+                } as never
+            })
+
+            // Auto-promote manager to MANAGER if they are currently EMPLOYEE
+            if (finalManagerId) {
+                const manager = await prisma.user.findUnique({ where: { id: finalManagerId } })
+                if (manager && manager.role === "EMPLOYEE") {
+                    await prisma.user.update({
+                        where: { id: finalManagerId },
+                        data: { role: "MANAGER" }
+                    })
+                }
+            }
+
+            // Send notification email to existing user
+            const transporter = nodemailer.createTransport({
+                host: "smtp.gmail.com",
+                port: 587,
+                secure: false,
+                auth: {
+                    user: process.env.GMAIL_USER,
+                    pass: process.env.GMAIL_PASS,
+                },
+            })
+
+            const projectName = currentUser.project?.name || "the team"
+            const inviterName = currentUser.name || "A team member"
+            const dashboardUrl = `${process.env.NEXTAUTH_URL}/dashboard`
+            const logoUrl = `${process.env.NEXTAUTH_URL}/collabologo.png`
+
+            const addedToTeamHtml = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Added to Team on Collabo</title>
+                <style>
+                    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f5; margin: 0; padding: 0; }
+                    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; margin-top: 40px; margin-bottom: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+                    .header { background-color: #ffffff; padding: 32px 24px; text-align: center; border-bottom: 1px solid #f4f4f5; }
+                    .header img { height: 48px; width: auto; }
+                    .content { padding: 48px 40px; color: #3f3f46; line-height: 1.6; text-align: center; }
+                    .content h1 { margin-top: 0; color: #18181b; font-size: 24px; font-weight: 700; letter-spacing: -0.025em; margin-bottom: 24px; }
+                    .content p { margin-bottom: 24px; color: #52525b; font-size: 16px; }
+                    .inviter-badge { background-color: #f4f4f5; border-radius: 9999px; padding: 8px 16px; font-size: 14px; color: #18181b; display: inline-block; margin-bottom: 24px; font-weight: 500; }
+                    .button { display: inline-block; background-color: #000000; color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; margin-top: 8px; margin-bottom: 32px; transition: background-color 0.2s; }
+                    .button:hover { background-color: #27272a; }
+                    .footer { background-color: #fafafa; padding: 24px; text-align: center; font-size: 12px; color: #a1a1aa; border-top: 1px solid #f4f4f5; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <img src="${logoUrl}" alt="Collabo" />
+                    </div>
+                    <div class="content">
+                        <div class="inviter-badge">
+                            ✅ <strong>${inviterName}</strong> added you
+                        </div>
+                        <h1>Welcome to ${projectName}</h1>
+                        <p>You've been added to ${projectName} on Collabo. You can now access the team workspace and start collaborating.</p>
+                        
+                        <a href="${dashboardUrl}" class="button" style="color: #ffffff;">
+                            Go to Dashboard
+                        </a>
+                    </div>
+                    <div class="footer">
+                        <p>&copy; ${new Date().getFullYear()} Collabo. All rights reserved.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            `
+
+            try {
+                await transporter.sendMail({
+                    from: `"Collabo" <${process.env.GMAIL_USER}>`,
+                    to: email,
+                    subject: `You've been added to ${projectName}`,
+                    html: addedToTeamHtml,
+                })
+            } catch (emailError) {
+                console.error("Failed to send email:", emailError)
+                // Continue anyway - the user was added
+            }
+
+            // Create notification for the user
+            try {
+                const { createNotification } = await import("@/lib/create-notification")
+                await createNotification({
+                    userId: existingUser.id,
+                    title: "Added to Team",
+                    message: `You've been added to ${projectName} by ${inviterName}`,
+                    type: "INFO",
+                    link: "/dashboard"
+                })
+            } catch (notifError) {
+                console.error("Failed to create notification:", notifError)
+            }
+
+            return NextResponse.json({
+                success: true,
+                message: `User ${email} has been added to your team`,
+                isExistingUser: true,
+                user: { id: existingUser.id, email: existingUser.email }
+            })
         }
 
         // If user exists but is PENDING, we can resend invitation

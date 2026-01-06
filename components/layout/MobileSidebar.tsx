@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Menu } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { signOut, useSession } from "next-auth/react"
 import { stopActiveTimer } from "@/lib/utils"
 import { useLanguage } from "@/lib/useLanguage"
@@ -17,6 +17,31 @@ export function MobileSidebar() {
     const { t, dir } = useLanguage()
     const { data: session } = useSession() // useSession from next-auth/react is already imported? Check imports.
     const [open, setOpen] = useState(false)
+    const [pendingRequestsCount, setPendingRequestsCount] = useState(0)
+
+    // Check for pending join requests (only for admins)
+    useEffect(() => {
+        if (session?.user?.role === 'ADMIN' && pathname !== '/team') {
+            const fetchPendingRequests = async () => {
+                try {
+                    const res = await fetch('/api/team/requests')
+                    if (res.ok) {
+                        const data = await res.json()
+                        setPendingRequestsCount(data.length || 0)
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch pending requests:', error)
+                }
+            }
+            fetchPendingRequests()
+            // Poll every 30 seconds for new requests
+            const interval = setInterval(fetchPendingRequests, 30000)
+            return () => clearInterval(interval)
+        } else {
+            // Clear count when on team page or not admin
+            setPendingRequestsCount(0)
+        }
+    }, [session?.user?.role, pathname])
 
     const routes = [
         {
@@ -43,6 +68,8 @@ export function MobileSidebar() {
             href: "/team",
             label: t('nav.team'),
             active: pathname === "/team",
+            badge: session?.user?.role === 'ADMIN' && pendingRequestsCount > 0 && pathname !== '/team',
+            badgeCount: pendingRequestsCount,
         },
         {
             href: "/settings",
@@ -123,7 +150,16 @@ export function MobileSidebar() {
                                             : "text-muted-foreground hover:bg-muted/50 hover:text-primary"
                                     )}
                                 >
-                                    {route.label}
+                                    <span className="flex-1">{route.label}</span>
+                                    {route.badge && (
+                                        route.badgeCount ? (
+                                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                                                {route.badgeCount}
+                                            </span>
+                                        ) : (
+                                            <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                                        )
+                                    )}
                                 </Link>
                             ))}
                         </div>

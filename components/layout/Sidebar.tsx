@@ -18,6 +18,7 @@ export function Sidebar() {
     const { data: session } = useSession()
 
     const [isDismissed, setIsDismissed] = useState(true) // Default to true to prevent flash
+    const [pendingRequestsCount, setPendingRequestsCount] = useState(0)
 
     useEffect(() => {
         // Check local storage on mount
@@ -31,6 +32,30 @@ export function Sidebar() {
             setIsDismissed(true)
         }
     }, [pathname])
+
+    // Check for pending join requests (only for admins)
+    useEffect(() => {
+        if (session?.user?.role === 'ADMIN' && pathname !== '/team') {
+            const fetchPendingRequests = async () => {
+                try {
+                    const res = await fetch('/api/team/requests')
+                    if (res.ok) {
+                        const data = await res.json()
+                        setPendingRequestsCount(data.length || 0)
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch pending requests:', error)
+                }
+            }
+            fetchPendingRequests()
+            // Poll every 30 seconds for new requests
+            const interval = setInterval(fetchPendingRequests, 30000)
+            return () => clearInterval(interval)
+        } else {
+            // Clear count when on team page or not admin
+            setPendingRequestsCount(0)
+        }
+    }, [session?.user?.role, pathname])
 
     // Check if user is a top-level admin with incomplete profile
     // Only show badge if NOT on settings page AND not remembered as seen
@@ -66,6 +91,8 @@ export function Sidebar() {
             href: "/team",
             label: t('nav.team'),
             active: pathname === "/team",
+            badge: session?.user?.role === 'ADMIN' && pendingRequestsCount > 0 && pathname !== '/team',
+            badgeCount: pendingRequestsCount,
         },
         {
             href: "/settings",
@@ -147,7 +174,13 @@ export function Sidebar() {
                             {route.label}
 
                             {route.badge && (
-                                <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                                route.badgeCount ? (
+                                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                                        {route.badgeCount}
+                                    </span>
+                                ) : (
+                                    <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                                )
                             )}
                         </Link>
                     ))}
