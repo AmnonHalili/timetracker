@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react"
 import React from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Clock, Users, CheckCircle2, MessageSquare, Paperclip, Send, FileText, X, AtSign, Link2, Plus, Info } from "lucide-react"
+import { Clock, Users, CheckCircle2, MessageSquare, Paperclip, Send, FileText, X, AtSign, Link2, Plus, Info, Calendar, ChevronDown, ChevronUp } from "lucide-react"
 import { useLanguage } from "@/lib/useLanguage"
 import { toast } from "sonner"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -105,6 +105,7 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
     const [notes, setNotes] = useState<Note[]>([])
     const [attachments, setAttachments] = useState<Attachment[]>([])
     const [activities, setActivities] = useState<ActivityLog[]>([])
+    const [isWorkLogOpen, setIsWorkLogOpen] = useState(false)
 
     const [newNote, setNewNote] = useState("")
     const [pendingFiles, setPendingFiles] = useState<File[]>([])
@@ -564,6 +565,65 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
                         <TabsContent value="details" className="mt-0 h-full">
                             <ScrollArea className="h-full">
                                 <div className="p-6 space-y-6">
+                                    {/* Quick Summary Stats */}
+                                    {(() => {
+                                        const totalTime = calculateTotalTimeValue()
+                                        const peopleWorked = Array.from(timeByUser.values()).filter(u => u.totalSeconds > 0).length
+                                        
+                                        // Find last activity date from time entries or activities
+                                        let lastActivityDate: Date | null = null
+                                        if (timeEntries && timeEntries.length > 0) {
+                                            const completedEntries = timeEntries.filter(e => e.endTime)
+                                            if (completedEntries.length > 0) {
+                                                const dates = completedEntries.map(e => new Date(e.startTime))
+                                                lastActivityDate = new Date(Math.max(...dates.map(d => d.getTime())))
+                                            }
+                                        }
+                                        if (activities && activities.length > 0) {
+                                            const activityDates = activities.map(a => new Date(a.createdAt))
+                                            const latestActivity = new Date(Math.max(...activityDates.map(d => d.getTime())))
+                                            if (!lastActivityDate || latestActivity > lastActivityDate) {
+                                                lastActivityDate = latestActivity
+                                            }
+                                        }
+                                        
+                                        return (
+                                            <div className="grid grid-cols-3 gap-4">
+                                                <div className="bg-card rounded-lg border border-border/50 p-4">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <Clock className="h-4 w-4 text-muted-foreground" />
+                                                        <span className="text-xs font-medium text-muted-foreground">Total Time</span>
+                                                    </div>
+                                                    <div className="text-lg font-bold text-primary">
+                                                        {calculateTotalTime()}
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="bg-card rounded-lg border border-border/50 p-4">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <Users className="h-4 w-4 text-muted-foreground" />
+                                                        <span className="text-xs font-medium text-muted-foreground">People Worked</span>
+                                                    </div>
+                                                    <div className="text-lg font-bold text-primary">
+                                                        {peopleWorked || 0}
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="bg-card rounded-lg border border-border/50 p-4">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                                                        <span className="text-xs font-medium text-muted-foreground">Last Activity</span>
+                                                    </div>
+                                                    <div className="text-sm font-semibold text-foreground">
+                                                        {lastActivityDate 
+                                                            ? new Date(lastActivityDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                                                            : 'No activity'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )
+                                    })()}
+
                                     {/* Description */}
                                     {task.description && (
                                         <div className="bg-card rounded-lg border border-border/50 p-4">
@@ -614,44 +674,31 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
                                                 </h3>
 
                                                 <div className="bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden">
-                                                    {/* Total Time Spent - Always shown at top */}
-                                                    <div className="p-4 bg-primary/5 border-b border-border/50">
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="text-sm font-medium text-foreground flex items-center gap-2">
-                                                                <Clock className="h-4 w-4 text-primary" />
-                                                                {t('tasks.totalTimeSpent') || "Total Time Spent on Task"}
-                                                            </span>
-                                                            <span className="text-2xl font-bold font-mono tracking-tight text-primary">
-                                                                {calculateTotalTime()}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-
                                                     {/* Individual Contributors - Sorted from most to least */}
                                                     {hasWorked && usersWithTime.length > 0 ? (
                                                         <div className="divide-y divide-border/50">
                                                             {usersWithTime.map(({ user, totalSeconds }, index) => (
-                                                                <div key={user.id} className="flex justify-between items-center p-4 hover:bg-muted/30 transition-colors group">
-                                                                    <div className="flex items-center gap-3 flex-1">
+                                                                <div key={user.id} className="flex justify-between items-center p-3 hover:bg-muted/30 transition-colors group">
+                                                                    <div className="flex items-center gap-2.5 flex-1">
                                                                         <div className="relative">
-                                                                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary ring-2 ring-background group-hover:ring-primary/30 transition-all">
+                                                                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary ring-2 ring-background group-hover:ring-primary/30 transition-all">
                                                                                 {user.name?.substring(0, 2).toUpperCase() || "??"}
                                                                             </div>
                                                                             {index === 0 && usersWithTime.length > 1 && (
-                                                                                <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary flex items-center justify-center">
-                                                                                    <span className="text-[10px] font-bold text-primary-foreground">1</span>
+                                                                                <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary flex items-center justify-center">
+                                                                                    <span className="text-[9px] font-bold text-primary-foreground">1</span>
                                                                                 </div>
                                                                             )}
                                                                         </div>
                                                                         <div className="flex-1 min-w-0">
-                                                                            <span className="text-sm font-medium block truncate">{user.name || 'Unknown'}</span>
-                                                                            <span className="text-xs text-muted-foreground">
+                                                                            <span className="text-xs font-medium block truncate">{user.name || 'Unknown'}</span>
+                                                                            <span className="text-[10px] text-muted-foreground">
                                                                                 {index === 0 ? "Most time worked" : `${index + 1}${index === 1 ? 'nd' : index === 2 ? 'rd' : 'th'} contributor`}
                                                                             </span>
                                                                         </div>
                                                                     </div>
                                                                     <div className="flex items-center gap-3">
-                                                                        <span className="text-base font-bold font-mono text-primary min-w-[80px] text-right">
+                                                                        <span className="text-xs font-bold font-mono text-primary min-w-[70px] text-right">
                                                                             {formatTime(totalSeconds)}
                                                                         </span>
                                                                     </div>
@@ -659,16 +706,29 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
                                                             ))}
                                                         </div>
                                                     ) : (
-                                                        <div className="p-4 text-center text-sm text-muted-foreground">
+                                                        <div className="p-3 text-center text-xs text-muted-foreground">
                                                             No work logged yet
                                                         </div>
                                                     )}
+
+                                                    {/* Total Time Spent - Summary at bottom */}
+                                                    <div className="p-3 bg-muted/30 border-t border-border/50">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-xs font-medium text-muted-foreground flex items-center gap-2">
+                                                                <Clock className="h-3.5 w-3.5" />
+                                                                {t('tasks.totalTimeSpent') || "Total Time Spent"}
+                                                            </span>
+                                                            <span className="text-sm font-bold font-mono text-primary">
+                                                                {calculateTotalTime()}
+                                                            </span>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         )
                                     })()}
 
-                                    {/* Work Log - Detailed time entries */}
+                                    {/* Work Log - Detailed time entries (Collapsible) */}
                                     {timeEntries && timeEntries.length > 0 && (() => {
                                         const completedEntries = timeEntries.filter(entry => entry.endTime).sort((a, b) => {
                                             const dateA = new Date(a.startTime).getTime()
@@ -680,53 +740,60 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
 
                                         return (
                                             <div className="space-y-3">
-                                                <h3 className="text-sm font-semibold flex items-center gap-2 text-foreground">
-                                                    <Clock className="h-4 w-4" />
-                                                    {t('tasks.workLog') || "Work Log"}
-                                                </h3>
-
                                                 <div className="bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden">
-                                                    <div className="divide-y divide-border/50">
-                                                        {completedEntries.map((entry) => {
-                                                            const start = new Date(entry.startTime).getTime()
-                                                            const end = new Date(entry.endTime!).getTime()
-                                                            const seconds = Math.floor((end - start) / 1000)
-                                                            const workTarget = entry.subtask ? entry.subtask.title : task?.title || "Main Task"
-                                                            
-                                                            return (
-                                                                <div key={entry.id} className="p-4 hover:bg-muted/30 transition-colors">
-                                                                    <div className="flex items-start justify-between gap-4">
-                                                                        <div className="flex-1 min-w-0">
-                                                                            <div className="flex items-center gap-2 mb-2">
-                                                                                <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                                                    <button
+                                                        onClick={() => setIsWorkLogOpen(!isWorkLogOpen)}
+                                                        className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors group"
+                                                    >
+                                                        <div className="flex items-center gap-2">
+                                                            <Clock className="h-4 w-4 text-muted-foreground" />
+                                                            <h3 className="text-sm font-semibold text-foreground">
+                                                                {t('tasks.workLog') || "Work Log"}
+                                                            </h3>
+                                                            <Badge variant="secondary" className="text-xs h-5 px-1.5">
+                                                                {completedEntries.length}
+                                                            </Badge>
+                                                        </div>
+                                                        {isWorkLogOpen ? (
+                                                            <ChevronUp className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                                                        ) : (
+                                                            <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                                                        )}
+                                                    </button>
+
+                                                    {isWorkLogOpen && (
+                                                        <div className="border-t border-border/50 divide-y divide-border/50">
+                                                            {completedEntries.map((entry) => {
+                                                                const start = new Date(entry.startTime).getTime()
+                                                                const end = new Date(entry.endTime!).getTime()
+                                                                const seconds = Math.floor((end - start) / 1000)
+                                                                const workTarget = entry.subtask ? entry.subtask.title : task?.title || "Main Task"
+                                                                
+                                                                return (
+                                                                    <div key={entry.id} className="p-3 hover:bg-muted/30 transition-colors">
+                                                                        <div className="flex items-start justify-between gap-3">
+                                                                            <div className="flex items-start gap-2 flex-1 min-w-0">
+                                                                                <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0 mt-0.5">
                                                                                     {entry.user.name?.substring(0, 2).toUpperCase() || "??"}
                                                                                 </div>
-                                                                                <span className="text-sm font-semibold">{entry.user.name || 'Unknown'}</span>
-                                                                            </div>
-                                                                            <div className="ml-9 space-y-1">
-                                                                                <div className="text-xs text-muted-foreground">
-                                                                                    <span className="font-medium text-foreground">Worked on:</span> <span className="text-foreground/80">{workTarget}</span>
-                                                                                </div>
-                                                                                {entry.description && (
-                                                                                    <div className="text-xs text-muted-foreground italic bg-muted/30 p-2 rounded">
-                                                                                        {entry.description}
+                                                                                <div className="flex-1 min-w-0">
+                                                                                    <div className="text-xs font-semibold truncate">{entry.user.name || 'Unknown'}</div>
+                                                                                    <div className="text-xs text-muted-foreground truncate mt-0.5">
+                                                                                        {workTarget}
                                                                                     </div>
-                                                                                )}
+                                                                                </div>
                                                                             </div>
-                                                                        </div>
-                                                                        <div className="flex flex-col items-end gap-1 shrink-0">
-                                                                            <span className="text-base font-bold font-mono text-primary">
-                                                                                {formatTime(seconds)}
-                                                                            </span>
-                                                                            <span className="text-xs text-muted-foreground">
-                                                                                {new Date(entry.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                                            </span>
+                                                                            <div className="flex-shrink-0">
+                                                                                <span className="text-xs font-bold font-mono text-primary">
+                                                                                    {formatTime(seconds)}
+                                                                                </span>
+                                                                            </div>
                                                                         </div>
                                                                     </div>
-                                                                </div>
-                                                            )
-                                                        })}
-                                                    </div>
+                                                                )
+                                                            })}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         )
