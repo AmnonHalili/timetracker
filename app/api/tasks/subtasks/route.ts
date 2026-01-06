@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     if (!session) return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
 
     try {
-        const { taskId, title } = await req.json()
+        const { taskId, title, priority, assignedToId, dueDate } = await req.json()
 
         if (!taskId || !title) {
             return NextResponse.json({ message: "Task ID and title are required" }, { status: 400 })
@@ -23,6 +23,14 @@ export async function POST(req: Request) {
             where: { id: taskId },
             include: { assignees: { select: { id: true } } }
         })
+
+        // Validate assignedToId if provided - must be one of task assignees
+        if (assignedToId) {
+            const isValidAssignee = task?.assignees.some(a => a.id === assignedToId)
+            if (!isValidAssignee) {
+                return NextResponse.json({ message: "Assigned user must be one of the parent task's assignees" }, { status: 400 })
+            }
+        }
 
         if (!task) {
             return NextResponse.json({ message: "Task not found" }, { status: 404 })
@@ -51,7 +59,18 @@ export async function POST(req: Request) {
             }
 
             subtask = await prismaAny.subTaskItem.create({
-                data: { taskId, title }
+                data: {
+                    taskId,
+                    title,
+                    priority: priority || null,
+                    assignedToId: assignedToId || null,
+                    dueDate: dueDate ? new Date(dueDate) : null
+                },
+                include: {
+                    assignedTo: {
+                        select: { id: true, name: true, image: true }
+                    }
+                }
             })
         } catch (e: unknown) {
             // If SubTaskItem model doesn't exist yet, return error with helpful message
@@ -81,7 +100,7 @@ export async function PATCH(req: Request) {
     if (!session) return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
 
     try {
-        const { id, isDone } = await req.json()
+        const { id, title, isDone, priority, assignedToId, dueDate } = await req.json()
 
         if (!id) {
             return NextResponse.json({ message: "Subtask ID is required" }, { status: 400 })
@@ -118,6 +137,14 @@ export async function PATCH(req: Request) {
             return NextResponse.json({ message: "Subtask not found" }, { status: 404 })
         }
 
+        // Validate assignedToId if provided - must be one of parent task assignees
+        if (assignedToId !== undefined && assignedToId !== null) {
+            const isValidAssignee = subtask.task.assignees.some((a: { id: string }) => a.id === assignedToId)
+            if (!isValidAssignee) {
+                return NextResponse.json({ message: "Assigned user must be one of the parent task's assignees" }, { status: 400 })
+            }
+        }
+
         // Permission check
         let hasPermission = false
         if (session.user.role === "ADMIN") {
@@ -130,10 +157,23 @@ export async function PATCH(req: Request) {
             return NextResponse.json({ message: "You don't have permission to update this subtask" }, { status: 403 })
         }
 
-        // Update subtask
+        // Update subtask - build update data dynamically
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const updateData: any = {}
+        if (title !== undefined) updateData.title = title
+        if (isDone !== undefined) updateData.isDone = isDone
+        if (priority !== undefined) updateData.priority = priority
+        if (assignedToId !== undefined) updateData.assignedToId = assignedToId
+        if (dueDate !== undefined) updateData.dueDate = dueDate ? new Date(dueDate) : null
+
         const updated = await prismaAny.subTaskItem.update({
             where: { id },
-            data: { isDone: isDone || false }
+            data: updateData,
+            include: {
+                assignedTo: {
+                    select: { id: true, name: true, image: true }
+                }
+            }
         })
 
         return NextResponse.json(updated)

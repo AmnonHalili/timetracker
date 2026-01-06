@@ -27,7 +27,7 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json()
-        const { title, assignedToIds, priority, startDate, deadline, description } = body
+        const { title, assignedToIds, priority, startDate, deadline, description, subtasks } = body
 
         // Validate permissions  
         // ADMIN: Can assign to anyone in project
@@ -90,10 +90,20 @@ export async function POST(req: Request) {
                 startDate: startDate ? new Date(startDate) : null,
                 deadline: deadline ? new Date(deadline) : null,
                 description,
-                status: "TODO"
+                status: "TODO",
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                subtasks: subtasks && Array.isArray(subtasks) && subtasks.length > 0 ? {
+                    create: subtasks.map((st: any) => ({
+                        title: st.title,
+                        priority: st.priority || "LOW",
+                        assignedToId: st.assignedToId || null,
+                        dueDate: st.dueDate ? new Date(st.dueDate) : null
+                    }))
+                } : undefined
             },
             include: {
-                assignees: true
+                assignees: true,
+                subtasks: true
             }
         })
 

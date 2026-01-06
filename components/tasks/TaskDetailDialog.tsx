@@ -425,14 +425,14 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
 
     // Initialize timeByUser with all assignees (even if they haven't worked yet)
     const timeByUser = new Map<string, { user: { id: string; name: string | null }, totalSeconds: number }>()
-    
+
     // First, add all assignees with 0 time
     if (task?.assignees) {
         task.assignees.forEach(assignee => {
             timeByUser.set(assignee.id, { user: { id: assignee.id, name: assignee.name }, totalSeconds: 0 })
         })
     }
-    
+
     // Then, update with actual time entries
     timeEntries.forEach(entry => {
         if (entry.endTime && entry.user) {
@@ -569,7 +569,7 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
                                     {(() => {
                                         const totalTime = calculateTotalTimeValue()
                                         const peopleWorked = Array.from(timeByUser.values()).filter(u => u.totalSeconds > 0).length
-                                        
+
                                         // Find last activity date from time entries or activities
                                         let lastActivityDate: Date | null = null
                                         if (timeEntries && timeEntries.length > 0) {
@@ -586,7 +586,7 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
                                                 lastActivityDate = latestActivity
                                             }
                                         }
-                                        
+
                                         return (
                                             <div className="grid grid-cols-3 gap-4">
                                                 <div className="bg-card rounded-lg border border-border/50 p-4">
@@ -598,7 +598,7 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
                                                         {calculateTotalTime()}
                                                     </div>
                                                 </div>
-                                                
+
                                                 <div className="bg-card rounded-lg border border-border/50 p-4">
                                                     <div className="flex items-center gap-2 mb-1">
                                                         <Users className="h-4 w-4 text-muted-foreground" />
@@ -608,14 +608,14 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
                                                         {peopleWorked || 0}
                                                     </div>
                                                 </div>
-                                                
+
                                                 <div className="bg-card rounded-lg border border-border/50 p-4">
                                                     <div className="flex items-center gap-2 mb-1">
                                                         <Calendar className="h-4 w-4 text-muted-foreground" />
                                                         <span className="text-xs font-medium text-muted-foreground">Last Activity</span>
                                                     </div>
                                                     <div className="text-sm font-semibold text-foreground">
-                                                        {lastActivityDate 
+                                                        {lastActivityDate
                                                             ? new Date(lastActivityDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                                                             : 'No activity'}
                                                     </div>
@@ -665,7 +665,7 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
                                         const usersWithTime = Array.from(timeByUser.values())
                                             .filter(u => u.totalSeconds > 0)
                                             .sort((a, b) => b.totalSeconds - a.totalSeconds)
-                                        
+
                                         return (
                                             <div className="space-y-3">
                                                 <h3 className="text-sm font-semibold flex items-center gap-2 text-foreground">
@@ -731,7 +731,7 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
                                     {/* Work Log - Detailed time entries (Collapsible) */}
                                     {timeEntries && timeEntries.length > 0 && (() => {
                                         const completedEntries = timeEntries.filter(entry => entry.endTime)
-                                        
+
                                         if (completedEntries.length === 0) return null
 
                                         // Separate main task entries from subtask entries
@@ -743,17 +743,17 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
                                             const startA = new Date(a.startTime).getTime()
                                             const endA = new Date(a.endTime!).getTime()
                                             const secondsA = Math.floor((endA - startA) / 1000)
-                                            
+
                                             const startB = new Date(b.startTime).getTime()
                                             const endB = new Date(b.endTime!).getTime()
                                             const secondsB = Math.floor((endB - startB) / 1000)
-                                            
+
                                             return secondsB - secondsA // Most time first
                                         })
 
                                         // Get subtask order from task.subtasks (already sorted by createdAt: 'asc' from API)
                                         const subtaskOrder = task?.subtasks ? task.subtasks.map(s => s.id) : []
-                                        
+
                                         // Group subtask entries by subtask ID
                                         const entriesBySubtask = new Map<string, typeof subtaskEntries>()
                                         subtaskEntries.forEach(entry => {
@@ -773,28 +773,28 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
                                                 const startA = new Date(a.startTime).getTime()
                                                 const endA = new Date(a.endTime!).getTime()
                                                 const secondsA = Math.floor((endA - startA) / 1000)
-                                                
+
                                                 const startB = new Date(b.startTime).getTime()
                                                 const endB = new Date(b.endTime!).getTime()
                                                 const secondsB = Math.floor((endB - startB) / 1000)
-                                                
+
                                                 return secondsB - secondsA // Most time first
                                             })
                                         })
 
                                         // Get all subtask IDs from entries (including deleted subtasks)
                                         const allSubtaskIds = Array.from(entriesBySubtask.keys())
-                                        
+
                                         // Separate known subtasks (in order) from unknown ones (deleted)
                                         const knownSubtaskIds = subtaskOrder.filter(id => entriesBySubtask.has(id))
                                         const unknownSubtaskIds = allSubtaskIds.filter(id => !subtaskOrder.includes(id))
-                                        
+
                                         // Build final sorted list: main task first, then subtasks in order
                                         const sortedEntries: typeof completedEntries = []
-                                        
+
                                         // Add main task entries first (if any)
                                         sortedEntries.push(...sortedMainTaskEntries)
-                                        
+
                                         // Add known subtask entries in order (from task.subtasks)
                                         knownSubtaskIds.forEach(subtaskId => {
                                             const entries = entriesBySubtask.get(subtaskId)
@@ -802,7 +802,7 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
                                                 sortedEntries.push(...entries)
                                             }
                                         })
-                                        
+
                                         // Add unknown subtask entries at the end (deleted subtasks)
                                         unknownSubtaskIds.forEach(subtaskId => {
                                             const entries = entriesBySubtask.get(subtaskId)
@@ -841,7 +841,7 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
                                                                 const end = new Date(entry.endTime!).getTime()
                                                                 const seconds = Math.floor((end - start) / 1000)
                                                                 const workTarget = entry.subtask ? entry.subtask.title : task?.title || "Main Task"
-                                                                
+
                                                                 return (
                                                                     <div key={entry.id} className="p-3 hover:bg-muted/30 transition-colors">
                                                                         <div className="flex items-start justify-between gap-3">

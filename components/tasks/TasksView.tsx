@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
+import { cn } from "@/lib/utils"
 import {
     Select,
     SelectContent,
@@ -60,6 +61,36 @@ const getPriorityColor = (priority: string) => {
             return 'bg-primary/25 text-primary-foreground border-transparent'
         default:
             return 'bg-muted text-muted-foreground border-border'
+    }
+}
+
+const formatDueDateIndicator = (dueDate: Date | string | null, t: (key: string) => string): { text: string; className: string } | null => {
+    if (!dueDate) return null
+
+    const due = new Date(dueDate)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    due.setHours(0, 0, 0, 0)
+
+    const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+
+    if (diffDays === 0) {
+        return { text: t('tasks.subtaskDueToday'), className: 'text-orange-600 dark:text-orange-400' }
+    } else if (diffDays < 0) {
+        return {
+            text: t('tasks.subtaskOverdue').replace('{days}', Math.abs(diffDays).toString()),
+            className: 'text-red-600 dark:text-red-400 font-medium'
+        }
+    } else if (diffDays <= 3) {
+        return {
+            text: t('tasks.subtaskDueSoon').replace('{days}', diffDays.toString()),
+            className: 'text-yellow-600 dark:text-yellow-400'
+        }
+    } else {
+        return {
+            text: t('tasks.subtaskDueSoon').replace('{days}', diffDays.toString()),
+            className: 'text-muted-foreground'
+        }
     }
 }
 
@@ -131,7 +162,15 @@ interface TasksViewProps {
         blocking?: Array<{ id: string; title: string; status: string }>;
         blockedBy?: Array<{ id: string; title: string; status: string }>;
         checklist: Array<{ id: string; text: string; isDone: boolean }>;
-        subtasks?: Array<{ id: string; title: string; isDone: boolean }>;
+        subtasks?: Array<{
+            id: string;
+            title: string;
+            isDone: boolean;
+            priority?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+            assignedToId?: string | null;
+            assignedTo?: { id: string; name: string | null; image?: string | null } | null;
+            dueDate?: Date | string | null;
+        }>;
         createdAt?: Date | string;
     }>
     users: User[]
@@ -151,7 +190,24 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
     const [editingSubtask, setEditingSubtask] = useState<{ taskId: string; subtaskId: string } | null>(null)
     const [editingSubtaskTitle, setEditingSubtaskTitle] = useState("")
 
-    const [localSubtasks, setLocalSubtasks] = useState<Record<string, Array<{ id: string; title: string; isDone: boolean }>>>({})
+    // Enhanced subtask editing state
+    const [editingEnhancedSubtask, setEditingEnhancedSubtask] = useState<{
+        taskId: string;
+        subtaskId: string;
+        priority: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+        assignedToId: string | null;
+        dueDate: Date | null;
+    } | null>(null)
+
+    const [localSubtasks, setLocalSubtasks] = useState<Record<string, Array<{
+        id: string;
+        title: string;
+        isDone: boolean;
+        priority?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+        assignedToId?: string | null;
+        assignedTo?: { id: string; name: string | null; image?: string | null } | null;
+        dueDate?: Date | string | null;
+    }>>>({})
     const [expandedSubtasks, setExpandedSubtasks] = useState<Record<string, boolean>>({})
     // Initialize visibleSubtasksMap to true for tasks with subtasks (show by default)
     const [visibleSubtasksMap, setVisibleSubtasksMap] = useState<Record<string, boolean>>(() => {
@@ -697,7 +753,15 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                 setLocalSubtasks(prev => ({
                     ...prev,
                     [taskId]: (prev[taskId] || []).map(s =>
-                        s.id === tempId ? { id: newSubtask.id, title: newSubtask.title, isDone: newSubtask.isDone || false } : s
+                        s.id === tempId ? {
+                            id: newSubtask.id,
+                            title: newSubtask.title,
+                            isDone: newSubtask.isDone || false,
+                            priority: newSubtask.priority || null,
+                            assignedToId: newSubtask.assignedToId || null,
+                            assignedTo: newSubtask.assignedTo || null,
+                            dueDate: newSubtask.dueDate || null
+                        } : s
                     )
                 }))
                 router.refresh()
@@ -806,11 +870,52 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
 
 
 
-    const handleUpdateSubtask = async (taskId: string, subtaskId: string) => {
-        const trimmedTitle = editingSubtaskTitle.trim()
-        if (!trimmedTitle) {
-            setEditingSubtask(null)
-            return
+    const handleUpdateSubtask = async (
+        taskId: string,
+        subtaskId: string,
+        updates?: {
+            title?: string;
+            priority?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+            assignedToId?: string | null;
+            dueDate?: Date | null;
+        }
+    ) => {
+        // Build update data object
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const updateData: any = {}
+
+        if (updates?.title !== undefined) {
+            const trimmed = updates.title.trim()
+            if (!trimmed) {
+                setEditingSubtask(null)
+                return
+            }
+            updateData.title = trimmed
+        } else if (!updates) {
+            // Legacy title update from editingSubtaskTitle
+            const trimmedTitle = editingSubtaskTitle.trim()
+            if (!trimmedTitle) {
+                setEditingSubtask(null)
+                return
+            }
+            updateData.title = trimmedTitle
+        }
+
+        // Add other updates
+        if (updates?.priority !== undefined) updateData.priority = updates.priority
+        if (updates?.assignedToId !== undefined) updateData.assignedToId = updates.assignedToId
+        if (updates?.dueDate !== undefined) {
+            updateData.dueDate = updates.dueDate ? updates.dueDate.toISOString() : null
+        }
+
+        // Validate assignee if being updated
+        if (updates?.assignedToId !== undefined && updates.assignedToId !== null) {
+            const parentTask = tasks.find(t => t.id === taskId)
+            const isValidAssignee = parentTask?.assignees.some(a => a.id === updates.assignedToId)
+            if (!isValidAssignee) {
+                toast.error("Assigned user must be from parent task assignees")
+                return
+            }
         }
 
         // Store previous state for revert
@@ -821,7 +926,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
         setLocalSubtasks(prev => ({
             ...prev,
             [taskId]: (prev[taskId] || []).map(s =>
-                s.id === subtaskId ? { ...s, title: trimmedTitle } : s
+                s.id === subtaskId ? { ...s, ...updateData } : s
             )
         }))
 
@@ -831,12 +936,26 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
             const res = await fetch("/api/tasks/subtasks", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id: subtaskId, title: trimmedTitle })
+                body: JSON.stringify({ id: subtaskId, ...updateData })
             })
 
             if (!res.ok) {
                 throw new Error("Failed to update subtask")
             }
+
+            const updated = await res.json()
+
+            // Update with server response (includes assignedTo populated)
+            setLocalSubtasks(prev => ({
+                ...prev,
+                [taskId]: (prev[taskId] || []).map(s =>
+                    s.id === subtaskId ? {
+                        ...s,
+                        ...updateData,
+                        assignedTo: updated.assignedTo || s.assignedTo
+                    } : s
+                )
+            }))
 
             router.refresh()
         } catch (error) {
@@ -850,6 +969,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                     )
                 }))
             }
+            toast.error("Failed to update subtask")
         }
     }
 
@@ -1165,7 +1285,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                     <th className="h-10 px-4 text-left font-normal text-muted-foreground bg-muted/20 first:rounded-tl-md">
                                         {t('tasks.title') || 'Task'}
                                     </th>
-                                    <th className="h-10 px-4 text-left font-normal text-muted-foreground bg-muted/20">
+                                    <th className="h-10 px-4 text-center font-normal text-muted-foreground bg-muted/20">
                                         {t('tasks.assignToLabel') || 'Assigned to'}
                                     </th>
                                     {/* Priority */}
@@ -1487,6 +1607,45 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                                                 </span>
                                                                             )}
 
+                                                                            {/* Visual Indicators for Enhanced Subtasks */}
+                                                                            {!editingSubtask || editingSubtask.subtaskId !== subtask.id ? (
+                                                                                <div className="flex items-center gap-1.5 ml-2">
+                                                                                    {/* Priority Badge */}
+                                                                                    {/* Priority Badge */}
+                                                                                    {subtask.priority && (
+                                                                                        <Badge
+                                                                                            variant="secondary"
+                                                                                            className={cn(
+                                                                                                "text-[10px] h-5 px-2 font-semibold border-0",
+                                                                                                getPriorityColor(subtask.priority)
+                                                                                            )}
+                                                                                        >
+                                                                                            {subtask.priority.charAt(0)}
+                                                                                        </Badge>
+                                                                                    )}
+
+                                                                                    {/* Assigned User */}
+                                                                                    {subtask.assignedTo && (
+                                                                                        <Avatar className="h-4 w-4 border">
+                                                                                            <AvatarFallback className="text-[8px] bg-primary/10 text-primary">
+                                                                                                {subtask.assignedTo.name?.substring(0, 2).toUpperCase() || '??'}
+                                                                                            </AvatarFallback>
+                                                                                        </Avatar>
+                                                                                    )}
+
+                                                                                    {/* Due Date */}
+                                                                                    {(() => {
+                                                                                        const indicator = formatDueDateIndicator(subtask.dueDate, t)
+                                                                                        if (!indicator) return null
+                                                                                        return (
+                                                                                            <span className={cn("text-[9px] font-medium whitespace-nowrap", indicator.className)}>
+                                                                                                {indicator.text}
+                                                                                            </span>
+                                                                                        )
+                                                                                    })()}
+                                                                                </div>
+                                                                            ) : null}
+
                                                                             {tasksWithActiveTimers[subtask.id] && tasksWithActiveTimers[subtask.id].length > 0 && (
                                                                                 <Badge variant="secondary" className="bg-[#fdab3d]/10 text-[#fdab3d] hover:bg-[#fdab3d]/20 border-none text-[10px] h-5 px-1.5 flex items-center gap-1">
                                                                                     {tasksWithActiveTimers[subtask.id].length > 1
@@ -1532,6 +1691,24 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                                                             <Edit className="mr-2 h-4 w-4" />
                                                                                             {t('tasks.editSubtask')}
                                                                                         </DropdownMenuItem>
+
+                                                                                        {/* Edit Enhanced Fields */}
+                                                                                        <DropdownMenuItem
+                                                                                            onClick={() => {
+                                                                                                setEditingEnhancedSubtask({
+                                                                                                    taskId: task.id,
+                                                                                                    subtaskId: subtask.id,
+                                                                                                    priority: subtask.priority || null,
+                                                                                                    assignedToId: subtask.assignedToId || null,
+                                                                                                    dueDate: subtask.dueDate ? new Date(subtask.dueDate) : null
+                                                                                                })
+                                                                                            }}
+                                                                                            className="cursor-pointer"
+                                                                                        >
+                                                                                            <Edit className="mr-2 h-4 w-4" />
+                                                                                            Edit Details
+                                                                                        </DropdownMenuItem>
+
                                                                                         <DropdownMenuSeparator />
                                                                                         <DropdownMenuItem
                                                                                             onClick={() => handleDeleteSubtask(task.id, subtask.id)}
@@ -1876,6 +2053,149 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* Enhanced Subtask Edit Dialog */}
+            {editingEnhancedSubtask && (() => {
+                const task = tasks.find(t => t.id === editingEnhancedSubtask.taskId)
+                const subtask = localSubtasks[editingEnhancedSubtask.taskId]?.find(
+                    s => s.id === editingEnhancedSubtask.subtaskId
+                )
+
+                if (!task || !subtask) return null
+
+                return (
+                    <Dialog open={true} onOpenChange={() => setEditingEnhancedSubtask(null)}>
+                        <DialogContent className="sm:max-w-md">
+                            <DialogHeader>
+                                <DialogTitle>{t('tasks.editSubtask')}</DialogTitle>
+                            </DialogHeader>
+
+                            <div className="space-y-4 py-4">
+                                <div>
+                                    <label className="text-sm font-medium text-muted-foreground">
+                                        {t('tasks.titleLabel')}
+                                    </label>
+                                    <p className="text-sm mt-1">{subtask.title}</p>
+                                </div>
+
+                                <div>
+                                    <label className="text-sm font-medium mb-2 block">
+                                        {t('tasks.subtaskPriority')}
+                                    </label>
+                                    <Select
+                                        value={editingEnhancedSubtask.priority || 'none'}
+                                        onValueChange={(v) => setEditingEnhancedSubtask(prev =>
+                                            prev ? {
+                                                ...prev,
+                                                priority: v === 'none' ? null : v as 'LOW' | 'MEDIUM' | 'HIGH'
+                                            } : null
+                                        )}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">{t('tasks.subtaskNoPriority')}</SelectItem>
+                                            <SelectItem value="HIGH">
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant="secondary" className={cn("text-[10px] px-1 h-5 min-w-[1.5rem] justify-center", getPriorityColor('HIGH'))}>H</Badge>
+                                                    {t('tasks.priorityHigh')}
+                                                </div>
+                                            </SelectItem>
+                                            <SelectItem value="MEDIUM">
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant="secondary" className={cn("text-[10px] px-1 h-5 min-w-[1.5rem] justify-center", getPriorityColor('MEDIUM'))}>M</Badge>
+                                                    {t('tasks.priorityMedium')}
+                                                </div>
+                                            </SelectItem>
+                                            <SelectItem value="LOW">
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant="secondary" className={cn("text-[10px] px-1 h-5 min-w-[1.5rem] justify-center", getPriorityColor('LOW'))}>L</Badge>
+                                                    {t('tasks.priorityLow')}
+                                                </div>
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div>
+                                    <label className="text-sm font-medium mb-2 block">
+                                        {t('tasks.subtaskAssignedTo')}
+                                    </label>
+                                    <Select
+                                        value={editingEnhancedSubtask.assignedToId || 'none'}
+                                        onValueChange={(v) => setEditingEnhancedSubtask(prev =>
+                                            prev ? {
+                                                ...prev,
+                                                assignedToId: v === 'none' ? null : v
+                                            } : null
+                                        )}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">{t('tasks.subtaskNoAssignee')}</SelectItem>
+                                            {task.assignees.map(user => (
+                                                <SelectItem key={user.id} value={user.id}>
+                                                    {user.name || 'Unknown User'}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        Only users assigned to the parent task
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <label className="text-sm font-medium mb-2 block">
+                                        {t('tasks.subtaskDueDate')}
+                                    </label>
+                                    <Input
+                                        type="date"
+                                        value={editingEnhancedSubtask.dueDate
+                                            ? editingEnhancedSubtask.dueDate.toISOString().split('T')[0]
+                                            : ''}
+                                        onChange={(e) => setEditingEnhancedSubtask(prev =>
+                                            prev ? {
+                                                ...prev,
+                                                dueDate: e.target.value ? new Date(e.target.value) : null
+                                            } : null
+                                        )}
+                                        className="w-full"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex gap-2 justify-end">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setEditingEnhancedSubtask(null)}
+                                >
+                                    {t('common.cancel')}
+                                </Button>
+                                <Button onClick={() => {
+                                    if (!editingEnhancedSubtask) return
+
+                                    handleUpdateSubtask(
+                                        editingEnhancedSubtask.taskId,
+                                        editingEnhancedSubtask.subtaskId,
+                                        {
+                                            priority: editingEnhancedSubtask.priority,
+                                            assignedToId: editingEnhancedSubtask.assignedToId,
+                                            dueDate: editingEnhancedSubtask.dueDate
+                                        }
+                                    )
+                                    setEditingEnhancedSubtask(null)
+                                }}>
+                                    {t('common.save')}
+                                </Button>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                )
+            })()}
         </Card >
     )
 }

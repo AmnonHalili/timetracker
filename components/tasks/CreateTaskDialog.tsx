@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, Pencil } from "lucide-react"
+import { Plus, Pencil, Trash2, ChevronDown, ChevronUp } from "lucide-react"
 import { useLanguage } from "@/lib/useLanguage"
 import { cn } from "@/lib/utils"
 
@@ -66,6 +66,14 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
     const [users, setUsers] = useState<Array<{ id: string; name: string | null; email: string | null; managerId?: string | null; role?: string; depth?: number }>>([])
     const [loading, setLoading] = useState(false)
     const [showToMe, setShowToMe] = useState(true) // Default to true - independent of Assign To
+
+    // Subtasks State
+    const [subtasks, setSubtasks] = useState<Array<{ id: string; title: string; priority: string; assignedToId: string | null; dueDate: string | null }>>([])
+    const [newSubtaskTitle, setNewSubtaskTitle] = useState("")
+    const [newSubtaskPriority, setNewSubtaskPriority] = useState("LOW")
+    const [newSubtaskAssignee, setNewSubtaskAssignee] = useState<string | null>(null)
+    const [newSubtaskDueDate, setNewSubtaskDueDate] = useState("")
+    const [isSubtasksExpanded, setIsSubtasksExpanded] = useState(false)
 
     // Helper to sort users: Current User first, then Hierarchy
     const sortUsersHierarchically = (usersToSort: Array<{ id: string; name: string | null; email: string | null; managerId?: string | null; role?: string }>, meId?: string) => {
@@ -308,6 +316,12 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                 setDeadline("")
                 setDeadlineTime("")
                 setDescription("")
+                setSubtasks([])
+                setNewSubtaskTitle("")
+                setNewSubtaskPriority("LOW")
+                setNewSubtaskAssignee(null)
+                setNewSubtaskDueDate("")
+                setIsSubtasksExpanded(false)
             }
         } else {
             setLoading(true)
@@ -328,7 +342,9 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                     priority,
                     startDate: finalStartDate,
                     deadline: finalDeadline,
-                    description
+
+                    description,
+                    subtasks // Include subtasks in payload
                 }),
             })
 
@@ -367,6 +383,28 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
         })
     }
 
+    const handleAddSubtask = () => {
+        if (!newSubtaskTitle.trim()) return
+
+        const newSubtask = {
+            id: `temp-${Date.now()}`,
+            title: newSubtaskTitle,
+            priority: newSubtaskPriority,
+            assignedToId: newSubtaskAssignee,
+            dueDate: newSubtaskDueDate || null
+        }
+
+        setSubtasks(prev => [...prev, newSubtask])
+        setNewSubtaskTitle("")
+        setNewSubtaskPriority("LOW")
+        setNewSubtaskAssignee(null)
+        setNewSubtaskDueDate("")
+    }
+
+    const handleDeleteSubtask = (id: string) => {
+        setSubtasks(prev => prev.filter(st => st.id !== id))
+    }
+
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             {mode === 'create' && (
@@ -378,7 +416,8 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
             )}
             <DialogContent
                 className={cn(
-                    "sm:max-w-[425px]",
+                    "sm:max-w-2xl",
+                    "max-h-[85vh] overflow-y-auto",
                     isRTL && "[&>button]:left-4 [&>button]:right-auto"
                 )}
                 dir={isRTL ? "rtl" : "ltr"}
@@ -390,54 +429,130 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                             {mode === 'edit' ? t('tasks.edit') : t('tasks.assignNewTask')}
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="title">
-                                {t('tasks.titleLabel')}
-                            </Label>
-                            <Input
-                                id="title"
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                className="col-span-3"
-                                required
-                            />
+                    <div className="grid gap-6 py-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="title" className="text-base font-semibold">
+                                    {t('tasks.titleLabel')}
+                                </Label>
+                                <Input
+                                    id="title"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    className="h-10"
+                                    required
+                                    placeholder={t('tasks.titlePlaceholder') || "Task title"}
+                                />
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="priority" className="text-base font-semibold">
+                                    {t('tasks.priority')}
+                                </Label>
+                                <Select value={priority} onValueChange={setPriority}>
+                                    <SelectTrigger className="h-10">
+                                        <SelectValue placeholder={t('tasks.priority')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="LOW">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-2 h-2 rounded-full bg-green-500" />
+                                                {t('tasks.priorityLow')}
+                                            </div>
+                                        </SelectItem>
+                                        <SelectItem value="MEDIUM">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                                                {t('tasks.priorityMedium')}
+                                            </div>
+                                        </SelectItem>
+                                        <SelectItem value="HIGH">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-2 h-2 rounded-full bg-red-500" />
+                                                {t('tasks.priorityHigh')}
+                                            </div>
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
 
-                        <div className="grid grid-cols-4 items-start gap-4">
-                            <Label htmlFor="description" className="pt-2">
+                        <div className="grid gap-2">
+                            <Label htmlFor="description" className="text-base font-semibold">
                                 {t('tasks.description')}
                             </Label>
                             <Textarea
                                 id="description"
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
-                                className="col-span-3"
+                                className="min-h-[100px] resize-y"
                                 placeholder={t('tasks.addTaskDescription')}
-                                aria-label={t('tasks.description')}
                             />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="startDate" className="text-base font-semibold">
+                                    {t('tasks.startDate') || 'Start Date'}
+                                </Label>
+                                <div className="flex gap-2">
+                                    <Input
+                                        id="startDate"
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                        className="h-10"
+                                    />
+                                    <Input
+                                        id="startDate-time"
+                                        type="time"
+                                        value={startDateTime}
+                                        onChange={(e) => setStartDateTime(e.target.value)}
+                                        className="h-10 w-[110px]"
+                                    />
+                                </div>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="deadline" className="text-base font-semibold">
+                                    {t('tasks.deadline')}
+                                </Label>
+                                <div className="flex gap-2">
+                                    <Input
+                                        id="deadline"
+                                        type="date"
+                                        value={deadline}
+                                        onChange={(e) => setDeadline(e.target.value)}
+                                        className="h-10"
+                                    />
+                                    <Input
+                                        id="deadline-time"
+                                        type="time"
+                                        value={deadlineTime}
+                                        onChange={(e) => setDeadlineTime(e.target.value)}
+                                        className="h-10 w-[110px]"
+                                    />
+                                </div>
+                            </div>
                         </div>
 
                         {/* Only show assignment if there are users loaded */}
                         {(users.length > 0) && (
-                            <div className="grid grid-cols-4 items-start gap-4">
-                                <Label className="pt-2">
+                            <div className="grid gap-2">
+                                <Label className="text-base font-semibold">
                                     {t('tasks.assignTo')}
                                 </Label>
-                                <div className="col-span-3 border rounded-md max-h-40 overflow-y-auto p-2 space-y-2">
+                                <div className="border rounded-md max-h-48 overflow-y-auto p-3 space-y-2 bg-background/50">
                                     {users.map(user => (
-                                        <div key={user.id} className="flex items-center gap-3" style={{ paddingInlineStart: `${(user.depth || 0) * 1.25}rem` }}>
-                                            <input
-                                                type="checkbox"
+                                        <div key={user.id} className="flex items-center gap-3 p-1 rounded hover:bg-muted/50 transition-colors" style={{ paddingInlineStart: `${(user.depth || 0) * 1.5}rem` }}>
+                                            <Checkbox
                                                 id={`user-${user.id}`}
                                                 checked={assignedToIds.includes(user.id)}
-                                                onChange={() => toggleUser(user.id)}
-                                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary flex-shrink-0"
+                                                onCheckedChange={() => toggleUser(user.id)}
                                             />
-                                            <Label htmlFor={`user-${user.id}`} className="cursor-pointer text-sm font-normal">
+                                            <Label htmlFor={`user-${user.id}`} className="cursor-pointer text-sm font-medium flex-1">
                                                 {user.name || user.email}
                                                 {currentUserId && user.id === currentUserId && (
-                                                    <span className="text-muted-foreground ml-1">{t('common.you')}</span>
+                                                    <span className="text-muted-foreground ml-1 text-xs">({t('common.you')})</span>
                                                 )}
                                             </Label>
                                         </div>
@@ -448,88 +563,216 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
 
                         {/* Show to me checkbox - only in create mode */}
                         {mode === 'create' && currentUserId && (
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label>
-                                    {/* Empty label for alignment */}
+                            <div className="flex items-center gap-2">
+                                <Checkbox
+                                    id="showToMe"
+                                    checked={showToMe}
+                                    onCheckedChange={(checked) => setShowToMe(checked as boolean)}
+                                />
+                                <Label htmlFor="showToMe" className="cursor-pointer font-medium">
+                                    {t('tasks.showThisTaskToMe')}
                                 </Label>
-                                <div className="col-span-3 flex items-center space-x-2">
-                                    <Checkbox
-                                        id="showToMe"
-                                        checked={showToMe}
-                                        onCheckedChange={(checked) => setShowToMe(checked as boolean)}
-                                    />
-                                    <Label htmlFor="showToMe" className="cursor-pointer text-sm font-normal">
-                                        {t('tasks.showThisTaskToMe')}
-                                    </Label>
-                                </div>
                             </div>
                         )}
-
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="priority">
-                                {t('tasks.priority')}
-                            </Label>
-                            <div className="col-span-3">
-                                <Select value={priority} onValueChange={setPriority}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder={t('tasks.priority')} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="LOW">{t('tasks.priorityLow')}</SelectItem>
-                                        <SelectItem value="MEDIUM">{t('tasks.priorityMedium')}</SelectItem>
-                                        <SelectItem value="HIGH">{t('tasks.priorityHigh')}</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="startDate">
-                                {t('tasks.startDate') || 'Start Date'}
-                            </Label>
-                            <div className="col-span-3 flex gap-2">
-                                <Input
-                                    id="startDate"
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
-                                    className="flex-1"
-                                />
-                                <Input
-                                    id="startDate-time"
-                                    type="time"
-                                    value={startDateTime}
-                                    onChange={(e) => setStartDateTime(e.target.value)}
-                                    className="w-32"
-                                    placeholder={t('tasks.startDate') || 'Start Date'}
-                                    aria-label={t('tasks.startDate') || 'Start Date'}
-                                />
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="deadline">
-                                {t('tasks.deadline')}
-                            </Label>
-                            <div className="col-span-3 flex gap-2">
-                                <Input
-                                    id="deadline"
-                                    type="date"
-                                    value={deadline}
-                                    onChange={(e) => setDeadline(e.target.value)}
-                                    className="flex-1"
-                                />
-                                <Input
-                                    id="deadline-time"
-                                    type="time"
-                                    value={deadlineTime}
-                                    onChange={(e) => setDeadlineTime(e.target.value)}
-                                    className="w-32"
-                                    placeholder={t('tasks.deadline')}
-                                    aria-label={t('tasks.deadline')}
-                                />
-                            </div>
-                        </div>
                     </div>
-                    <DialogFooter className={cn("gap-2", isRTL ? "justify-start" : "justify-end")}>
+
+                    {/* Subtasks Section - Only in Create Mode */}
+                    {mode === 'create' && (
+                        <div className="border-t pt-4">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => setIsSubtasksExpanded(!isSubtasksExpanded)}
+                                className="w-full justify-between mb-4 group hover:bg-muted/50"
+                            >
+                                <span className="font-semibold text-lg flex items-center gap-2">
+                                    {t('tasks.subtasks') || 'Subtasks'}
+                                    {subtasks.length > 0 && (
+                                        <Badge variant="secondary" className="px-2">
+                                            {subtasks.length}
+                                        </Badge>
+                                    )}
+                                </span>
+                                <div className="p-1 rounded-full bg-muted group-hover:bg-background transition-colors">
+                                    {isSubtasksExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                </div>
+                            </Button>
+
+                            {isSubtasksExpanded && (
+                                <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                                    {/* Add Subtask Input Row - redesigned for wide layout */}
+                                    <div className="flex flex-col md:flex-row gap-3 p-4 bg-muted/40 rounded-xl border items-start md:items-center shadow-sm">
+                                        <div className="flex-1 w-full md:w-auto">
+                                            <Input
+                                                placeholder={t('tasks.subtaskTitlePlaceholder') || "What needs to be done?"}
+                                                value={newSubtaskTitle}
+                                                onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                                                className="h-9 bg-background"
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault()
+                                                        handleAddSubtask()
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+
+                                        <div className="flex gap-2 w-full md:w-auto">
+                                            {/* Priority Select */}
+                                            <div className="w-[110px]">
+                                                <Select value={newSubtaskPriority} onValueChange={setNewSubtaskPriority}>
+                                                    <SelectTrigger className="h-9 bg-background text-xs">
+                                                        <SelectValue placeholder={t('tasks.priority')} />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="LOW">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                                                                {t('tasks.priorityLow')}
+                                                            </div>
+                                                        </SelectItem>
+                                                        <SelectItem value="MEDIUM">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
+                                                                {t('tasks.priorityMedium')}
+                                                            </div>
+                                                        </SelectItem>
+                                                        <SelectItem value="HIGH">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                                                                {t('tasks.priorityHigh')}
+                                                            </div>
+                                                        </SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            {/* Assignee Select */}
+                                            <div className="w-[140px]">
+                                                <Select
+                                                    value={newSubtaskAssignee || "unassigned"}
+                                                    onValueChange={(val) => setNewSubtaskAssignee(val === "unassigned" ? null : val)}
+                                                >
+                                                    <SelectTrigger className="h-9 bg-background text-xs">
+                                                        <SelectValue placeholder={t('tasks.assignTo')} />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="unassigned">{t('tasks.subtaskNoAssignee') || 'Unassigned'}</SelectItem>
+                                                        {users.map(user => (
+                                                            <SelectItem key={user.id} value={user.id}>
+                                                                {user.name || user.email}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            {/* Due Date */}
+                                            <Input
+                                                type="date"
+                                                value={newSubtaskDueDate}
+                                                onChange={(e) => setNewSubtaskDueDate(e.target.value)}
+                                                className="h-9 w-[130px] text-xs bg-background"
+                                            />
+
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                onClick={handleAddSubtask}
+                                                disabled={!newSubtaskTitle.trim()}
+                                                className="h-9 w-9 p-0 shrink-0"
+                                            >
+                                                <Plus className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    {/* Pending Subtasks List */}
+                                    {subtasks.length > 0 && (
+                                        <div className="border rounded-md overflow-hidden">
+                                            <div className="bg-muted/50 px-4 py-2 border-b text-xs font-semibold text-muted-foreground flex items-center">
+                                                <div className="flex-1">{t('tasks.subtaskTitlePlaceholder') || 'Title'}</div>
+                                                <div className="w-[100px] hidden md:block">{t('tasks.priority')}</div>
+                                                <div className="w-[120px] hidden md:block">{t('tasks.assignTo')}</div>
+                                                <div className="w-[100px] hidden md:block">{t('tasks.dueDate') || 'Due Date'}</div>
+                                                <div className="w-8"></div>
+                                            </div>
+                                            <div className="max-h-[200px] overflow-y-auto bg-background/50 divide-y">
+                                                {subtasks.map((st) => (
+                                                    <div key={st.id} className="flex items-center px-4 py-2.5 hover:bg-muted/30 transition-colors group text-sm">
+                                                        <div className="flex-1 font-medium flex items-center gap-2">
+                                                            {st.title}
+                                                            {/* Mobile only indicators */}
+                                                            <div className="md:hidden flex gap-1">
+                                                                <div className={cn(
+                                                                    "w-2 h-2 rounded-full",
+                                                                    st.priority === 'HIGH' ? "bg-red-500" :
+                                                                        st.priority === 'MEDIUM' ? "bg-yellow-500" :
+                                                                            "bg-green-500"
+                                                                )} />
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Priority (Desktop) */}
+                                                        <div className="w-[100px] hidden md:flex items-center">
+                                                            <Badge variant="outline" className={cn(
+                                                                "h-6 text-[10px] gap-1.5 pl-1.5 pr-2.5",
+                                                                st.priority === 'HIGH' ? "bg-red-50 text-red-700 border-red-200" :
+                                                                    st.priority === 'MEDIUM' ? "bg-yellow-50 text-yellow-700 border-yellow-200" :
+                                                                        "bg-green-50 text-green-700 border-green-200"
+                                                            )}>
+                                                                <div className={cn(
+                                                                    "w-1.5 h-1.5 rounded-full",
+                                                                    st.priority === 'HIGH' ? "bg-red-500" :
+                                                                        st.priority === 'MEDIUM' ? "bg-yellow-500" :
+                                                                            "bg-green-500"
+                                                                )} />
+                                                                {st.priority || 'LOW'}
+                                                            </Badge>
+                                                        </div>
+
+                                                        {/* Assignee (Desktop) */}
+                                                        <div className="w-[120px] hidden md:flex items-center text-muted-foreground text-xs">
+                                                            {st.assignedToId ? (
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[10px] text-primary font-bold">
+                                                                        {users.find(u => u.id === st.assignedToId)?.name?.charAt(0) || "U"}
+                                                                    </div>
+                                                                    <span className="truncate max-w-[85px]">
+                                                                        {users.find(u => u.id === st.assignedToId)?.name || "User"}
+                                                                    </span>
+                                                                </div>
+                                                            ) : (
+                                                                <span className="opacity-50">-</span>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Due Date (Desktop) */}
+                                                        <div className="w-[100px] hidden md:flex items-center text-muted-foreground text-xs">
+                                                            {st.dueDate ? st.dueDate : <span className="opacity-50">-</span>}
+                                                        </div>
+
+                                                        <div className="w-8 flex justify-end">
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => handleDeleteSubtask(st.id)}
+                                                                className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    <DialogFooter className={cn("gap-2", isRTL ? "justify-start" : "justify-end", "pt-4")}>
                         <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
                             {t('common.cancel')}
                         </Button>
@@ -543,3 +786,4 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
         </Dialog>
     )
 }
+
