@@ -37,8 +37,18 @@ export async function GET(req: Request) {
     }
 
     // Security: Only allow viewing if same user, admin/manager of same project, or in hierarchy
+
+    // 1. Strict Project Check: Must be in same project (or both null)
     if (targetUser.projectId !== currentUser.projectId) {
         return new NextResponse("Forbidden", { status: 403 })
+    }
+
+    // 2. Private Session Isolation (Null Project)
+    // If in private session, NO ONE (even admin) can see other users' data
+    if (!currentUser.projectId) {
+        if (targetUser.id !== currentUser.id) {
+            return new NextResponse("Forbidden - Private Session Isolation", { status: 403 })
+        }
     }
 
     if (userId !== session.user.id && !["ADMIN", "MANAGER"].includes(currentUser.role)) {
@@ -107,7 +117,7 @@ export async function GET(req: Request) {
     const timeEntries = await prisma.timeEntry.findMany({
         where: {
             userId: userId,
-            projectId: currentUser.projectId,
+            projectId: currentUser.projectId || null, // Explicitly filter by null if in private session
             startTime: {
                 gte: dayStart,
                 lt: nextDayStart, // Less than start of next day

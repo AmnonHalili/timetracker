@@ -75,20 +75,22 @@ export default async function CalendarPage({
     }
 
     // Strict Project Isolation
-    if (currentUser?.projectId) {
-        whereClause.projectId = currentUser.projectId
-    }
+    // Always filter by the current project ID (even if it is null for private session)
+    whereClause.projectId = currentUser?.projectId || null
 
     // Role-based visibility
-    if (currentUser?.role !== "ADMIN") {
-        // Regular users only see tasks assigned to them
+    // Force strict isolation if:
+    // 1. User is not an admin
+    // 2. OR User is in Private Session (projectId is null) - Admins shouldn't see other people's private tasks
+    if (currentUser?.role !== "ADMIN" || !currentUser?.projectId) {
+        // Regular users (or anyone in private session) only see tasks assigned to them
         whereClause.assignees = {
             some: {
                 id: session.user.id
             }
         }
     }
-    // Admins see all tasks in the project (already filtered by projectId above)
+    // Admins see all tasks in the project (only if in a real project)
 
     const tasks = await prisma.task.findMany({
         where: whereClause,
@@ -118,9 +120,8 @@ export default async function CalendarPage({
     }
 
     // Optionally filter by project
-    if (currentUser?.projectId) {
-        eventWhereClause.projectId = currentUser.projectId
-    }
+    // Always filter by projectId to prevent leaks across private sessions
+    eventWhereClause.projectId = currentUser?.projectId || null
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const events = await (prisma as any).event.findMany({
