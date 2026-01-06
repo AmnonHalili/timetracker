@@ -62,6 +62,53 @@ const getPriorityColor = (priority: string) => {
     }
 }
 
+// Calculate deadline progress percentage (0-100)
+// Returns percentage of time elapsed (how much time has passed)
+// Calculates based on days, not milliseconds, for accurate day-based progress
+const calculateDeadlineProgress = (startDate: Date | string | null | undefined, deadline: Date | string | null): number => {
+    if (!deadline) return 0
+    
+    const now = new Date()
+    const deadlineDate = new Date(deadline)
+    
+    // If no start date, use today as start
+    if (!startDate) {
+        // If deadline has passed, show 100% (all time passed)
+        if (deadlineDate < now) return 100
+        // If deadline is today or in future, show 0% (no time passed yet)
+        return 0
+    }
+    
+    const start = new Date(startDate)
+    
+    // Normalize dates to start of day for accurate day calculations
+    const startOfStart = new Date(start.getFullYear(), start.getMonth(), start.getDate())
+    const startOfDeadline = new Date(deadlineDate.getFullYear(), deadlineDate.getMonth(), deadlineDate.getDate())
+    const startOfNow = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    
+    // Calculate total number of days (inclusive: start day + all days until deadline)
+    // Example: Jan 6 to Jan 8 = 3 days (6, 7, 8)
+    const totalDays = Math.ceil((startOfDeadline.getTime() - startOfStart.getTime()) / (1000 * 60 * 60 * 24)) + 1
+    
+    // If total days is 0 or negative, return 0
+    if (totalDays <= 0) return 0
+    
+    // If deadline has passed, return 100% (all time passed)
+    if (startOfDeadline < startOfNow) return 100
+    
+    // If start date is in the future, return 0% (no time passed yet)
+    if (startOfStart > startOfNow) return 0
+    
+    // Calculate elapsed days (inclusive: start day + all days until today)
+    // Example: Jan 6 to Jan 7 = 2 days (6, 7)
+    const elapsedDays = Math.ceil((startOfNow.getTime() - startOfStart.getTime()) / (1000 * 60 * 60 * 24)) + 1
+    
+    // Calculate percentage of time elapsed
+    const progress = Math.max(0, Math.min(100, (elapsedDays / totalDays) * 100))
+    
+    return progress
+}
+
 interface User {
     id: string
     name: string | null
@@ -1252,39 +1299,54 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                 {/* Date */}
                                                 <td className="p-2 align-middle text-center border-r border-border/50">
                                                     {(task.startDate || task.deadline) ? (
-                                                        <div className="flex flex-col items-center justify-center gap-0.5 text-xs">
-                                                            {task.startDate && task.deadline ? (
-                                                                <>
-                                                                    <div className="text-muted-foreground">
-                                                                        {format(new Date(task.startDate), 'MMM d', { locale: dateLocale })}
+                                                        (() => {
+                                                            const deadline = task.deadline ? new Date(task.deadline) : null
+                                                            const startDate = task.startDate ? new Date(task.startDate) : null
+                                                            const progress = calculateDeadlineProgress(startDate, deadline)
+                                                            const isOverdue = deadline && isPast(deadline) && !isToday(deadline) && task.status !== 'DONE'
+                                                            
+                                                            // Format date range text
+                                                            let dateText = ''
+                                                            if (startDate && deadline) {
+                                                                dateText = `${format(startDate, 'MMM d', { locale: dateLocale })} - ${format(deadline, 'MMM d', { locale: dateLocale })}`
+                                                            } else if (deadline) {
+                                                                dateText = format(deadline, 'MMM d', { locale: dateLocale })
+                                                            } else if (startDate) {
+                                                                dateText = format(startDate, 'MMM d', { locale: dateLocale })
+                                                            }
+                                                            
+                                                            return (
+                                                                <div className="flex flex-col items-center justify-center gap-1.5 w-full max-w-[160px] mx-auto">
+                                                                    {/* Progress Bar Pill */}
+                                                                    <div className="relative w-full h-7 rounded-full overflow-hidden border border-border/40 shadow-sm bg-background">
+                                                                        {/* Time Passed (filled portion - left side) - Single uniform color */}
+                                                                        <div 
+                                                                            className={`absolute inset-0 transition-all duration-500 ease-out ${
+                                                                                isOverdue 
+                                                                                    ? 'bg-destructive' 
+                                                                                    : 'bg-primary'
+                                                                            }`}
+                                                                            style={{ 
+                                                                                width: `${Math.max(0, Math.min(100, progress))}%`,
+                                                                                left: 0
+                                                                            }}
+                                                                        />
+                                                                        {/* Date Text Overlay */}
+                                                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                                                                            <span className={`text-[10px] font-semibold px-2 truncate max-w-full ${
+                                                                                isOverdue 
+                                                                                    ? 'text-destructive-foreground drop-shadow-sm' 
+                                                                                    : progress > 50
+                                                                                        ? 'text-primary-foreground drop-shadow-sm'
+                                                                                        : 'text-foreground drop-shadow-sm'
+                                                                            }`}>
+                                                                                {dateText}
+                                                                            </span>
+                                                                        </div>
                                                                     </div>
-                                                                    <span className="text-muted-foreground/50">-</span>
-                                                                    <div className={`
-                                                                flex items-center gap-1
-                                                                ${isPast(new Date(task.deadline)) && !isToday(new Date(task.deadline)) && task.status !== 'DONE'
-                                                                            ? 'text-destructive font-medium'
-                                                                            : 'text-muted-foreground'
-                                                                        }`}>
-                                                                        <Calendar className="h-3 w-3" />
-                                                                        {format(new Date(task.deadline), 'MMM d', { locale: dateLocale })}
-                                                                    </div>
-                                                                </>
-                                                            ) : task.deadline ? (
-                                                                <div className={`
-                                                            flex items-center gap-1
-                                                            ${isPast(new Date(task.deadline)) && !isToday(new Date(task.deadline)) && task.status !== 'DONE'
-                                                                        ? 'text-destructive font-medium'
-                                                                        : 'text-muted-foreground'
-                                                                    }`}>
-                                                                    <Calendar className="h-3 w-3" />
-                                                                    {format(new Date(task.deadline), 'MMM d', { locale: dateLocale })}
                                                                 </div>
-                                                            ) : task.startDate ? (
-                                                                <div className="text-muted-foreground">
-                                                                    {format(new Date(task.startDate), 'MMM d', { locale: dateLocale })}
-                                                                </div>
-                                                            ) : null}
-                                                        </div>
+                                                            )
+                                                        })()
                                                     ) : (
                                                         <span className="text-muted-foreground/30 text-xs">-</span>
                                                     )}
