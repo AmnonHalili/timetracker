@@ -1422,7 +1422,9 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                                         (tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0 && !stoppedTimers.has(task.id))
                                                                             ? (tasksWithActiveTimers[task.id].length > 1
                                                                                 ? t('tasks.usersWorking').replace('{count}', tasksWithActiveTimers[task.id].length.toString())
-                                                                                : t('tasks.userIsWorking').replace('{name}', tasksWithActiveTimers[task.id][0].name?.split(' ')[0] || 'User'))
+                                                                                : (tasksWithActiveTimers[task.id][0].id === currentUserId
+                                                                                    ? (t('tasks.youAreOnIt') || 'You are on it')
+                                                                                    : t('tasks.userIsWorking').replace('{name}', tasksWithActiveTimers[task.id][0].name?.split(' ')[0] || 'User')))
                                                                             : (task.status === 'IN_PROGRESS' ? (t('tasks.statusInProgress') || 'In Progress') : t('tasks.statusTodo'))
                                                             }
                                                         </span>
@@ -1489,7 +1491,9 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                                                 <Badge variant="secondary" className="bg-[#fdab3d]/10 text-[#fdab3d] hover:bg-[#fdab3d]/20 border-none text-[10px] h-5 px-1.5 flex items-center gap-1">
                                                                                     {tasksWithActiveTimers[subtask.id].length > 1
                                                                                         ? t('tasks.usersWorking').replace('{count}', tasksWithActiveTimers[subtask.id].length.toString())
-                                                                                        : t('tasks.userIsWorking').replace('{name}', tasksWithActiveTimers[subtask.id][0].name?.split(' ')[0] || 'User')}
+                                                                                        : (tasksWithActiveTimers[subtask.id][0].id === currentUserId
+                                                                                            ? (t('tasks.youAreOnIt') || 'You are on it')
+                                                                                            : t('tasks.userIsWorking').replace('{name}', tasksWithActiveTimers[subtask.id][0].name?.split(' ')[0] || 'User'))}
                                                                                 </Badge>
                                                                             )}
 

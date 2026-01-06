@@ -13,12 +13,10 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { UnifiedTimeline, UnifiedActivityItem } from "./UnifiedTimeline"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Badge } from "@/components/ui/badge"
-import confetti from "canvas-confetti"
 
 interface TaskDetailDialogProps {
     task: {
@@ -121,14 +119,6 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
     const [mentionIndex, setMentionIndex] = useState(0)
     const [cursorPosition, setCursorPosition] = useState(0)
 
-    // Local state for status (synced with task prop initially, updated on change)
-    const [status, setStatus] = useState(task?.status || "TODO")
-
-    useEffect(() => {
-        if (task?.status) {
-            setStatus(task.status)
-        }
-    }, [task?.status])
 
     // Mention Logic
     const filteredMentions = useMemo(() => {
@@ -400,34 +390,6 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
         }
     }
 
-    const handleStatusChange = async (newStatus: string) => {
-        if (!task?.id) return
-        setStatus(newStatus) // Optimistic update
-        if (newStatus === 'DONE') {
-            confetti({
-                particleCount: 150,
-                spread: 60,
-                origin: { y: 0.6 }
-            })
-        }
-
-        try {
-            const res = await fetch(`/api/tasks/${task.id}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ status: newStatus })
-            })
-            if (!res.ok) {
-                throw new Error("Failed to update status")
-            }
-            onUpdate?.({ status: newStatus }) // Notify parent to refresh list with new data
-            if (activeTab === "chat") {
-                fetchAllUpdates()
-            }
-        } catch (error) {
-            console.error(error)
-        }
-    }
 
     const formatTime = (totalSeconds: number) => {
         const hours = Math.floor(totalSeconds / 3600)
@@ -460,21 +422,17 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
         return formatTime(calculateTotalTimeValue())
     }
 
-    const usersWhoWorked = Array.from(
-        new Map(
-            timeEntries
-                .filter(entry => entry.user)
-                .map(entry => [entry.user.id, entry.user])
-        ).values()
-    )
-
-    const subtasksDone = task?.subtasks?.filter(s => s.isDone).length || 0
-    const totalSubtasks = task?.subtasks?.length || 0
-    const completionPercentage = totalSubtasks > 0
-        ? Math.round((subtasksDone / totalSubtasks) * 100)
-        : task?.status === 'DONE' ? 100 : 0
-
+    // Initialize timeByUser with all assignees (even if they haven't worked yet)
     const timeByUser = new Map<string, { user: { id: string; name: string | null }, totalSeconds: number }>()
+    
+    // First, add all assignees with 0 time
+    if (task?.assignees) {
+        task.assignees.forEach(assignee => {
+            timeByUser.set(assignee.id, { user: { id: assignee.id, name: assignee.name }, totalSeconds: 0 })
+        })
+    }
+    
+    // Then, update with actual time entries
     timeEntries.forEach(entry => {
         if (entry.endTime && entry.user) {
             const start = new Date(entry.startTime).getTime()
@@ -488,6 +446,12 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
             }
         }
     })
+
+    const subtasksDone = task?.subtasks?.filter(s => s.isDone).length || 0
+    const totalSubtasks = task?.subtasks?.length || 0
+    const completionPercentage = totalSubtasks > 0
+        ? Math.round((subtasksDone / totalSubtasks) * 100)
+        : task?.status === 'DONE' ? 100 : 0
 
 
     const handleAddDependency = async (type: 'BLOCKING' | 'BLOCKED_BY', targetTaskId: string) => {
@@ -575,19 +539,6 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
                             </div>
                         )}
                     </div>
-                    <div className="shrink-0 mr-8 flex items-center gap-2">
-                        <Select value={status} onValueChange={handleStatusChange}>
-                            <SelectTrigger className="w-[140px] h-8">
-                                <SelectValue placeholder="Status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="TODO">To Do (Open)</SelectItem>
-                                <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                                <SelectItem value="DONE">Done</SelectItem>
-                                <SelectItem value="BLOCKED">Blocked</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
                 </DialogHeader>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
@@ -615,76 +566,171 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
                                 <div className="p-6 space-y-6">
                                     {/* Description */}
                                     {task.description && (
-                                        <div>
-                                            <h3 className="text-sm font-semibold mb-2">{t('tasks.description')}</h3>
-                                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{task.description}</p>
+                                        <div className="bg-card rounded-lg border border-border/50 p-4">
+                                            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                                                <FileText className="h-4 w-4" />
+                                                {t('tasks.description') || "Description"}
+                                            </h3>
+                                            <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{task.description}</p>
                                         </div>
                                     )}
 
                                     {/* Completion Percentage */}
                                     {totalSubtasks > 0 && (
-                                        <div>
-                                            <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                                        <div className="bg-card rounded-lg border border-border/50 p-4">
+                                            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
                                                 <CheckCircle2 className="h-4 w-4" />
-                                                Completion: {completionPercentage}%
+                                                {t('tasks.completion') || "Completion Progress"}
                                             </h3>
-                                            <div className="w-full bg-muted rounded-full h-2.5">
-                                                <div
-                                                    className="bg-primary h-2.5 rounded-full transition-all"
-                                                    style={{ width: `${completionPercentage}%` }}
-                                                />
-                                            </div>
-                                            <p className="text-xs text-muted-foreground mt-1">
-                                                {subtasksDone} of {totalSubtasks} subtasks completed
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    {/* Users Who Worked on This Task */}
-                                    {usersWhoWorked.length > 0 && (
-                                        <div className="space-y-3">
-                                            <h3 className="text-sm font-semibold flex items-center gap-2 text-foreground/80">
-                                                <Users className="h-4 w-4" />
-                                                {t('tasks.teamActivity') || "Team Activity"}
-                                            </h3>
-
-                                            <div className="bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden">
-                                                <div className="divide-y divide-border/50">
-                                                    {Array.from(timeByUser.values())
-                                                        .sort((a, b) => b.totalSeconds - a.totalSeconds)
-                                                        .map(({ user, totalSeconds }) => (
-                                                            <div key={user.id} className="flex justify-between items-center p-3 hover:bg-muted/30 transition-colors group">
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary ring-2 ring-background group-hover:ring-muted transition-all">
-                                                                        {user.name?.substring(0, 2).toUpperCase() || "??"}
-                                                                    </div>
-                                                                    <span className="text-sm font-medium">{user.name || 'Unknown'}</span>
-                                                                </div>
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className="w-16 md:w-24 bg-muted/50 rounded-full h-1.5 overflow-hidden hidden sm:block">
-                                                                        <div
-                                                                            className="bg-primary h-full rounded-full"
-                                                                            style={{ width: `${Math.min(100, (totalSeconds / calculateTotalTimeValue()) * 100)}%` }}
-                                                                        />
-                                                                    </div>
-                                                                    <span className="text-sm font-semibold font-mono w-16 text-right">{formatTime(totalSeconds)}</span>
-                                                                </div>
-                                                            </div>
-                                                        ))}
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="text-muted-foreground">{subtasksDone} of {totalSubtasks} subtasks completed</span>
+                                                    <span className="font-semibold text-primary">{completionPercentage}%</span>
                                                 </div>
-
-                                                <div className="p-4 bg-muted/30 border-t border-border/50 flex items-center justify-between">
-                                                    <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                                        <Clock className="h-4 w-4" />
-                                                        {t('tasks.totalTimeSpent') || "Total Time Spent"}
-                                                    </span>
-                                                    <span className="text-xl font-bold font-mono tracking-tight text-primary">
-                                                        {calculateTotalTime()}
-                                                    </span>
+                                                <div className="w-full bg-muted rounded-full h-3">
+                                                    <div
+                                                        className="bg-primary h-3 rounded-full transition-all"
+                                                        style={{ width: `${completionPercentage}%` }}
+                                                    />
                                                 </div>
                                             </div>
                                         </div>
                                     )}
+
+                                    {/* Team Activity - Summary with total time and individual contributions */}
+                                    {task?.assignees && task.assignees.length > 0 && (() => {
+                                        const totalTime = calculateTotalTimeValue()
+                                        const hasWorked = totalTime > 0
+                                        // Sort users by time worked (most to least)
+                                        const usersWithTime = Array.from(timeByUser.values())
+                                            .filter(u => u.totalSeconds > 0)
+                                            .sort((a, b) => b.totalSeconds - a.totalSeconds)
+                                        
+                                        return (
+                                            <div className="space-y-3">
+                                                <h3 className="text-sm font-semibold flex items-center gap-2 text-foreground">
+                                                    <Users className="h-4 w-4" />
+                                                    {t('tasks.teamActivity') || "Team Activity"}
+                                                </h3>
+
+                                                <div className="bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden">
+                                                    {/* Total Time Spent - Always shown at top */}
+                                                    <div className="p-4 bg-primary/5 border-b border-border/50">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-sm font-medium text-foreground flex items-center gap-2">
+                                                                <Clock className="h-4 w-4 text-primary" />
+                                                                {t('tasks.totalTimeSpent') || "Total Time Spent on Task"}
+                                                            </span>
+                                                            <span className="text-2xl font-bold font-mono tracking-tight text-primary">
+                                                                {calculateTotalTime()}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Individual Contributors - Sorted from most to least */}
+                                                    {hasWorked && usersWithTime.length > 0 ? (
+                                                        <div className="divide-y divide-border/50">
+                                                            {usersWithTime.map(({ user, totalSeconds }, index) => (
+                                                                <div key={user.id} className="flex justify-between items-center p-4 hover:bg-muted/30 transition-colors group">
+                                                                    <div className="flex items-center gap-3 flex-1">
+                                                                        <div className="relative">
+                                                                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary ring-2 ring-background group-hover:ring-primary/30 transition-all">
+                                                                                {user.name?.substring(0, 2).toUpperCase() || "??"}
+                                                                            </div>
+                                                                            {index === 0 && usersWithTime.length > 1 && (
+                                                                                <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary flex items-center justify-center">
+                                                                                    <span className="text-[10px] font-bold text-primary-foreground">1</span>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <span className="text-sm font-medium block truncate">{user.name || 'Unknown'}</span>
+                                                                            <span className="text-xs text-muted-foreground">
+                                                                                {index === 0 ? "Most time worked" : `${index + 1}${index === 1 ? 'nd' : index === 2 ? 'rd' : 'th'} contributor`}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-3">
+                                                                        <span className="text-base font-bold font-mono text-primary min-w-[80px] text-right">
+                                                                            {formatTime(totalSeconds)}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="p-4 text-center text-sm text-muted-foreground">
+                                                            No work logged yet
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )
+                                    })()}
+
+                                    {/* Work Log - Detailed time entries */}
+                                    {timeEntries && timeEntries.length > 0 && (() => {
+                                        const completedEntries = timeEntries.filter(entry => entry.endTime).sort((a, b) => {
+                                            const dateA = new Date(a.startTime).getTime()
+                                            const dateB = new Date(b.startTime).getTime()
+                                            return dateB - dateA // Most recent first
+                                        })
+
+                                        if (completedEntries.length === 0) return null
+
+                                        return (
+                                            <div className="space-y-3">
+                                                <h3 className="text-sm font-semibold flex items-center gap-2 text-foreground">
+                                                    <Clock className="h-4 w-4" />
+                                                    {t('tasks.workLog') || "Work Log"}
+                                                </h3>
+
+                                                <div className="bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden">
+                                                    <div className="divide-y divide-border/50">
+                                                        {completedEntries.map((entry) => {
+                                                            const start = new Date(entry.startTime).getTime()
+                                                            const end = new Date(entry.endTime!).getTime()
+                                                            const seconds = Math.floor((end - start) / 1000)
+                                                            const workTarget = entry.subtask ? entry.subtask.title : task?.title || "Main Task"
+                                                            
+                                                            return (
+                                                                <div key={entry.id} className="p-4 hover:bg-muted/30 transition-colors">
+                                                                    <div className="flex items-start justify-between gap-4">
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <div className="flex items-center gap-2 mb-2">
+                                                                                <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                                                                                    {entry.user.name?.substring(0, 2).toUpperCase() || "??"}
+                                                                                </div>
+                                                                                <span className="text-sm font-semibold">{entry.user.name || 'Unknown'}</span>
+                                                                            </div>
+                                                                            <div className="ml-9 space-y-1">
+                                                                                <div className="text-xs text-muted-foreground">
+                                                                                    <span className="font-medium text-foreground">Worked on:</span> <span className="text-foreground/80">{workTarget}</span>
+                                                                                </div>
+                                                                                {entry.description && (
+                                                                                    <div className="text-xs text-muted-foreground italic bg-muted/30 p-2 rounded">
+                                                                                        {entry.description}
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex flex-col items-end gap-1 shrink-0">
+                                                                            <span className="text-base font-bold font-mono text-primary">
+                                                                                {formatTime(seconds)}
+                                                                            </span>
+                                                                            <span className="text-xs text-muted-foreground">
+                                                                                {new Date(entry.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            )
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )
+                                    })()}
 
                                     <div className="space-y-4">
                                         <h3 className="text-sm font-semibold flex items-center gap-2 text-foreground/80">
