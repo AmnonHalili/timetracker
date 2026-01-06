@@ -138,18 +138,22 @@ export async function DELETE(req: Request) {
             }
         }
 
-        // Remove user from team instead of deleting
-        // Set removedAt to current time, clear manager relationships, but keep projectId for history
-        // Keep the user account active so they can still log in
+        // Remove membership first
+        await prisma.projectMember.deleteMany({
+            where: {
+                userId: userId,
+                projectId: currentUser.projectId
+            }
+        })
+
+        // Update user record: Clear project context and manager links
         await prisma.user.update({
             where: { id: userId },
             data: {
                 removedAt: new Date(),
                 managerId: null,
                 sharedChiefGroupId: null,
-                // Keep projectId so we can show historical reports
-                // Keep status as ACTIVE so they can still log in
-                // They will see the "join or create team" screen
+                projectId: null // Clear project context so they don't see "Join Team" for a project they were removed from
             }
         })
 
