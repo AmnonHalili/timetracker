@@ -966,8 +966,8 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
 
     return (
 
-        <Card className="border-none shadow-none">
-            <CardHeader className="flex flex-col space-y-4 pb-4 px-0">
+        <Card className="border-none shadow-none bg-transparent">
+            <CardHeader className="flex flex-col space-y-4 pb-4 px-0 bg-transparent">
                 {/* Filters and Sort - Above title */}
                 <div className={`flex items-center gap-2 w-full ${isRTL ? 'flex-row-reverse justify-start' : 'justify-end'}`}>
                     {/* Filters Button */}
@@ -1103,9 +1103,9 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                     </div>
                 )}
             </CardHeader>
-            <CardContent className="p-0">
+            <CardContent className="p-0 bg-transparent">
                 {viewMode === 'board' ? (
-                    <div className="h-[calc(100vh-250px)] px-4 pb-4">
+                    <div className="h-[calc(100vh-250px)] px-4 pb-4 bg-muted/30 dark:bg-muted/20 rounded-md">
                         <TasksBoard
                             tasks={filteredTasks}
                             onTaskClick={(task) => {
@@ -1116,7 +1116,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                         />
                     </div>
                 ) : (
-                    <div className="rounded-md border border-border overflow-hidden">
+                    <div className="rounded-md border border-border overflow-hidden bg-muted/30 dark:bg-muted/20">
                         <table className="w-full text-sm">
                             <thead className="bg-muted/40 sticky top-0 z-10 border-b border-border">
                                 <tr className="border-b border-border/50">
@@ -1342,7 +1342,11 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                                         />
                                                                         {/* Date Text Overlay */}
                                                                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                                                                            <span className={`text-[10px] font-semibold px-2 truncate max-w-full text-white drop-shadow-sm ${isOverdue ? '' : ''}`}>
+                                                                            <span className={`text-[10px] font-semibold px-2 truncate max-w-full drop-shadow-sm ${
+                                                                                isOverdue 
+                                                                                    ? 'text-destructive-foreground' 
+                                                                                    : 'text-white dark:text-gray-900' // White text in light theme (dark bg), dark text in dark theme (light bg)
+                                                                            }`}>
                                                                                 {dateText}
                                                                             </span>
                                                                         </div>
