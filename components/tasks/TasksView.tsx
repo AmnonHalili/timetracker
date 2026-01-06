@@ -64,7 +64,8 @@ const getPriorityColor = (priority: string) => {
     }
 }
 
-const formatDueDateIndicator = (dueDate: Date | string | null, t: (key: string) => string): { text: string; className: string } | null => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const formatDueDateIndicator = (dueDate: Date | string | null, t: any): { text: string; className: string } | null => {
     if (!dueDate) return null
 
     const due = new Date(dueDate)
