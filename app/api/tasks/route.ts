@@ -93,6 +93,7 @@ export async function POST(req: Request) {
                 status: "TODO",
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 subtasks: subtasks && Array.isArray(subtasks) && subtasks.length > 0 ? {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     create: subtasks.map((st: any) => ({
                         title: st.title,
                         priority: st.priority || "LOW",

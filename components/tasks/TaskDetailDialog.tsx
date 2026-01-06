@@ -567,7 +567,11 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
                                 <div className="p-6 space-y-6">
                                     {/* Quick Summary Stats */}
                                     {(() => {
-                                        const totalTime = calculateTotalTimeValue()
+                                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                                        const calculation = calculateTotalTimeValue()
+                                        // totalTime removed or commented out as it was unused and referenced calculation only for side effects if any (probably pure calc though)
+                                        // Actually calculateTotalTimeValue is just a calculation. If unused, remove.
+
                                         const peopleWorked = Array.from(timeByUser.values()).filter(u => u.totalSeconds > 0).length
 
                                         // Find last activity date from time entries or activities

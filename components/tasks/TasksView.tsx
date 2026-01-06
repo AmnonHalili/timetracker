@@ -1913,7 +1913,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                         <div key={subtask.id} className="flex items-start gap-2.5 group">
                                                             <Checkbox
                                                                 checked={subtask.isDone}
-                                                                onCheckedChange={(checked) => handleToggleSubtask(task.id, subtask.id)}
+                                                                onCheckedChange={() => handleToggleSubtask(task.id, subtask.id)}
                                                                 className="h-4 w-4 mt-0.5 rounded-full data-[state=checked]:bg-primary/80 data-[state=checked]:border-primary/80"
                                                             />
                                                             <div className="flex-1 min-w-0">

@@ -17,7 +17,9 @@ import { toast } from "sonner" // Assuming sonner is used, or update to use toas
 interface CreateTaskFormProps {
     users: { id: string; name: string | null; email: string | null; managerId?: string | null; role?: string }[]
     onTaskCreated?: () => void
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onOptimisticTaskCreate?: (task: any) => void
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     task?: any
     mode?: 'create' | 'edit'
     currentUserId?: string
@@ -58,57 +60,57 @@ export function CreateTaskForm({
     const [newSubtaskDueDate, setNewSubtaskDueDate] = useState("")
     const [isSubtasksExpanded, setIsSubtasksExpanded] = useState(false)
 
-    // Helper to sort users: Current User first, then Hierarchy
-    const sortUsersHierarchically = (usersToSort: Array<{ id: string; name: string | null; email: string | null; managerId?: string | null; role?: string }>, meId?: string) => {
-        if (!usersToSort.length) return [];
+    useEffect(() => {
+        // Helper to sort users: Current User first, then Hierarchy
+        const sortUsersHierarchically = (usersToSort: Array<{ id: string; name: string | null; email: string | null; managerId?: string | null; role?: string }>, meId?: string) => {
+            if (!usersToSort.length) return [];
 
-        let me: typeof users[0] | undefined;
-        const others = usersToSort.map(u => ({ ...u, depth: 0 }));
+            let me: typeof users[0] | undefined;
+            const others = usersToSort.map(u => ({ ...u, depth: 0 }));
 
-        if (meId) {
-            const meIndex = others.findIndex(u => u.id === meId);
-            if (meIndex >= 0) {
-                me = others[meIndex];
-                others.splice(meIndex, 1);
+            if (meId) {
+                const meIndex = others.findIndex(u => u.id === meId);
+                if (meIndex >= 0) {
+                    me = others[meIndex];
+                    others.splice(meIndex, 1);
+                }
             }
+
+            const userMap = new Map<string, typeof users[0]>();
+            const childrenMap = new Map<string, typeof users[0][]>();
+
+            others.forEach(u => {
+                userMap.set(u.id, u);
+                if (!childrenMap.has(u.id)) childrenMap.set(u.id, []);
+            });
+
+            const roots: typeof users = [];
+
+            others.forEach(u => {
+                if (u.managerId && userMap.has(u.managerId)) {
+                    childrenMap.get(u.managerId)?.push(u);
+                } else {
+                    roots.push(u);
+                }
+            });
+
+            const flattened: typeof users = [];
+            const traverse = (nodes: typeof users, currentDepth: number) => {
+                nodes.sort((a, b) => (a.name || a.email || "").localeCompare(b.name || b.email || ""))
+                    .forEach(node => {
+                        flattened.push({ ...node, depth: currentDepth });
+                        const children = childrenMap.get(node.id);
+                        if (children && children.length > 0) {
+                            traverse(children, currentDepth + 1);
+                        }
+                    });
+            };
+
+            traverse(roots, 0);
+
+            return me ? [{ ...me, depth: 0 }, ...flattened] : flattened;
         }
 
-        const userMap = new Map<string, typeof users[0]>();
-        const childrenMap = new Map<string, typeof users[0][]>();
-
-        others.forEach(u => {
-            userMap.set(u.id, u);
-            if (!childrenMap.has(u.id)) childrenMap.set(u.id, []);
-        });
-
-        const roots: typeof users = [];
-
-        others.forEach(u => {
-            if (u.managerId && userMap.has(u.managerId)) {
-                childrenMap.get(u.managerId)?.push(u);
-            } else {
-                roots.push(u);
-            }
-        });
-
-        const flattened: typeof users = [];
-        const traverse = (nodes: typeof users, currentDepth: number) => {
-            nodes.sort((a, b) => (a.name || a.email || "").localeCompare(b.name || b.email || ""))
-                .forEach(node => {
-                    flattened.push({ ...node, depth: currentDepth });
-                    const children = childrenMap.get(node.id);
-                    if (children && children.length > 0) {
-                        traverse(children, currentDepth + 1);
-                    }
-                });
-        };
-
-        traverse(roots, 0);
-
-        return me ? [{ ...me, depth: 0 }, ...flattened] : flattened;
-    }
-
-    useEffect(() => {
         // Initialize users list
         if (initialUsers && initialUsers.length > 0) {
             const compatibleUsers = initialUsers as Array<{ id: string; name: string | null; email: string | null; managerId?: string | null; role?: string; depth?: number }>;
@@ -170,8 +172,10 @@ export function CreateTaskForm({
                 }
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const assignees = task.assignees || (task.participants ? task.participants.map((p: any) => p.user) : [])
             if (assignees) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const assigneeIds = assignees.map((u: any) => u.id)
                 setAssignedToIds(assigneeIds)
             }

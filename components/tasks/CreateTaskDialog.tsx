@@ -17,7 +17,7 @@ import {
     SheetTitle,
     SheetTrigger,
 } from "@/components/ui/sheet"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Plus } from "lucide-react"
 import { useLanguage } from "@/lib/useLanguage"
 import { cn } from "@/lib/utils"
@@ -27,7 +27,9 @@ import { CreateTaskForm } from "./CreateTaskForm"
 interface CreateTaskDialogProps {
     users: { id: string; name: string | null; email: string | null; managerId?: string | null; role?: string }[]
     onTaskCreated?: () => void
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onOptimisticTaskCreate?: (task: any) => void
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     task?: any
     mode?: 'create' | 'edit'
     open?: boolean
