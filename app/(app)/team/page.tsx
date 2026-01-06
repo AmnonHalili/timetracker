@@ -7,6 +7,7 @@ import { TeamOnboardingWidget } from "@/components/dashboard/TeamOnboardingWidge
 import { filterHierarchyGroup } from "@/lib/hierarchy-utils"
 import { TeamRequestsList } from "@/components/team/TeamRequestsList"
 import { TeamPageHeader } from "@/components/team/TeamPageHeader"
+import { TeamInvitationsList } from "@/components/team/TeamInvitationsList"
 
 export default async function TeamPage() {
     const session = await getServerSession(authOptions)
@@ -30,6 +31,26 @@ export default async function TeamPage() {
         })
         currentUser = basicUser ? { ...basicUser, sharedChiefGroupId: null } : null
     }
+
+    // Fetch pending invitations for the user
+    const pendingInvitations = await prisma.projectMember.findMany({
+        where: {
+            userId: session.user.id,
+            status: "INVITED"
+        },
+        include: {
+            project: {
+                select: {
+                    id: true,
+                    name: true,
+                    logo: true
+                }
+            }
+        },
+        orderBy: {
+            joinedAt: 'desc'
+        }
+    })
 
     if (!currentUser?.projectId) {
         // Fetch full user details for the private view
@@ -56,6 +77,11 @@ export default async function TeamPage() {
                     <h1 className="text-3xl font-bold tracking-tight">Private Session</h1>
                     <p className="text-muted-foreground">You are currently working independently.</p>
                 </div>
+
+                {/* Show invitations if any */}
+                {pendingInvitations.length > 0 && (
+                    <TeamInvitationsList invitations={pendingInvitations} />
+                )}
 
                 <TeamOnboardingWidget />
 
@@ -273,6 +299,11 @@ export default async function TeamPage() {
 
     return (
         <div className="container mx-auto space-y-8">
+            {/* Show invitations if any */}
+            {pendingInvitations.length > 0 && (
+                <TeamInvitationsList invitations={pendingInvitations} />
+            )}
+
             {pendingRequests.length > 0 && (
                 <TeamRequestsList initialRequests={pendingRequests} />
             )}

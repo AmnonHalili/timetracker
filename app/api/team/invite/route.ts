@@ -187,10 +187,82 @@ export async function POST(req: Request) {
                     title: "Team Invitation",
                     message: `You have been invited to join ${projectName} by ${inviterName}.`,
                     type: "INFO",
-                    link: "/team" // Link to team page where they might see it? Or dashboard.
+                    link: "/team"
                 })
             } catch (notifError) {
                 console.error("Failed to create notification:", notifError)
+            }
+
+            // Send Email to Existing User
+            const transporter = nodemailer.createTransport({
+                host: "smtp.gmail.com",
+                port: 587,
+                secure: false,
+                auth: {
+                    user: process.env.GMAIL_USER,
+                    pass: process.env.GMAIL_PASS,
+                },
+            })
+
+            const invitationUrl = `${process.env.NEXTAUTH_URL}/team`
+            const logoUrl = "https://utfs.io/f/9c336522-386f-47dc-b935-4ae257771cb8-1zbfv.png" // Use your logo URL
+
+            const htmlContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .header { text-align: center; margin-bottom: 30px; }
+                    .header img { height: 40px; }
+                    .content { background: #fff; padding: 40px; border-radius: 12px; border: 1px solid #e4e4e7; text-align: center; }
+                    .inviter-badge { display: inline-block; background: #f4f4f5; padding: 8px 16px; border-radius: 9999px; font-size: 14px; margin-bottom: 24px; }
+                    .button { display: inline-block; background: #000; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 500; margin-top: 24px; }
+                    .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #71717a; }
+                    .link-text { margin-top: 32px; font-size: 13px; color: #71717a; word-break: break-all; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <img src="${logoUrl}" alt="Collabo" />
+                    </div>
+                    <div class="content">
+                        <div class="inviter-badge">
+                            👋 <strong>${inviterName}</strong> invited you
+                        </div>
+                        <h1>Join ${projectName} on Collabo</h1>
+                        <p>You have been invited to join the team workspace. Click below to view and accept the invitation.</p>
+                        
+                        <a href="${invitationUrl}" class="button" style="color: #ffffff;">
+                            View Invitation
+                        </a>
+
+                        <p class="link-text">
+                            Button not working? Copy and paste this link into your browser:<br>
+                            ${invitationUrl}
+                        </p>
+                    </div>
+                    <div class="footer">
+                        <p>&copy; ${new Date().getFullYear()} Collabo. All rights reserved.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            `
+
+            try {
+                await transporter.verify()
+                await transporter.sendMail({
+                    from: `"Collabo" <${process.env.GMAIL_USER}>`,
+                    to: email,
+                    subject: `You've been invited to join ${projectName}`,
+                    html: htmlContent,
+                })
+            } catch (emailError) {
+                console.error("Failed to send invitation email:", emailError)
+                // Continue execution, don't block response
             }
 
             return NextResponse.json({
