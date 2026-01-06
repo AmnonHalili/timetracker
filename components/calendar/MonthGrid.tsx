@@ -151,13 +151,15 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                     const hoursWorked = dailyData?.totalDurationHours || 0
                     const isTargetMet = dailyData?.status === 'MET'
 
+                    // Event colors - all events use one shade of primary theme color
                     const eventTypeColors: Record<string, string> = {
-                        MEETING: "bg-blue-50 border-blue-200 text-blue-700",
-                        APPOINTMENT: "bg-purple-50 border-purple-200 text-purple-700",
-                        TASK_TIME: "bg-green-50 border-green-200 text-green-700",
-                        BREAK: "bg-gray-50 border-gray-200 text-gray-700",
-                        PERSONAL: "bg-pink-50 border-pink-200 text-pink-700",
-                        HOLIDAY: "bg-teal-50 border-teal-200 text-teal-700",
+                        MEETING: "bg-primary/20 text-primary border-primary/30",
+                        APPOINTMENT: "bg-primary/20 text-primary border-primary/30",
+                        TASK_TIME: "bg-primary/60 text-primary-foreground border-primary/70", // Tasks use different shade
+                        BREAK: "bg-muted/50 text-muted-foreground border-muted",
+                        PERSONAL: "bg-primary/20 text-primary border-primary/30",
+                        OTHER: "bg-primary/20 text-primary border-primary/30",
+                        HOLIDAY: "bg-yellow-50 border-yellow-200 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800",
                     }
 
                     // Check if there are any events or tasks for this day (for mobile indicator)
@@ -202,12 +204,15 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                                     {/* Events and Tasks - sorted by time */}
                                     {visibleItems.map((item) => {
                                         // Determine colors:
+                                        // Tasks use one shade of primary, events use another shade
                                         let itemColors = eventTypeColors.OTHER
                                         if (item.isTask) {
-                                            itemColors = "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20"
+                                            // Tasks use darker shade of primary
+                                            itemColors = "bg-primary/60 text-primary-foreground border-primary/70"
                                         } else if (item.isHoliday) {
                                             itemColors = eventTypeColors.HOLIDAY
                                         } else {
+                                            // Events use lighter shade of primary
                                             itemColors = eventTypeColors[item.type] || eventTypeColors.OTHER
                                         }
 

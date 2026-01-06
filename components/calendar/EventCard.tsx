@@ -55,26 +55,27 @@ interface EventCardProps {
 
 // Removed unused type EventWithType
 
+// Event colors - all events use one shade of primary theme color
 const eventTypeColors = {
-    MEETING: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
-    APPOINTMENT: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
-    TASK_TIME: "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20",
-    BREAK: "bg-gray-500/10 text-gray-700 border-gray-500/20",
-    PERSONAL: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
-    OTHER: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
-    EXTERNAL: "bg-orange-100/50 text-orange-700 border-orange-200",
-    HOLIDAY: "bg-yellow-50 border-yellow-200 text-yellow-700",
+    MEETING: "bg-primary/20 text-primary border-primary/30",
+    APPOINTMENT: "bg-primary/20 text-primary border-primary/30",
+    TASK_TIME: "bg-primary/60 text-primary-foreground border-primary/70", // Tasks use different shade
+    BREAK: "bg-muted/50 text-muted-foreground border-muted",
+    PERSONAL: "bg-primary/20 text-primary border-primary/30",
+    OTHER: "bg-primary/20 text-primary border-primary/30",
+    EXTERNAL: "bg-orange-100/50 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800",
+    HOLIDAY: "bg-yellow-50 border-yellow-200 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800",
 }
 
 const eventTypeBadgeColors = {
-    MEETING: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
-    APPOINTMENT: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
-    TASK_TIME: "bg-[#004B7C]/10 text-[#004B7C] border-[#004B7C]/20",
-    BREAK: "bg-gray-500/10 text-gray-700 border-gray-500/20",
-    PERSONAL: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
-    OTHER: "bg-[#0EA5E9]/10 text-[#0284C7] border-[#0EA5E9]/20",
-    EXTERNAL: "bg-orange-100 text-orange-700 border-orange-200",
-    HOLIDAY: "bg-yellow-100 text-yellow-700 border-yellow-200",
+    MEETING: "bg-primary/20 text-primary border-primary/30",
+    APPOINTMENT: "bg-primary/20 text-primary border-primary/30",
+    TASK_TIME: "bg-primary/60 text-primary-foreground border-primary/70", // Tasks use different shade
+    BREAK: "bg-muted/50 text-muted-foreground border-muted",
+    PERSONAL: "bg-primary/20 text-primary border-primary/30",
+    OTHER: "bg-primary/20 text-primary border-primary/30",
+    EXTERNAL: "bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800",
+    HOLIDAY: "bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800",
 }
 
 export function EventCard({ event, onClick, size = 'md', showDelete = false }: EventCardProps) {
@@ -163,7 +164,7 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
         <>
             <div
                 className={cn(
-                    "relative rounded-md border transition-all group p-2 space-y-1",
+                    "relative rounded-md border transition-all group p-2 flex items-center",
                     // @ts-expect-error - Event type key access
                     (event.isHoliday ? eventTypeColors.HOLIDAY : (eventTypeColors[event.type as keyof typeof eventTypeColors] || "bg-gray-100 text-gray-700")),
                     onClick && "cursor-pointer hover:shadow-md",
@@ -174,29 +175,25 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
                     onClick?.()
                 }}
             >
-                <div className="space-y-1">
-                    {/* Title and Badge */}
-                    <div className="flex items-start justify-between gap-2">
-                        <span className={cn(
-                            "font-semibold truncate flex-1",
-                            size === 'sm' && "text-xs",
-                            size === 'md' && "text-sm",
-                            size === 'lg' && "text-base"
-                        )}>
-                            {event.title}
-                        </span>
-                        <div className="flex items-center gap-1 shrink-0 mr-8 self-center">
-                            {size !== 'sm' && (
-                                <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 h-5", badgeColor)}>
-                                    {event.type}
-                                </Badge>
-                            )}
-                        </div>
+                {/* Badge - positioned in the middle vertically, aligned with menu dots */}
+                {size !== 'sm' && (
+                    <div className={cn(
+                        "absolute z-10 flex items-center",
+                        showDelete && event.type !== 'EXTERNAL' ? "right-10" : "right-2"
+                    )}
+                    style={{ top: '50%', transform: 'translateY(-50%)' }}
+                    >
+                        <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 h-5", badgeColor)}>
+                            {event.type}
+                        </Badge>
                     </div>
+                )}
 
-                    {/* Actions Menu (Edit/Delete) - absolutely positioned */}
-                    {showDelete && event.type !== 'EXTERNAL' && (
-                        <div className="absolute right-2 top-1/2 -translate-y-[52%] z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                {/* Actions Menu (Edit/Delete) - absolutely positioned */}
+                {showDelete && event.type !== 'EXTERNAL' && (
+                    <div className="absolute right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center"
+                    style={{ top: '50%', transform: 'translateY(-50%)' }}
+                    >
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button
@@ -246,6 +243,21 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
                             </DropdownMenu>
                         </div>
                     )}
+
+                {/* Content area */}
+                <div className="flex-1 space-y-1 min-w-0">
+                    {/* Title */}
+                    <div className="flex items-start justify-between gap-2">
+                        <span className={cn(
+                            "font-semibold truncate flex-1",
+                            size === 'sm' && "text-xs",
+                            size === 'md' && "text-sm",
+                            size === 'lg' && "text-base",
+                            size !== 'sm' && (showDelete && event.type !== 'EXTERNAL' ? "pr-20" : "pr-12")
+                        )}>
+                            {event.title}
+                        </span>
+                    </div>
 
                     {/* Time */}
                     <div className="flex items-center gap-1 text-xs opacity-90">
