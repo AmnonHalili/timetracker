@@ -48,16 +48,16 @@ import { toast } from "sonner"
 
 const getPriorityColor = (priority: string) => {
     // Dynamic theme-based colors using CSS variables (handled by Tailwind)
-    // High: Solid primary color
-    // Medium: 80% opacity primary
-    // Low: 60% opacity primary
+    // High: Solid primary color (100% opacity)
+    // Medium: 50% opacity primary (more distinct from HIGH)
+    // Low: 25% opacity primary (more distinct from MEDIUM)
     switch (priority) {
         case 'HIGH':
             return 'bg-primary text-primary-foreground border-transparent'
         case 'MEDIUM':
-            return 'bg-primary/80 text-primary-foreground border-transparent'
+            return 'bg-primary/65 text-primary-foreground border-transparent'
         case 'LOW':
-            return 'bg-primary/60 text-primary-foreground border-transparent'
+            return 'bg-primary/25 text-primary-foreground border-transparent'
         default:
             return 'bg-muted text-muted-foreground border-border'
     }
@@ -1320,25 +1320,29 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                                 <div className="flex flex-col items-center justify-center gap-1.5 w-full max-w-[160px] mx-auto">
                                                                     {/* Progress Bar Pill */}
                                                                     <div className="relative w-full h-7 rounded-full overflow-hidden border border-border/40 shadow-sm bg-background">
-                                                                        {/* Time Passed (filled portion - left side) - Single uniform color */}
+                                                                        {/* Time Passed (dark theme color - left side) */}
                                                                         <div
-                                                                            className={`absolute inset-0 transition-all duration-500 ease-out ${isOverdue
+                                                                            className={`absolute top-0 bottom-0 left-0 transition-all duration-500 ease-out z-0 ${isOverdue
                                                                                 ? 'bg-destructive'
                                                                                 : 'bg-primary'
                                                                                 }`}
                                                                             style={{
-                                                                                width: `${Math.max(0, Math.min(100, progress))}%`,
-                                                                                left: 0
+                                                                                width: `${Math.max(0, Math.min(100, progress))}%`
+                                                                            }}
+                                                                        />
+                                                                        {/* Time Remaining (light theme color - right side) */}
+                                                                        <div
+                                                                            className={`absolute top-0 bottom-0 right-0 transition-all duration-500 ease-out z-0 ${isOverdue
+                                                                                ? 'bg-destructive/50'
+                                                                                : 'bg-primary/50'
+                                                                                }`}
+                                                                            style={{
+                                                                                width: `${Math.max(0, Math.min(100, 100 - progress))}%`
                                                                             }}
                                                                         />
                                                                         {/* Date Text Overlay */}
                                                                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                                                                            <span className={`text-[10px] font-semibold px-2 truncate max-w-full ${isOverdue
-                                                                                ? 'text-destructive-foreground drop-shadow-sm'
-                                                                                : progress > 50
-                                                                                    ? 'text-primary-foreground drop-shadow-sm'
-                                                                                    : 'text-foreground drop-shadow-sm'
-                                                                                }`}>
+                                                                            <span className={`text-[10px] font-semibold px-2 truncate max-w-full text-white drop-shadow-sm ${isOverdue ? '' : ''}`}>
                                                                                 {dateText}
                                                                             </span>
                                                                         </div>

@@ -67,9 +67,9 @@ export function TasksDemo() {
       case 'HIGH':
         return 'bg-primary text-primary-foreground border-transparent'
       case 'MEDIUM':
-        return 'bg-[#4b7699] text-primary-foreground border-transparent'
+        return 'bg-primary/65 text-primary-foreground border-transparent'
       case 'LOW':
-        return 'bg-[#7fa1bc] text-primary-foreground border-transparent'
+        return 'bg-primary/25 text-primary-foreground border-transparent'
       default:
         return 'bg-muted text-muted-foreground border-border'
     }
