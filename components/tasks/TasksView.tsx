@@ -143,7 +143,7 @@ interface TasksViewProps {
 
 export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWithActiveTimers = {}, labels = [] }: TasksViewProps) {
     const router = useRouter()
-    const [isPending, startTransition] = useTransition()
+    const [, startTransition] = useTransition()
     const { t, isRTL, language } = useLanguage()
     const dateLocale = language === 'he' ? he : undefined
     const [tasks, setTasks] = useState(initialTasks)
@@ -217,7 +217,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
             }
         })
         setLocalSubtasks(subtasksMap)
-        
+
         // Auto-show subtasks for tasks that have them (show by default)
         setVisibleSubtasksMap(prev => {
             const updated = { ...prev }
@@ -671,7 +671,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
             ...prev,
             [taskId]: [...(prev[taskId] || []), { id: tempId, title: titleToSave, isDone: false }]
         }))
-        
+
         // Auto-show subtasks when first subtask is added (if it's the first one)
         if (currentSubtasksCount === 0) {
             setVisibleSubtasksMap(prev => ({ ...prev, [taskId]: true }))
@@ -973,7 +973,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                             return aIndex - bIndex
                         })
                     }))
-                    toast.error(t('tasks.deleteSubtaskError') || "Failed to delete subtask. Please try again.")
+                    toast.error("Failed to delete subtask. Please try again.")
                 }
             })
             .finally(() => {
@@ -1384,11 +1384,10 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                                         />
                                                                         {/* Date Text Overlay */}
                                                                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                                                                            <span className={`text-[10px] font-semibold px-2 truncate max-w-full drop-shadow-sm ${
-                                                                                isOverdue 
-                                                                                    ? 'text-destructive-foreground' 
-                                                                                    : 'text-white dark:text-gray-900' // White text in light theme (dark bg), dark text in dark theme (light bg)
-                                                                            }`}>
+                                                                            <span className={`text-[10px] font-semibold px-2 truncate max-w-full drop-shadow-sm ${isOverdue
+                                                                                ? 'text-destructive-foreground'
+                                                                                : 'text-white dark:text-gray-900' // White text in light theme (dark bg), dark text in dark theme (light bg)
+                                                                                }`}>
                                                                                 {dateText}
                                                                             </span>
                                                                         </div>

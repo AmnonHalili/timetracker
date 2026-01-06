@@ -1,5 +1,6 @@
 "use client"
 
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -177,7 +178,7 @@ function ProfileForm({ user }: ProfileFormProps) {
         const file = e.target.files?.[0]
         if (file) {
             if (file.size > 1024 * 1024) { // 1MB limit for Base64
-                alert("Image too large. Please use an image under 1MB.")
+                toast.error("Image too large. Please use an image under 1MB.")
                 return
             }
             const reader = new FileReader()
@@ -199,9 +200,10 @@ function ProfileForm({ user }: ProfileFormProps) {
             })
             if (!res.ok) throw new Error("Failed to update")
             router.refresh()
-            alert(t('profile.updated'))
-        } catch {
-            alert(t('common.error'))
+            toast.success(t('profile.updated'))
+        } catch (error) {
+            console.error(error)
+            toast.error(t('common.error'))
         } finally {
             setLoading(false)
         }
@@ -229,9 +231,10 @@ function ProfileForm({ user }: ProfileFormProps) {
             })
             if (!res.ok) throw new Error("Failed to update")
             router.refresh()
-            alert(t('preferences.updated'))
-        } catch {
-            alert(t('common.error'))
+            toast.success(t('preferences.updated'))
+        } catch (error) {
+            console.error(error)
+            toast.error(t('common.error'))
         } finally {
             setPreferencesLoading(false)
         }
@@ -476,7 +479,7 @@ function SecurityForm({ user }: SecurityFormProps) {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (newPassword !== confirmPassword) {
-            alert("New passwords do not match")
+            toast.error("New passwords do not match")
             return
         }
         setLoading(true)
@@ -492,9 +495,9 @@ function SecurityForm({ user }: SecurityFormProps) {
             setCurrentPassword("")
             setNewPassword("")
             setConfirmPassword("")
-            alert("Password changed successfully")
+            toast.success("Password changed successfully")
         } catch (error) {
-            alert(error instanceof Error ? error.message : "Error updating password")
+            toast.error(error instanceof Error ? error.message : "Error updating password")
         } finally {
             setLoading(false)
         }
@@ -553,7 +556,8 @@ function SecurityForm({ user }: SecurityFormProps) {
             // Sign out and redirect to login
             await signOut({ callbackUrl: "/login" })
         } catch (error) {
-            alert(error instanceof Error ? error.message : "Error deleting account")
+            toast.error(error instanceof Error ? error.message : "Error deleting account")
+        } finally {
             setIsDeleting(false)
         }
     }
@@ -698,9 +702,10 @@ function LanguageForm() {
 
             // Refresh to apply changes
             router.refresh()
-            alert(t('language.saved'))
-        } catch {
-            alert(t('common.error'))
+            toast.success(t('language.saved'))
+        } catch (error) {
+            console.error(error)
+            toast.error(t('common.error'))
         } finally {
             setLoading(false)
         }
