@@ -21,6 +21,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 
 import { useState, useRef, useEffect } from "react"
 import { User, Upload, Loader2, Trash2 } from "lucide-react"
@@ -321,60 +322,119 @@ function ProfileForm({ user }: ProfileFormProps) {
                         </div>
                     )}
                     <div className={!canEditPreferences ? "opacity-60 pointer-events-none" : ""}>
-                        <div className="space-y-3">
-                            <Label>{t('preferences.workDays')}</Label>
-                            <p className="text-xs text-muted-foreground">
-                                {t('preferences.selectWorkDays')}
-                            </p>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                {daysOfWeek.map(day => (
-                                    <button
-                                        key={day.value}
-                                        type="button"
-                                        onClick={() => toggleDay(day.value)}
-                                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${selectedDays.includes(day.value)
-                                            ? 'bg-primary text-primary-foreground'
-                                            : 'bg-muted hover:bg-muted/80 text-muted-foreground'
-                                            }`}
-                                    >
-                                        {day.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                        <div className="space-y-4">
+                            <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${dir === 'rtl' ? 'sm:flex-row-reverse' : ''}`}>
+                                <div className="space-y-1">
+                                    <Label>{t('preferences.workDays')}</Label>
+                                    <p className="text-xs text-muted-foreground">
+                                        {t('preferences.selectWorkDays')}
+                                    </p>
+                                </div>
 
-                        {selectedDays.length > 0 && (
-                            <div className="space-y-3 mt-6">
-                                <Label>{t('preferences.dailyTarget')}</Label>
-                                <p className="text-xs text-muted-foreground">
-                                    {t('preferences.weeklyHoursDescription') || 'Set the number of work hours for each selected day. You can set different hours for different days.'}
-                                </p>
-                                <div className="space-y-2">
-                                    {selectedDays.map(day => {
-                                        const dayLabel = daysOfWeek.find(d => d.value === day)?.label || ''
-                                        return (
-                                            <div key={day} className="flex items-center gap-3">
-                                                <Label htmlFor={`hours-${day}`} className="w-24 text-sm font-medium">
-                                                    {dayLabel}
-                                                </Label>
-                                                <Input
-                                                    id={`hours-${day}`}
-                                                    type="number"
-                                                    step="0.5"
-                                                    min="0"
-                                                    value={weeklyHours[day]?.toString() || ""}
-                                                    onChange={e => updateDayHours(day, e.target.value)}
-                                                    disabled={!canEditPreferences}
-                                                    placeholder="8"
-                                                    className="w-24"
-                                                />
-                                                <span className="text-sm text-muted-foreground">{t('preferences.hours') || 'hours'}</span>
-                                            </div>
-                                        )
-                                    })}
+                                {/* Quick Actions */}
+                                <div className={`flex gap-2 ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                            const standardDays = [0, 1, 2, 3, 4]; // Sun-Thu
+                                            setSelectedDays(standardDays);
+                                            setWeeklyHours(prev => {
+                                                const updated = { ...prev };
+                                                standardDays.forEach(d => {
+                                                    if (!updated[d]) updated[d] = 8;
+                                                });
+                                                return updated;
+                                            });
+                                        }}
+                                        className="text-xs h-8 px-2"
+                                    >
+                                        Sun-Thu
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                            const standardDays = [1, 2, 3, 4, 5]; // Mon-Fri
+                                            setSelectedDays(standardDays);
+                                            setWeeklyHours(prev => {
+                                                const updated = { ...prev };
+                                                standardDays.forEach(d => {
+                                                    if (!updated[d]) updated[d] = 8;
+                                                });
+                                                return updated;
+                                            });
+                                        }}
+                                        className="text-xs h-8 px-2"
+                                    >
+                                        Mon-Fri
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                            setSelectedDays([]);
+                                            setWeeklyHours({});
+                                        }}
+                                        className="text-xs h-8 px-2 text-muted-foreground hover:text-destructive"
+                                    >
+                                        Clear
+                                    </Button>
                                 </div>
                             </div>
-                        )}
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {daysOfWeek.map(day => {
+                                    const isSelected = selectedDays.includes(day.value);
+                                    return (
+                                        <div
+                                            key={day.value}
+                                            className={`flex items-center justify-between p-3 rounded-md border transition-all ${isSelected ? 'bg-primary/5 border-primary/20' : 'bg-transparent border-transparent hover:bg-muted/50'} ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}
+                                        >
+                                            <div className={`flex items-center gap-3 ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}>
+                                                <Switch
+                                                    checked={isSelected}
+                                                    onCheckedChange={() => toggleDay(day.value)}
+                                                    id={`settings-day-switch-${day.value}`}
+                                                    disabled={!canEditPreferences}
+                                                />
+                                                <Label
+                                                    htmlFor={`settings-day-switch-${day.value}`}
+                                                    className={`font-medium cursor-pointer ${isSelected ? 'text-foreground' : 'text-muted-foreground'}`}
+                                                >
+                                                    {day.label}
+                                                </Label>
+                                            </div>
+
+                                            {isSelected && (
+                                                <div className={`flex items-center gap-1.5 ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}>
+                                                    <Input
+                                                        type="number"
+                                                        step="0.5"
+                                                        min="0"
+                                                        value={weeklyHours[day.value]?.toString() || ""}
+                                                        onChange={e => updateDayHours(day.value, e.target.value)}
+                                                        placeholder="8"
+                                                        className="w-16 h-7 text-center text-sm px-1"
+                                                        dir="ltr"
+                                                        disabled={!canEditPreferences}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === '-' || e.key === 'Minus') {
+                                                                e.preventDefault()
+                                                            }
+                                                        }}
+                                                    />
+                                                    <span className="text-[10px] text-muted-foreground">{t('preferences.hours') || 'h'}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </div>
                     </div>
                 </CardContent>
                 {canEditPreferences && (

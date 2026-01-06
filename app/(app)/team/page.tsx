@@ -89,7 +89,8 @@ export default async function TeamPage() {
                 {privateUser && (
                     <div className="space-y-4">
                         <h2 className="text-xl font-semibold">Your Profile</h2>
-                        <TeamList users={[privateUser]} currentUserId={session.user.id} currentUserRole={privateUser.role} />
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                        <TeamList users={[privateUser as any]} currentUserId={session.user.id} currentUserRole={privateUser.role} />
                     </div>
                 )}
             </div>
@@ -109,7 +110,8 @@ export default async function TeamPage() {
         jobTitle: string | null
         managerId: string | null
         sharedChiefGroupId?: string | null
-        weeklyHours?: any // using any for Json type to avoid complexity in this local type
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        weeklyHours?: any // using any to bypass Prisma JsonValue vs Record mismatch
     }
 
     let allTeamMembers: TeamMember[]

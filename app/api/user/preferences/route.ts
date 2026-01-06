@@ -44,7 +44,7 @@ export async function PATCH(req: Request) {
         }
 
         // Legacy support: still accept dailyTarget and workDays for backward compatibility
-        if (dailyTarget !== null && (typeof dailyTarget !== 'number' || dailyTarget < 0)) {
+        if (dailyTarget !== undefined && dailyTarget !== null && (typeof dailyTarget !== 'number' || dailyTarget < 0)) {
             return NextResponse.json({ message: "Invalid daily target" }, { status: 400 })
         }
 

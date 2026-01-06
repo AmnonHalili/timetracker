@@ -26,6 +26,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { SecondaryManagersForm } from "./SecondaryManagersForm"
@@ -601,65 +602,114 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
                         </TabsList>
 
                         <TabsContent value="work" className="space-y-6 pt-4">
-                            <div className="space-y-3">
-                                <Label className={`block ${isRTL ? 'text-right' : 'text-left'}`}>{t('preferences.workDays')}</Label>
-                                <p className={`text-xs text-muted-foreground ${isRTL ? 'text-right' : 'text-left'}`}>
-                                    {t('team.selectWorkDaysMember')}
-                                </p>
-                                <div className="grid grid-cols-2 gap-2">
-                                    {daysOfWeek.map(day => (
-                                        <button
-                                            key={day.value}
-                                            type="button"
-                                            onClick={() => toggleDay(day.value)}
-                                            className={`px-4 py-3 rounded-md text-sm font-medium transition-colors ${editSelectedDays.includes(day.value)
-                                                ? 'bg-primary text-primary-foreground'
-                                                : 'bg-muted hover:bg-muted/80 text-muted-foreground'
-                                                }`}
-                                        >
-                                            {day.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
+                            <div className="space-y-4">
+                                <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
+                                    <div className="space-y-1">
+                                        <Label className={`block ${isRTL ? 'text-right' : 'text-left'}`}>{t('preferences.workDays')}</Label>
+                                        <p className={`text-xs text-muted-foreground ${isRTL ? 'text-right' : 'text-left'}`}>
+                                            {t('team.selectWorkDaysMember') || 'Configure work days and targets.'}
+                                        </p>
+                                    </div>
 
-                            {editSelectedDays.length > 0 && (
-                                <div className="space-y-3">
-                                    <Label className={`block ${isRTL ? 'text-right' : 'text-left'}`}>{t('team.dailyTargetHours')}</Label>
-                                    <p className={`text-xs text-muted-foreground ${isRTL ? 'text-right' : 'text-left'}`}>
-                                        {t('preferences.weeklyHoursDescription') || 'Set the number of work hours for each selected day. You can set different hours for different days.'}
-                                    </p>
-                                    <div className="space-y-2">
-                                        {editSelectedDays.map(day => {
-                                            const dayLabel = daysOfWeek.find(d => d.value === day)?.label || ''
-                                            return (
-                                                <div key={day} className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                                                    <Label htmlFor={`hours-${day}`} className="w-24 text-sm font-medium">
-                                                        {dayLabel}
-                                                    </Label>
-                                                    <Input
-                                                        id={`hours-${day}`}
-                                                        type="number"
-                                                        step="0.5"
-                                                        min="0"
-                                                        value={editWeeklyHours[day]?.toString() || ""}
-                                                        onChange={e => updateDayHours(day, e.target.value)}
-                                                        placeholder="8"
-                                                        className="w-24"
-                                                        dir="ltr"
-                                                        onKeyDown={(e) => {
-                                                            if (e.key === '-' || e.key === 'Minus') {
-                                                                e.preventDefault()
-                                                            }
-                                                        }}
-                                                    />
-                                                    <span className="text-sm text-muted-foreground">{t('preferences.hours') || 'hours'}</span>
-                                                </div>
-                                            )
-                                        })}
+                                    {/* Quick Actions */}
+                                    <div className={`flex gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => {
+                                                const standardDays = [0, 1, 2, 3, 4]; // Sun-Thu
+                                                setEditSelectedDays(standardDays);
+                                                setEditWeeklyHours(prev => {
+                                                    const updated = { ...prev };
+                                                    standardDays.forEach(d => {
+                                                        if (!updated[d]) updated[d] = 8;
+                                                    });
+                                                    return updated;
+                                                });
+                                            }}
+                                            className="text-xs h-8 px-2"
+                                        >
+                                            Sun-Thu
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => {
+                                                const standardDays = [1, 2, 3, 4, 5]; // Mon-Fri
+                                                setEditSelectedDays(standardDays);
+                                                setEditWeeklyHours(prev => {
+                                                    const updated = { ...prev };
+                                                    standardDays.forEach(d => {
+                                                        if (!updated[d]) updated[d] = 8;
+                                                    });
+                                                    return updated;
+                                                });
+                                            }}
+                                            className="text-xs h-8 px-2"
+                                        >
+                                            Mon-Fri
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => {
+                                                setEditSelectedDays([]);
+                                                setEditWeeklyHours({});
+                                            }}
+                                            className="text-xs h-8 px-2 text-muted-foreground hover:text-destructive"
+                                        >
+                                            Clear
+                                        </Button>
                                     </div>
                                 </div>
-                            )}
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {daysOfWeek.map(day => {
+                                        const isSelected = editSelectedDays.includes(day.value);
+                                        return (
+                                            <div
+                                                key={day.value}
+                                                className={`flex items-center justify-between p-3 rounded-md border transition-all ${isSelected ? 'bg-primary/5 border-primary/20' : 'bg-transparent border-transparent hover:bg-muted/50'} ${isRTL ? 'flex-row-reverse' : ''}`}
+                                            >
+                                                <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                                                    <Switch
+                                                        checked={isSelected}
+                                                        onCheckedChange={() => toggleDay(day.value)}
+                                                        id={`day-switch-${day.value}`}
+                                                    />
+                                                    <Label
+                                                        htmlFor={`day-switch-${day.value}`}
+                                                        className={`font-medium cursor-pointer ${isSelected ? 'text-foreground' : 'text-muted-foreground'}`}
+                                                    >
+                                                        {day.label}
+                                                    </Label>
+                                                </div>
+
+                                                {isSelected && (
+                                                    <div className={`flex items-center gap-1.5 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                                                        <Input
+                                                            type="number"
+                                                            step="0.5"
+                                                            min="0"
+                                                            value={editWeeklyHours[day.value]?.toString() || ""}
+                                                            onChange={e => updateDayHours(day.value, e.target.value)}
+                                                            placeholder="8"
+                                                            className="w-16 h-7 text-center text-sm px-1"
+                                                            dir="ltr"
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === '-' || e.key === 'Minus') {
+                                                                    e.preventDefault()
+                                                                }
+                                                            }}
+                                                        />
+                                                        <span className="text-[10px] text-muted-foreground">{t('preferences.hours') || 'h'}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
                         </TabsContent>
 
                         <TabsContent value="managers" className="pt-4">
