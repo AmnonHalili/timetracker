@@ -2,7 +2,7 @@
 
 
 import { useRouter, useSearchParams } from "next/navigation"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useTransition } from "react"
 import { Trash2, Plus, MoreVertical, Pencil, Play, Square, CheckCircle2, AlertCircle, Edit, Filter, ArrowUpDown, X } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -143,6 +143,7 @@ interface TasksViewProps {
 
 export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWithActiveTimers = {}, labels = [] }: TasksViewProps) {
     const router = useRouter()
+    const [isPending, startTransition] = useTransition()
     const { t, isRTL, language } = useLanguage()
     const dateLocale = language === 'he' ? he : undefined
     const [tasks, setTasks] = useState(initialTasks)
@@ -152,7 +153,16 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
 
     const [localSubtasks, setLocalSubtasks] = useState<Record<string, Array<{ id: string; title: string; isDone: boolean }>>>({})
     const [expandedSubtasks, setExpandedSubtasks] = useState<Record<string, boolean>>({})
-    const [visibleSubtasksMap, setVisibleSubtasksMap] = useState<Record<string, boolean>>({})
+    // Initialize visibleSubtasksMap to true for tasks with subtasks (show by default)
+    const [visibleSubtasksMap, setVisibleSubtasksMap] = useState<Record<string, boolean>>(() => {
+        const initial: Record<string, boolean> = {}
+        initialTasks.forEach(task => {
+            if (task.subtasks && task.subtasks.length > 0) {
+                initial[task.id] = true
+            }
+        })
+        return initial
+    })
     const [stoppedTimers, setStoppedTimers] = useState<Set<string>>(new Set()) // Track tasks where timer was stopped
     const pendingOperations = useRef<Set<string>>(new Set()) // Track pending operations by subtask ID
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -207,6 +217,18 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
             }
         })
         setLocalSubtasks(subtasksMap)
+        
+        // Auto-show subtasks for tasks that have them (show by default)
+        setVisibleSubtasksMap(prev => {
+            const updated = { ...prev }
+            initialTasks.forEach(task => {
+                const hasSubtasks = (task.subtasks && task.subtasks.length > 0) || (subtasksMap[task.id] && subtasksMap[task.id].length > 0)
+                if (hasSubtasks && updated[task.id] === undefined) {
+                    updated[task.id] = true // Show by default if not explicitly hidden
+                }
+            })
+            return updated
+        })
     }, [initialTasks])
 
     useEffect(() => {
@@ -644,10 +666,16 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
         setNewSubtaskTitle(prev => ({ ...prev, [taskId]: "" }))
 
         // Optimistic update: Add immediately with temporary ID - synchronous, no await
+        const currentSubtasksCount = (localSubtasks[taskId] || []).length
         setLocalSubtasks(prev => ({
             ...prev,
             [taskId]: [...(prev[taskId] || []), { id: tempId, title: titleToSave, isDone: false }]
         }))
+        
+        // Auto-show subtasks when first subtask is added (if it's the first one)
+        if (currentSubtasksCount === 0) {
+            setVisibleSubtasksMap(prev => ({ ...prev, [taskId]: true }))
+        }
 
         // Fire and forget - don't await, let it happen in background
         fetch("/api/tasks/subtasks", {
@@ -901,7 +929,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
         }
     }
 
-    const handleDeleteSubtask = async (taskId: string, subtaskId: string) => {
+    const handleDeleteSubtask = (taskId: string, subtaskId: string) => {
         // Skip if operation is already pending
         if (pendingOperations.current.has(subtaskId)) {
             return
@@ -913,37 +941,44 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
         const previousSubtasks = localSubtasks[taskId] || []
         const deletedSubtask = previousSubtasks.find(s => s.id === subtaskId)
 
-        // Optimistic update - remove immediately
+        // Optimistic update - remove IMMEDIATELY (synchronous, no await)
         setLocalSubtasks(prev => ({
             ...prev,
             [taskId]: (prev[taskId] || []).filter(s => s.id !== subtaskId)
         }))
 
-        try {
-            const res = await fetch(`/api/tasks/subtasks?id=${subtaskId}`, { method: "DELETE" })
-            if (!res.ok) {
-                throw new Error("Failed to delete subtask")
-            }
-            router.refresh()
-        } catch (error) {
-            console.error("Failed to delete subtask:", error)
-            // Revert on error - restore the deleted subtask
-            if (deletedSubtask) {
-                setLocalSubtasks(prev => ({
-                    ...prev,
-                    [taskId]: [...(prev[taskId] || []), deletedSubtask].sort((a, b) => {
-                        // Try to maintain original order
-                        const aIndex = previousSubtasks.findIndex(s => s.id === a.id)
-                        const bIndex = previousSubtasks.findIndex(s => s.id === b.id)
-                        if (aIndex === -1) return 1
-                        if (bIndex === -1) return -1
-                        return aIndex - bIndex
-                    })
-                }))
-            }
-        } finally {
-            pendingOperations.current.delete(subtaskId)
-        }
+        // Fire and forget - API call happens in background, doesn't block UI
+        fetch(`/api/tasks/subtasks?id=${subtaskId}`, { method: "DELETE" })
+            .then(async (res) => {
+                if (!res.ok) {
+                    throw new Error("Failed to delete subtask")
+                }
+                // Refresh in background without blocking (using startTransition for smooth updates)
+                startTransition(() => {
+                    router.refresh()
+                })
+            })
+            .catch((error) => {
+                console.error("Failed to delete subtask:", error)
+                // Revert on error - restore the deleted subtask
+                if (deletedSubtask) {
+                    setLocalSubtasks(prev => ({
+                        ...prev,
+                        [taskId]: [...(prev[taskId] || []), deletedSubtask].sort((a, b) => {
+                            // Try to maintain original order
+                            const aIndex = previousSubtasks.findIndex(s => s.id === a.id)
+                            const bIndex = previousSubtasks.findIndex(s => s.id === b.id)
+                            if (aIndex === -1) return 1
+                            if (bIndex === -1) return -1
+                            return aIndex - bIndex
+                        })
+                    }))
+                    toast.error(t('tasks.deleteSubtaskError') || "Failed to delete subtask. Please try again.")
+                }
+            })
+            .finally(() => {
+                pendingOperations.current.delete(subtaskId)
+            })
     }
 
 
@@ -1116,26 +1151,33 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                         />
                     </div>
                 ) : (
-                    <div className="rounded-md border border-border overflow-hidden bg-muted/30 dark:bg-muted/20">
-                        <table className="w-full text-sm">
+                    <div className="rounded-md border border-border overflow-hidden bg-muted/30 dark:bg-muted/20 w-full">
+                        <table className="w-full text-sm" style={{ tableLayout: 'fixed', width: '100%' }}>
+                            <colgroup>
+                                <col style={{ width: '55%' }} />
+                                <col style={{ width: '12%' }} />
+                                <col style={{ width: '11%' }} />
+                                <col style={{ width: '11%' }} />
+                                <col style={{ width: '11%' }} />
+                            </colgroup>
                             <thead className="bg-muted/40 sticky top-0 z-10 border-b border-border">
                                 <tr className="border-b border-border/50">
-                                    <th className="h-10 px-4 text-left font-normal text-muted-foreground bg-muted/20 first:rounded-tl-lg">
+                                    <th className="h-10 px-4 text-left font-normal text-muted-foreground bg-muted/20 first:rounded-tl-md">
                                         {t('tasks.title') || 'Task'}
                                     </th>
-                                    <th className="h-10 px-4 text-left font-normal text-muted-foreground w-[150px] bg-muted/20">
+                                    <th className="h-10 px-4 text-left font-normal text-muted-foreground bg-muted/20">
                                         {t('tasks.assignToLabel') || 'Assigned to'}
                                     </th>
                                     {/* Priority */}
-                                    <th className="h-10 px-4 text-center font-normal text-muted-foreground w-[140px] bg-muted/20">
+                                    <th className="h-10 px-4 text-center font-normal text-muted-foreground bg-muted/20">
                                         {t('tasks.priority') || 'Priority'}
                                     </th>
                                     {/* Date */}
-                                    <th className="h-10 px-4 text-center font-normal text-muted-foreground w-[150px] bg-muted/20">
+                                    <th className="h-10 px-4 text-center font-normal text-muted-foreground bg-muted/20">
                                         {t('tasks.date') || 'Date'}
                                     </th>
                                     {/* Status */}
-                                    <th className="h-10 px-4 text-center font-normal text-muted-foreground w-[140px] bg-muted/20 last:rounded-tr-lg">
+                                    <th className="h-10 px-4 text-center font-normal text-muted-foreground bg-muted/20 last:rounded-tr-md">
                                         {t('tasks.status')}
                                     </th>
                                 </tr>
@@ -1503,7 +1545,8 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                                     <td className="p-2 border-r border-border/50"></td>
                                                                     <td className="p-2 border-r border-border/50"></td>
                                                                     <td className="p-2 border-r border-border/50"></td>
-                                                                    <td className="p-2 border-r border-border/50"></td>
+                                                                    <td className="p-2"></td>
+                                                                    <td className="p-2"></td>
                                                                     <td className="p-2"></td>
                                                                 </tr>
                                                             )
@@ -1552,7 +1595,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                             <td className="p-2 border-r border-border/50"></td>
                                                             <td className="p-2 border-r border-border/50"></td>
                                                             <td className="p-2 border-r border-border/50"></td>
-                                                            <td className="p-2 border-r border-border/50"></td>
+                                                            <td className="p-2"></td>
                                                             <td className="p-2"></td>
                                                         </tr>
                                                     </>
