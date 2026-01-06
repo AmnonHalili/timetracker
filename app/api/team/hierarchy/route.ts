@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 
+export const dynamic = "force-dynamic"
+
 export async function GET() {
     const session = await getServerSession(authOptions)
 
@@ -53,7 +55,7 @@ export async function GET() {
         try {
             // Try to fetch with new fields first
             allUsers = await prisma.user.findMany({
-                where: { 
+                where: {
                     projectId: currentUser.projectId,
                     status: "ACTIVE" // Only show users who have accepted invitation and signed in
                 },
@@ -90,7 +92,7 @@ export async function GET() {
             if (error.message?.includes('sharedChiefGroupId') || error.message?.includes('Unknown field') || error.message?.includes('secondaryManagers')) {
                 console.warn("New fields not available in Prisma client, fetching without them")
                 allUsers = await prisma.user.findMany({
-                    where: { 
+                    where: {
                         projectId: currentUser.projectId,
                         status: "ACTIVE" // Only show users who have accepted invitation and signed in
                     },

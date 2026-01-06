@@ -36,11 +36,12 @@ export async function POST(req: Request) {
         await prisma.user.update({
             where: { id: session.user.id },
             data: {
-                projectId: projectId
+                projectId: projectId,
+                role: membership.role
             }
         })
 
-        return NextResponse.json({ success: true })
+        return NextResponse.json({ success: true, role: membership.role })
     } catch (error) {
         console.error("Error switching project:", error)
         return NextResponse.json({ error: "Internal server error" }, { status: 500 })

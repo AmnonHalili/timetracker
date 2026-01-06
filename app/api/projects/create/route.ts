@@ -42,7 +42,10 @@ export async function POST(req: Request) {
             // 3. Switch User Context
             await tx.user.update({
                 where: { id: session.user.id },
-                data: { projectId: project.id }
+                data: {
+                    projectId: project.id,
+                    role: 'ADMIN'
+                }
             })
 
             return project

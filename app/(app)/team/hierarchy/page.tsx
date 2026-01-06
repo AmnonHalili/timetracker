@@ -8,6 +8,7 @@ import { User } from "@prisma/client"
 import { Loader2, Pencil, ZoomIn, ZoomOut, ArrowRight, Crosshair, Eye } from "lucide-react"
 import { toast } from "sonner"
 import { useSession } from "next-auth/react"
+import { useProject } from "@/components/providers/ProjectProvider"
 import { useLanguage } from "@/lib/useLanguage"
 import { Button } from "@/components/ui/button"
 import { ImageCropperDialog } from "@/components/ui/ImageCropperDialog"
@@ -27,7 +28,9 @@ type TreeNode = User & {
 
 export default function HierarchyPage() {
     const { data: session } = useSession()
+
     const { t } = useLanguage()
+    const { activeProject } = useProject()
     const [users, setUsers] = useState<User[]>([])
     const [projectName, setProjectName] = useState("Organization")
     const [projectId, setProjectId] = useState<string | null>(null)
@@ -72,7 +75,7 @@ export default function HierarchyPage() {
         if (!parentContainer) return
 
         const parentRect = parentContainer.getBoundingClientRect()
-        
+
         // Get header height
         const headerElement = parentContainer.querySelector('.p-8') as HTMLElement
         const headerHeight = headerElement ? headerElement.getBoundingClientRect().height : 200
@@ -103,7 +106,7 @@ export default function HierarchyPage() {
         // With transform-origin '0 0', we need to calculate pan position to center
         const scaledWidth = containerWidth * optimalZoom
         const scaledHeight = containerHeight * optimalZoom
-        
+
         // Calculate pan position to center the scaled container in available space
         const centeredPanX = (availableWidth - scaledWidth) / 2
         const centeredPanY = (availableHeight - scaledHeight) / 2
@@ -291,9 +294,9 @@ export default function HierarchyPage() {
 
             const data = await res.json()
             setUsers(data.users || [])
-            if (data.projectName) setProjectName(data.projectName)
-            if (data.projectLogo) setProjectLogo(data.projectLogo)
-            if (data.projectId) setProjectId(data.projectId)
+            setProjectName(data.projectName || "Organization")
+            setProjectLogo(data.projectLogo || null)
+            setProjectId(data.projectId || null)
 
             // Private workspace check
             setHasProject(data.projectName !== "Private Workspace")
@@ -354,7 +357,7 @@ export default function HierarchyPage() {
 
     useEffect(() => {
         fetchHierarchy()
-    }, [])
+    }, [activeProject?.id])
 
     // Disable scrolling on the main container for this page
     useEffect(() => {
@@ -514,6 +517,10 @@ export default function HierarchyPage() {
                 <div className="relative max-w-5xl mx-auto mb-4 md:mb-8 flex flex-col md:block">
                     {/* Title */}
                     <h1 className="text-xl md:text-2xl font-bold text-center w-full mb-4 md:mb-0 order-1 md:order-none">{t('hierarchy.organizationHierarchy')}</h1>
+                    {/* DEBUG INFO */}
+                    <div className="text-xs text-center text-muted-foreground mt-1">
+                        Role: {session?.user?.role || 'None'} | Project: {projectName} | Can Edit: {hasProject && session?.user?.role === "ADMIN" ? 'Yes' : 'No'}
+                    </div>
 
                     {/* Controls Row - Mobile: Flow, Desktop: Absolute Overlay */}
                     <div className="flex items-center justify-between w-full order-2 md:absolute md:top-0 md:left-0 md:h-full pointer-events-none">

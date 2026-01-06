@@ -88,6 +88,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
 
             if (!res.ok) throw new Error("Failed to switch project")
 
+            const data = await res.json()
             const targetProject = projects.find(p => p.id === projectId)
             setActiveProject(targetProject || null)
             optimisticProjectId.current = projectId // Set optimistic ID
@@ -95,7 +96,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
             toast.success(`Switched to ${targetProject?.name}`, { id: loadingToast })
 
             // Update the session to reflect the change immediately
-            await update({ projectId })
+            await update({ projectId, role: data.role })
 
             // Refresh the page w/ transition to track loading state
             startTransition(() => {
@@ -130,7 +131,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
                 setProjects(prev => [...prev, newProject])
                 setActiveProject(newProject)
                 optimisticProjectId.current = newProject.id
-                await update({ projectId: data.id })
+                await update({ projectId: data.id, role: 'ADMIN' })
 
                 startTransition(() => {
                     router.refresh()
