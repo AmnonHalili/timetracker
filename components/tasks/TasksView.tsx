@@ -1636,7 +1636,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
 
                                                                                         {/* Due Date */}
                                                                                         {(() => {
-                                                                                            const indicator = formatDueDateIndicator(subtask.dueDate, t)
+                                                                                            const indicator = formatDueDateIndicator(subtask.dueDate || null, t)
                                                                                             if (!indicator) return null
                                                                                             return (
                                                                                                 <span className={cn("text-[9px] font-medium whitespace-nowrap", indicator.className)}>
