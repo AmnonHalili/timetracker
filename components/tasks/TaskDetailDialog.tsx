@@ -760,6 +760,7 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
 
                                         // Group subtask entries by subtask ID
                                         const entriesBySubtask = new Map<string, typeof subtaskEntries>()
+                                        const subtaskTitles = new Map<string, string>()
                                         subtaskEntries.forEach(entry => {
                                             if (entry.subtask) {
                                                 const subtaskId = entry.subtask.id
