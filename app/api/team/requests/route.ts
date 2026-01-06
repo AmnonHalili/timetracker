@@ -87,16 +87,16 @@ export async function POST(req: Request) {
 
             // Determine required tier based on current user count
             // Free: up to 3 users (0-3)
-            // Team (Tier 1): 4-20 users
-            // Business (Tier 2): 20-50 users
-            // Company (Tier 3): 51+ users
+            // Team (Tier 1): 4-10 users
+            // Business (Tier 2): 10-20 users
+            // Company (Tier 3): 20+ users
             let requiredTier: string | null = null
 
             if (activeUserCount >= 3) {
                 // Already at free limit (3 users), need Team for 4th user
-                if (activeUserCount < 20) {
+                if (activeUserCount < 10) {
                     requiredTier = "tier1"
-                } else if (activeUserCount < 50) {
+                } else if (activeUserCount < 20) {
                     requiredTier = "tier2"
                 } else {
                     requiredTier = "tier3"
@@ -105,8 +105,8 @@ export async function POST(req: Request) {
 
             // Check if current plan allows this user count
             const planLimit = currentUserPlan?.plan === 'FREE' ? 3 :
-                currentUserPlan?.plan === 'TIER1' ? 20 :
-                    currentUserPlan?.plan === 'TIER2' ? 50 :
+                currentUserPlan?.plan === 'TIER1' ? 10 :
+                    currentUserPlan?.plan === 'TIER2' ? 20 :
                         Infinity
 
             // If approving this request would exceed current plan limit, return error

@@ -473,7 +473,7 @@ export const translations = {
     'pricing.feature.advancedReports': 'Advanced reports',
     'pricing.feature.advancedTeamManagement': 'Advanced team management',
     'pricing.feature.organizationalSupport': 'Full organizational support',
-    'pricing.feature.perUserPricing': 'Per-user pricing above 50 users',
+    'pricing.feature.perUserPricing': 'Per-user pricing above 20 users',
 
     // Free Plan
     'pricing.free.name': 'Free',
@@ -486,30 +486,30 @@ export const translations = {
 
     // Team (Tier 1)
     'pricing.tier1.name': 'Team',
-    'pricing.tier1.price': '$29 / month',
+    'pricing.tier1.price': '$49 / month',
     'pricing.tier1.description': 'For growing teams',
-    'pricing.tier1.users': '4-20 participants',
+    'pricing.tier1.users': '4-10 participants',
     'pricing.tier1.feature1': 'All Free features',
-    'pricing.tier1.feature2': 'Support up to 20 users',
+    'pricing.tier1.feature2': 'Support up to 10 users',
     'pricing.tier1.feature3': 'Advanced reports',
 
     // Business (Tier 2)
     'pricing.tier2.name': 'Business',
-    'pricing.tier2.price': '$69 / month',
+    'pricing.tier2.price': '$99 / month',
     'pricing.tier2.description': 'For established teams',
-    'pricing.tier2.users': '20-50 participants',
+    'pricing.tier2.users': '10-20 participants',
     'pricing.tier2.feature1': 'All Team features',
-    'pricing.tier2.feature2': 'Support up to 50 users',
+    'pricing.tier2.feature2': 'Support up to 20 users',
     'pricing.tier2.feature3': 'Advanced team management',
 
     // Company (Tier 3)
     'pricing.tier3.name': 'Company',
-    'pricing.tier3.price': '$99 / month',
+    'pricing.tier3.price': '$199 / month',
     'pricing.tier3.description': 'For large organizations',
-    'pricing.tier3.users': '51+ participants',
-    'pricing.tier3.basePrice': 'Base: $99/month',
-    'pricing.tier3.perUserAbove50': 'per user above 50',
-    'pricing.tier3.usersAbove50': 'users above 50',
+    'pricing.tier3.users': '20+ participants',
+    'pricing.tier3.basePrice': 'Base: $199/month',
+    'pricing.tier3.perUserAbove50': 'per user above 20',
+    'pricing.tier3.usersAbove50': 'users above 20',
     'pricing.tier3.feature1': 'All Business features',
     'pricing.tier3.feature2': 'Unlimited user support',
     'pricing.tier3.feature3': 'Full organizational support',
@@ -1113,7 +1113,7 @@ export const translations = {
     'pricing.feature.advancedReports': 'דוחות מתקדמים',
     'pricing.feature.advancedTeamManagement': 'ניהול צוות מתקדם',
     'pricing.feature.organizationalSupport': 'תמיכה ארגונית מלאה',
-    'pricing.feature.perUserPricing': 'מחיר לכל משתמש מעל 50',
+    'pricing.feature.perUserPricing': 'מחיר לכל משתמש מעל 20',
 
     // Free Plan
     'pricing.free.name': 'חינם',
@@ -1126,30 +1126,30 @@ export const translations = {
 
     // Team (Tier 1)
     'pricing.tier1.name': 'צוות',
-    'pricing.tier1.price': '$29 / חודש',
+    'pricing.tier1.price': '$49 / חודש',
     'pricing.tier1.description': 'לצוותים גדלים',
-    'pricing.tier1.users': '4-20 משתתפים',
+    'pricing.tier1.users': '4-10 משתתפים',
     'pricing.tier1.feature1': 'כל התכונות של החינם',
-    'pricing.tier1.feature2': 'תמיכה עד 20 משתמשים',
+    'pricing.tier1.feature2': 'תמיכה עד 10 משתמשים',
     'pricing.tier1.feature3': 'דוחות מתקדמים',
 
     // Business (Tier 2)
     'pricing.tier2.name': 'עסק',
-    'pricing.tier2.price': '$69 / חודש',
+    'pricing.tier2.price': '$99 / חודש',
     'pricing.tier2.description': 'לצוותים מבוססים',
-    'pricing.tier2.users': '20-50 משתתפים',
+    'pricing.tier2.users': '10-20 משתתפים',
     'pricing.tier2.feature1': 'כל התכונות של צוות',
-    'pricing.tier2.feature2': 'תמיכה עד 50 משתמשים',
+    'pricing.tier2.feature2': 'תמיכה עד 20 משתמשים',
     'pricing.tier2.feature3': 'ניהול צוות מתקדם',
 
     // Company (Tier 3)
     'pricing.tier3.name': 'חברה',
-    'pricing.tier3.price': '$99 / חודש',
+    'pricing.tier3.price': '$199 / חודש',
     'pricing.tier3.description': 'לארגונים גדולים',
-    'pricing.tier3.users': '51+ משתתפים',
-    'pricing.tier3.basePrice': 'בסיס: $99/חודש',
-    'pricing.tier3.perUserAbove50': 'לכל משתמש מעל 50',
-    'pricing.tier3.usersAbove50': 'משתמשים מעל 50',
+    'pricing.tier3.users': '20+ משתתפים',
+    'pricing.tier3.basePrice': 'בסיס: $199/חודש',
+    'pricing.tier3.perUserAbove50': 'לכל משתמש מעל 20',
+    'pricing.tier3.usersAbove50': 'משתמשים מעל 20',
     'pricing.tier3.feature1': 'כל התכונות של עסק',
     'pricing.tier3.feature2': 'תמיכה ללא הגבלה במשתמשים',
     'pricing.tier3.feature3': 'תמיכה ארגונית מלאה',

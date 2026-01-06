@@ -76,20 +76,20 @@ export async function POST(req: Request) {
 
         // New pricing model limits:
         // Free: up to 3 users
-        // Team (TIER1): 4-20 users
-        // Business (TIER2): 20-50 users
-        // Company (TIER3): 51+ users
+        // Team (TIER1): 4-10 users
+        // Business (TIER2): 10-20 users
+        // Company (TIER3): 20+ users
         let planLimit = 3
-        if (userPlan === 'TIER1') planLimit = 20
-        if (userPlan === 'TIER2') planLimit = 50
+        if (userPlan === 'TIER1') planLimit = 10
+        if (userPlan === 'TIER2') planLimit = 20
         if (userPlan === 'TIER3') planLimit = Infinity
 
         // Determine required tier if limit would be exceeded
         let requiredTier: string | null = null
         if (activeUserCount >= 3) {
-            if (activeUserCount < 20) {
+            if (activeUserCount < 10) {
                 requiredTier = "tier1"
-            } else if (activeUserCount < 50) {
+            } else if (activeUserCount < 20) {
                 requiredTier = "tier2"
             } else {
                 requiredTier = "tier3"
@@ -104,7 +104,7 @@ export async function POST(req: Request) {
                 requiredTier,
                 currentPlan: userPlan,
                 currentUserCount: activeUserCount,
-                limit: activeUserCount < 20 ? 20 : activeUserCount < 50 ? 50 : null
+                limit: activeUserCount < 10 ? 10 : activeUserCount < 20 ? 20 : null
             }, { status: 402 }) // 402 Payment Required
         }
 

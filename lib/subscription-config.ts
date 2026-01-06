@@ -16,9 +16,9 @@ export const PLANS = [
     {
         name: "Team",
         slug: "tier1",
-        quota: 20,
+        quota: 10,
         price: {
-            amount: 29,
+            amount: 49,
             priceIds: {
                 test: "price_tier1_test", // User to replace
                 production: "",
@@ -28,9 +28,9 @@ export const PLANS = [
     {
         name: "Business",
         slug: "tier2",
-        quota: 50,
+        quota: 20,
         price: {
-            amount: 69,
+            amount: 99,
             priceIds: {
                 test: "price_tier2_test", // User to replace
                 production: "",
@@ -42,8 +42,8 @@ export const PLANS = [
         slug: "tier3",
         quota: Infinity, // Unlimited
         price: {
-            amount: 99, // Base price
-            perUserPrice: 2.5, // Per user above 50
+            amount: 199, // Base price
+            perUserPrice: 8, // Per user above 20
             priceIds: {
                 test: "price_tier3_test", // User to replace
                 production: "",
@@ -57,9 +57,9 @@ export function getPlanLimit(plan: Plan) {
         case Plan.FREE:
             return 3
         case Plan.TIER1:
-            return 20
+            return 10
         case Plan.TIER2:
-            return 50
+            return 20
         case Plan.TIER3:
             return Infinity
         default:
@@ -71,9 +71,9 @@ export function getPlanLimit(plan: Plan) {
 export function getRequiredTier(userCount: number): { tier: string; slug: string } | null {
     if (userCount <= 3) {
         return { tier: "Free", slug: "free" }
-    } else if (userCount <= 20) {
+    } else if (userCount <= 10) {
         return { tier: "Team", slug: "tier1" }
-    } else if (userCount <= 50) {
+    } else if (userCount <= 20) {
         return { tier: "Business", slug: "tier2" }
     } else {
         return { tier: "Company", slug: "tier3" }
@@ -82,7 +82,7 @@ export function getRequiredTier(userCount: number): { tier: string; slug: string
 
 // Calculate Company tier price based on user count
 export function calculateCompanyPrice(userCount: number): number {
-    const basePrice = 99
-    const usersAbove50 = Math.max(0, userCount - 50)
-    return basePrice + (usersAbove50 * 2.5)
+    const basePrice = 199
+    const usersAbove20 = Math.max(0, userCount - 20)
+    return basePrice + (usersAbove20 * 8)
 }

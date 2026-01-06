@@ -146,7 +146,7 @@ export function PricingContent() {
         {
             id: 'tier3',
             name: t('pricing.tier3.name'),
-            price: userCount > 50 ? `$${calculateCompanyPrice(userCount).toFixed(2)} / month` : t('pricing.tier3.price'),
+            price: userCount > 20 ? `$${calculateCompanyPrice(userCount).toFixed(2)} / month` : t('pricing.tier3.price'),
             description: t('pricing.tier3.description'),
             users: t('pricing.tier3.users'),
             popular: false,
@@ -225,13 +225,13 @@ export function PricingContent() {
                                     <div className="text-3xl font-bold">{plan.price}</div>
                                     {plan.id === 'tier3' && (
                                         <div className="mt-2 space-y-1">
-                                            {userCount > 50 ? (
+                                            {userCount > 20 ? (
                                                 <div className="text-xs text-muted-foreground">
-                                                    {t('pricing.tier3.basePrice')} + ${2.5.toFixed(2)} × {userCount - 50} {t('pricing.tier3.usersAbove50')} = ${calculateCompanyPrice(userCount).toFixed(2)}/month
+                                                    {t('pricing.tier3.basePrice')} + $8.00 × {userCount - 20} {t('pricing.tier3.usersAbove50')} = ${calculateCompanyPrice(userCount).toFixed(2)}/month
                                                 </div>
                                             ) : (
                                                 <div className="text-xs text-muted-foreground">
-                                                    {t('pricing.tier3.basePrice')} + ${2.5.toFixed(2)} {t('pricing.tier3.perUserAbove50')}
+                                                    {t('pricing.tier3.basePrice')} + $8.00 {t('pricing.tier3.perUserAbove50')}
                                                 </div>
                                             )}
                                         </div>
