@@ -26,8 +26,10 @@ export default async function TasksPage() {
         projectId: currentUser?.projectId // Ensure task belongs to current project
     }
 
-    if (!isAdmin) {
-        // Regular users only see tasks assigned to them WITHIN the project
+    // Force strict isolation if:
+    // 1. User is not an admin
+    // 2. OR User is in Private Session (projectId is null) - Admins shouldn't see other people's private tasks
+    if (!isAdmin || !currentUser?.projectId) {
         where.assignees = { some: { id: session.user.id } }
     }
 

@@ -145,7 +145,8 @@ export default async function DashboardPage() {
         where: {
             projectId: session.user.projectId,
             // Only tasks assigned to the user OR user is admin
-            ...(session.user.role !== 'ADMIN' ? {
+            // OR user is in Private Session (projectId is null) - Admins shouldn't see other people's private tasks
+            ...(session.user.role !== 'ADMIN' || !session.user.projectId ? {
                 assignees: {
                     some: { id: session.user.id }
                 }
