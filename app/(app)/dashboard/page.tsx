@@ -92,16 +92,6 @@ export default async function DashboardPage() {
                     startTime: "desc",
                 },
             },
-            workdays: {
-                where: {
-                    userId: session.user.id,
-                    projectId: session.user.projectId,
-                    workdayStartTime: {
-                        gte: dayStart,
-                        lte: dayEnd,
-                    },
-                },
-            },
         },
     })) as unknown as DashboardUser
 
@@ -109,15 +99,31 @@ export default async function DashboardPage() {
         redirect("/login")
     }
 
-    // Process workdays to find the active one
-    const todayWorkdays = user.workdays || []
-    const activeWorkday = todayWorkdays.find(w => !w.workdayEndTime) || null
-
-    // Fetch all workdays for the current month for balance calculation
-    const monthlyWorkdays = await prisma.workday.findMany({
+    // Fetch today's workdays separately
+    // Note: projectId filtering removed temporarily until migration is applied and Prisma client is regenerated
+    const todayWorkdays = await prisma.workday.findMany({
         where: {
             userId: session.user.id,
-            projectId: session.user.projectId,
+            workdayStartTime: {
+                gte: dayStart,
+                lte: dayEnd,
+            },
+        },
+    })
+    
+    // Filter by projectId in JavaScript if needed (once projectId column exists in DB)
+    const filteredTodayWorkdays = session.user.projectId 
+        ? todayWorkdays.filter(w => (w as any).projectId === session.user.projectId)
+        : todayWorkdays
+
+    // Process workdays to find the active one
+    const activeWorkday = filteredTodayWorkdays.find(w => !w.workdayEndTime) || null
+
+    // Fetch all workdays for the current month for balance calculation
+    // Note: projectId filtering removed temporarily until migration is applied and Prisma client is regenerated
+    const monthlyWorkdaysRaw = await prisma.workday.findMany({
+        where: {
+            userId: session.user.id,
             workdayStartTime: {
                 gte: monthStart,
                 lte: today,
@@ -128,6 +134,11 @@ export default async function DashboardPage() {
             workdayEndTime: true,
         },
     })
+    
+    // Filter by projectId in JavaScript if needed (once projectId column exists in DB)
+    const monthlyWorkdays = session.user.projectId
+        ? monthlyWorkdaysRaw.filter((w: any) => w.projectId === session.user.projectId)
+        : monthlyWorkdaysRaw
 
     // Fetch tasks for the current project for DashboardContent
     const tasks = await prisma.task.findMany({
