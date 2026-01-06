@@ -730,13 +730,86 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
 
                                     {/* Work Log - Detailed time entries (Collapsible) */}
                                     {timeEntries && timeEntries.length > 0 && (() => {
-                                        const completedEntries = timeEntries.filter(entry => entry.endTime).sort((a, b) => {
-                                            const dateA = new Date(a.startTime).getTime()
-                                            const dateB = new Date(b.startTime).getTime()
-                                            return dateB - dateA // Most recent first
+                                        const completedEntries = timeEntries.filter(entry => entry.endTime)
+                                        
+                                        if (completedEntries.length === 0) return null
+
+                                        // Separate main task entries from subtask entries
+                                        const mainTaskEntries = completedEntries.filter(entry => !entry.subtask)
+                                        const subtaskEntries = completedEntries.filter(entry => entry.subtask)
+
+                                        // Sort main task entries by time (most time first)
+                                        const sortedMainTaskEntries = mainTaskEntries.sort((a, b) => {
+                                            const startA = new Date(a.startTime).getTime()
+                                            const endA = new Date(a.endTime!).getTime()
+                                            const secondsA = Math.floor((endA - startA) / 1000)
+                                            
+                                            const startB = new Date(b.startTime).getTime()
+                                            const endB = new Date(b.endTime!).getTime()
+                                            const secondsB = Math.floor((endB - startB) / 1000)
+                                            
+                                            return secondsB - secondsA // Most time first
                                         })
 
-                                        if (completedEntries.length === 0) return null
+                                        // Get subtask order from task.subtasks (already sorted by createdAt: 'asc' from API)
+                                        const subtaskOrder = task?.subtasks ? task.subtasks.map(s => s.id) : []
+                                        
+                                        // Group subtask entries by subtask ID
+                                        const entriesBySubtask = new Map<string, typeof subtaskEntries>()
+                                        subtaskEntries.forEach(entry => {
+                                            if (entry.subtask) {
+                                                const subtaskId = entry.subtask.id
+                                                if (!entriesBySubtask.has(subtaskId)) {
+                                                    entriesBySubtask.set(subtaskId, [])
+                                                }
+                                                entriesBySubtask.get(subtaskId)!.push(entry)
+                                                subtaskTitles.set(subtaskId, entry.subtask.title)
+                                            }
+                                        })
+
+                                        // Sort entries within each subtask by time (most time first)
+                                        entriesBySubtask.forEach((entries) => {
+                                            entries.sort((a, b) => {
+                                                const startA = new Date(a.startTime).getTime()
+                                                const endA = new Date(a.endTime!).getTime()
+                                                const secondsA = Math.floor((endA - startA) / 1000)
+                                                
+                                                const startB = new Date(b.startTime).getTime()
+                                                const endB = new Date(b.endTime!).getTime()
+                                                const secondsB = Math.floor((endB - startB) / 1000)
+                                                
+                                                return secondsB - secondsA // Most time first
+                                            })
+                                        })
+
+                                        // Get all subtask IDs from entries (including deleted subtasks)
+                                        const allSubtaskIds = Array.from(entriesBySubtask.keys())
+                                        
+                                        // Separate known subtasks (in order) from unknown ones (deleted)
+                                        const knownSubtaskIds = subtaskOrder.filter(id => entriesBySubtask.has(id))
+                                        const unknownSubtaskIds = allSubtaskIds.filter(id => !subtaskOrder.includes(id))
+                                        
+                                        // Build final sorted list: main task first, then subtasks in order
+                                        const sortedEntries: typeof completedEntries = []
+                                        
+                                        // Add main task entries first (if any)
+                                        sortedEntries.push(...sortedMainTaskEntries)
+                                        
+                                        // Add known subtask entries in order (from task.subtasks)
+                                        knownSubtaskIds.forEach(subtaskId => {
+                                            const entries = entriesBySubtask.get(subtaskId)
+                                            if (entries) {
+                                                sortedEntries.push(...entries)
+                                            }
+                                        })
+                                        
+                                        // Add unknown subtask entries at the end (deleted subtasks)
+                                        unknownSubtaskIds.forEach(subtaskId => {
+                                            const entries = entriesBySubtask.get(subtaskId)
+                                            if (entries) {
+                                                sortedEntries.push(...entries)
+                                            }
+                                        })
 
                                         return (
                                             <div className="space-y-3">
@@ -763,7 +836,7 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
 
                                                     {isWorkLogOpen && (
                                                         <div className="border-t border-border/50 divide-y divide-border/50">
-                                                            {completedEntries.map((entry) => {
+                                                            {sortedEntries.map((entry) => {
                                                                 const start = new Date(entry.startTime).getTime()
                                                                 const end = new Date(entry.endTime!).getTime()
                                                                 const seconds = Math.floor((end - start) / 1000)
