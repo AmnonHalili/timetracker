@@ -68,6 +68,7 @@ export default async function TeamPage() {
                 createdAt: true,
                 jobTitle: true,
                 managerId: true,
+                weeklyHours: true,
             }
         })
 
@@ -108,6 +109,7 @@ export default async function TeamPage() {
         jobTitle: string | null
         managerId: string | null
         sharedChiefGroupId?: string | null
+        weeklyHours?: any // using any for Json type to avoid complexity in this local type
     }
 
     let allTeamMembers: TeamMember[]
@@ -134,6 +136,7 @@ export default async function TeamPage() {
                 jobTitle: true,
                 managerId: true,
                 sharedChiefGroupId: true, // CRITICAL for filterVisibleUsers!
+                weeklyHours: true,
             } as never,
             orderBy: { createdAt: "asc" }
         }) as TeamMember[]
@@ -159,6 +162,7 @@ export default async function TeamPage() {
                     jobTitle: true,
                     managerId: true,
                     sharedChiefGroupId: true,
+                    weeklyHours: true,
                 } as never,
                 orderBy: { createdAt: "asc" }
             }) as TeamMember[]
@@ -182,6 +186,7 @@ export default async function TeamPage() {
                     createdAt: true,
                     jobTitle: true,
                     managerId: true,
+                    weeklyHours: true,
                 },
                 orderBy: { createdAt: "asc" }
             })
