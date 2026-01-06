@@ -658,11 +658,13 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         <SelectItem value="unassigned">{t('tasks.subtaskNoAssignee') || 'Unassigned'}</SelectItem>
-                                                        {users.map(user => (
-                                                            <SelectItem key={user.id} value={user.id}>
-                                                                {user.name || user.email}
-                                                            </SelectItem>
-                                                        ))}
+                                                        {users
+                                                            .filter(user => assignedToIds.includes(user.id))
+                                                            .map(user => (
+                                                                <SelectItem key={user.id} value={user.id}>
+                                                                    {user.name || user.email}
+                                                                </SelectItem>
+                                                            ))}
                                                     </SelectContent>
                                                 </Select>
                                             </div>
