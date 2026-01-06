@@ -117,7 +117,8 @@ export async function POST(req: Request) {
                 status: true,
                 projectId: true,
                 pendingProjectId: true,
-                removedAt: true
+                removedAt: true,
+                resetTokenExpiry: true,
             }
         })
 
@@ -172,16 +173,8 @@ export async function POST(req: Request) {
                 })
             }
 
-            // Send notification email to existing user (Modified to say "Invited")
-            const transporter = nodemailer.createTransport({
-                host: "smtp.gmail.com",
-                port: 587,
-                secure: false,
-                auth: {
-                    user: process.env.GMAIL_USER,
-                    pass: process.env.GMAIL_PASS,
-                },
-            })
+
+
 
             const projectName = currentUser.project?.name || "the team"
             const inviterName = currentUser.name || "A team member"

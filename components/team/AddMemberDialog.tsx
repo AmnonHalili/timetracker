@@ -63,7 +63,8 @@ export function AddMemberDialog({
 
     // Check if current user is top-level admin (has no manager)
     const isAdmin = session?.user?.role === "ADMIN"
-    const isTopLevelAdmin = isAdmin && !session?.user?.managerId
+
+
 
     const defaultTriggerLabel = triggerLabel || t('team.addMember')
     const [loading, setLoading] = useState(false)

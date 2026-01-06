@@ -3,7 +3,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState, useEffect, useRef } from "react"
-import { Trash2, Calendar, Plus, MoreVertical, Pencil, Play, Square, CheckCircle2, AlertCircle, Edit } from "lucide-react"
+import { Trash2, Plus, MoreVertical, Pencil, Play, Square, CheckCircle2, AlertCircle, Edit, Filter, ArrowUpDown, X } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -39,7 +39,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Filter, X, ArrowUpDown } from "lucide-react"
+
+
 import { useLanguage } from "@/lib/useLanguage"
 import confetti from "canvas-confetti"
 import { TasksBoard } from "./board/TasksBoard"
@@ -67,10 +68,10 @@ const getPriorityColor = (priority: string) => {
 // Calculates based on days, not milliseconds, for accurate day-based progress
 const calculateDeadlineProgress = (startDate: Date | string | null | undefined, deadline: Date | string | null): number => {
     if (!deadline) return 0
-    
+
     const now = new Date()
     const deadlineDate = new Date(deadline)
-    
+
     // If no start date, use today as start
     if (!startDate) {
         // If deadline has passed, show 100% (all time passed)
@@ -78,34 +79,34 @@ const calculateDeadlineProgress = (startDate: Date | string | null | undefined, 
         // If deadline is today or in future, show 0% (no time passed yet)
         return 0
     }
-    
+
     const start = new Date(startDate)
-    
+
     // Normalize dates to start of day for accurate day calculations
     const startOfStart = new Date(start.getFullYear(), start.getMonth(), start.getDate())
     const startOfDeadline = new Date(deadlineDate.getFullYear(), deadlineDate.getMonth(), deadlineDate.getDate())
     const startOfNow = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    
+
     // Calculate total number of days (inclusive: start day + all days until deadline)
     // Example: Jan 6 to Jan 8 = 3 days (6, 7, 8)
     const totalDays = Math.ceil((startOfDeadline.getTime() - startOfStart.getTime()) / (1000 * 60 * 60 * 24)) + 1
-    
+
     // If total days is 0 or negative, return 0
     if (totalDays <= 0) return 0
-    
+
     // If deadline has passed, return 100% (all time passed)
     if (startOfDeadline < startOfNow) return 100
-    
+
     // If start date is in the future, return 0% (no time passed yet)
     if (startOfStart > startOfNow) return 0
-    
+
     // Calculate elapsed days (inclusive: start day + all days until today)
     // Example: Jan 6 to Jan 7 = 2 days (6, 7)
     const elapsedDays = Math.ceil((startOfNow.getTime() - startOfStart.getTime()) / (1000 * 60 * 60 * 24)) + 1
-    
+
     // Calculate percentage of time elapsed
     const progress = Math.max(0, Math.min(100, (elapsedDays / totalDays) * 100))
-    
+
     return progress
 }
 
@@ -1304,7 +1305,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                             const startDate = task.startDate ? new Date(task.startDate) : null
                                                             const progress = calculateDeadlineProgress(startDate, deadline)
                                                             const isOverdue = deadline && isPast(deadline) && !isToday(deadline) && task.status !== 'DONE'
-                                                            
+
                                                             // Format date range text
                                                             let dateText = ''
                                                             if (startDate && deadline) {
@@ -1314,32 +1315,30 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                             } else if (startDate) {
                                                                 dateText = format(startDate, 'MMM d', { locale: dateLocale })
                                                             }
-                                                            
+
                                                             return (
                                                                 <div className="flex flex-col items-center justify-center gap-1.5 w-full max-w-[160px] mx-auto">
                                                                     {/* Progress Bar Pill */}
                                                                     <div className="relative w-full h-7 rounded-full overflow-hidden border border-border/40 shadow-sm bg-background">
                                                                         {/* Time Passed (filled portion - left side) - Single uniform color */}
-                                                                        <div 
-                                                                            className={`absolute inset-0 transition-all duration-500 ease-out ${
-                                                                                isOverdue 
-                                                                                    ? 'bg-destructive' 
-                                                                                    : 'bg-primary'
-                                                                            }`}
-                                                                            style={{ 
+                                                                        <div
+                                                                            className={`absolute inset-0 transition-all duration-500 ease-out ${isOverdue
+                                                                                ? 'bg-destructive'
+                                                                                : 'bg-primary'
+                                                                                }`}
+                                                                            style={{
                                                                                 width: `${Math.max(0, Math.min(100, progress))}%`,
                                                                                 left: 0
                                                                             }}
                                                                         />
                                                                         {/* Date Text Overlay */}
                                                                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                                                                            <span className={`text-[10px] font-semibold px-2 truncate max-w-full ${
-                                                                                isOverdue 
-                                                                                    ? 'text-destructive-foreground drop-shadow-sm' 
-                                                                                    : progress > 50
-                                                                                        ? 'text-primary-foreground drop-shadow-sm'
-                                                                                        : 'text-foreground drop-shadow-sm'
-                                                                            }`}>
+                                                                            <span className={`text-[10px] font-semibold px-2 truncate max-w-full ${isOverdue
+                                                                                ? 'text-destructive-foreground drop-shadow-sm'
+                                                                                : progress > 50
+                                                                                    ? 'text-primary-foreground drop-shadow-sm'
+                                                                                    : 'text-foreground drop-shadow-sm'
+                                                                                }`}>
                                                                                 {dateText}
                                                                             </span>
                                                                         </div>

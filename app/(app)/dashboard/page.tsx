@@ -110,10 +110,10 @@ export default async function DashboardPage() {
             },
         },
     })
-    
+
     // Filter by projectId in JavaScript if needed (once projectId column exists in DB)
-    const filteredTodayWorkdays = session.user.projectId 
-        ? todayWorkdays.filter(w => (w as any).projectId === session.user.projectId)
+    const filteredTodayWorkdays = session.user.projectId
+        ? todayWorkdays.filter(w => ((w as unknown) as { projectId?: string | null }).projectId === session.user.projectId)
         : todayWorkdays
 
     // Process workdays to find the active one
@@ -134,10 +134,10 @@ export default async function DashboardPage() {
             workdayEndTime: true,
         },
     })
-    
+
     // Filter by projectId in JavaScript if needed (once projectId column exists in DB)
     const monthlyWorkdays = session.user.projectId
-        ? monthlyWorkdaysRaw.filter((w: any) => w.projectId === session.user.projectId)
+        ? monthlyWorkdaysRaw.filter((w) => ((w as unknown) as { projectId?: string | null }).projectId === session.user.projectId)
         : monthlyWorkdaysRaw
 
     // Fetch tasks for the current project for DashboardContent
