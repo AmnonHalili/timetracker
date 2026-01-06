@@ -215,6 +215,9 @@ export const translations = {
     'tasks.subtaskTitlePlaceholder': 'Subtask title',
     'tasks.titlePlaceholder': 'Task title',
     'tasks.dueDate': 'Due Date',
+    'tasks.taskCreated': 'Task created successfully',
+    'tasks.taskUpdated': 'Task updated successfully',
+    'tasks.errorCreatingTask': 'Failed to create task',
 
     // Time Entries
     'timeEntries.today': 'Today',
@@ -867,6 +870,9 @@ export const translations = {
     'tasks.subtaskTitlePlaceholder': 'כותרת תת משימה',
     'tasks.titlePlaceholder': 'כותרת המשימה',
     'tasks.dueDate': 'תאריך יעד',
+    'tasks.taskCreated': 'המשימה נוצרה בהצלחה',
+    'tasks.taskUpdated': 'המשימה עודכנה בהצלחה',
+    'tasks.errorCreatingTask': 'שגיאה ביצירת המשימה',
 
     // Time Entries
     'timeEntries.today': 'היום',
