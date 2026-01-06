@@ -214,6 +214,7 @@ export const translations = {
     'tasks.subtasks': 'Subtasks',
     'tasks.subtaskTitlePlaceholder': 'Subtask title',
     'tasks.titlePlaceholder': 'Task title',
+    'tasks.dueDate': 'Due Date',
 
     // Time Entries
     'timeEntries.today': 'Today',
@@ -865,6 +866,7 @@ export const translations = {
     'tasks.subtasks': 'תת משימות',
     'tasks.subtaskTitlePlaceholder': 'כותרת תת משימה',
     'tasks.titlePlaceholder': 'כותרת המשימה',
+    'tasks.dueDate': 'תאריך יעד',
 
     // Time Entries
     'timeEntries.today': 'היום',

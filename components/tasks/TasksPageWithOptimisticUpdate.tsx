@@ -53,6 +53,15 @@ export function TasksPageWithOptimisticUpdate({
         description: string | null
         status: string
         assignees: Array<{ id: string; name: string | null; email: string | null }>
+        subtasks?: Array<{
+            id: string;
+            title: string;
+            isDone: boolean;
+            priority?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+            assignedToId?: string | null;
+            assignedTo?: { id: string; name: string | null; image?: string | null } | null;
+            dueDate?: Date | string | null;
+        }>
         createdAt: Date
         updatedAt: Date
     }) => {
@@ -66,7 +75,7 @@ export function TasksPageWithOptimisticUpdate({
             const newTask = {
                 ...task,
                 checklist: [],
-                subtasks: []
+                subtasks: task.subtasks || []
             }
             return [newTask as typeof initialTasks[0], ...prev]
         })

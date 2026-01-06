@@ -1,6 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import {
     Dialog,
     DialogContent,
@@ -68,7 +69,7 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
     const [showToMe, setShowToMe] = useState(true) // Default to true - independent of Assign To
 
     // Subtasks State
-    const [subtasks, setSubtasks] = useState<Array<{ id: string; title: string; priority: string; assignedToId: string | null; dueDate: string | null }>>([])
+    const [subtasks, setSubtasks] = useState<Array<{ id: string; title: string; priority: string; assignedToId: string | null; dueDate: string | null; isDone: boolean }>>([])
     const [newSubtaskTitle, setNewSubtaskTitle] = useState("")
     const [newSubtaskPriority, setNewSubtaskPriority] = useState("LOW")
     const [newSubtaskAssignee, setNewSubtaskAssignee] = useState<string | null>(null)
@@ -296,8 +297,8 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
                 // Preserve existing or new
                 createdAt: mode === 'edit' && task ? task.createdAt : new Date(),
                 updatedAt: new Date(),
-                // Preserve subtasks if editing
-                subtasks: mode === 'edit' && task ? task.subtasks : [],
+                // Use current subtasks state
+                subtasks: subtasks,
                 // Preserve checklist if editing
                 checklist: mode === 'edit' && task ? task.checklist : []
             }
@@ -391,7 +392,8 @@ export function CreateTaskDialog({ users: initialUsers, onTaskCreated, onOptimis
             title: newSubtaskTitle,
             priority: newSubtaskPriority,
             assignedToId: newSubtaskAssignee,
-            dueDate: newSubtaskDueDate || null
+            dueDate: newSubtaskDueDate || null,
+            isDone: false
         }
 
         setSubtasks(prev => [...prev, newSubtask])
