@@ -238,6 +238,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
     }>>([])
     const [editingTask, setEditingTask] = useState<TasksViewProps['initialTasks'][0] | null>(null)
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+    const [expandedMobileTaskId, setExpandedMobileTaskId] = useState<string | null>(null)
 
     // Filters and Sort state
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
@@ -1120,7 +1121,6 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
     }
 
     return (
-
         <Card className="border-none shadow-none bg-transparent">
             <CardHeader className="flex flex-col space-y-4 pb-4 px-0 bg-transparent">
                 {/* Filters and Sort - Above title */}
@@ -1166,7 +1166,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
 
                 {/* Active Filter Chips */}
                 {activeFiltersCount > 0 && (
-                    <div className="flex flex-wrap gap-1.5 items-center px-4">
+                    <div className="flex overflow-x-auto md:flex-wrap gap-1.5 items-center px-4 md:px-0 pb-2 md:pb-0 mask-fade-right md:mask-none no-scrollbar">
                         {filters.status.map(status => (
                             <Badge key={status} variant="secondary" className="h-6 text-xs px-2">
                                 {getFilterLabel('status', status)}
@@ -1271,106 +1271,492 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                         />
                     </div>
                 ) : (
-                    <div className="rounded-md border border-border overflow-hidden bg-muted/30 dark:bg-muted/20 w-full">
-                        <table className="w-full text-sm" style={{ tableLayout: 'fixed', width: '100%' }}>
-                            <colgroup>
-                                <col style={{ width: '55%' }} />
-                                <col style={{ width: '12%' }} />
-                                <col style={{ width: '11%' }} />
-                                <col style={{ width: '11%' }} />
-                                <col style={{ width: '11%' }} />
-                            </colgroup>
-                            <thead className="bg-muted/40 sticky top-0 z-10 border-b border-border">
-                                <tr className="border-b border-border/50">
-                                    <th className="h-10 px-4 text-left font-normal text-muted-foreground bg-muted/20 first:rounded-tl-md">
-                                        {t('tasks.title') || 'Task'}
-                                    </th>
-                                    <th className="h-10 px-4 text-center font-normal text-muted-foreground bg-muted/20">
-                                        {t('tasks.assignToLabel') || 'Assigned to'}
-                                    </th>
-                                    {/* Priority */}
-                                    <th className="h-10 px-4 text-center font-normal text-muted-foreground bg-muted/20">
-                                        {t('tasks.priority') || 'Priority'}
-                                    </th>
-                                    {/* Date */}
-                                    <th className="h-10 px-4 text-center font-normal text-muted-foreground bg-muted/20">
-                                        {t('tasks.date') || 'Date'}
-                                    </th>
-                                    {/* Status */}
-                                    <th className="h-10 px-4 text-center font-normal text-muted-foreground bg-muted/20 last:rounded-tr-md">
-                                        {t('tasks.status')}
-                                    </th>
-                                </tr>
-                            </thead>
-                            {
-                                filteredTasks.length === 0 ? (
-                                    <tbody>
-                                        <tr>
-                                            <td colSpan={5} className="p-8 text-center text-muted-foreground italic">
-                                                {t('tasks.noTasksFound')}
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                ) : (
-                                    filteredTasks.map((task) => (
-                                        <tbody key={task.id} className="border-b border-border last:border-0 relative hover:bg-muted/5 transition-colors">
-                                            <tr className="group transition-colors">
-                                                {/* Task Title & Subtask Toggle */}
-                                                <td className="p-2 border-r border-border/50 min-w-[300px]">
-                                                    <div className="flex items-center gap-3">
-                                                        <Checkbox
-                                                            checked={task.status === 'DONE'}
-                                                            onCheckedChange={(checked) => handleToggleTaskCompletion(task.id, checked as boolean)}
-                                                            className="rounded-md h-5 w-5 border-2 border-primary"
-                                                        />
+                    <>
+                        <div className="hidden md:block rounded-md border border-border overflow-hidden bg-muted/30 dark:bg-muted/20 w-full">
+                            <table className="w-full text-sm" style={{ tableLayout: 'fixed', width: '100%' }}>
+                                <colgroup>
+                                    <col style={{ width: '55%' }} />
+                                    <col style={{ width: '12%' }} />
+                                    <col style={{ width: '11%' }} />
+                                    <col style={{ width: '11%' }} />
+                                    <col style={{ width: '11%' }} />
+                                </colgroup>
+                                <thead className="bg-muted/40 sticky top-0 z-10 border-b border-border">
+                                    <tr className="border-b border-border/50">
+                                        <th className="h-10 px-4 text-left font-normal text-muted-foreground bg-muted/20 first:rounded-tl-md">
+                                            {t('tasks.title') || 'Task'}
+                                        </th>
+                                        <th className="h-10 px-4 text-center font-normal text-muted-foreground bg-muted/20">
+                                            {t('tasks.assignToLabel') || 'Assigned to'}
+                                        </th>
+                                        {/* Priority */}
+                                        <th className="h-10 px-4 text-center font-normal text-muted-foreground bg-muted/20">
+                                            {t('tasks.priority') || 'Priority'}
+                                        </th>
+                                        {/* Date */}
+                                        <th className="h-10 px-4 text-center font-normal text-muted-foreground bg-muted/20">
+                                            {t('tasks.date') || 'Date'}
+                                        </th>
+                                        {/* Status */}
+                                        <th className="h-10 px-4 text-center font-normal text-muted-foreground bg-muted/20 last:rounded-tr-md">
+                                            {t('tasks.status')}
+                                        </th>
+                                    </tr>
+                                </thead>
+                                {
+                                    filteredTasks.length === 0 ? (
+                                        <tbody>
+                                            <tr>
+                                                <td colSpan={5} className="p-8 text-center text-muted-foreground italic">
+                                                    {t('tasks.noTasksFound')}
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    ) : (
+                                        filteredTasks.map((task) => (
+                                            <tbody key={task.id} className="border-b border-border last:border-0 relative hover:bg-muted/5 transition-colors">
+                                                <tr className="group transition-colors">
+                                                    {/* Task Title & Subtask Toggle */}
+                                                    <td className="p-2 border-r border-border/50 min-w-[300px]">
+                                                        <div className="flex items-center gap-3">
+                                                            <Checkbox
+                                                                checked={task.status === 'DONE'}
+                                                                onCheckedChange={(checked) => handleToggleTaskCompletion(task.id, checked as boolean)}
+                                                                className="rounded-md h-5 w-5 border-2 border-primary"
+                                                            />
 
-                                                        <div className="flex flex-col min-w-0 flex-1">
-                                                            <span
-                                                                className={`font-medium truncate cursor-pointer hover:underline hover:text-primary ${task.status === 'DONE' ? 'line-through text-muted-foreground' : ''}`}
-                                                                onClick={async () => {
-                                                                    setSelectedTask(task)
-                                                                    setIsDetailOpen(true)
-                                                                    // Fetch time entries for this task
-                                                                    try {
-                                                                        const response = await fetch(`/api/tasks/${task.id}/time-entries`)
-                                                                        if (response.ok) {
-                                                                            const data = await response.json()
-                                                                            setTaskTimeEntries(data || [])
-                                                                        } else {
+                                                            <div className="flex flex-col min-w-0 flex-1">
+                                                                <span
+                                                                    className={`font-medium truncate cursor-pointer hover:underline hover:text-primary ${task.status === 'DONE' ? 'line-through text-muted-foreground' : ''}`}
+                                                                    onClick={async () => {
+                                                                        setSelectedTask(task)
+                                                                        setIsDetailOpen(true)
+                                                                        // Fetch time entries for this task
+                                                                        try {
+                                                                            const response = await fetch(`/api/tasks/${task.id}/time-entries`)
+                                                                            if (response.ok) {
+                                                                                const data = await response.json()
+                                                                                setTaskTimeEntries(data || [])
+                                                                            } else {
+                                                                                setTaskTimeEntries([])
+                                                                            }
+                                                                        } catch (error) {
+                                                                            console.error('Failed to fetch time entries:', error)
                                                                             setTaskTimeEntries([])
                                                                         }
-                                                                    } catch (error) {
-                                                                        console.error('Failed to fetch time entries:', error)
-                                                                        setTaskTimeEntries([])
-                                                                    }
-                                                                }}
-                                                            >
-                                                                {task.title}
-                                                            </span>
+                                                                    }}
+                                                                >
+                                                                    {task.title}
+                                                                </span>
 
-                                                            {/* Subtask Meta & Master Toggle */}
-                                                            <div className="flex items-center gap-2 mt-1">
-                                                                {localSubtasks[task.id] && localSubtasks[task.id].length > 0 ? (
-                                                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                                        <button
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation()
-                                                                                setVisibleSubtasksMap(prev => ({ ...prev, [task.id]: !prev[task.id] }))
-                                                                            }}
-                                                                            className="flex items-center gap-1 hover:text-primary transition-colors cursor-pointer focus:outline-none bg-muted/30 px-1.5 py-0.5 rounded-sm hover:bg-muted/50"
-                                                                        >
-                                                                            <div className={`w-1.5 h-1.5 rounded-full ${visibleSubtasksMap[task.id] ? 'bg-primary' : 'bg-muted-foreground/40'}`}></div>
-                                                                            <span className="font-medium">
-                                                                                {visibleSubtasksMap[task.id]
-                                                                                    ? t('tasks.hideSubtasks').replace('{count}', localSubtasks[task.id].length.toString())
-                                                                                    : t('tasks.showSubtasks').replace('{count}', localSubtasks[task.id].length.toString())}
-                                                                            </span>
-                                                                        </button>
-                                                                        <span>•</span>
-                                                                        <span>{t('tasks.subtasksDone').replace('{done}', localSubtasks[task.id].filter(st => st.isDone).length.toString()).replace('{total}', localSubtasks[task.id].length.toString())}</span>
+                                                                {/* Subtask Meta & Master Toggle */}
+                                                                <div className="flex items-center gap-2 mt-1">
+                                                                    {localSubtasks[task.id] && localSubtasks[task.id].length > 0 ? (
+                                                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                                            <button
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation()
+                                                                                    setVisibleSubtasksMap(prev => ({ ...prev, [task.id]: !prev[task.id] }))
+                                                                                }}
+                                                                                className="flex items-center gap-1 hover:text-primary transition-colors cursor-pointer focus:outline-none bg-muted/30 px-1.5 py-0.5 rounded-sm hover:bg-muted/50"
+                                                                            >
+                                                                                <div className={`w-1.5 h-1.5 rounded-full ${visibleSubtasksMap[task.id] ? 'bg-primary' : 'bg-muted-foreground/40'}`}></div>
+                                                                                <span className="font-medium">
+                                                                                    {visibleSubtasksMap[task.id]
+                                                                                        ? t('tasks.hideSubtasks').replace('{count}', localSubtasks[task.id].length.toString())
+                                                                                        : t('tasks.showSubtasks').replace('{count}', localSubtasks[task.id].length.toString())}
+                                                                                </span>
+                                                                            </button>
+                                                                            <span>•</span>
+                                                                            <span>{t('tasks.subtasksDone').replace('{done}', localSubtasks[task.id].filter(st => st.isDone).length.toString()).replace('{total}', localSubtasks[task.id].length.toString())}</span>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="flex items-center gap-1">
+                                                                            <Plus className="h-3 w-3 text-muted-foreground/60" />
+                                                                            <Input
+                                                                                placeholder={t('tasks.addSubtaskPlaceholder')}
+                                                                                value={newSubtaskTitle[task.id] || ""}
+                                                                                onChange={(e) => setNewSubtaskTitle(prev => ({ ...prev, [task.id]: e.target.value }))}
+                                                                                onKeyDown={(e) => {
+                                                                                    if (e.key === 'Enter' && (newSubtaskTitle[task.id] || "").trim()) {
+                                                                                        handleAddSubtask(task.id)
+                                                                                    }
+                                                                                }}
+                                                                                className="h-6 text-xs border-none bg-transparent hover:bg-muted/30 focus-visible:ring-0 focus-visible:ring-offset-0 px-1"
+                                                                            />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Actions Menu - Same as subtasks */}
+                                                            {(isAdmin || (currentUserId && task.assignees.some(a => a.id === currentUserId))) && (
+                                                                <div className="ml-auto opacity-0 group-hover:opacity-100">
+                                                                    <DropdownMenu>
+                                                                        <DropdownMenuTrigger asChild>
+                                                                            <button className="text-muted-foreground hover:text-primary p-1">
+                                                                                <MoreVertical className="h-4 w-4" />
+                                                                            </button>
+                                                                        </DropdownMenuTrigger>
+                                                                        <DropdownMenuContent align="end">
+                                                                            {tasksWithActiveTimers[task.id]?.some(u => u.id === currentUserId) && !stoppedTimers.has(task.id) ? (
+                                                                                <DropdownMenuItem onClick={() => handleStopWorking(task.id)}>
+                                                                                    <Square className="h-4 w-4 mr-2" />
+                                                                                    {t('tasks.stopWorking')}
+                                                                                </DropdownMenuItem>
+                                                                            ) : (
+                                                                                <DropdownMenuItem onClick={() => handleStartWorking(task.id)}>
+                                                                                    <Play className="h-4 w-4 mr-2" />
+                                                                                    {t('tasks.startWorking')}
+                                                                                </DropdownMenuItem>
+                                                                            )}
+                                                                            <DropdownMenuItem onClick={() => {
+                                                                                setEditingTask(task)
+                                                                                setIsEditDialogOpen(true)
+                                                                            }}>
+                                                                                <Pencil className="h-4 w-4 mr-2" />
+                                                                                {t('tasks.edit')}
+                                                                            </DropdownMenuItem>
+                                                                            <DropdownMenuItem
+                                                                                onClick={() => handleDelete(task.id)}
+                                                                                className="text-destructive focus:text-destructive"
+                                                                            >
+                                                                                <Trash2 className="h-4 w-4 mr-2" />
+                                                                                {t('tasks.delete')}
+                                                                            </DropdownMenuItem>
+                                                                        </DropdownMenuContent>
+                                                                    </DropdownMenu>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </td>
+
+                                                    {/* Assigned To */}
+                                                    <td className="p-2 border-r border-border/50 w-[80px]">
+                                                        <div className="flex -space-x-2 overflow-hidden justify-center pl-2">
+                                                            {task.assignees.length > 0 ? (
+                                                                task.assignees.map((assignee) => (
+                                                                    <Avatar key={assignee.id} className="inline-block h-8 w-8 rounded-full ring-2 ring-background border bg-muted">
+                                                                        <AvatarFallback className="text-[10px] font-medium bg-primary/10 text-primary">
+                                                                            {assignee.name ? assignee.name.substring(0, 2).toUpperCase() : "??"}
+                                                                        </AvatarFallback>
+                                                                    </Avatar>
+                                                                ))
+                                                            ) : (
+                                                                <div className="h-8 w-8 rounded-full bg-muted border border-dashed flex items-center justify-center">
+                                                                    <span className="text-[10px] text-muted-foreground">-</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </td>
+
+                                                    {/* Priority */}
+                                                    <td className="p-1 align-middle text-center border-r border-border/50">
+                                                        <div className={`
+                                                h-8 w-full max-w-[140px] mx-auto flex items-center justify-center gap-1.5 text-xs font-semibold shadow-sm p-2 rounded-md border
+                                                ${getPriorityColor(task.priority)}
+                                            `}>
+                                                            <span>{task.priority === 'HIGH' ? t('tasks.priorityHigh') : task.priority === 'MEDIUM' ? t('tasks.priorityMedium') : t('tasks.priorityLow')}</span>
+                                                        </div>
+                                                    </td>
+
+                                                    {/* Date */}
+                                                    <td className="p-2 align-middle text-center border-r border-border/50">
+                                                        {(task.startDate || task.deadline) ? (
+                                                            (() => {
+                                                                const deadline = task.deadline ? new Date(task.deadline) : null
+                                                                const startDate = task.startDate ? new Date(task.startDate) : null
+                                                                const progress = calculateDeadlineProgress(startDate, deadline)
+                                                                const isOverdue = deadline && isPast(deadline) && !isToday(deadline) && task.status !== 'DONE'
+
+                                                                // Format date range text
+                                                                let dateText = ''
+                                                                if (startDate && deadline) {
+                                                                    dateText = `${format(startDate, 'MMM d', { locale: dateLocale })} - ${format(deadline, 'MMM d', { locale: dateLocale })}`
+                                                                } else if (deadline) {
+                                                                    dateText = format(deadline, 'MMM d', { locale: dateLocale })
+                                                                } else if (startDate) {
+                                                                    dateText = format(startDate, 'MMM d', { locale: dateLocale })
+                                                                }
+
+                                                                return (
+                                                                    <div className="flex flex-col items-center justify-center gap-1.5 w-full max-w-[160px] mx-auto">
+                                                                        {/* Progress Bar Pill */}
+                                                                        <div className="relative w-full h-7 rounded-full overflow-hidden border border-border/40 shadow-sm bg-background">
+                                                                            {/* Time Passed (dark theme color - left side) */}
+                                                                            <div
+                                                                                className={`absolute top-0 bottom-0 left-0 transition-all duration-500 ease-out z-0 ${isOverdue
+                                                                                    ? 'bg-destructive'
+                                                                                    : 'bg-primary'
+                                                                                    }`}
+                                                                                style={{
+                                                                                    width: `${Math.max(0, Math.min(100, progress))}%`
+                                                                                }}
+                                                                            />
+                                                                            {/* Time Remaining (light theme color - right side) */}
+                                                                            <div
+                                                                                className={`absolute top-0 bottom-0 right-0 transition-all duration-500 ease-out z-0 ${isOverdue
+                                                                                    ? 'bg-destructive/50'
+                                                                                    : 'bg-primary/50'
+                                                                                    }`}
+                                                                                style={{
+                                                                                    width: `${Math.max(0, Math.min(100, 100 - progress))}%`
+                                                                                }}
+                                                                            />
+                                                                            {/* Date Text Overlay */}
+                                                                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                                                                                <span className={`text-[10px] font-semibold px-2 truncate max-w-full drop-shadow-sm ${isOverdue
+                                                                                    ? 'text-destructive-foreground'
+                                                                                    : 'text-white dark:text-gray-900' // White text in light theme (dark bg), dark text in dark theme (light bg)
+                                                                                    }`}>
+                                                                                    {dateText}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
                                                                     </div>
-                                                                ) : (
-                                                                    <div className="flex items-center gap-1">
+                                                                )
+                                                            })()
+                                                        ) : (
+                                                            <span className="text-muted-foreground/30 text-xs">-</span>
+                                                        )}
+                                                    </td>
+
+                                                    {/* Status */}
+                                                    <td className="p-1 align-middle text-center">
+                                                        <div
+                                                            className={`
+                                                    h-8 w-full max-w-[140px] mx-auto flex items-center justify-center gap-2 text-xs font-semibold shadow-sm rounded-md transition-all
+                                                    ${task.status === 'DONE' ? 'bg-[#00c875] hover:bg-[#00c875]/90 text-white' :
+                                                                    isPast(new Date(task.deadline || '')) && !isToday(new Date(task.deadline || '')) && task.status !== 'DONE' ? 'bg-[#e2445c] hover:bg-[#d00000] text-white' :
+                                                                        task.status === 'IN_PROGRESS' || (tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0) ? 'bg-[#fdab3d] hover:bg-[#fdab3d]/90 text-white' :
+                                                                            task.status === 'BLOCKED' ? 'bg-[#e2445c] hover:bg-[#c93b51] text-white' :
+                                                                                task.status === 'TODO' && !((tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0)) ? 'bg-muted hover:bg-muted/80 text-muted-foreground' : ''}
+                                                `}
+                                                        >
+                                                            {task.status === 'DONE' && <CheckCircle2 className="h-3.5 w-3.5" />}
+                                                            {isPast(new Date(task.deadline || '')) && !isToday(new Date(task.deadline || '')) && task.status !== 'DONE' && <AlertCircle className="h-3.5 w-3.5" />}
+
+                                                            <span className="truncate">
+                                                                {task.status === 'DONE' ? t('tasks.statusDone') :
+                                                                    isPast(new Date(task.deadline || '')) && !isToday(new Date(task.deadline || '')) && task.status !== 'DONE' ? t('tasks.statusOverdue') :
+                                                                        task.status === 'BLOCKED' ? (t('tasks.statusBlocked') || 'Blocked') :
+                                                                            (tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0 && !stoppedTimers.has(task.id))
+                                                                                ? (tasksWithActiveTimers[task.id].length > 1
+                                                                                    ? t('tasks.usersWorking').replace('{count}', tasksWithActiveTimers[task.id].length.toString())
+                                                                                    : (tasksWithActiveTimers[task.id][0].id === currentUserId
+                                                                                        ? (t('tasks.youAreOnIt') || 'You are on it')
+                                                                                        : t('tasks.userIsWorking').replace('{name}', tasksWithActiveTimers[task.id][0].name?.split(' ')[0] || 'User')))
+                                                                                : (task.status === 'IN_PROGRESS' ? (t('tasks.statusInProgress') || 'In Progress') : t('tasks.statusTodo'))
+                                                                }
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+
+                                                {/* Nested Subtasks Rendered as Rows */}
+                                                {localSubtasks[task.id] && localSubtasks[task.id].length > 0 && visibleSubtasksMap[task.id] && (() => {
+                                                    const subtasks = localSubtasks[task.id]
+                                                    const isExpanded = expandedSubtasks[task.id]
+                                                    const displaySubtasks = isExpanded ? subtasks : subtasks.slice(0, 5)
+                                                    const hasMore = subtasks.length > 5
+
+                                                    return (
+                                                        <>
+                                                            {displaySubtasks.map((subtask, index) => {
+                                                                const isLast = index === displaySubtasks.length - 1 && !hasMore
+                                                                return (
+                                                                    <tr key={subtask.id} className="group/subtask bg-muted/5 hover:bg-muted/10 relative">
+                                                                        {/* Spacing for Task Title (nested) */}
+                                                                        <td className="p-2 pl-12 border-r border-border/50 relative">
+                                                                            {/* Continuous Hierarchy Line */}
+                                                                            <div className="absolute left-[36px] top-0 bottom-0 w-[1px] bg-border/50 group-last/subtask:bottom-1/2"></div>
+                                                                            {/* Branch Line */}
+                                                                            <div className="absolute left-[36px] top-1/2 w-4 h-[1px] bg-border/50"></div>
+                                                                            {/* Mask bottom part of line for last item if no "Show More" */}
+                                                                            {isLast && !hasMore && (
+                                                                                <div className="absolute left-[36px] top-1/2 bottom-0 w-[2px] bg-background translate-x-[-0.5px]"></div>
+                                                                            )}
+
+                                                                            <div className="flex items-center gap-2 relative">
+                                                                                <Checkbox
+                                                                                    checked={subtask.isDone}
+                                                                                    className="rounded-full w-4 h-4 border-2"
+                                                                                    onCheckedChange={() => handleToggleSubtask(task.id, subtask.id, subtask.isDone)}
+                                                                                />
+
+                                                                                {editingSubtask?.subtaskId === subtask.id ? (
+                                                                                    <Input
+                                                                                        value={editingSubtaskTitle}
+                                                                                        onChange={(e) => setEditingSubtaskTitle(e.target.value)}
+                                                                                        onKeyDown={(e) => {
+                                                                                            if (e.key === 'Enter') handleUpdateSubtask(task.id, subtask.id)
+                                                                                            if (e.key === 'Escape') setEditingSubtask(null)
+                                                                                        }}
+                                                                                        onBlur={() => handleUpdateSubtask(task.id, subtask.id)}
+                                                                                        autoFocus
+                                                                                        className="h-7 text-sm"
+                                                                                    />
+                                                                                ) : (
+                                                                                    <span
+                                                                                        className={`text-sm truncate cursor-pointer hover:underline ${subtask.isDone ? 'line-through text-muted-foreground' : ''}`}
+                                                                                        onClick={() => {
+                                                                                            setEditingSubtask({ taskId: task.id, subtaskId: subtask.id })
+                                                                                            setEditingSubtaskTitle(subtask.title)
+                                                                                        }}
+                                                                                    >
+                                                                                        {subtask.title}
+                                                                                    </span>
+                                                                                )}
+
+                                                                                {/* Visual Indicators for Enhanced Subtasks */}
+                                                                                {!editingSubtask || editingSubtask.subtaskId !== subtask.id ? (
+                                                                                    <div className="flex items-center gap-1.5 ml-2">
+                                                                                        {/* Priority Badge */}
+                                                                                        {/* Priority Badge */}
+                                                                                        {subtask.priority && (
+                                                                                            <Badge
+                                                                                                variant="secondary"
+                                                                                                className={cn(
+                                                                                                    "text-[10px] h-5 px-2 font-semibold border-0",
+                                                                                                    getPriorityColor(subtask.priority)
+                                                                                                )}
+                                                                                            >
+                                                                                                {subtask.priority.charAt(0)}
+                                                                                            </Badge>
+                                                                                        )}
+
+                                                                                        {/* Assigned User */}
+                                                                                        {subtask.assignedTo && (
+                                                                                            <Avatar className="h-4 w-4 border">
+                                                                                                <AvatarFallback className="text-[8px] bg-primary/10 text-primary">
+                                                                                                    {subtask.assignedTo.name?.substring(0, 2).toUpperCase() || '??'}
+                                                                                                </AvatarFallback>
+                                                                                            </Avatar>
+                                                                                        )}
+
+                                                                                        {/* Due Date */}
+                                                                                        {(() => {
+                                                                                            const indicator = formatDueDateIndicator(subtask.dueDate, t)
+                                                                                            if (!indicator) return null
+                                                                                            return (
+                                                                                                <span className={cn("text-[9px] font-medium whitespace-nowrap", indicator.className)}>
+                                                                                                    {indicator.text}
+                                                                                                </span>
+                                                                                            )
+                                                                                        })()}
+                                                                                    </div>
+                                                                                ) : null}
+
+                                                                                {tasksWithActiveTimers[subtask.id] && tasksWithActiveTimers[subtask.id].length > 0 && (
+                                                                                    <Badge variant="secondary" className="bg-[#fdab3d]/10 text-[#fdab3d] hover:bg-[#fdab3d]/20 border-none text-[10px] h-5 px-1.5 flex items-center gap-1">
+                                                                                        {tasksWithActiveTimers[subtask.id].length > 1
+                                                                                            ? t('tasks.usersWorking').replace('{count}', tasksWithActiveTimers[subtask.id].length.toString())
+                                                                                            : (tasksWithActiveTimers[subtask.id][0].id === currentUserId
+                                                                                                ? (t('tasks.youAreOnIt') || 'You are on it')
+                                                                                                : t('tasks.userIsWorking').replace('{name}', tasksWithActiveTimers[subtask.id][0].name?.split(' ')[0] || 'User'))}
+                                                                                    </Badge>
+                                                                                )}
+
+                                                                                <div className="ml-auto opacity-0 group-hover/subtask:opacity-100">
+                                                                                    <DropdownMenu>
+                                                                                        <DropdownMenuTrigger asChild>
+                                                                                            <button className="text-muted-foreground hover:text-primary p-1">
+                                                                                                <MoreVertical className="h-3 w-3" />
+                                                                                            </button>
+                                                                                        </DropdownMenuTrigger>
+                                                                                        <DropdownMenuContent align="end" className="w-48">
+                                                                                            {tasksWithActiveTimers[subtask.id]?.some(u => u.id === currentUserId) && !stoppedTimers.has(subtask.id) ? (
+                                                                                                <DropdownMenuItem
+                                                                                                    onClick={() => handleStopWorking(subtask.id)}
+                                                                                                    className="cursor-pointer"
+                                                                                                >
+                                                                                                    <Square className="mr-2 h-4 w-4" />
+                                                                                                    {t('tasks.stopWorking')}
+                                                                                                </DropdownMenuItem>
+                                                                                            ) : (
+                                                                                                <DropdownMenuItem
+                                                                                                    onClick={() => handleStartWorking(task.id, subtask.id)}
+                                                                                                    className="cursor-pointer"
+                                                                                                >
+                                                                                                    <Play className="mr-2 h-4 w-4" />
+                                                                                                    {t('tasks.startWorking')}
+                                                                                                </DropdownMenuItem>
+                                                                                            )}
+                                                                                            <DropdownMenuItem
+                                                                                                onClick={() => {
+                                                                                                    setEditingSubtask({ taskId: task.id, subtaskId: subtask.id })
+                                                                                                    setEditingSubtaskTitle(subtask.title)
+                                                                                                }}
+                                                                                                className="cursor-pointer"
+                                                                                            >
+                                                                                                <Edit className="mr-2 h-4 w-4" />
+                                                                                                {t('tasks.editSubtask')}
+                                                                                            </DropdownMenuItem>
+
+                                                                                            {/* Edit Enhanced Fields */}
+                                                                                            <DropdownMenuItem
+                                                                                                onClick={() => {
+                                                                                                    setEditingEnhancedSubtask({
+                                                                                                        taskId: task.id,
+                                                                                                        subtaskId: subtask.id,
+                                                                                                        priority: subtask.priority || null,
+                                                                                                        assignedToId: subtask.assignedToId || null,
+                                                                                                        dueDate: subtask.dueDate ? new Date(subtask.dueDate) : null
+                                                                                                    })
+                                                                                                }}
+                                                                                                className="cursor-pointer"
+                                                                                            >
+                                                                                                <Edit className="mr-2 h-4 w-4" />
+                                                                                                Edit Details
+                                                                                            </DropdownMenuItem>
+
+                                                                                            <DropdownMenuSeparator />
+                                                                                            <DropdownMenuItem
+                                                                                                onClick={() => handleDeleteSubtask(task.id, subtask.id)}
+                                                                                                className="cursor-pointer text-destructive focus:text-destructive"
+                                                                                            >
+                                                                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                                                                {t('tasks.deleteSubtask')}
+                                                                                            </DropdownMenuItem>
+                                                                                        </DropdownMenuContent>
+                                                                                    </DropdownMenu>
+                                                                                </div>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td className="p-2 border-r border-border/50"></td>
+                                                                        <td className="p-2 border-r border-border/50"></td>
+                                                                        <td className="p-2 border-r border-border/50"></td>
+                                                                        <td className="p-2"></td>
+                                                                        <td className="p-2"></td>
+                                                                        <td className="p-2"></td>
+                                                                    </tr>
+                                                                )
+                                                            })}
+                                                            {hasMore && !isExpanded && (
+                                                                <tr className="bg-muted/5 hover:bg-muted/10 cursor-pointer" onClick={() => setExpandedSubtasks(prev => ({ ...prev, [task.id]: true }))}>
+                                                                    <td className="p-2 pl-12 border-r border-border/50 relative">
+                                                                        {/* Hierarchy Line Continuing to this "Show More" item */}
+                                                                        <div className="absolute left-[36px] top-0 bottom-1/2 w-[1px] bg-border/50"></div>
+                                                                        <div className="absolute left-[36px] top-1/2 w-4 h-[1px] bg-border/50"></div>
+
+                                                                        <div className="flex items-center gap-2 pl-6">
+                                                                            <span className="text-xs text-muted-foreground hover:text-primary font-medium">
+                                                                                {t('tasks.showMoreSubtasks').replace('{count}', (subtasks.length - 5).toString())}
+                                                                            </span>
+                                                                        </div>
+                                                                    </td>
+                                                                    <td colSpan={5}></td>
+                                                                </tr>
+                                                            )}
+
+                                                            {/* Add New Subtask Row */}
+                                                            <tr className="group/add-subtask bg-muted/5 hover:bg-muted/10 relative">
+                                                                <td className="p-2 pl-12 border-r border-border/50 relative">
+                                                                    {/* Hierarchy Line */}
+                                                                    <div className="absolute left-[36px] top-0 bottom-1/2 w-[1px] bg-border/50"></div>
+                                                                    <div className="absolute left-[36px] top-1/2 w-4 h-[1px] bg-border/50"></div>
+
+                                                                    <div className="flex items-center gap-2 pl-6">
                                                                         <Plus className="h-3 w-3 text-muted-foreground/60" />
                                                                         <Input
                                                                             placeholder={t('tasks.addSubtaskPlaceholder')}
@@ -1379,414 +1765,207 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                                             onKeyDown={(e) => {
                                                                                 if (e.key === 'Enter' && (newSubtaskTitle[task.id] || "").trim()) {
                                                                                     handleAddSubtask(task.id)
+                                                                                    // Auto-expand subtasks after adding
+                                                                                    setVisibleSubtasksMap(prev => ({ ...prev, [task.id]: true }))
                                                                                 }
                                                                             }}
                                                                             className="h-6 text-xs border-none bg-transparent hover:bg-muted/30 focus-visible:ring-0 focus-visible:ring-offset-0 px-1"
                                                                         />
                                                                     </div>
+                                                                </td>
+                                                                <td className="p-2 border-r border-border/50"></td>
+                                                                <td className="p-2 border-r border-border/50"></td>
+                                                                <td className="p-2 border-r border-border/50"></td>
+                                                                <td className="p-2"></td>
+                                                                <td className="p-2"></td>
+                                                            </tr>
+                                                        </>
+                                                    )
+                                                })()}
+                                            </tbody>
+                                        ))
+                                    )
+                                }
+                            </table>
+                        </div>
+                        {/* Mobile Card View */}
+                        <div className="md:hidden space-y-3 pb-20">
+                            {filteredTasks.length === 0 ? (
+                                <div className="text-center p-8 text-muted-foreground italic bg-muted/20 rounded-lg">
+                                    {t('tasks.noTasksFound')}
+                                </div>
+                            ) : (
+                                filteredTasks.map((task) => (
+                                    <div key={task.id}
+                                        onClick={() => {
+                                            setSelectedTask(task)
+                                            setIsDetailOpen(true)
+                                        }}
+                                        className={cn(
+                                            "bg-card rounded-xl border p-4 shadow-sm active:scale-[0.98] transition-all duration-200",
+                                            task.status === 'DONE' ? "opacity-60 bg-muted/20" : ""
+                                        )}
+                                    >
+                                        <div className="flex items-start gap-3">
+                                            {/* Checkbox - Stop propagation to strictly handle status */}
+                                            <div onClick={(e) => e.stopPropagation()} className="pt-0.5">
+                                                <Checkbox
+                                                    checked={task.status === 'DONE'}
+                                                    onCheckedChange={(checked) => handleToggleTaskCompletion(task.id, checked as boolean)}
+                                                    className="h-6 w-6 rounded-full border-2 border-primary/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                                />
+                                            </div>
+
+                                            <div className="flex-1 min-w-0">
+                                                {/* Header Row: Title & Actions */}
+                                                <div className="flex justify-between items-start gap-2">
+                                                    <h3 className={cn(
+                                                        "font-semibold text-base leading-none mb-1.5 truncate pr-2",
+                                                        task.status === 'DONE' && "line-through text-muted-foreground"
+                                                    )}>
+                                                        {task.title}
+                                                    </h3>
+                                                    {/* Priority Badge */}
+                                                    {task.priority !== 'LOW' && (
+                                                        <Badge variant="outline" className={cn("text-[10px] h-5 px-1.5 font-bold border-0", getPriorityColor(task.priority))}>
+                                                            {task.priority}
+                                                        </Badge>
+                                                    )}
+                                                </div>
+
+                                                {/* Description or Subtext */}
+                                                {task.description && (
+                                                    <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
+                                                        {task.description}
+                                                    </p>
+                                                )}
+
+                                                {/* Footer Row: Metadata */}
+                                                <div className="flex items-center justify-between mt-2">
+                                                    <div className="flex items-center gap-3">
+                                                        {/* Assignees */}
+                                                        {task.assignees && task.assignees.length > 0 && (
+                                                            <div className="flex -space-x-2">
+                                                                {task.assignees.slice(0, 3).map((assignee) => (
+                                                                    <Avatar key={assignee.id} className="h-6 w-6 border-2 border-background">
+                                                                        <AvatarFallback className="text-[9px] bg-primary/10 text-primary">
+                                                                            {assignee.name?.[0]?.toUpperCase() || 'U'}
+                                                                        </AvatarFallback>
+                                                                    </Avatar>
+                                                                ))}
+                                                                {task.assignees.length > 3 && (
+                                                                    <div className="h-6 w-6 rounded-full bg-muted border-2 border-background flex items-center justify-center text-[9px] font-medium text-muted-foreground">
+                                                                        +{task.assignees.length - 3}
+                                                                    </div>
                                                                 )}
                                                             </div>
-                                                        </div>
-
-                                                        {/* Actions Menu - Same as subtasks */}
-                                                        {(isAdmin || (currentUserId && task.assignees.some(a => a.id === currentUserId))) && (
-                                                            <div className="ml-auto opacity-0 group-hover:opacity-100">
-                                                                <DropdownMenu>
-                                                                    <DropdownMenuTrigger asChild>
-                                                                        <button className="text-muted-foreground hover:text-primary p-1">
-                                                                            <MoreVertical className="h-4 w-4" />
-                                                                        </button>
-                                                                    </DropdownMenuTrigger>
-                                                                    <DropdownMenuContent align="end">
-                                                                        {tasksWithActiveTimers[task.id]?.some(u => u.id === currentUserId) && !stoppedTimers.has(task.id) ? (
-                                                                            <DropdownMenuItem onClick={() => handleStopWorking(task.id)}>
-                                                                                <Square className="h-4 w-4 mr-2" />
-                                                                                {t('tasks.stopWorking')}
-                                                                            </DropdownMenuItem>
-                                                                        ) : (
-                                                                            <DropdownMenuItem onClick={() => handleStartWorking(task.id)}>
-                                                                                <Play className="h-4 w-4 mr-2" />
-                                                                                {t('tasks.startWorking')}
-                                                                            </DropdownMenuItem>
-                                                                        )}
-                                                                        <DropdownMenuItem onClick={() => {
-                                                                            setEditingTask(task)
-                                                                            setIsEditDialogOpen(true)
-                                                                        }}>
-                                                                            <Pencil className="h-4 w-4 mr-2" />
-                                                                            {t('tasks.edit')}
-                                                                        </DropdownMenuItem>
-                                                                        <DropdownMenuItem
-                                                                            onClick={() => handleDelete(task.id)}
-                                                                            className="text-destructive focus:text-destructive"
-                                                                        >
-                                                                            <Trash2 className="h-4 w-4 mr-2" />
-                                                                            {t('tasks.delete')}
-                                                                        </DropdownMenuItem>
-                                                                    </DropdownMenuContent>
-                                                                </DropdownMenu>
-                                                            </div>
                                                         )}
-                                                    </div>
-                                                </td>
 
-                                                {/* Assigned To */}
-                                                <td className="p-2 border-r border-border/50 w-[80px]">
-                                                    <div className="flex -space-x-2 overflow-hidden justify-center pl-2">
-                                                        {task.assignees.length > 0 ? (
-                                                            task.assignees.map((assignee) => (
-                                                                <Avatar key={assignee.id} className="inline-block h-8 w-8 rounded-full ring-2 ring-background border bg-muted">
-                                                                    <AvatarFallback className="text-[10px] font-medium bg-primary/10 text-primary">
-                                                                        {assignee.name ? assignee.name.substring(0, 2).toUpperCase() : "??"}
-                                                                    </AvatarFallback>
-                                                                </Avatar>
-                                                            ))
-                                                        ) : (
-                                                            <div className="h-8 w-8 rounded-full bg-muted border border-dashed flex items-center justify-center">
-                                                                <span className="text-[10px] text-muted-foreground">-</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </td>
-
-                                                {/* Priority */}
-                                                <td className="p-1 align-middle text-center border-r border-border/50">
-                                                    <div className={`
-                                                h-8 w-full max-w-[140px] mx-auto flex items-center justify-center gap-1.5 text-xs font-semibold shadow-sm p-2 rounded-md border
-                                                ${getPriorityColor(task.priority)}
-                                            `}>
-                                                        <span>{task.priority === 'HIGH' ? t('tasks.priorityHigh') : task.priority === 'MEDIUM' ? t('tasks.priorityMedium') : t('tasks.priorityLow')}</span>
-                                                    </div>
-                                                </td>
-
-                                                {/* Date */}
-                                                <td className="p-2 align-middle text-center border-r border-border/50">
-                                                    {(task.startDate || task.deadline) ? (
-                                                        (() => {
-                                                            const deadline = task.deadline ? new Date(task.deadline) : null
-                                                            const startDate = task.startDate ? new Date(task.startDate) : null
-                                                            const progress = calculateDeadlineProgress(startDate, deadline)
-                                                            const isOverdue = deadline && isPast(deadline) && !isToday(deadline) && task.status !== 'DONE'
-
-                                                            // Format date range text
-                                                            let dateText = ''
-                                                            if (startDate && deadline) {
-                                                                dateText = `${format(startDate, 'MMM d', { locale: dateLocale })} - ${format(deadline, 'MMM d', { locale: dateLocale })}`
-                                                            } else if (deadline) {
-                                                                dateText = format(deadline, 'MMM d', { locale: dateLocale })
-                                                            } else if (startDate) {
-                                                                dateText = format(startDate, 'MMM d', { locale: dateLocale })
-                                                            }
+                                                        {/* Deadline Indicator */}
+                                                        {task.deadline && (() => {
+                                                            const isOverdue = isPast(new Date(task.deadline)) && !isToday(new Date(task.deadline))
+                                                            const isDueToday = isToday(new Date(task.deadline))
 
                                                             return (
-                                                                <div className="flex flex-col items-center justify-center gap-1.5 w-full max-w-[160px] mx-auto">
-                                                                    {/* Progress Bar Pill */}
-                                                                    <div className="relative w-full h-7 rounded-full overflow-hidden border border-border/40 shadow-sm bg-background">
-                                                                        {/* Time Passed (dark theme color - left side) */}
-                                                                        <div
-                                                                            className={`absolute top-0 bottom-0 left-0 transition-all duration-500 ease-out z-0 ${isOverdue
-                                                                                ? 'bg-destructive'
-                                                                                : 'bg-primary'
-                                                                                }`}
-                                                                            style={{
-                                                                                width: `${Math.max(0, Math.min(100, progress))}%`
-                                                                            }}
-                                                                        />
-                                                                        {/* Time Remaining (light theme color - right side) */}
-                                                                        <div
-                                                                            className={`absolute top-0 bottom-0 right-0 transition-all duration-500 ease-out z-0 ${isOverdue
-                                                                                ? 'bg-destructive/50'
-                                                                                : 'bg-primary/50'
-                                                                                }`}
-                                                                            style={{
-                                                                                width: `${Math.max(0, Math.min(100, 100 - progress))}%`
-                                                                            }}
-                                                                        />
-                                                                        {/* Date Text Overlay */}
-                                                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                                                                            <span className={`text-[10px] font-semibold px-2 truncate max-w-full drop-shadow-sm ${isOverdue
-                                                                                ? 'text-destructive-foreground'
-                                                                                : 'text-white dark:text-gray-900' // White text in light theme (dark bg), dark text in dark theme (light bg)
-                                                                                }`}>
-                                                                                {dateText}
+                                                                <div className={cn(
+                                                                    "flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full",
+                                                                    isOverdue ? "bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400" :
+                                                                        isDueToday ? "bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-400" :
+                                                                            "bg-muted text-muted-foreground"
+                                                                )}>
+                                                                    <span className="font-medium">
+                                                                        {isDueToday ? t('calendar.today') : format(new Date(task.deadline), "d MMM")}
+                                                                    </span>
+                                                                </div>
+                                                            )
+                                                        })()}
+                                                    </div>
+
+                                                    {/* Subtasks Count (Clickable) */}
+                                                    {localSubtasks[task.id] && localSubtasks[task.id].length > 0 && (
+                                                        <div
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                setExpandedMobileTaskId(prev => prev === task.id ? null : task.id)
+                                                            }}
+                                                            className={cn(
+                                                                "flex items-center gap-1 text-xs px-2 py-0.5 rounded-md transition-colors",
+                                                                expandedMobileTaskId === task.id
+                                                                    ? "bg-primary/10 text-primary border border-primary/20"
+                                                                    : "bg-muted/40 text-muted-foreground active:bg-muted"
+                                                            )}
+                                                        >
+                                                            <CheckCircle2 className="h-3 w-3" />
+                                                            <span>
+                                                                {localSubtasks[task.id].filter(st => st.isDone).length}/{localSubtasks[task.id].length}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Mobile Subtasks Expansion */}
+                                        {expandedMobileTaskId === task.id && localSubtasks[task.id] && localSubtasks[task.id].length > 0 && (
+                                            <div className="mt-3 pt-3 border-t border-border/50 animate-in slide-in-from-top-2 fade-in duration-200" onClick={(e) => e.stopPropagation()}>
+                                                <div className="space-y-2">
+                                                    {localSubtasks[task.id].map(subtask => (
+                                                        <div key={subtask.id} className="flex items-start gap-2.5 group">
+                                                            <Checkbox
+                                                                checked={subtask.isDone}
+                                                                onCheckedChange={(checked) => handleToggleSubtask(task.id, subtask.id)}
+                                                                className="h-4 w-4 mt-0.5 rounded-full data-[state=checked]:bg-primary/80 data-[state=checked]:border-primary/80"
+                                                            />
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex justify-between items-start gap-2">
+                                                                    <span className={cn(
+                                                                        "text-sm leading-tight break-words",
+                                                                        subtask.isDone && "line-through text-muted-foreground opacity-70"
+                                                                    )}>
+                                                                        {subtask.title}
+                                                                    </span>
+                                                                    {subtask.priority && subtask.priority !== 'LOW' && (
+                                                                        <div className={cn("w-1.5 h-1.5 rounded-full shrink-0 mt-1.5",
+                                                                            subtask.priority === 'HIGH' ? "bg-red-500" :
+                                                                                subtask.priority === 'MEDIUM' ? "bg-yellow-500" : "bg-muted"
+                                                                        )} />
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex items-center gap-2 mt-1">
+                                                                    {subtask.assignedTo && (
+                                                                        <div className="flex items-center gap-1">
+                                                                            <Avatar className="h-3.5 w-3.5">
+                                                                                <AvatarFallback className="text-[6px]">
+                                                                                    {subtask.assignedTo.name?.[0]?.toUpperCase() || 'U'}
+                                                                                </AvatarFallback>
+                                                                            </Avatar>
+                                                                            <span className="text-[10px] text-muted-foreground truncate max-w-[60px]">
+                                                                                {subtask.assignedTo.name?.split(' ')[0]}
                                                                             </span>
                                                                         </div>
-                                                                    </div>
-                                                                </div>
-                                                            )
-                                                        })()
-                                                    ) : (
-                                                        <span className="text-muted-foreground/30 text-xs">-</span>
-                                                    )}
-                                                </td>
-
-                                                {/* Status */}
-                                                <td className="p-1 align-middle text-center">
-                                                    <div
-                                                        className={`
-                                                    h-8 w-full max-w-[140px] mx-auto flex items-center justify-center gap-2 text-xs font-semibold shadow-sm rounded-md transition-all
-                                                    ${task.status === 'DONE' ? 'bg-[#00c875] hover:bg-[#00c875]/90 text-white' :
-                                                                isPast(new Date(task.deadline || '')) && !isToday(new Date(task.deadline || '')) && task.status !== 'DONE' ? 'bg-[#e2445c] hover:bg-[#d00000] text-white' :
-                                                                    task.status === 'IN_PROGRESS' || (tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0) ? 'bg-[#fdab3d] hover:bg-[#fdab3d]/90 text-white' :
-                                                                        task.status === 'BLOCKED' ? 'bg-[#e2445c] hover:bg-[#c93b51] text-white' :
-                                                                            task.status === 'TODO' && !((tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0)) ? 'bg-muted hover:bg-muted/80 text-muted-foreground' : ''}
-                                                `}
-                                                    >
-                                                        {task.status === 'DONE' && <CheckCircle2 className="h-3.5 w-3.5" />}
-                                                        {isPast(new Date(task.deadline || '')) && !isToday(new Date(task.deadline || '')) && task.status !== 'DONE' && <AlertCircle className="h-3.5 w-3.5" />}
-
-                                                        <span className="truncate">
-                                                            {task.status === 'DONE' ? t('tasks.statusDone') :
-                                                                isPast(new Date(task.deadline || '')) && !isToday(new Date(task.deadline || '')) && task.status !== 'DONE' ? t('tasks.statusOverdue') :
-                                                                    task.status === 'BLOCKED' ? (t('tasks.statusBlocked') || 'Blocked') :
-                                                                        (tasksWithActiveTimers[task.id] && tasksWithActiveTimers[task.id].length > 0 && !stoppedTimers.has(task.id))
-                                                                            ? (tasksWithActiveTimers[task.id].length > 1
-                                                                                ? t('tasks.usersWorking').replace('{count}', tasksWithActiveTimers[task.id].length.toString())
-                                                                                : (tasksWithActiveTimers[task.id][0].id === currentUserId
-                                                                                    ? (t('tasks.youAreOnIt') || 'You are on it')
-                                                                                    : t('tasks.userIsWorking').replace('{name}', tasksWithActiveTimers[task.id][0].name?.split(' ')[0] || 'User')))
-                                                                            : (task.status === 'IN_PROGRESS' ? (t('tasks.statusInProgress') || 'In Progress') : t('tasks.statusTodo'))
-                                                            }
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                            </tr>
-
-                                            {/* Nested Subtasks Rendered as Rows */}
-                                            {localSubtasks[task.id] && localSubtasks[task.id].length > 0 && visibleSubtasksMap[task.id] && (() => {
-                                                const subtasks = localSubtasks[task.id]
-                                                const isExpanded = expandedSubtasks[task.id]
-                                                const displaySubtasks = isExpanded ? subtasks : subtasks.slice(0, 5)
-                                                const hasMore = subtasks.length > 5
-
-                                                return (
-                                                    <>
-                                                        {displaySubtasks.map((subtask, index) => {
-                                                            const isLast = index === displaySubtasks.length - 1 && !hasMore
-                                                            return (
-                                                                <tr key={subtask.id} className="group/subtask bg-muted/5 hover:bg-muted/10 relative">
-                                                                    {/* Spacing for Task Title (nested) */}
-                                                                    <td className="p-2 pl-12 border-r border-border/50 relative">
-                                                                        {/* Continuous Hierarchy Line */}
-                                                                        <div className="absolute left-[36px] top-0 bottom-0 w-[1px] bg-border/50 group-last/subtask:bottom-1/2"></div>
-                                                                        {/* Branch Line */}
-                                                                        <div className="absolute left-[36px] top-1/2 w-4 h-[1px] bg-border/50"></div>
-                                                                        {/* Mask bottom part of line for last item if no "Show More" */}
-                                                                        {isLast && !hasMore && (
-                                                                            <div className="absolute left-[36px] top-1/2 bottom-0 w-[2px] bg-background translate-x-[-0.5px]"></div>
-                                                                        )}
-
-                                                                        <div className="flex items-center gap-2 relative">
-                                                                            <Checkbox
-                                                                                checked={subtask.isDone}
-                                                                                className="rounded-full w-4 h-4 border-2"
-                                                                                onCheckedChange={() => handleToggleSubtask(task.id, subtask.id, subtask.isDone)}
-                                                                            />
-
-                                                                            {editingSubtask?.subtaskId === subtask.id ? (
-                                                                                <Input
-                                                                                    value={editingSubtaskTitle}
-                                                                                    onChange={(e) => setEditingSubtaskTitle(e.target.value)}
-                                                                                    onKeyDown={(e) => {
-                                                                                        if (e.key === 'Enter') handleUpdateSubtask(task.id, subtask.id)
-                                                                                        if (e.key === 'Escape') setEditingSubtask(null)
-                                                                                    }}
-                                                                                    onBlur={() => handleUpdateSubtask(task.id, subtask.id)}
-                                                                                    autoFocus
-                                                                                    className="h-7 text-sm"
-                                                                                />
-                                                                            ) : (
-                                                                                <span
-                                                                                    className={`text-sm truncate cursor-pointer hover:underline ${subtask.isDone ? 'line-through text-muted-foreground' : ''}`}
-                                                                                    onClick={() => {
-                                                                                        setEditingSubtask({ taskId: task.id, subtaskId: subtask.id })
-                                                                                        setEditingSubtaskTitle(subtask.title)
-                                                                                    }}
-                                                                                >
-                                                                                    {subtask.title}
-                                                                                </span>
-                                                                            )}
-
-                                                                            {/* Visual Indicators for Enhanced Subtasks */}
-                                                                            {!editingSubtask || editingSubtask.subtaskId !== subtask.id ? (
-                                                                                <div className="flex items-center gap-1.5 ml-2">
-                                                                                    {/* Priority Badge */}
-                                                                                    {/* Priority Badge */}
-                                                                                    {subtask.priority && (
-                                                                                        <Badge
-                                                                                            variant="secondary"
-                                                                                            className={cn(
-                                                                                                "text-[10px] h-5 px-2 font-semibold border-0",
-                                                                                                getPriorityColor(subtask.priority)
-                                                                                            )}
-                                                                                        >
-                                                                                            {subtask.priority.charAt(0)}
-                                                                                        </Badge>
-                                                                                    )}
-
-                                                                                    {/* Assigned User */}
-                                                                                    {subtask.assignedTo && (
-                                                                                        <Avatar className="h-4 w-4 border">
-                                                                                            <AvatarFallback className="text-[8px] bg-primary/10 text-primary">
-                                                                                                {subtask.assignedTo.name?.substring(0, 2).toUpperCase() || '??'}
-                                                                                            </AvatarFallback>
-                                                                                        </Avatar>
-                                                                                    )}
-
-                                                                                    {/* Due Date */}
-                                                                                    {(() => {
-                                                                                        const indicator = formatDueDateIndicator(subtask.dueDate, t)
-                                                                                        if (!indicator) return null
-                                                                                        return (
-                                                                                            <span className={cn("text-[9px] font-medium whitespace-nowrap", indicator.className)}>
-                                                                                                {indicator.text}
-                                                                                            </span>
-                                                                                        )
-                                                                                    })()}
-                                                                                </div>
-                                                                            ) : null}
-
-                                                                            {tasksWithActiveTimers[subtask.id] && tasksWithActiveTimers[subtask.id].length > 0 && (
-                                                                                <Badge variant="secondary" className="bg-[#fdab3d]/10 text-[#fdab3d] hover:bg-[#fdab3d]/20 border-none text-[10px] h-5 px-1.5 flex items-center gap-1">
-                                                                                    {tasksWithActiveTimers[subtask.id].length > 1
-                                                                                        ? t('tasks.usersWorking').replace('{count}', tasksWithActiveTimers[subtask.id].length.toString())
-                                                                                        : (tasksWithActiveTimers[subtask.id][0].id === currentUserId
-                                                                                            ? (t('tasks.youAreOnIt') || 'You are on it')
-                                                                                            : t('tasks.userIsWorking').replace('{name}', tasksWithActiveTimers[subtask.id][0].name?.split(' ')[0] || 'User'))}
-                                                                                </Badge>
-                                                                            )}
-
-                                                                            <div className="ml-auto opacity-0 group-hover/subtask:opacity-100">
-                                                                                <DropdownMenu>
-                                                                                    <DropdownMenuTrigger asChild>
-                                                                                        <button className="text-muted-foreground hover:text-primary p-1">
-                                                                                            <MoreVertical className="h-3 w-3" />
-                                                                                        </button>
-                                                                                    </DropdownMenuTrigger>
-                                                                                    <DropdownMenuContent align="end" className="w-48">
-                                                                                        {tasksWithActiveTimers[subtask.id]?.some(u => u.id === currentUserId) && !stoppedTimers.has(subtask.id) ? (
-                                                                                            <DropdownMenuItem
-                                                                                                onClick={() => handleStopWorking(subtask.id)}
-                                                                                                className="cursor-pointer"
-                                                                                            >
-                                                                                                <Square className="mr-2 h-4 w-4" />
-                                                                                                {t('tasks.stopWorking')}
-                                                                                            </DropdownMenuItem>
-                                                                                        ) : (
-                                                                                            <DropdownMenuItem
-                                                                                                onClick={() => handleStartWorking(task.id, subtask.id)}
-                                                                                                className="cursor-pointer"
-                                                                                            >
-                                                                                                <Play className="mr-2 h-4 w-4" />
-                                                                                                {t('tasks.startWorking')}
-                                                                                            </DropdownMenuItem>
-                                                                                        )}
-                                                                                        <DropdownMenuItem
-                                                                                            onClick={() => {
-                                                                                                setEditingSubtask({ taskId: task.id, subtaskId: subtask.id })
-                                                                                                setEditingSubtaskTitle(subtask.title)
-                                                                                            }}
-                                                                                            className="cursor-pointer"
-                                                                                        >
-                                                                                            <Edit className="mr-2 h-4 w-4" />
-                                                                                            {t('tasks.editSubtask')}
-                                                                                        </DropdownMenuItem>
-
-                                                                                        {/* Edit Enhanced Fields */}
-                                                                                        <DropdownMenuItem
-                                                                                            onClick={() => {
-                                                                                                setEditingEnhancedSubtask({
-                                                                                                    taskId: task.id,
-                                                                                                    subtaskId: subtask.id,
-                                                                                                    priority: subtask.priority || null,
-                                                                                                    assignedToId: subtask.assignedToId || null,
-                                                                                                    dueDate: subtask.dueDate ? new Date(subtask.dueDate) : null
-                                                                                                })
-                                                                                            }}
-                                                                                            className="cursor-pointer"
-                                                                                        >
-                                                                                            <Edit className="mr-2 h-4 w-4" />
-                                                                                            Edit Details
-                                                                                        </DropdownMenuItem>
-
-                                                                                        <DropdownMenuSeparator />
-                                                                                        <DropdownMenuItem
-                                                                                            onClick={() => handleDeleteSubtask(task.id, subtask.id)}
-                                                                                            className="cursor-pointer text-destructive focus:text-destructive"
-                                                                                        >
-                                                                                            <Trash2 className="mr-2 h-4 w-4" />
-                                                                                            {t('tasks.deleteSubtask')}
-                                                                                        </DropdownMenuItem>
-                                                                                    </DropdownMenuContent>
-                                                                                </DropdownMenu>
-                                                                            </div>
-                                                                        </div>
-                                                                    </td>
-                                                                    <td className="p-2 border-r border-border/50"></td>
-                                                                    <td className="p-2 border-r border-border/50"></td>
-                                                                    <td className="p-2 border-r border-border/50"></td>
-                                                                    <td className="p-2"></td>
-                                                                    <td className="p-2"></td>
-                                                                    <td className="p-2"></td>
-                                                                </tr>
-                                                            )
-                                                        })}
-                                                        {hasMore && !isExpanded && (
-                                                            <tr className="bg-muted/5 hover:bg-muted/10 cursor-pointer" onClick={() => setExpandedSubtasks(prev => ({ ...prev, [task.id]: true }))}>
-                                                                <td className="p-2 pl-12 border-r border-border/50 relative">
-                                                                    {/* Hierarchy Line Continuing to this "Show More" item */}
-                                                                    <div className="absolute left-[36px] top-0 bottom-1/2 w-[1px] bg-border/50"></div>
-                                                                    <div className="absolute left-[36px] top-1/2 w-4 h-[1px] bg-border/50"></div>
-
-                                                                    <div className="flex items-center gap-2 pl-6">
-                                                                        <span className="text-xs text-muted-foreground hover:text-primary font-medium">
-                                                                            {t('tasks.showMoreSubtasks').replace('{count}', (subtasks.length - 5).toString())}
+                                                                    )}
+                                                                    {subtask.dueDate && (
+                                                                        <span className={cn(
+                                                                            "text-[10px]",
+                                                                            formatDueDateIndicator(subtask.dueDate, t)?.className || "text-muted-foreground"
+                                                                        )}>
+                                                                            {isToday(new Date(subtask.dueDate))
+                                                                                ? t('calendar.today')
+                                                                                : format(new Date(subtask.dueDate), "d MMM")}
                                                                         </span>
-                                                                    </div>
-                                                                </td>
-                                                                <td colSpan={5}></td>
-                                                            </tr>
-                                                        )}
-
-                                                        {/* Add New Subtask Row */}
-                                                        <tr className="group/add-subtask bg-muted/5 hover:bg-muted/10 relative">
-                                                            <td className="p-2 pl-12 border-r border-border/50 relative">
-                                                                {/* Hierarchy Line */}
-                                                                <div className="absolute left-[36px] top-0 bottom-1/2 w-[1px] bg-border/50"></div>
-                                                                <div className="absolute left-[36px] top-1/2 w-4 h-[1px] bg-border/50"></div>
-
-                                                                <div className="flex items-center gap-2 pl-6">
-                                                                    <Plus className="h-3 w-3 text-muted-foreground/60" />
-                                                                    <Input
-                                                                        placeholder={t('tasks.addSubtaskPlaceholder')}
-                                                                        value={newSubtaskTitle[task.id] || ""}
-                                                                        onChange={(e) => setNewSubtaskTitle(prev => ({ ...prev, [task.id]: e.target.value }))}
-                                                                        onKeyDown={(e) => {
-                                                                            if (e.key === 'Enter' && (newSubtaskTitle[task.id] || "").trim()) {
-                                                                                handleAddSubtask(task.id)
-                                                                                // Auto-expand subtasks after adding
-                                                                                setVisibleSubtasksMap(prev => ({ ...prev, [task.id]: true }))
-                                                                            }
-                                                                        }}
-                                                                        className="h-6 text-xs border-none bg-transparent hover:bg-muted/30 focus-visible:ring-0 focus-visible:ring-offset-0 px-1"
-                                                                    />
+                                                                    )}
                                                                 </div>
-                                                            </td>
-                                                            <td className="p-2 border-r border-border/50"></td>
-                                                            <td className="p-2 border-r border-border/50"></td>
-                                                            <td className="p-2 border-r border-border/50"></td>
-                                                            <td className="p-2"></td>
-                                                            <td className="p-2"></td>
-                                                        </tr>
-                                                    </>
-                                                )
-                                            })()}
-                                        </tbody>
-                                    ))
-                                )
-                            }
-                        </table>
-                    </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </>
                 )}
             </CardContent>
 

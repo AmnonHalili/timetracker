@@ -24,7 +24,7 @@ export function TasksPageHeader({ isAdmin, users, currentUserId, onOptimisticTas
     const { t } = useLanguage()
 
     return (
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">{t('tasks.title')}</h1>
                 <p className="text-muted-foreground">
