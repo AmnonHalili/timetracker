@@ -43,10 +43,10 @@ export function NotificationBell() {
         }
     }
 
-    // Poll every 10 seconds for live-like updates
+    // Poll every 30 seconds for live-like updates (reduced from 10s to reduce server load)
     useEffect(() => {
         fetchNotifications()
-        const interval = setInterval(fetchNotifications, 10000) // 10 seconds
+        const interval = setInterval(fetchNotifications, 30000) // 30 seconds
         return () => clearInterval(interval)
     }, [])
 

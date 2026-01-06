@@ -56,15 +56,20 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
 
                     // Only sync if we are not in an optimistic state OR if session has caught up
                     if (!optimisticProjectId.current || optimisticProjectId.current === session.user.projectId) {
-                        setActiveProject(current || null)
+                        setActiveProject(prev => {
+                            // Only update if it actually changed to prevent unnecessary re-renders
+                            if (prev?.id !== current?.id) {
+                                return current || null
+                            }
+                            return prev
+                        })
                         if (optimisticProjectId.current === session.user.projectId) {
                             optimisticProjectId.current = null // Reset if matched
                         }
                     }
-                } else if (data.length > 0 && !activeProject) {
-                    // Fallback: If no active project in session but user has projects (edge case),
-                    // we might want to prompt them or just leave it null.
-                    // For now, leaving it null to show "No Project" state.
+                } else {
+                    // If no project in session, clear active project only if it exists
+                    setActiveProject(prev => prev ? null : prev)
                 }
             }
 
@@ -73,7 +78,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         } finally {
             setIsLoading(false)
         }
-    }, [status, session?.user?.projectId, activeProject])
+    }, [status, session?.user?.projectId]) // Removed activeProject from dependencies to prevent infinite loop
 
     useEffect(() => {
         refreshProjects()
