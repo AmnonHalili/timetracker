@@ -138,6 +138,10 @@ export async function DELETE(req: Request) {
             }
         }
 
+        if (!currentUser.projectId) {
+            return NextResponse.json({ message: "Admin has no project" }, { status: 400 })
+        }
+
         // Remove membership first
         await prisma.projectMember.deleteMany({
             where: {
@@ -154,6 +158,16 @@ export async function DELETE(req: Request) {
                 managerId: null,
                 sharedChiefGroupId: null,
                 projectId: null // Clear project context so they don't see "Join Team" for a project they were removed from
+            }
+        })
+
+        // Notify the user about the removal
+        await prisma.notification.create({
+            data: {
+                userId: userId,
+                title: "Team Update",
+                message: `You have been removed from the team in project "${currentUser.projectId ? (await prisma.project.findUnique({ where: { id: currentUser.projectId }, select: { name: true } }))?.name || 'Unknown' : 'Unknown'}".`,
+                type: "INFO"
             }
         })
 

@@ -12,6 +12,7 @@ type Project = {
     plan: string
     logo: string | null
     role?: string
+    status?: string
 }
 
 type ProjectContextType = {
@@ -22,6 +23,7 @@ type ProjectContextType = {
     switchProject: (projectId: string) => Promise<void>
     createProject: (name: string) => Promise<void>
     joinProject: (joinCode: string) => Promise<void>
+    respondToInvitation: (projectId: string, action: 'ACCEPT' | 'REJECT') => Promise<void>
     refreshProjects: () => Promise<void>
 }
 
@@ -166,6 +168,32 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         }
     }
 
+    const respondToInvitation = async (projectId: string, action: 'ACCEPT' | 'REJECT') => {
+        const loadingToast = toast.loading(`${action === 'ACCEPT' ? 'Accepting' : 'Rejecting'} invitation...`)
+        try {
+            const res = await fetch("/api/team/invitation/respond", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ projectId, action }),
+            })
+
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || "Failed to respond")
+
+            toast.success(data.message || "Updated!", { id: loadingToast })
+            await refreshProjects()
+
+            if (action === 'ACCEPT') {
+                // Optionally switch to it
+                switchProject(projectId)
+            }
+        } catch (error) {
+            console.error(error)
+            toast.error(error instanceof Error ? error.message : "Failed to update invitation", { id: loadingToast })
+            throw error
+        }
+    }
+
     return (
         <ProjectContext.Provider value={{
             projects,
@@ -175,6 +203,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
             switchProject,
             createProject,
             joinProject,
+            respondToInvitation,
             refreshProjects
         }}>
             {children}

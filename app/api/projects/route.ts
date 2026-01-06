@@ -16,7 +16,10 @@ export async function GET() {
         // Fetch projects where user is a member
         const memberships = await prisma.projectMember.findMany({
             where: {
-                userId: session.user.id
+                userId: session.user.id,
+                status: {
+                    not: "REJECTED"
+                }
             },
             include: {
                 project: true
@@ -25,7 +28,8 @@ export async function GET() {
 
         const projects = memberships.map(m => ({
             ...m.project,
-            role: m.role // Include the role in the project
+            role: m.role, // Include the role in the project
+            status: m.status // Include membership status
         }))
 
         return NextResponse.json(projects)

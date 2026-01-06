@@ -33,7 +33,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useProject } from "@/components/providers/ProjectProvider"
 
 export function ProjectSwitcher({ className }: { className?: string }) {
-    const { projects, activeProject, switchProject, createProject, joinProject, isLoading } = useProject()
+    const { projects, activeProject, switchProject, createProject, joinProject, respondToInvitation, isLoading } = useProject()
 
     // Switcher State
     const [open, setOpen] = React.useState(false)
@@ -41,11 +41,36 @@ export function ProjectSwitcher({ className }: { className?: string }) {
     // Dialog States
     const [showCreateDialog, setShowCreateDialog] = React.useState(false)
     const [showJoinDialog, setShowJoinDialog] = React.useState(false)
+    const [invitationDialog, setInvitationDialog] = React.useState<{ open: boolean; projectId: string; projectName: string }>({
+        open: false,
+        projectId: "",
+        projectName: ""
+    })
 
     // Form States
     const [projectName, setProjectName] = React.useState("")
     const [joinCode, setJoinCode] = React.useState("")
     const [isSubmitting, setIsSubmitting] = React.useState(false)
+
+    const handleAcceptInvitation = async () => {
+        setIsSubmitting(true)
+        try {
+            await respondToInvitation(invitationDialog.projectId, 'ACCEPT')
+            setInvitationDialog(prev => ({ ...prev, open: false }))
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    const handleRejectInvitation = async () => {
+        setIsSubmitting(true)
+        try {
+            await respondToInvitation(invitationDialog.projectId, 'REJECT')
+            setInvitationDialog(prev => ({ ...prev, open: false }))
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
 
     const handleCreateProject = async () => {
         if (!projectName.trim()) return
@@ -113,9 +138,9 @@ export function ProjectSwitcher({ className }: { className?: string }) {
                             aria-expanded={open}
                             className={cn("w-full justify-between h-12 px-3 border-dashed", className)}
                         >
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                                <PlusCircle className="h-5 w-5" />
-                                <span className="text-sm font-medium">Select Workspace</span>
+                            <div className="flex items-center gap-2 text-muted-foreground truncate flex-1">
+                                <PlusCircle className="h-5 w-5 shrink-0" />
+                                <span className="text-sm font-medium truncate">Select Workspace</span>
                             </div>
                             <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
                         </Button>
@@ -234,10 +259,17 @@ export function ProjectSwitcher({ className }: { className?: string }) {
                                     <CommandItem
                                         key={project.id}
                                         onSelect={() => {
-                                            if (project.id !== activeProject?.id) {
+                                            if (project.status === "INVITED") {
+                                                setInvitationDialog({
+                                                    open: true,
+                                                    projectId: project.id,
+                                                    projectName: project.name
+                                                })
+                                                setOpen(false)
+                                            } else if (project.id !== activeProject?.id) {
                                                 switchProject(project.id)
+                                                setOpen(false)
                                             }
-                                            setOpen(false)
                                         }}
                                         className="text-sm"
                                     >
@@ -252,6 +284,11 @@ export function ProjectSwitcher({ className }: { className?: string }) {
                                             <AvatarFallback className="text-[10px]">{project.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                                         </Avatar>
                                         {project.name}
+                                        {project.status === "INVITED" && (
+                                            <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                                                Invited
+                                            </span>
+                                        )}
                                         <Check
                                             className={cn(
                                                 "ml-auto h-4 w-4",
@@ -325,6 +362,25 @@ export function ProjectSwitcher({ className }: { className?: string }) {
                         <Button variant="outline" onClick={() => setShowJoinDialog(false)}>Cancel</Button>
                         <Button onClick={handleJoinProject} disabled={isSubmitting}>
                             {isSubmitting ? "Sending Request..." : "Join Team"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={invitationDialog.open} onOpenChange={(val) => setInvitationDialog(prev => ({ ...prev, open: val }))}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Team Invitation</DialogTitle>
+                        <DialogDescription>
+                            You have been invited to join <strong>{invitationDialog.projectName}</strong>.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button variant="outline" onClick={handleRejectInvitation} disabled={isSubmitting}>
+                            Decline
+                        </Button>
+                        <Button onClick={handleAcceptInvitation} disabled={isSubmitting}>
+                            {isSubmitting ? "Accepting..." : "Accept Invitation"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
