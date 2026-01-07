@@ -9,13 +9,20 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState, useEffect } from "react"
 import { Loader2, Keyboard } from "lucide-react"
 import { format } from "date-fns"
 
-import { MultiSelect } from "@/components/ui/multi-select"
+
 import { useLanguage } from "@/lib/useLanguage"
 
 interface TimeEntry {
@@ -48,7 +55,7 @@ export function EditEntryDialog({ entry, open, onOpenChange, onSave, tasks = [] 
     const [startTime, setStartTime] = useState("")
     const [endDate, setEndDate] = useState("")
     const [endTime, setEndTime] = useState("")
-    const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
+    const [selectedTaskId, setSelectedTaskId] = useState<string | undefined>(undefined)
 
     useEffect(() => {
         if (entry) {
@@ -66,9 +73,9 @@ export function EditEntryDialog({ entry, open, onOpenChange, onSave, tasks = [] 
             }
             // Only set task IDs if there are tasks, filter out any empty/invalid IDs
             const taskIds = entry.tasks?.map(t => t.id).filter(id => id && id.trim() !== '') || []
-            setSelectedTaskIds(taskIds)
+            setSelectedTaskId(taskIds.length > 0 ? taskIds[0] : undefined)
         }
-    }, [entry])
+    }, [entry, open])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -78,7 +85,7 @@ export function EditEntryDialog({ entry, open, onOpenChange, onSave, tasks = [] 
         try {
             const updates: { startTime?: Date; endTime?: Date; description: string; taskIds: string[] } = {
                 description,
-                taskIds: selectedTaskIds
+                taskIds: (selectedTaskId && selectedTaskId !== "no_task") ? [selectedTaskId] : []
             }
 
             // Combine date and time
@@ -118,50 +125,61 @@ export function EditEntryDialog({ entry, open, onOpenChange, onSave, tasks = [] 
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="w-[95vw] max-w-[425px] rounded-xl sm:w-full">
                 <form onSubmit={handleSubmit}>
-                    <DialogHeader>
-                        <DialogTitle>Edit Time Entry</DialogTitle>
-                        <DialogDescription>
+                    <DialogHeader className="text-left sm:text-center space-y-2 sm:space-y-1.5">
+                        <DialogTitle className="text-xl sm:text-lg font-semibold">Edit Time Entry</DialogTitle>
+                        <DialogDescription className="text-base sm:text-sm">
                             Make changes to the time entry. Modifying times will mark this entry as Manual.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="description" className="text-right">
+                    <div className="grid gap-6 py-6 sm:gap-4 sm:py-4">
+                        <div className="flex flex-col gap-2 sm:grid sm:grid-cols-4 sm:items-center sm:gap-4">
+                            <Label htmlFor="description" className="text-left sm:text-right text-base sm:text-sm font-medium text-foreground/80 sm:text-foreground">
                                 Description
                             </Label>
                             <Input
                                 id="description"
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
-                                className="col-span-3"
+                                className="col-span-3 h-12 sm:h-10 text-base sm:text-sm"
+                                placeholder="What are you working on?"
                             />
                         </div>
 
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right">Tasks</Label>
+                        <div className="flex flex-col gap-2 sm:grid sm:grid-cols-4 sm:items-center sm:gap-4">
+                            <Label className="text-left sm:text-right text-base sm:text-sm font-medium text-foreground/80 sm:text-foreground">Tasks</Label>
                             <div className="col-span-3">
-                                <MultiSelect
-                                    options={taskOptions}
-                                    selected={selectedTaskIds}
-                                    onChange={setSelectedTaskIds}
-                                    placeholder="Select tasks..."
-                                />
+                                <Select
+                                    value={selectedTaskId}
+                                    onValueChange={setSelectedTaskId}
+                                >
+                                    <SelectTrigger className="h-12 sm:h-auto min-h-12 sm:min-h-10 text-base sm:text-sm">
+                                        <SelectValue placeholder="Select a task..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="no_task">No Task</SelectItem>
+                                        {tasks.map((task) => (
+                                            <SelectItem key={task.id} value={task.id}>
+                                                {task.title}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="start" className="text-right">
+                        <div className="flex flex-col gap-2 sm:grid sm:grid-cols-4 sm:items-center sm:gap-4">
+                            <Label htmlFor="start" className="text-left sm:text-right text-base sm:text-sm font-medium text-foreground/80 sm:text-foreground">
                                 Start
                             </Label>
-                            <div className={`col-span-3 flex gap-2 ${isRTL ? 'flex-row-reverse' : 'flex-row'}`}>
+                            <div className={`col-span-3 flex gap-3 sm:gap-2 ${isRTL ? 'flex-row-reverse' : 'flex-row'}`}>
                                 <Input
                                     id="start-date"
                                     type="date"
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
-                                    className="flex-1"
+                                    className="flex-1 h-12 sm:h-10 text-base sm:text-sm"
                                     required
                                 />
                                 <Input
@@ -169,22 +187,22 @@ export function EditEntryDialog({ entry, open, onOpenChange, onSave, tasks = [] 
                                     type="time"
                                     value={startTime}
                                     onChange={(e) => setStartTime(e.target.value)}
-                                    className="w-32"
+                                    className="w-32 h-12 sm:h-10 text-base sm:text-sm"
                                     required
                                 />
                             </div>
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="end" className="text-right">
+                        <div className="flex flex-col gap-2 sm:grid sm:grid-cols-4 sm:items-center sm:gap-4">
+                            <Label htmlFor="end" className="text-left sm:text-right text-base sm:text-sm font-medium text-foreground/80 sm:text-foreground">
                                 End
                             </Label>
-                            <div className={`col-span-3 flex gap-2 ${isRTL ? 'flex-row-reverse' : 'flex-row'}`}>
+                            <div className={`col-span-3 flex gap-3 sm:gap-2 ${isRTL ? 'flex-row-reverse' : 'flex-row'}`}>
                                 <Input
                                     id="end-date"
                                     type="date"
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.target.value)}
-                                    className="flex-1"
+                                    className="flex-1 h-12 sm:h-10 text-base sm:text-sm"
                                     disabled={!entry?.endTime}
                                 />
                                 <Input
@@ -192,17 +210,21 @@ export function EditEntryDialog({ entry, open, onOpenChange, onSave, tasks = [] 
                                     type="time"
                                     value={endTime}
                                     onChange={(e) => setEndTime(e.target.value)}
-                                    className="w-32"
+                                    className="w-32 h-12 sm:h-10 text-base sm:text-sm"
                                     disabled={!entry?.endTime}
                                 />
                             </div>
-                            {!entry?.endTime && <p className="col-start-2 col-span-3 text-[10px] text-muted-foreground mt-1">Use Stop button to end timer</p>}
+                            {!entry?.endTime && (
+                                <p className="sm:col-start-2 col-span-3 text-[12px] sm:text-[10px] text-muted-foreground mt-1 sm:mt-0">
+                                    Use Stop button to end timer
+                                </p>
+                            )}
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button type="submit" disabled={loading}>
+                        <Button type="submit" disabled={loading} size="lg" className="w-full sm:w-auto h-12 sm:h-10 text-base sm:text-sm font-medium">
                             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {entry?.isManual && <Keyboard className="h-3 w-3 text-muted-foreground/70 mr-1" />}
+                            {entry?.isManual && <Keyboard className="h-4 w-4 sm:h-3 sm:w-3 text-muted-foreground/70 mr-2 sm:mr-1" />}
                             Save Changes
                         </Button>
                     </DialogFooter>

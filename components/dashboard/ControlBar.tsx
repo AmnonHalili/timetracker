@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Pause, Square } from "lucide-react"
+import { Pause, Square, Plus } from "lucide-react"
 
 import { useState, useEffect, startTransition, useRef } from "react"
 import { useRouter } from "next/navigation"
@@ -793,13 +793,13 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                 </div>
 
                 {/* Controls Area */}
-                <div className={`flex ${!optimisticEntry && isManualMode ? 'items-end' : 'items-center'} gap-2 md:gap-4 w-full md:w-auto justify-between md:justify-end`}>
+                <div className={`flex ${!optimisticEntry && isManualMode ? 'flex-col items-end xs:items-center sm:flex-row sm:items-end justify-end sm:justify-end' : 'items-center justify-between md:justify-end'} gap-3 md:gap-4 w-full md:w-auto`}>
 
                     {/* Timer / Manual Inputs */}
                     {!optimisticEntry && isManualMode ? (
-                        <div className="relative flex items-end gap-2">
-                            <div className="flex flex-col gap-1">
-                                <label htmlFor="manual-start-time" className="text-[10px] text-muted-foreground font-medium">
+                        <div className="relative flex items-end gap-2 w-full sm:w-auto">
+                            <div className="flex flex-col gap-1 flex-1 sm:flex-none">
+                                <label htmlFor="manual-start-time" className="text-xs sm:text-[10px] text-muted-foreground font-medium">
                                     {t('dashboard.startTime')}
                                 </label>
                                 <Input
@@ -834,13 +834,13 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                                             setTimeError("")
                                         }
                                     }}
-                                    className={`w-[95px] h-9 text-sm bg-background border-input shadow-sm ${timeError ? 'border-destructive' : ''}`}
+                                    className={`w-full sm:w-[95px] h-9 text-sm bg-background border-input shadow-sm rounded-xl md:rounded-md [&::-webkit-calendar-picker-indicator]:ml-auto text-center ${timeError ? 'border-destructive' : ''}`}
                                     aria-label="Start time"
                                 />
                             </div>
                             <span className="text-muted-foreground mb-2" aria-hidden="true">-</span>
-                            <div className="flex flex-col gap-1">
-                                <label htmlFor="manual-end-time" className="text-[10px] text-muted-foreground font-medium">
+                            <div className="flex flex-col gap-1 flex-1 sm:flex-none">
+                                <label htmlFor="manual-end-time" className="text-xs sm:text-[10px] text-muted-foreground font-medium">
                                     {t('dashboard.endTime')}
                                 </label>
                                 <Input
@@ -875,7 +875,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                                             setTimeError("")
                                         }
                                     }}
-                                    className={`w-[95px] h-9 text-sm bg-background border-input shadow-sm ${timeError ? 'border-destructive' : ''}`}
+                                    className={`w-full sm:w-[95px] h-9 text-sm bg-background border-input shadow-sm rounded-xl md:rounded-md [&::-webkit-calendar-picker-indicator]:ml-auto text-center ${timeError ? 'border-destructive' : ''}`}
                                     aria-label="End time"
                                 />
                             </div>
@@ -894,7 +894,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                     )}
 
                     {/* Action Buttons */}
-                    <div className="flex items-center gap-2 flex-nowrap">
+                    <div className={`flex items-center gap-2 flex-nowrap ${isManualMode ? 'w-full sm:w-auto' : ''}`}>
                         {!optimisticEntry ? (
                             <>
                                 <Button
@@ -909,7 +909,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                                             setTimeError("")
                                         }
                                     }}
-                                    className={`h-10 md:h-9 w-[85px] md:w-[80px] text-sm md:text-xs font-medium border-dashed rounded-3xl md:rounded-md flex items-center justify-center ${isManualMode ? 'bg-primary/10 text-primary border-primary/20 border-2' : 'text-muted-foreground border-border border-2'}`}
+                                    className={`h-10 md:h-9 ${isManualMode ? 'flex-1' : 'w-[80px]'} sm:flex-none sm:w-[80px] text-sm md:text-xs font-medium border-dashed rounded-3xl md:rounded-md flex items-center justify-center ${isManualMode ? 'bg-primary/10 text-primary border-primary/20 border-2' : 'text-muted-foreground border-border border-2'}`}
                                 >
                                     {isManualMode ? t('dashboard.timer') : t('dashboard.manual')}
                                 </Button>
@@ -917,9 +917,14 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                                     size="sm"
                                     onClick={handleStart}
                                     disabled={loading || (isManualMode && (!manualStart || !manualEnd || !!timeError))}
-                                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium w-[85px] md:w-[80px] h-10 md:h-9 shadow-lg md:shadow-none rounded-3xl md:rounded-md text-sm md:text-sm px-3 md:px-2 border-0 flex items-center justify-center"
+                                    className={`bg-primary hover:bg-primary/90 text-primary-foreground font-medium ${isManualMode ? 'flex-1' : 'w-[80px]'} sm:flex-none sm:w-[80px] h-10 md:h-9 shadow-lg md:shadow-none rounded-3xl md:rounded-md text-sm md:text-sm px-3 md:px-2 border-0 flex items-center justify-center`}
                                 >
-                                    {isManualMode ? t('dashboard.add') : t('dashboard.start')}
+                                    {isManualMode ? (
+                                        <>
+                                            <Plus className="mr-1 h-4 w-4" />
+                                            {t('dashboard.add')}
+                                        </>
+                                    ) : t('dashboard.start')}
                                 </Button>
                             </>
                         ) : (
