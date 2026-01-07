@@ -1362,7 +1362,8 @@ export function TaskDetailDialog({
                                                     editingEnhancedSubtask.priority === p && p === 'LOW' && "bg-blue-600 hover:bg-blue-700"
                                                 )}
                                             >
-                                                {t(`tasks.priority${p.charAt(0) + p.slice(1).toLowerCase()}`) || p}
+                                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                                {t(`tasks.priority${p.charAt(0) + p.slice(1).toLowerCase()}` as any) || p}
                                             </Button>
                                         ))}
                                         <Button
