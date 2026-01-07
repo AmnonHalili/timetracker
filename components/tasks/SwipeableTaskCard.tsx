@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { motion, useMotionValue, useTransform, useAnimation, PanInfo } from "framer-motion"
+import { motion, useMotionValue, useTransform, useAnimation } from "framer-motion"
 import { Play, Pause, Trash2, Pencil, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -17,11 +17,13 @@ interface Task {
     priority: string;
     assignees: Array<{ id: string; name: string | null }>;
     deadline: Date | string | null;
+    checklist: Array<{ id: string; text: string; isDone: boolean }>;
 }
 
 interface SwipeableTaskCardProps {
     task: Task
-    t: (key: string, options?: any) => string
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    t: any
     isRTL?: boolean
     getPriorityColor: (priority: string) => string
     handleToggleTaskCompletion: (taskId: string, checked: boolean) => void
@@ -31,7 +33,7 @@ interface SwipeableTaskCardProps {
     handleDelete: (taskId: string) => void
     onClick: () => void
     isTimerRunning: boolean
-    localSubtasks: Record<string, any[]>
+    localSubtasks: Record<string, Array<{ id: string; title: string; isDone: boolean; priority?: string | null; assignedToId?: string | null; dueDate?: Date | string | null }>>
     expandedMobileTaskId: string | null
     setExpandedMobileTaskId: (id: string | null) => void
 }
@@ -67,7 +69,7 @@ export function SwipeableTaskCard({
         setRevealSide(null)
     }
 
-    const handleDragEnd = (_: any, info: PanInfo) => {
+    const handleDragEnd = () => {
         const currentX = x.get()
 
         if (currentX > SWIPE_THRESHOLD) {

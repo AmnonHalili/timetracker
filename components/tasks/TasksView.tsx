@@ -885,7 +885,12 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
     ) => {
         // Build update data object
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const updateData: any = {}
+        const updateData: {
+            title?: string;
+            priority?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+            assignedToId?: string | null;
+            dueDate?: string | null;
+        } = {}
 
         if (updates?.title !== undefined) {
             const trimmed = updates.title.trim()
@@ -1640,7 +1645,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
 
                                                                                         {/* Due Date */}
                                                                                         {(() => {
-                                                                                            const indicator = formatDueDateIndicator(subtask.dueDate || null, t)
+                                                                                            const indicator = formatDueDateIndicator(subtask.dueDate ?? null, t)
                                                                                             if (!indicator) return null
                                                                                             return (
                                                                                                 <span className={cn("text-[9px] font-medium whitespace-nowrap", indicator.className)}>

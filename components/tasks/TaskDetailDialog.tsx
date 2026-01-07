@@ -4,8 +4,9 @@ import { useState, useEffect, useMemo } from "react"
 import React from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Clock, Users, CheckCircle2, MessageSquare, Paperclip, Send, FileText, X, AtSign, Link2, Plus, Info, Calendar, ChevronDown, ChevronUp, ListTodo, Trash2, Pencil, MoreVertical } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { useLanguage } from "@/lib/useLanguage"
 import { toast } from "sonner"
@@ -22,7 +23,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { cn } from "@/lib/utils"
 
-const formatDueDateIndicator = (dueDate: Date | string | null, t: (key: string, options?: any) => string): { text: string; className: string } | null => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const formatDueDateIndicator = (dueDate: Date | string | null, t: any): { text: string; className: string } | null => {
     if (!dueDate) return null
 
     const due = new Date(dueDate)
@@ -165,12 +167,11 @@ export function TaskDetailDialog({
     const [isWorkLogOpen, setIsWorkLogOpen] = useState(false)
 
     const [newNote, setNewNote] = useState("")
-    const [editingSubtask, setEditingSubtask] = useState<{ subtaskId: string; title: string } | null>(null)
     const [editingEnhancedSubtask, setEditingEnhancedSubtask] = useState<{
-        subtaskId: string,
-        priority: 'LOW' | 'MEDIUM' | 'HIGH' | null,
-        assignedToId: string | null,
-        dueDate: Date | null
+        subtaskId: string;
+        priority?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+        assignedToId?: string | null;
+        dueDate?: Date | null;
     } | null>(null)
     const [pendingFiles, setPendingFiles] = useState<File[]>([])
     const [loading, setLoading] = useState(false)
@@ -768,7 +769,7 @@ export function TaskDetailDialog({
                                                                         )}
 
                                                                         {(() => {
-                                                                            const indicator = formatDueDateIndicator(subtask.dueDate, t)
+                                                                            const indicator = formatDueDateIndicator(subtask.dueDate ?? null, t)
                                                                             if (!indicator) return null
                                                                             return (
                                                                                 <span className={cn("text-[8px] font-bold uppercase tracking-tight", indicator.className)}>
@@ -1353,7 +1354,7 @@ export function TaskDetailDialog({
                                                 key={p}
                                                 variant={editingEnhancedSubtask.priority === p ? 'default' : 'outline'}
                                                 size="sm"
-                                                onClick={() => setEditingEnhancedSubtask(prev => prev ? { ...prev, priority: p as any } : null)}
+                                                onClick={() => setEditingEnhancedSubtask(prev => prev ? { ...prev, priority: p as 'LOW' | 'MEDIUM' | 'HIGH' } : null)}
                                                 className={cn(
                                                     "flex-1",
                                                     editingEnhancedSubtask.priority === p && p === 'HIGH' && "bg-red-600 hover:bg-red-700",
