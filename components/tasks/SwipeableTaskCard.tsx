@@ -9,19 +9,29 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { format, isPast, isToday } from "date-fns"
 
+interface Task {
+    id: string;
+    title: string;
+    description: string | null;
+    status: string;
+    priority: string;
+    assignees: Array<{ id: string; name: string | null }>;
+    deadline: Date | string | null;
+}
+
 interface SwipeableTaskCardProps {
-    task: any
-    t: any
-    isRTL: boolean
+    task: Task
+    t: (key: string, options?: any) => string
+    isRTL?: boolean
     getPriorityColor: (priority: string) => string
     handleToggleTaskCompletion: (taskId: string, checked: boolean) => void
     handleStartWorking: (taskId: string) => void
     handleStopWorking: (taskId: string) => void
-    handleEdit: (task: any) => void
+    handleEdit: (task: Task) => void
     handleDelete: (taskId: string) => void
     onClick: () => void
     isTimerRunning: boolean
-    localSubtasks: any
+    localSubtasks: Record<string, any[]>
     expandedMobileTaskId: string | null
     setExpandedMobileTaskId: (id: string | null) => void
 }
@@ -29,7 +39,6 @@ interface SwipeableTaskCardProps {
 export function SwipeableTaskCard({
     task,
     t,
-    isRTL,
     getPriorityColor,
     handleToggleTaskCompletion,
     handleStartWorking,
@@ -58,7 +67,7 @@ export function SwipeableTaskCard({
         setRevealSide(null)
     }
 
-    const handleDragEnd = (event: any, info: PanInfo) => {
+    const handleDragEnd = (_: any, info: PanInfo) => {
         const currentX = x.get()
 
         if (currentX > SWIPE_THRESHOLD) {
@@ -167,7 +176,7 @@ export function SwipeableTaskCard({
                 onDragEnd={handleDragEnd}
                 animate={controls}
                 style={{ x }}
-                onClick={(e) => {
+                onClick={() => {
                     if (revealSide) {
                         closeActions()
                     } else {
@@ -218,7 +227,7 @@ export function SwipeableTaskCard({
                                 {/* Assignees */}
                                 {task.assignees && task.assignees.length > 0 && (
                                     <div className="flex -space-x-2">
-                                        {task.assignees.slice(0, 3).map((assignee: any) => (
+                                        {task.assignees.slice(0, 3).map((assignee) => (
                                             <Avatar key={assignee.id} className="h-6 w-6 border-2 border-background">
                                                 <AvatarFallback className="text-[9px] bg-primary/10 text-primary">
                                                     {assignee.name?.[0]?.toUpperCase() || 'U'}
@@ -269,7 +278,7 @@ export function SwipeableTaskCard({
                                     )}
                                 >
                                     <div className="h-1 w-1 rounded-full bg-current opacity-40" />
-                                    {localSubtasks[task.id].filter((s: any) => s.isDone).length}/{localSubtasks[task.id].length}
+                                    {localSubtasks[task.id].filter((s) => s.isDone).length}/{localSubtasks[task.id].length}
                                 </div>
                             )}
                         </div>

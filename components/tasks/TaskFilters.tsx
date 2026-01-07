@@ -17,7 +17,7 @@ import {
 import { useLanguage } from "@/lib/useLanguage"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { cn } from "@/lib/utils"
-import { Filter, X, Check, Calendar, AlertCircle, User, Layout, UserCircle } from "lucide-react"
+import { Filter, Check, Calendar, AlertCircle, User, Layout, UserCircle } from "lucide-react"
 
 interface TaskFiltersProps {
     open: boolean
@@ -61,7 +61,7 @@ export function TaskFilters({
         children
     }: {
         title: string,
-        icon: any,
+        icon: React.ElementType,
         children: React.ReactNode
     }) => (
         <div className="space-y-4">

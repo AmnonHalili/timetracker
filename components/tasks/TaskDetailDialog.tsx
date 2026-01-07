@@ -4,9 +4,13 @@ import { useState, useEffect, useMemo } from "react"
 import React from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Clock, Users, CheckCircle2, MessageSquare, Paperclip, Send, FileText, X, AtSign, Link2, Plus, Info, Calendar, ChevronDown, ChevronUp } from "lucide-react"
+import { Clock, Users, CheckCircle2, MessageSquare, Paperclip, Send, FileText, X, AtSign, Link2, Plus, Info, Calendar, ChevronDown, ChevronUp, ListTodo, Trash2, Pencil, MoreVertical } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { useLanguage } from "@/lib/useLanguage"
 import { toast } from "sonner"
+import { format } from "date-fns"
+import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -16,7 +20,32 @@ import { UnifiedTimeline, UnifiedActivityItem } from "./UnifiedTimeline"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
-import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
+
+const formatDueDateIndicator = (dueDate: Date | string | null, t: (key: string, options?: any) => string): { text: string; className: string } | null => {
+    if (!dueDate) return null
+
+    const due = new Date(dueDate)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    due.setHours(0, 0, 0, 0)
+
+    const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+
+    if (diffDays === 0) {
+        return { text: t('tasks.subtaskDueToday'), className: 'text-orange-600' }
+    } else if (diffDays < 0) {
+        return {
+            text: t('tasks.subtaskOverdue', { days: Math.abs(diffDays) }),
+            className: 'text-red-600'
+        }
+    } else {
+        return {
+            text: t('tasks.subtaskDueSoon', { days: diffDays }),
+            className: 'text-muted-foreground'
+        }
+    }
+}
 
 interface TaskDetailDialogProps {
     task: {
@@ -32,7 +61,15 @@ interface TaskDetailDialogProps {
         blocking?: Array<{ id: string; title: string; status: string }>
         blockedBy?: Array<{ id: string; title: string; status: string }>
         checklist: Array<{ id: string; text: string; isDone: boolean }>
-        subtasks?: Array<{ id: string; title: string; isDone: boolean }>
+        subtasks?: Array<{
+            id: string;
+            title: string;
+            isDone: boolean;
+            priority?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+            assignedToId?: string | null;
+            assignedTo?: { id: string; name: string | null; image?: string | null } | null;
+            dueDate?: Date | string | null;
+        }>
     } | null
     open: boolean
     onOpenChange: (open: boolean) => void
@@ -56,6 +93,14 @@ interface TaskDetailDialogProps {
     highlightNoteId?: string | null
     labels?: Array<{ id: string; name: string; color: string }>
     allTasks?: Array<{ id: string; title: string; status: string }>
+    onSubtaskToggle?: (taskId: string, subtaskId: string, currentDone: boolean) => void
+    onSubtaskUpdate?: (taskId: string, subtaskId: string, updates: {
+        title?: string;
+        priority?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+        assignedToId?: string | null;
+        dueDate?: Date | null;
+    }) => void
+    onSubtaskDelete?: (taskId: string, subtaskId: string) => void
 }
 
 interface Note {
@@ -94,7 +139,19 @@ interface ActivityLog {
     }
 }
 
-export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntries = [], projectUsers = [], highlightNoteId = null, allTasks = [] }: TaskDetailDialogProps) {
+export function TaskDetailDialog({
+    task,
+    open,
+    onOpenChange,
+    onUpdate,
+    timeEntries = [],
+    projectUsers = [],
+    highlightNoteId = null,
+    allTasks = [],
+    onSubtaskToggle,
+    onSubtaskUpdate,
+    onSubtaskDelete
+}: TaskDetailDialogProps) {
     const { t } = useLanguage()
     const { data: session } = useSession()
     const currentUserId = session?.user?.id
@@ -108,6 +165,13 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
     const [isWorkLogOpen, setIsWorkLogOpen] = useState(false)
 
     const [newNote, setNewNote] = useState("")
+    const [editingSubtask, setEditingSubtask] = useState<{ subtaskId: string; title: string } | null>(null)
+    const [editingEnhancedSubtask, setEditingEnhancedSubtask] = useState<{
+        subtaskId: string,
+        priority: 'LOW' | 'MEDIUM' | 'HIGH' | null,
+        assignedToId: string | null,
+        dueDate: Date | null
+    } | null>(null)
     const [pendingFiles, setPendingFiles] = useState<File[]>([])
     const [loading, setLoading] = useState(false)
     const [submittingNote, setSubmittingNote] = useState(false)
@@ -639,6 +703,128 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
                                         </div>
                                     )}
 
+                                    {/* Subtasks Section */}
+                                    <div className="bg-card rounded-lg border border-border/50 p-4 space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <h3 className="text-sm font-semibold flex items-center gap-2">
+                                                <ListTodo className="h-4 w-4" />
+                                                {t('tasks.subtasks') || "Subtasks"}
+                                            </h3>
+                                            <Badge variant="secondary" className="text-xs h-5 px-1.5">
+                                                {subtasksDone}/{totalSubtasks}
+                                            </Badge>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            {task.subtasks && task.subtasks.length > 0 ? (
+                                                task.subtasks.map((subtask) => (
+                                                    <div key={subtask.id} className="group flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors border border-transparent hover:border-border">
+                                                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                            <div
+                                                                className={cn(
+                                                                    "h-4 w-4 rounded border flex items-center justify-center cursor-pointer transition-colors",
+                                                                    subtask.isDone ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/30 hover:border-primary"
+                                                                )}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation()
+                                                                    if (task) {
+                                                                        onSubtaskToggle?.(task.id, subtask.id, subtask.isDone)
+                                                                    }
+                                                                }}
+                                                            >
+                                                                {subtask.isDone && <CheckCircle2 className="h-3 w-3" />}
+                                                            </div>
+                                                            <div className="flex flex-col flex-1 min-w-0">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className={cn(
+                                                                        "text-sm font-medium truncate",
+                                                                        subtask.isDone && "text-muted-foreground line-through"
+                                                                    )}>
+                                                                        {subtask.title}
+                                                                    </span>
+
+                                                                    {/* Enhanced Fields Indicators */}
+                                                                    <div className="flex items-center gap-1.5 shrink-0">
+                                                                        {subtask.priority && (
+                                                                            <Badge
+                                                                                variant="outline"
+                                                                                className={cn(
+                                                                                    "text-[9px] h-3.5 px-1 font-medium ring-0 border",
+                                                                                    subtask.priority === 'HIGH' && "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400",
+                                                                                    subtask.priority === 'MEDIUM' && "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950/30 dark:text-yellow-400",
+                                                                                    subtask.priority === 'LOW' && "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400"
+                                                                                )}
+                                                                            >
+                                                                                {subtask.priority.charAt(0)}
+                                                                            </Badge>
+                                                                        )}
+
+                                                                        {subtask.assignedTo && (
+                                                                            <Avatar className="h-4 w-4 border shadow-sm">
+                                                                                <AvatarFallback className="text-[7px] bg-primary/10 text-primary font-bold">
+                                                                                    {subtask.assignedTo.name?.substring(0, 2).toUpperCase() || '??'}
+                                                                                </AvatarFallback>
+                                                                            </Avatar>
+                                                                        )}
+
+                                                                        {(() => {
+                                                                            const indicator = formatDueDateIndicator(subtask.dueDate, t)
+                                                                            if (!indicator) return null
+                                                                            return (
+                                                                                <span className={cn("text-[8px] font-bold uppercase tracking-tight", indicator.className)}>
+                                                                                    {indicator.text}
+                                                                                </span>
+                                                                            )
+                                                                        })()}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button variant="ghost" size="icon" className="h-7 w-7">
+                                                                        <MoreVertical className="h-3.5 w-3.5" />
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end">
+                                                                    <DropdownMenuItem className="cursor-pointer" onClick={() => {
+                                                                        setEditingEnhancedSubtask({
+                                                                            subtaskId: subtask.id,
+                                                                            priority: subtask.priority || null,
+                                                                            assignedToId: subtask.assignedToId || null,
+                                                                            dueDate: subtask.dueDate ? new Date(subtask.dueDate) : null
+                                                                        })
+                                                                    }}>
+                                                                        <Pencil className="mr-2 h-3 w-3" />
+                                                                        {t('tasks.editSubtaskDetails') || "Edit Details"}
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuSeparator />
+                                                                    <DropdownMenuItem
+                                                                        className="cursor-pointer text-destructive focus:text-destructive"
+                                                                        onClick={() => {
+                                                                            if (task) {
+                                                                                onSubtaskDelete?.(task.id, subtask.id)
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        <Trash2 className="mr-2 h-3 w-3" />
+                                                                        {t('tasks.deleteSubtask') || "Delete"}
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="text-center py-4 bg-muted/20 rounded-lg border border-dashed border-border/60">
+                                                    <p className="text-xs text-muted-foreground">{t('tasks.noSubtasksYet') || "No subtasks yet"}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
                                     {/* Completion Percentage */}
                                     {totalSubtasks > 0 && (
                                         <div className="bg-card rounded-lg border border-border/50 p-4">
@@ -1146,6 +1332,146 @@ export function TaskDetailDialog({ task, open, onOpenChange, onUpdate, timeEntri
                         </TabsContent>
                     </div>
                 </Tabs>
+
+                {/* Subtask Detail Edit Dialog */}
+                {editingEnhancedSubtask && (
+                    <Dialog open={true} onOpenChange={() => setEditingEnhancedSubtask(null)}>
+                        <DialogContent className="sm:max-w-md">
+                            <DialogHeader>
+                                <DialogTitle>{t('tasks.editSubtaskDetails') || "Edit Subtask Details"}</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                                {/* Priority Selector */}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium flex items-center gap-2">
+                                        <Info className="h-4 w-4" />
+                                        {t('tasks.subtaskPriority') || "Priority"}
+                                    </label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {['LOW', 'MEDIUM', 'HIGH'].map((p) => (
+                                            <Button
+                                                key={p}
+                                                variant={editingEnhancedSubtask.priority === p ? 'default' : 'outline'}
+                                                size="sm"
+                                                onClick={() => setEditingEnhancedSubtask(prev => prev ? { ...prev, priority: p as any } : null)}
+                                                className={cn(
+                                                    "flex-1",
+                                                    editingEnhancedSubtask.priority === p && p === 'HIGH' && "bg-red-600 hover:bg-red-700",
+                                                    editingEnhancedSubtask.priority === p && p === 'MEDIUM' && "bg-yellow-600 hover:bg-yellow-700",
+                                                    editingEnhancedSubtask.priority === p && p === 'LOW' && "bg-blue-600 hover:bg-blue-700"
+                                                )}
+                                            >
+                                                {t(`tasks.priority${p.charAt(0) + p.slice(1).toLowerCase()}`) || p}
+                                            </Button>
+                                        ))}
+                                        <Button
+                                            variant={!editingEnhancedSubtask.priority ? 'default' : 'outline'}
+                                            size="sm"
+                                            onClick={() => setEditingEnhancedSubtask(prev => prev ? { ...prev, priority: null } : null)}
+                                            className="flex-1"
+                                        >
+                                            {t('tasks.subtaskNoPriority') || "None"}
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {/* Assignee Selector */}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium flex items-center gap-2">
+                                        <Users className="h-4 w-4" />
+                                        {t('tasks.subtaskAssignedTo') || "Assigned To"}
+                                    </label>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="outline" className="w-full justify-between">
+                                                {editingEnhancedSubtask.assignedToId ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <Avatar className="h-5 w-5">
+                                                            <AvatarFallback className="text-[8px]">
+                                                                {task?.assignees.find(u => u.id === editingEnhancedSubtask.assignedToId)?.name?.substring(0, 2).toUpperCase() || "??"}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                        {task?.assignees.find(u => u.id === editingEnhancedSubtask.assignedToId)?.name}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-muted-foreground">{t('tasks.subtaskNoAssignee') || "Unassigned"}</span>
+                                                )}
+                                                <ChevronDown className="h-4 w-4 opacity-50" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent className="w-[300px]">
+                                            <DropdownMenuItem onClick={() => setEditingEnhancedSubtask(prev => prev ? { ...prev, assignedToId: null } : null)}>
+                                                {t('tasks.subtaskNoAssignee') || "Unassigned"}
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            {task?.assignees.map(user => (
+                                                <DropdownMenuItem
+                                                    key={user.id}
+                                                    onClick={() => setEditingEnhancedSubtask(prev => prev ? { ...prev, assignedToId: user.id } : null)}
+                                                    className="flex items-center gap-2"
+                                                >
+                                                    <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
+                                                        {user.name?.substring(0, 2).toUpperCase() || "??"}
+                                                    </div>
+                                                    {user.name}
+                                                </DropdownMenuItem>
+                                            ))}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+
+                                {/* Due Date Picker */}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium flex items-center gap-2">
+                                        <Calendar className="h-4 w-4" />
+                                        {t('tasks.subtaskDueDate') || "Due Date"}
+                                    </label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                className={cn(
+                                                    "w-full justify-start text-left font-normal",
+                                                    !editingEnhancedSubtask.dueDate && "text-muted-foreground"
+                                                )}
+                                            >
+                                                <Calendar className="mr-2 h-4 w-4" />
+                                                {editingEnhancedSubtask.dueDate ? format(new Date(editingEnhancedSubtask.dueDate), "PPP") : <span>{t('tasks.pickDate') || "Pick a date"}</span>}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <CalendarComponent
+                                                mode="single"
+                                                selected={editingEnhancedSubtask.dueDate ? new Date(editingEnhancedSubtask.dueDate) : undefined}
+                                                onSelect={(date) => setEditingEnhancedSubtask(prev => prev ? { ...prev, dueDate: date || null } : null)}
+                                                initialFocus
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+
+                                {/* Actions */}
+                                <div className="flex gap-2 pt-4">
+                                    <Button variant="outline" className="flex-1" onClick={() => setEditingEnhancedSubtask(null)}>
+                                        {t('common.cancel') || "Cancel"}
+                                    </Button>
+                                    <Button className="flex-1" onClick={() => {
+                                        if (task && editingEnhancedSubtask) {
+                                            onSubtaskUpdate?.(task.id, editingEnhancedSubtask.subtaskId, {
+                                                priority: editingEnhancedSubtask.priority,
+                                                assignedToId: editingEnhancedSubtask.assignedToId,
+                                                dueDate: editingEnhancedSubtask.dueDate
+                                            })
+                                            setEditingEnhancedSubtask(null)
+                                        }
+                                    }}>
+                                        {t('common.save') || "Save"}
+                                    </Button>
+                                </div>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                )}
             </DialogContent>
         </Dialog>
     )

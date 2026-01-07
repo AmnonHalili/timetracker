@@ -1,8 +1,6 @@
 "use client"
 
-
-
-
+import { useRouter, useSearchParams } from "next/navigation"
 import { useState, useEffect, useRef, useTransition } from "react"
 import { Trash2, Plus, MoreVertical, Pencil, Play, Square, CheckCircle2, AlertCircle, Filter, ArrowUpDown, X } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -1695,7 +1693,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                                                                 }}
                                                                                                 className="cursor-pointer"
                                                                                             >
-                                                                                                <Edit className="mr-2 h-4 w-4" />
+                                                                                                <Pencil className="mr-2 h-4 w-4" />
                                                                                                 {t('tasks.editSubtask')}
                                                                                             </DropdownMenuItem>
 
@@ -1712,7 +1710,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                                                                                 }}
                                                                                                 className="cursor-pointer"
                                                                                             >
-                                                                                                <Edit className="mr-2 h-4 w-4" />
+                                                                                                <Pencil className="mr-2 h-4 w-4" />
                                                                                                 Edit Details
                                                                                             </DropdownMenuItem>
 
@@ -1811,7 +1809,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                             handleToggleTaskCompletion={handleToggleTaskCompletion}
                                             handleStartWorking={handleStartWorking}
                                             handleStopWorking={handleStopWorking}
-                                            handleEdit={(task: any) => {
+                                            handleEdit={(task) => {
                                                 setEditingTask(task)
                                                 setIsEditDialogOpen(true)
                                             }}
@@ -1891,7 +1889,10 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
             </CardContent>
 
             <TaskDetailDialog
-                task={selectedTask}
+                task={selectedTask ? {
+                    ...selectedTask,
+                    subtasks: localSubtasks[selectedTask.id] || selectedTask.subtasks || []
+                } : null}
                 open={isDetailOpen}
                 onOpenChange={(open) => {
                     setIsDetailOpen(open)
@@ -1904,6 +1905,9 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                 }}
                 timeEntries={taskTimeEntries}
                 onUpdate={handleTaskUpdate}
+                onSubtaskToggle={handleToggleSubtask}
+                onSubtaskUpdate={handleUpdateSubtask}
+                onSubtaskDelete={handleDeleteSubtask}
                 projectUsers={users}
                 highlightNoteId={deepLinkNoteId}
                 labels={labels}
