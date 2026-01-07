@@ -59,7 +59,7 @@ interface MonthGridProps {
 }
 
 export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEventCreate, isLoading }: MonthGridProps) {
-    const { t } = useLanguage()
+    const { t, isRTL } = useLanguage()
     const monthStart = startOfMonth(date)
     const monthEnd = endOfMonth(date)
     const startDate = startOfWeek(monthStart)
@@ -78,17 +78,24 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
     const [selectedDate, setSelectedDate] = useState<Date>(new Date())
 
     return (
-        <div className="space-y-4">
-            <div className="flex items-center justify-end">
-                <Button size="sm" onClick={() => { setSelectedDate(new Date()); setCreateDialogOpen(true) }}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    {t('calendar.addEvent')}
-                </Button>
+        <div className="space-y-4 relative">
+            {/* Add Event Button - Fixed bottom left on mobile (opposite to accessibility button) */}
+            <div className={`fixed bottom-6 z-50 md:relative md:bottom-auto md:z-auto ${isRTL ? 'right-6 md:right-auto' : 'left-6 md:left-auto'}`}>
+                <div className="flex items-center justify-end md:mb-0 mb-0">
+                    <Button 
+                        size="sm" 
+                        onClick={() => { setSelectedDate(new Date()); setCreateDialogOpen(true) }}
+                        className="h-11 md:h-9 rounded-xl md:rounded-md shadow-lg md:shadow-none bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-4 md:px-3"
+                    >
+                        <Plus className="h-4 w-4 mr-2" />
+                        {t('calendar.addEvent')}
+                    </Button>
+                </div>
             </div>
 
-            <div className="grid grid-cols-7 gap-1 text-center mb-2">
+            <div className="grid grid-cols-7 gap-1 text-center mb-3 md:mb-2">
                 {weekDays.map((day) => (
-                    <div key={day} className="text-sm font-medium text-muted-foreground uppercase py-2">
+                    <div key={day} className="text-xs md:text-sm font-semibold md:font-medium text-muted-foreground uppercase py-2">
                         {t(day).substring(0, 3)}
                     </div>
                 ))}
@@ -170,16 +177,16 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                             key={day.toString()}
                             onClick={() => onDayClick?.(day)}
                             className={cn(
-                                "aspect-square p-0.5 md:p-1 flex flex-col justify-between transition-colors hover:bg-muted/30 cursor-pointer overflow-hidden",
+                                "aspect-square p-1 md:p-1 flex flex-col justify-between transition-colors hover:bg-muted/30 cursor-pointer overflow-hidden rounded-xl md:rounded-md",
                                 !isSameMonth(day, monthStart) && "bg-muted/10 text-muted-foreground",
-                                isToday(day) && "border-primary shadow-sm"
+                                isToday(day) && "border-2 md:border border-primary shadow-md md:shadow-sm"
                             )}
                         >
                             <div className="flex flex-col h-full">
                                 {/* Header with date and hours */}
                                 <div className="flex justify-between items-start mb-0.5">
                                     <span className={cn(
-                                        "text-[10px] md:text-xs font-semibold h-4 w-4 md:h-5 md:w-5 flex items-center justify-center rounded-full",
+                                        "text-xs md:text-xs font-semibold h-5 w-5 md:h-5 md:w-5 flex items-center justify-center rounded-full",
                                         isToday(day) && "bg-primary text-primary-foreground"
                                     )}>
                                         {format(day, 'd')}
@@ -193,9 +200,9 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
                                             {formatHoursMinutes(hoursWorked)}
                                         </span>
                                     )}
-                                    {/* Pink dot indicator on mobile if has events */}
+                                    {/* Event indicator dot on mobile if has events */}
                                     {hasEvents && (
-                                        <span className="md:hidden w-1.5 h-1.5 rounded-full bg-pink-500 shrink-0" />
+                                        <span className="md:hidden w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
                                     )}
                                 </div>
 

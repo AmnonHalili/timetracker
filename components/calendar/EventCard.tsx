@@ -191,7 +191,7 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
 
                 {/* Actions Menu (Edit/Delete) - absolutely positioned */}
                 {showDelete && event.type !== 'EXTERNAL' && (
-                    <div className="absolute right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center"
+                    <div className="absolute right-2 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex items-center"
                     style={{ top: '50%', transform: 'translateY(-50%)' }}
                     >
                             <DropdownMenu>

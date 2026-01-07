@@ -1,9 +1,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { usePathname } from "next/navigation"
 import { NotificationBell } from "@/components/layout/NotificationBell"
 import { MobileSidebar } from "@/components/layout/MobileSidebar"
 import { TeamStatusButton } from "@/components/dashboard/TeamStatusButton"
+import { CalendarSettingsButton } from "@/components/calendar/CalendarSettingsButton"
 import { useLanguage } from "@/lib/useLanguage"
 
 interface TeamMemberStatus {
@@ -18,7 +20,9 @@ interface TeamMemberStatus {
 
 export function AppHeader() {
     const { isRTL } = useLanguage()
+    const pathname = usePathname()
     const [teamStatus, setTeamStatus] = useState<TeamMemberStatus[]>([])
+    const isCalendarPage = pathname === '/calendar'
 
     useEffect(() => {
         fetch('/api/team-status')
@@ -44,6 +48,9 @@ export function AppHeader() {
                     <div className="md:hidden">
                         <TeamStatusButton teamStatus={teamStatus} />
                     </div>
+                )}
+                {isCalendarPage && (
+                    <CalendarSettingsButton />
                 )}
                 <NotificationBell />
             </div>

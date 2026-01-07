@@ -293,142 +293,167 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
             {/* Header */}
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 px-0">
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                    {/* Back Button / Placeholder-like container for stability */}
-                    <div className="w-10 flex justify-start shrink-0">
-                        {view === 'day' && (
+            <div className="flex flex-col gap-3 md:gap-4 px-0">
+                {/* Top Row: Settings Button (right) + Title (center) */}
+                <div className="relative flex items-center justify-center min-h-[40px] md:min-h-[36px]">
+                    {/* Settings Button - Absolute right (only in month view) */}
+                    {view === 'month' && (
+                        <div className="absolute right-0 shrink-0">
+                            <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+                                <DialogTrigger asChild>
+                                    <Button variant="outline" size="icon" className="shrink-0 h-10 w-10 md:h-9 md:w-9 rounded-xl md:rounded-md border-2 shadow-sm hover:shadow-md">
+                                        <Settings className="h-4 w-4" />
+                                    </Button>
+                                </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Calendar Settings</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-6 py-4 min-h-[400px]">
+                                    <div className="flex items-center justify-between space-x-2">
+                                        <div className="space-y-1">
+                                            <Label className="text-base flex items-center gap-2">
+                                                <PartyPopper className="h-4 w-4" />
+                                                Show Holidays
+                                            </Label>
+                                            <p className="text-sm text-muted-foreground">
+                                                Show local holidays (Israel) on the calendar.
+                                            </p>
+                                        </div>
+                                        <Switch
+                                            checked={showHolidays}
+                                            onCheckedChange={setShowHolidays}
+                                        />
+                                    </div>
+                                    <div className="border-t" />
+
+                                    <div className="flex items-center justify-between space-x-2">
+                                        <div className="space-y-1">
+                                            <Label className="text-base">Google Calendar Sync</Label>
+                                            <p className="text-sm text-muted-foreground">
+                                                Sync events from your Google Calendar.
+                                                {!syncSettings.isGoogleCalendarSyncEnabled && (
+                                                    <span className="block text-xs text-yellow-600 mt-1">
+                                                        Requires signing in with Google.
+                                                    </span>
+                                                )}
+                                            </p>
+                                        </div>
+                                        <Switch
+                                            checked={syncSettings.isGoogleCalendarSyncEnabled}
+                                            onCheckedChange={(checked: boolean) => {
+                                                if (checked) {
+                                                    if (isGoogleLinked && hasRefreshToken) {
+                                                        // If already linked and valid, just enable
+                                                        handleUpdateSettings({ isGoogleCalendarSyncEnabled: true })
+                                                    } else {
+                                                        // Start OAuth flow (force re-auth if missing token)
+                                                        handleConnectGoogle()
+                                                    }
+                                                } else {
+                                                    handleUpdateSettings({ isGoogleCalendarSyncEnabled: false })
+                                                }
+                                            }}
+                                        />
+                                    </div>
+
+                                    {syncSettings.isGoogleCalendarSyncEnabled && (
+                                        <>
+
+
+                                            <div className="space-y-2">
+                                                <Label>Synced Calendars</Label>
+                                                {availableCalendars.length > 0 ? (
+                                                    <div className="space-y-2 border rounded-md p-3 max-h-40 overflow-y-auto">
+                                                        {availableCalendars.map((cal) => (
+                                                            <div key={cal.id} className="flex items-center space-x-2">
+                                                                <Checkbox
+                                                                    id={cal.id}
+                                                                    checked={syncSettings.syncedCalendarIds?.includes(cal.id)}
+                                                                    onCheckedChange={(checked) => {
+                                                                        const currentIds = syncSettings.syncedCalendarIds || []
+                                                                        const newIds = checked
+                                                                            ? [...currentIds, cal.id]
+                                                                            : currentIds.filter(id => id !== cal.id)
+
+                                                                        // Optimistic update
+                                                                        setSyncSettings(prev => ({ ...prev, syncedCalendarIds: newIds }))
+                                                                        handleUpdateSettings({ syncedCalendarIds: newIds })
+                                                                    }}
+                                                                />
+                                                                <label
+                                                                    htmlFor={cal.id}
+                                                                    className="text-sm cursor-pointer select-none leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                                                    style={{ color: cal.foregroundColor, }} // Optional coloring
+                                                                >
+                                                                    {cal.summary} {cal.primary && <span className="text-xs text-muted-foreground ml-1">(Primary)</span>}
+                                                                </label>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <div className="text-sm text-muted-foreground italic">
+                                                        {isGoogleLinked ? "Loading calendars..." : "Connect Google Calendar to see available calendars."}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                        </DialogContent>
+                    </Dialog>
+                    </div>
+                    )}
+                    
+                    {/* Back Button - Absolute left (only for day view) */}
+                    {view === 'day' && (
+                        <div className="absolute left-0 shrink-0">
                             <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => setView('month')}
-                                className="-ml-2"
+                                className="h-10 w-10 md:h-9 md:w-9"
                             >
-                                <ArrowLeft className={`h-5 w-5 ${isRTL ? 'rotate-180' : ''}`} />
+                                <ChevronLeft className={`h-5 w-5 ${isRTL ? 'rotate-180' : ''}`} />
                             </Button>
+                        </div>
+                    )}
+
+                    {/* Title - Centered absolutely */}
+                    <div className="absolute left-1/2 -translate-x-1/2">
+                        {view === 'month' ? (
+                            <div className="flex items-center gap-2">
+                                <h2 className="text-xl md:text-3xl font-medium md:font-bold tracking-tight text-primary">
+                                    {t(`months.${['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'][currentDate.getMonth()]}` as 'months.january' | 'months.february' | 'months.march' | 'months.april' | 'months.may' | 'months.june' | 'months.july' | 'months.august' | 'months.september' | 'months.october' | 'months.november' | 'months.december')}
+                                </h2>
+                                <span className="text-xl md:text-3xl font-medium md:font-bold tracking-tight text-primary">
+                                    {currentDate.getFullYear()}
+                                </span>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center text-center">
+                                <h2 className="text-xl md:text-3xl font-medium md:font-bold tracking-tight text-primary">
+                                    {t(`days.${['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][currentDate.getDay()]}` as 'days.sunday' | 'days.monday' | 'days.tuesday' | 'days.wednesday' | 'days.thursday' | 'days.friday' | 'days.saturday')}
+                                </h2>
+                                <div className="flex items-center gap-2 text-lg md:text-2xl font-medium md:font-bold tracking-tight text-primary">
+                                    <span>{t(`months.${['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'][currentDate.getMonth()]}` as 'months.january' | 'months.february' | 'months.march' | 'months.april' | 'months.may' | 'months.june' | 'months.july' | 'months.august' | 'months.september' | 'months.october' | 'months.november' | 'months.december')}</span>
+                                    <span>{currentDate.getFullYear()}</span>
+                                </div>
+                            </div>
                         )}
                     </div>
-
-                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight truncate">
-                        {view === 'month'
-                            ? `${t(`months.${['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'][currentDate.getMonth()]}` as 'months.january' | 'months.february' | 'months.march' | 'months.april' | 'months.may' | 'months.june' | 'months.july' | 'months.august' | 'months.september' | 'months.october' | 'months.november' | 'months.december')} ${currentDate.getFullYear()}`
-                            : `${t(`days.${['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][currentDate.getDay()]}` as 'days.sunday' | 'days.monday' | 'days.tuesday' | 'days.wednesday' | 'days.thursday' | 'days.friday' | 'days.saturday')}, ${t(`months.${['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'][currentDate.getMonth()]}` as 'months.january' | 'months.february' | 'months.march' | 'months.april' | 'months.may' | 'months.june' | 'months.july' | 'months.august' | 'months.september' | 'months.october' | 'months.november' | 'months.december')} ${currentDate.getDate()}, ${currentDate.getFullYear()}`
-                        }
-                    </h2>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
-                    <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-                        <DialogTrigger asChild>
-                            <Button variant="outline" size="icon" className="shrink-0">
-                                <Settings className="h-4 w-4" />
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Calendar Settings</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-6 py-4 min-h-[400px]">
-                                <div className="flex items-center justify-between space-x-2">
-                                    <div className="space-y-1">
-                                        <Label className="text-base flex items-center gap-2">
-                                            <PartyPopper className="h-4 w-4" />
-                                            Show Holidays
-                                        </Label>
-                                        <p className="text-sm text-muted-foreground">
-                                            Show local holidays (Israel) on the calendar.
-                                        </p>
-                                    </div>
-                                    <Switch
-                                        checked={showHolidays}
-                                        onCheckedChange={setShowHolidays}
-                                    />
-                                </div>
-                                <div className="border-t" />
-
-                                <div className="flex items-center justify-between space-x-2">
-                                    <div className="space-y-1">
-                                        <Label className="text-base">Google Calendar Sync</Label>
-                                        <p className="text-sm text-muted-foreground">
-                                            Sync events from your Google Calendar.
-                                            {!syncSettings.isGoogleCalendarSyncEnabled && (
-                                                <span className="block text-xs text-yellow-600 mt-1">
-                                                    Requires signing in with Google.
-                                                </span>
-                                            )}
-                                        </p>
-                                    </div>
-                                    <Switch
-                                        checked={syncSettings.isGoogleCalendarSyncEnabled}
-                                        onCheckedChange={(checked: boolean) => {
-                                            if (checked) {
-                                                if (isGoogleLinked && hasRefreshToken) {
-                                                    // If already linked and valid, just enable
-                                                    handleUpdateSettings({ isGoogleCalendarSyncEnabled: true })
-                                                } else {
-                                                    // Start OAuth flow (force re-auth if missing token)
-                                                    handleConnectGoogle()
-                                                }
-                                            } else {
-                                                handleUpdateSettings({ isGoogleCalendarSyncEnabled: false })
-                                            }
-                                        }}
-                                    />
-                                </div>
-
-                                {syncSettings.isGoogleCalendarSyncEnabled && (
-                                    <>
-
-
-                                        <div className="space-y-2">
-                                            <Label>Synced Calendars</Label>
-                                            {availableCalendars.length > 0 ? (
-                                                <div className="space-y-2 border rounded-md p-3 max-h-40 overflow-y-auto">
-                                                    {availableCalendars.map((cal) => (
-                                                        <div key={cal.id} className="flex items-center space-x-2">
-                                                            <Checkbox
-                                                                id={cal.id}
-                                                                checked={syncSettings.syncedCalendarIds?.includes(cal.id)}
-                                                                onCheckedChange={(checked) => {
-                                                                    const currentIds = syncSettings.syncedCalendarIds || []
-                                                                    const newIds = checked
-                                                                        ? [...currentIds, cal.id]
-                                                                        : currentIds.filter(id => id !== cal.id)
-
-                                                                    // Optimistic update
-                                                                    setSyncSettings(prev => ({ ...prev, syncedCalendarIds: newIds }))
-                                                                    handleUpdateSettings({ syncedCalendarIds: newIds })
-                                                                }}
-                                                            />
-                                                            <label
-                                                                htmlFor={cal.id}
-                                                                className="text-sm cursor-pointer select-none leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                                                style={{ color: cal.foregroundColor, }} // Optional coloring
-                                                            >
-                                                                {cal.summary} {cal.primary && <span className="text-xs text-muted-foreground ml-1">(Primary)</span>}
-                                                            </label>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <div className="text-sm text-muted-foreground italic">
-                                                    {isGoogleLinked ? "Loading calendars..." : "Connect Google Calendar to see available calendars."}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        </DialogContent>
-                    </Dialog>
-
+                {/* Navigation Controls - Centered below title */}
+                <div className={`flex items-center justify-center gap-3 mb-4 md:mb-0 ${view === 'day' ? 'mt-4 md:mt-6' : ''}`}>
                     {/* Navigation Controls */}
-                    <div className="flex items-center border rounded-md bg-background shadow-sm shrink-0">
+                    <div className="flex items-center border-2 rounded-xl md:rounded-md bg-background shadow-sm hover:shadow-md shrink-0 overflow-hidden">
                         <Button
                             variant="ghost"
                             size="icon"
+                            className="h-10 w-10 md:h-9 md:w-9 rounded-none"
                             onClick={view === 'month'
                                 ? (isRTL ? handleNextMonth : handlePrevMonth)
                                 : (isRTL ? handleNextDay : handlePrevDay)
@@ -439,7 +464,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="text-sm font-medium border-x rounded-none px-3"
+                            className="text-sm font-semibold border-x-2 rounded-none px-4 md:px-3 h-10 md:h-9"
                             onClick={handleToday}
                         >
                             {t('calendar.today')}
@@ -447,6 +472,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                         <Button
                             variant="ghost"
                             size="icon"
+                            className="h-10 w-10 md:h-9 md:w-9 rounded-none"
                             onClick={view === 'month'
                                 ? (isRTL ? handlePrevMonth : handleNextMonth)
                                 : (isRTL ? handlePrevDay : handleNextDay)
