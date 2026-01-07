@@ -20,7 +20,7 @@ interface SwipeableEntryCardProps {
     entry: TimeEntry
     tasks: Array<{ id: string; title: string; subtasks?: Array<{ id: string; title: string; isDone: boolean }> }>
     isRTL: boolean
-    t: any
+    t: (key: string) => string
     onEdit: (entry: TimeEntry) => void
     onDelete: (entryId: string) => void
     inlineEditingId: string | null

@@ -30,12 +30,11 @@ interface TasksPageHeaderProps {
     }) => void
 }
 
-export function TasksPageHeader({ 
-    isAdmin, 
-    users, 
-    currentUserId, 
+export function TasksPageHeader({
+    isAdmin,
+    users,
+    currentUserId,
     onOptimisticTaskCreate,
-    isFiltersOpen,
     setIsFiltersOpen,
     sortBy,
     setSortBy,
@@ -54,7 +53,7 @@ export function TasksPageHeader({
                         {isAdmin ? t('tasks.manageAndAssign') : t('tasks.yourAssignedTasks')}
                     </p>
                 </div>
-                
+
                 {/* Add Task Button - Right aligned on desktop */}
                 <div className="flex md:justify-end">
                     <div className="w-full md:w-auto">

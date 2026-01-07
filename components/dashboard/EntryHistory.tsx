@@ -1,13 +1,8 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-
 import { useState, useEffect, startTransition } from "react"
 import { useRouter } from "next/navigation"
 import { format, isToday, isYesterday } from "date-fns"
-import { Pencil, Trash2 } from "lucide-react"
-import { motion, useMotionValue, useTransform, useAnimation } from "framer-motion"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -64,17 +59,17 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
         // Filter out entries that are pending deletion to prevent them from reappearing
         // This is critical for fast deletions - entries stay filtered even after router.refresh()
         const filteredEntries = entries.filter(e => !pendingDeletions.has(e.id))
-        
+
         // Always update local entries when entries prop changes
         // This ensures merged entries with updated breaks are reflected immediately
         // We update whenever the entries array changes, which includes when entry data (breaks, times) changes
         setLocalEntries(filteredEntries)
-        
+
         // When server entries arrive, check if we should remove the optimistic entry
         if (optimisticEntryId && onOptimisticEntryCleared) {
             // Check if the optimistic entry (temp ID) is still in the list
             const hasOptimisticEntry = entries.some(e => e.id === optimisticEntryId)
-            
+
             // If optimistic entry is gone, it means server data replaced it
             // Clear the callback to indicate we no longer need the optimistic entry
             if (!hasOptimisticEntry) {
@@ -102,7 +97,7 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
                 body: JSON.stringify({ id, ...updates }),
             })
             startTransition(() => {
-            router.refresh()
+                router.refresh()
             })
         } catch (e) {
             console.error("Failed to save", e)
@@ -134,7 +129,7 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
                 body: JSON.stringify({ id, description }),
             })
             startTransition(() => {
-            router.refresh()
+                router.refresh()
             })
         } catch (e) {
             console.error("Failed to save", e)
@@ -161,22 +156,22 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
 
         const id = entryToDelete
         setDeleteDialogOpen(false)
-        
+
         // Optimistic update - remove entry immediately from UI (BEFORE any async operations)
         const deletedEntry = localEntries.find(e => e.id === id)
         const deletedIndex = localEntries.findIndex(e => e.id === id)
-        
+
         if (!deletedEntry) {
             setEntryToDelete(null)
             return
         }
-        
+
         // Mark as pending deletion to prevent it from reappearing during router.refresh()
         setPendingDeletions(prev => new Set(prev).add(id))
-        
+
         // Remove immediately for instant UI feedback - this happens synchronously
         setLocalEntries(current => current.filter(e => e.id !== id))
-        
+
         // API call happens in background - doesn't block UI
         fetch(`/api/time-entries?id=${id}`, { method: "DELETE" })
             .then(() => {

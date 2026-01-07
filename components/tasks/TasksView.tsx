@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState, useEffect, useRef, useTransition } from "react"
-import { Trash2, Plus, MoreVertical, Pencil, Play, Square, CheckCircle2, AlertCircle, Filter, ArrowUpDown, X } from "lucide-react"
+import { Trash2, Plus, MoreVertical, Pencil, Play, Square, CheckCircle2, AlertCircle, X } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -183,22 +183,22 @@ interface TasksViewProps {
     isFiltersOpen?: boolean
     setIsFiltersOpen?: (open: boolean) => void
     sortBy?: string
-    setSortBy?: (value: string) => void
-    onActiveFiltersCountChange?: (count: number) => void
+
+
 }
 
-export function TasksView({ 
-    initialTasks, 
-    users, 
-    isAdmin, 
-    currentUserId, 
-    tasksWithActiveTimers = {}, 
+export function TasksView({
+    initialTasks,
+    users,
+    isAdmin,
+    currentUserId,
+    tasksWithActiveTimers = {},
     labels = [],
     isFiltersOpen: externalIsFiltersOpen,
     setIsFiltersOpen: externalSetIsFiltersOpen,
     sortBy: externalSortBy,
-    setSortBy: externalSetSortBy,
-    onActiveFiltersCountChange
+
+
 }: TasksViewProps) {
     const router = useRouter()
     const [, startTransition] = useTransition()
@@ -261,12 +261,12 @@ export function TasksView({
 
     // Filters and Sort state - use external if provided, otherwise use internal
     const [internalIsFiltersOpen, setInternalIsFiltersOpen] = useState(false)
-    const [internalSortBy, setInternalSortBy] = useState<string>("smart")
+    const [internalSortBy] = useState<string>("smart")
     const isFiltersOpen = externalIsFiltersOpen !== undefined ? externalIsFiltersOpen : internalIsFiltersOpen
     const setIsFiltersOpen = externalSetIsFiltersOpen || setInternalIsFiltersOpen
     const sortBy = externalSortBy !== undefined ? externalSortBy : internalSortBy
-    const setSortBy = externalSetSortBy || setInternalSortBy
-    
+
+
     const [filters, setFilters] = useState<{
         status: string[];
         deadline: string[];

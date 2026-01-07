@@ -14,7 +14,7 @@ import { useLanguage } from "@/lib/useLanguage"
 
 export function CalendarSettingsButton() {
     const router = useRouter()
-    const { isRTL } = useLanguage()
+    const { } = useLanguage()
     const [settingsOpen, setSettingsOpen] = useState(false)
     const [syncSettings, setSyncSettings] = useState<{
         isGoogleCalendarSyncEnabled: boolean;

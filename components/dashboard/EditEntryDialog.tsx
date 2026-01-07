@@ -121,7 +121,7 @@ export function EditEntryDialog({ entry, open, onOpenChange, onSave, tasks = [] 
         }
     }
 
-    const taskOptions = tasks.map(t => ({ label: t.title, value: t.id }))
+
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>

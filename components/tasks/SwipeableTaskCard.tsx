@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion, useMotionValue, useTransform, useAnimation } from "framer-motion"
-import { Play, Pause, Trash2, Pencil, CheckCircle2 } from "lucide-react"
+import { Play, Pause, Trash2, Pencil } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
@@ -37,7 +37,7 @@ interface SwipeableTaskCardProps {
     onClick: () => void
     isTimerRunning: boolean
     localSubtasks: Record<string, Array<{ id: string; title: string; isDone: boolean; priority?: string | null; assignedToId?: string | null; assignedTo?: { id: string; name: string | null; image?: string | null } | null; dueDate?: Date | string | null }>>
-    expandedMobileTaskId: string | null
+
     setExpandedMobileTaskId: (id: string | null) => void
     handleToggleSubtask?: (taskId: string, subtaskId: string, currentDone: boolean) => void
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -65,7 +65,7 @@ export function SwipeableTaskCard({
     onClick,
     isTimerRunning,
     localSubtasks,
-    expandedMobileTaskId,
+
     setExpandedMobileTaskId,
     handleToggleSubtask,
     formatDueDateIndicator,
@@ -227,13 +227,13 @@ export function SwipeableTaskCard({
                                     {(() => {
                                         const hasStartDate = task.startDate
                                         const hasDeadline = task.deadline
-                                        
+
                                         // If both dates exist and are in the same month, show as range
                                         if (hasStartDate && hasDeadline) {
                                             const start = new Date(task.startDate)
                                             const end = new Date(task.deadline)
                                             const sameMonth = start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()
-                                            
+
                                             if (sameMonth) {
                                                 return (
                                                     <Badge variant="outline" className="text-[10px] h-5 px-2 font-medium bg-muted/50 text-muted-foreground border-0 rounded-full">
@@ -269,7 +269,7 @@ export function SwipeableTaskCard({
                                         return null
                                     })()}
                                 </div>
-                                
+
                                 {/* Assignees */}
                                 {task.assignees && task.assignees.length > 0 && (
                                     <div className="flex -space-x-2">
@@ -395,7 +395,7 @@ export function SwipeableTaskCard({
                                                 </div>
                                             </div>
                                         ))}
-                                        
+
                                         {/* Show More Subtasks */}
                                         {hasMore && !isExpanded && (
                                             <div
