@@ -39,7 +39,7 @@ export function TasksPageWithOptimisticUpdate({
 }: TasksPageWithOptimisticUpdateProps) {
     const [tasks, setTasks] = useState(initialTasks)
     const { isRTL } = useLanguage()
-    
+
     // Filters and Sort state - lifted to parent to share with header
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
     const [sortBy, setSortBy] = useState<string>("smart")
@@ -95,7 +95,6 @@ export function TasksPageWithOptimisticUpdate({
                 users={users}
                 currentUserId={currentUserId}
                 onOptimisticTaskCreate={handleOptimisticTaskCreate}
-                isFiltersOpen={isFiltersOpen}
                 setIsFiltersOpen={setIsFiltersOpen}
                 sortBy={sortBy}
                 setSortBy={setSortBy}

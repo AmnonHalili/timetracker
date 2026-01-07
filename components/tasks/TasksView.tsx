@@ -183,6 +183,8 @@ interface TasksViewProps {
     isFiltersOpen?: boolean
     setIsFiltersOpen?: (open: boolean) => void
     sortBy?: string
+    setSortBy?: (sortBy: string) => void
+    onActiveFiltersCountChange?: (count: number) => void
 
 
 }

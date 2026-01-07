@@ -38,6 +38,7 @@ interface SwipeableTaskCardProps {
     isTimerRunning: boolean
     localSubtasks: Record<string, Array<{ id: string; title: string; isDone: boolean; priority?: string | null; assignedToId?: string | null; assignedTo?: { id: string; name: string | null; image?: string | null } | null; dueDate?: Date | string | null }>>
 
+    expandedMobileTaskId?: string | null
     setExpandedMobileTaskId: (id: string | null) => void
     handleToggleSubtask?: (taskId: string, subtaskId: string, currentDone: boolean) => void
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -229,7 +230,7 @@ export function SwipeableTaskCard({
                                         const hasDeadline = task.deadline
 
                                         // If both dates exist and are in the same month, show as range
-                                        if (hasStartDate && hasDeadline) {
+                                        if (hasStartDate && hasDeadline && task.startDate && task.deadline) {
                                             const start = new Date(task.startDate)
                                             const end = new Date(task.deadline)
                                             const sameMonth = start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()
@@ -253,13 +254,13 @@ export function SwipeableTaskCard({
                                                     </>
                                                 )
                                             }
-                                        } else if (hasStartDate) {
+                                        } else if (hasStartDate && task.startDate) {
                                             return (
                                                 <Badge variant="outline" className="text-[10px] h-5 px-2 font-medium bg-muted/50 text-muted-foreground border-0 rounded-full">
                                                     {format(new Date(task.startDate), 'd MMM')}
                                                 </Badge>
                                             )
-                                        } else if (hasDeadline) {
+                                        } else if (hasDeadline && task.deadline) {
                                             return (
                                                 <Badge variant="outline" className="text-[10px] h-5 px-2 font-medium bg-muted/50 text-muted-foreground border-0 rounded-full">
                                                     {format(new Date(task.deadline), 'd MMM')}

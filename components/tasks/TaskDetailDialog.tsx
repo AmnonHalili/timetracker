@@ -81,6 +81,8 @@ interface TaskDetailDialogProps {
         assignedToId?: string | null;
         dueDate?: Date | null;
     }) => void
+    onSubtaskToggle?: (taskId: string, subtaskId: string, isDone: boolean) => void
+    onSubtaskDelete?: (taskId: string, subtaskId: string) => void
 
 }
 

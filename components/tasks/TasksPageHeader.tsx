@@ -28,6 +28,11 @@ interface TasksPageHeaderProps {
         createdAt: Date
         updatedAt: Date
     }) => void
+    setIsFiltersOpen?: (isOpen: boolean) => void
+    sortBy?: string
+    setSortBy?: (value: string) => void
+    activeFiltersCount?: number
+    isRTL?: boolean
 }
 
 export function TasksPageHeader({

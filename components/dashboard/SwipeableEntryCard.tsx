@@ -20,6 +20,7 @@ interface SwipeableEntryCardProps {
     entry: TimeEntry
     tasks: Array<{ id: string; title: string; subtasks?: Array<{ id: string; title: string; isDone: boolean }> }>
     isRTL: boolean
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     t: (key: any) => string
     onEdit: (entry: TimeEntry) => void
     onDelete: (entryId: string) => void
