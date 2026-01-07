@@ -72,7 +72,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
     const [isLoading, setIsLoading] = useState(false)
 
     // Local Holidays State - Load from localStorage
-    const [showHolidays, setShowHolidays] = useState(() => {
+    const [showHolidays] = useState(() => {
         if (typeof window !== 'undefined') {
             const saved = localStorage.getItem('calendar-show-holidays')
             return saved === 'true'
