@@ -834,7 +834,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                                             setTimeError("")
                                         }
                                     }}
-                                    className={`w-full sm:w-[95px] h-9 text-sm bg-background border-input shadow-sm rounded-xl md:rounded-md [&::-webkit-calendar-picker-indicator]:ml-auto text-center ${timeError ? 'border-destructive' : ''}`}
+                                    className={`w-full sm:w-[95px] h-9 text-sm bg-background border-input shadow-sm rounded-xl md:rounded-md [&::-webkit-calendar-picker-indicator]:ml-auto text-center pl-8 ${timeError ? 'border-destructive' : ''}`}
                                     aria-label="Start time"
                                 />
                             </div>
@@ -875,7 +875,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                                             setTimeError("")
                                         }
                                     }}
-                                    className={`w-full sm:w-[95px] h-9 text-sm bg-background border-input shadow-sm rounded-xl md:rounded-md [&::-webkit-calendar-picker-indicator]:ml-auto text-center ${timeError ? 'border-destructive' : ''}`}
+                                    className={`w-full sm:w-[95px] h-9 text-sm bg-background border-input shadow-sm rounded-xl md:rounded-md [&::-webkit-calendar-picker-indicator]:ml-auto text-center pl-8 ${timeError ? 'border-destructive' : ''}`}
                                     aria-label="End time"
                                 />
                             </div>
