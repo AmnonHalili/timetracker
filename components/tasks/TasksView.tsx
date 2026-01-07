@@ -1,9 +1,10 @@
 "use client"
 
 
-import { useRouter, useSearchParams } from "next/navigation"
+
+
 import { useState, useEffect, useRef, useTransition } from "react"
-import { Trash2, Plus, MoreVertical, Pencil, Play, Square, CheckCircle2, AlertCircle, Edit, Filter, ArrowUpDown, X } from "lucide-react"
+import { Trash2, Plus, MoreVertical, Pencil, Play, Square, CheckCircle2, AlertCircle, Filter, ArrowUpDown, X } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -29,6 +30,8 @@ import { format, isPast, isToday, endOfWeek, isWithinInterval } from "date-fns"
 import { he } from "date-fns/locale"
 import { TaskDetailDialog } from "./TaskDetailDialog"
 import { CreateTaskDialog } from "./CreateTaskDialog"
+import { TaskFilters } from "./TaskFilters"
+import { SwipeableTaskCard } from "./SwipeableTaskCard"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
     AlertDialog,
@@ -1125,13 +1128,13 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
         <Card className="border-none shadow-none bg-transparent">
             <CardHeader className="flex flex-col space-y-4 pb-4 px-0 bg-transparent">
                 {/* Filters and Sort - Above title */}
-                <div className={`flex items-center gap-2 w-full ${isRTL ? 'flex-row-reverse justify-start' : 'justify-end'}`}>
+                <div className={`flex items-center gap-2 w-full px-4 md:px-0 ${isRTL ? 'flex-row-reverse justify-start' : 'justify-end'}`}>
                     {/* Filters Button */}
                     <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setIsFiltersOpen(true)}
-                        className={`h-9 text-sm font-medium flex-1 md:flex-initial ${isRTL ? 'flex-row-reverse' : ''}`}
+                        className={`h-10 text-sm font-semibold flex-1 ${isRTL ? 'flex-row-reverse' : ''}`}
                     >
                         <Filter className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
                         {t('tasks.filters')}
@@ -1144,8 +1147,8 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
 
                     {/* Sort Dropdown */}
                     <Select value={sortBy} onValueChange={setSortBy}>
-                        <SelectTrigger className="h-9 text-sm font-medium px-3 w-auto">
-                            <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                        <SelectTrigger className="h-10 text-sm font-semibold px-3 flex-1 md:w-auto">
+                            <div className={`flex items-center justify-center gap-2 w-full ${isRTL ? 'flex-row-reverse' : ''}`}>
                                 <ArrowUpDown className="h-4 w-4" />
                                 <SelectValue placeholder={t('tasks.sort')} />
                             </div>
@@ -1163,7 +1166,9 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                 </div>
 
                 {/* Title */}
-                <CardTitle className={`px-4 ${isRTL ? 'text-right' : 'text-left'}`}>{t('tasks.allTasks')} ({filteredTasks.length})</CardTitle>
+                <CardTitle className={`px-4 text-center md:text-left ${isRTL ? 'md:text-right' : 'md:text-left'} font-montserrat text-xl font-bold`}>
+                    {t('tasks.allTasks')} ({filteredTasks.length})
+                </CardTitle>
 
                 {/* Active Filter Chips */}
                 {activeFiltersCount > 0 && (
@@ -1797,114 +1802,29 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                 </div>
                             ) : (
                                 filteredTasks.map((task) => (
-                                    <div key={task.id}
-                                        onClick={() => {
-                                            setSelectedTask(task)
-                                            setIsDetailOpen(true)
-                                        }}
-                                        className={cn(
-                                            "bg-card rounded-xl border p-4 shadow-sm active:scale-[0.98] transition-all duration-200",
-                                            task.status === 'DONE' ? "opacity-60 bg-muted/20" : ""
-                                        )}
-                                    >
-                                        <div className="flex items-start gap-3">
-                                            {/* Checkbox - Stop propagation to strictly handle status */}
-                                            <div onClick={(e) => e.stopPropagation()} className="pt-0.5">
-                                                <Checkbox
-                                                    checked={task.status === 'DONE'}
-                                                    onCheckedChange={(checked) => handleToggleTaskCompletion(task.id, checked as boolean)}
-                                                    className="h-6 w-6 rounded-full border-2 border-primary/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                                                />
-                                            </div>
-
-                                            <div className="flex-1 min-w-0">
-                                                {/* Header Row: Title & Actions */}
-                                                <div className="flex justify-between items-start gap-2">
-                                                    <h3 className={cn(
-                                                        "font-semibold text-base leading-none mb-1.5 truncate pr-2",
-                                                        task.status === 'DONE' && "line-through text-muted-foreground"
-                                                    )}>
-                                                        {task.title}
-                                                    </h3>
-                                                    {/* Priority Badge */}
-                                                    {task.priority !== 'LOW' && (
-                                                        <Badge variant="outline" className={cn("text-[10px] h-5 px-1.5 font-bold border-0", getPriorityColor(task.priority))}>
-                                                            {task.priority}
-                                                        </Badge>
-                                                    )}
-                                                </div>
-
-                                                {/* Description or Subtext */}
-                                                {task.description && (
-                                                    <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
-                                                        {task.description}
-                                                    </p>
-                                                )}
-
-                                                {/* Footer Row: Metadata */}
-                                                <div className="flex items-center justify-between mt-2">
-                                                    <div className="flex items-center gap-3">
-                                                        {/* Assignees */}
-                                                        {task.assignees && task.assignees.length > 0 && (
-                                                            <div className="flex -space-x-2">
-                                                                {task.assignees.slice(0, 3).map((assignee) => (
-                                                                    <Avatar key={assignee.id} className="h-6 w-6 border-2 border-background">
-                                                                        <AvatarFallback className="text-[9px] bg-primary/10 text-primary">
-                                                                            {assignee.name?.[0]?.toUpperCase() || 'U'}
-                                                                        </AvatarFallback>
-                                                                    </Avatar>
-                                                                ))}
-                                                                {task.assignees.length > 3 && (
-                                                                    <div className="h-6 w-6 rounded-full bg-muted border-2 border-background flex items-center justify-center text-[9px] font-medium text-muted-foreground">
-                                                                        +{task.assignees.length - 3}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        )}
-
-                                                        {/* Deadline Indicator */}
-                                                        {task.deadline && (() => {
-                                                            const isOverdue = isPast(new Date(task.deadline)) && !isToday(new Date(task.deadline))
-                                                            const isDueToday = isToday(new Date(task.deadline))
-
-                                                            return (
-                                                                <div className={cn(
-                                                                    "flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full",
-                                                                    isOverdue ? "bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400" :
-                                                                        isDueToday ? "bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-400" :
-                                                                            "bg-muted text-muted-foreground"
-                                                                )}>
-                                                                    <span className="font-medium">
-                                                                        {isDueToday ? t('calendar.today') : format(new Date(task.deadline), "d MMM")}
-                                                                    </span>
-                                                                </div>
-                                                            )
-                                                        })()}
-                                                    </div>
-
-                                                    {/* Subtasks Count (Clickable) */}
-                                                    {localSubtasks[task.id] && localSubtasks[task.id].length > 0 && (
-                                                        <div
-                                                            onClick={(e) => {
-                                                                e.stopPropagation()
-                                                                setExpandedMobileTaskId(prev => prev === task.id ? null : task.id)
-                                                            }}
-                                                            className={cn(
-                                                                "flex items-center gap-1 text-xs px-2 py-0.5 rounded-md transition-colors",
-                                                                expandedMobileTaskId === task.id
-                                                                    ? "bg-primary/10 text-primary border border-primary/20"
-                                                                    : "bg-muted/40 text-muted-foreground active:bg-muted"
-                                                            )}
-                                                        >
-                                                            <CheckCircle2 className="h-3 w-3" />
-                                                            <span>
-                                                                {localSubtasks[task.id].filter(st => st.isDone).length}/{localSubtasks[task.id].length}
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
+                                    <div key={task.id} className="space-y-3">
+                                        <SwipeableTaskCard
+                                            task={task}
+                                            t={t}
+                                            isRTL={isRTL}
+                                            getPriorityColor={getPriorityColor}
+                                            handleToggleTaskCompletion={handleToggleTaskCompletion}
+                                            handleStartWorking={handleStartWorking}
+                                            handleStopWorking={handleStopWorking}
+                                            handleEdit={(task: any) => {
+                                                setEditingTask(task)
+                                                setIsEditDialogOpen(true)
+                                            }}
+                                            handleDelete={handleDelete}
+                                            onClick={() => {
+                                                setSelectedTask(task)
+                                                setIsDetailOpen(true)
+                                            }}
+                                            isTimerRunning={tasksWithActiveTimers[task.id]?.length > 0}
+                                            localSubtasks={localSubtasks}
+                                            expandedMobileTaskId={expandedMobileTaskId}
+                                            setExpandedMobileTaskId={setExpandedMobileTaskId}
+                                        />
 
                                         {/* Mobile Subtasks Expansion */}
                                         {expandedMobileTaskId === task.id && localSubtasks[task.id] && localSubtasks[task.id].length > 0 && (
@@ -2016,200 +1936,16 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                 currentUserId={currentUserId}
             />
 
-            {/* Filters Dialog */}
-            <Dialog open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
-                <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>{t('tasks.filters')}</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-6 py-4">
-                        {/* Status Filter */}
-                        <div>
-                            <label className="text-sm font-medium mb-2 block">{t('tasks.status')}</label>
-                            <div className="space-y-2">
-                                {[
-                                    { value: 'TODO', label: t('tasks.statusTodo') },
-                                    { value: 'IN_PROGRESS', label: t('tasks.statusInProgress') },
-                                    { value: 'DONE', label: t('tasks.statusDone') },
-                                    { value: 'OVERDUE', label: t('tasks.statusOverdue') }
-                                ].map(status => (
-                                    <div key={status.value} className="flex items-center space-x-2">
-                                        <Checkbox
-                                            id={`status-${status.value}`}
-                                            checked={filters.status.includes(status.value)}
-                                            onCheckedChange={(checked) => {
-                                                setFilters(prev => ({
-                                                    ...prev,
-                                                    status: checked
-                                                        ? [...prev.status, status.value]
-                                                        : prev.status.filter(s => s !== status.value)
-                                                }))
-                                            }}
-                                        />
-                                        <label
-                                            htmlFor={`status-${status.value}`}
-                                            className="text-sm cursor-pointer"
-                                        >
-                                            {status.label}
-                                        </label>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Deadline Filter */}
-                        <div>
-                            <label className="text-sm font-medium mb-2 block">{t('tasks.deadline')}</label>
-                            <div className="space-y-2">
-                                {[
-                                    { value: 'today', label: t('timeEntries.today') },
-                                    { value: 'thisWeek', label: 'This week' },
-                                    { value: 'overdue', label: t('tasks.statusOverdue') }
-                                ].map(option => (
-                                    <div key={option.value} className="flex items-center space-x-2">
-                                        <Checkbox
-                                            id={`deadline-${option.value}`}
-                                            checked={filters.deadline.includes(option.value)}
-                                            onCheckedChange={(checked) => {
-                                                setFilters(prev => ({
-                                                    ...prev,
-                                                    deadline: checked
-                                                        ? [...prev.deadline, option.value]
-                                                        : prev.deadline.filter(d => d !== option.value)
-                                                }))
-                                            }}
-                                        />
-                                        <label
-                                            htmlFor={`deadline-${option.value}`}
-                                            className="text-sm cursor-pointer"
-                                        >
-                                            {option.label}
-                                        </label>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Priority Filter */}
-                        <div>
-                            <label className="text-sm font-medium mb-2 block">{t('tasks.priority')}</label>
-                            <div className="space-y-2">
-                                {[
-                                    { value: 'high', label: t('tasks.priorityHigh') },
-                                    { value: 'medium', label: t('tasks.priorityMedium') },
-                                    { value: 'low', label: t('tasks.priorityLow') }
-                                ].map(priority => (
-                                    <div key={priority.value} className="flex items-center space-x-2">
-                                        <Checkbox
-                                            id={`priority-${priority.value}`}
-                                            checked={filters.priority.includes(priority.value)}
-                                            onCheckedChange={(checked) => {
-                                                setFilters(prev => ({
-                                                    ...prev,
-                                                    priority: checked
-                                                        ? [...prev.priority, priority.value]
-                                                        : prev.priority.filter(p => p !== priority.value)
-                                                }))
-                                            }}
-                                        />
-                                        <label
-                                            htmlFor={`priority-${priority.value}`}
-                                            className="text-sm cursor-pointer"
-                                        >
-                                            {priority.label}
-                                        </label>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Users Filter */}
-                        <div>
-                            <label className="text-sm font-medium mb-2 block">{t('tasks.assignToLabel')}</label>
-                            <div className="space-y-2 max-h-40 overflow-y-auto">
-                                {[...users].sort((a, b) => {
-                                    if (a.id === currentUserId) return -1;
-                                    if (b.id === currentUserId) return 1;
-                                    return 0;
-                                }).map(user => (
-                                    <div key={user.id} className="flex items-center space-x-2">
-                                        <Checkbox
-                                            id={`user-filter-${user.id}`}
-                                            checked={filters.users.includes(user.id)}
-                                            onCheckedChange={(checked) => {
-                                                setFilters(prev => ({
-                                                    ...prev,
-                                                    users: checked
-                                                        ? [...prev.users, user.id]
-                                                        : prev.users.filter(u => u !== user.id)
-                                                }))
-                                            }}
-                                        />
-                                        <label
-                                            htmlFor={`user-filter-${user.id}`}
-                                            className="text-sm cursor-pointer"
-                                        >
-                                            {user.name || user.email}
-                                            {currentUserId && user.id === currentUserId && (
-                                                <span className="text-muted-foreground ml-1">(you)</span>
-                                            )}
-                                        </label>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Personal Scope Filters */}
-                        <div>
-                            <label className="text-sm font-medium mb-2 block">{t('tasks.personalScope')}</label>
-                            <div className="space-y-2">
-                                <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                        id="assignedToMe"
-                                        checked={filters.assignedToMe}
-                                        onCheckedChange={(checked) => {
-                                            setFilters(prev => ({ ...prev, assignedToMe: checked as boolean }))
-                                        }}
-                                    />
-                                    <label
-                                        htmlFor="assignedToMe"
-                                        className="text-sm cursor-pointer"
-                                    >
-                                        {t('tasks.assignedToMe')}
-                                    </label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                        id="createdByMe"
-                                        checked={filters.createdByMe}
-                                        onCheckedChange={(checked) => {
-                                            setFilters(prev => ({ ...prev, createdByMe: checked as boolean }))
-                                        }}
-                                    />
-                                    <label
-                                        htmlFor="createdByMe"
-                                        className="text-sm cursor-pointer"
-                                    >
-                                        {t('tasks.tasksICreated')}
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex justify-end gap-2 pt-4 border-t">
-                        <Button
-                            variant="outline"
-                            onClick={clearAllFilters}
-                            disabled={activeFiltersCount === 0}
-                        >
-                            {t('common.clearAll')}
-                        </Button>
-                        <Button onClick={() => setIsFiltersOpen(false)}>
-                            {t('common.close')}
-                        </Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
+            {/* Task Filters Component */}
+            <TaskFilters
+                open={isFiltersOpen}
+                onOpenChange={setIsFiltersOpen}
+                filters={filters}
+                setFilters={setFilters}
+                users={users}
+                currentUserId={currentUserId}
+                clearAllFilters={clearAllFilters}
+            />
 
             {/* Delete Task Confirmation Dialog */}
             <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

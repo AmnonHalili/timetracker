@@ -24,10 +24,10 @@ export function TasksPageHeader({ isAdmin, users, currentUserId, onOptimisticTas
     const { t } = useLanguage()
 
     return (
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">{t('tasks.title')}</h1>
-                <p className="text-muted-foreground">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-0 px-4 md:px-0">
+            <div className="flex flex-col gap-1">
+                <h1 className="text-3xl font-bold tracking-tight font-montserrat">{t('tasks.title')}</h1>
+                <p className="text-sm text-muted-foreground font-medium">
                     {isAdmin ? t('tasks.manageAndAssign') : t('tasks.yourAssignedTasks')}
                 </p>
             </div>
