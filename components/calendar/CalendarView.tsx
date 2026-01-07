@@ -4,14 +4,9 @@ import { useState, useEffect } from "react"
 import { MonthGrid } from "./MonthGrid"
 import { DayView } from "./DayView"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, Settings, PartyPopper } from "lucide-react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import { addMonths, subMonths, addDays, subDays, startOfMonth, endOfMonth } from "date-fns"
 import { useLanguage } from "@/lib/useLanguage"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Switch } from "@/components/ui/switch"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
-import { signIn } from "next-auth/react"
 import { toast } from "sonner"
 import { getHolidaysForRange } from "@/lib/holidays"
 
@@ -76,8 +71,14 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
     const [calendarData, setCalendarData] = useState(data)
     const [isLoading, setIsLoading] = useState(false)
 
-    // Local Holidays State
-    const [showHolidays, setShowHolidays] = useState(false)
+    // Local Holidays State - Load from localStorage
+    const [showHolidays, setShowHolidays] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('calendar-show-holidays')
+            return saved === 'true'
+        }
+        return false
+    })
 
     // Calculate Holidays
     const [holidayEvents, setHolidayEvents] = useState<CalendarEvent[]>([])
@@ -125,46 +126,6 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
         fetchHolidays()
     }, [currentDate, showHolidays])
 
-    // Settings State
-    const [settingsOpen, setSettingsOpen] = useState(false)
-    const [syncSettings, setSyncSettings] = useState<{
-        isGoogleCalendarSyncEnabled: boolean;
-        syncMode: string;
-        syncedCalendarIds?: string[];
-    }>({
-        isGoogleCalendarSyncEnabled: false,
-        syncMode: 'FULL_DETAILS',
-        syncedCalendarIds: []
-    })
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [availableCalendars, setAvailableCalendars] = useState<any[]>([])
-
-    // Fetch settings on mount
-    const [isGoogleLinked, setIsGoogleLinked] = useState(false)
-    const [hasRefreshToken, setHasRefreshToken] = useState(false)
-
-    // Fetch settings and linked status
-    useEffect(() => {
-        const fetchSettings = async () => {
-            try {
-                const res = await fetch('/api/calendar/settings')
-                if (res.ok) {
-                    const data = await res.json()
-                    setSyncSettings({
-                        isGoogleCalendarSyncEnabled: data.isGoogleCalendarSyncEnabled,
-                        syncMode: data.syncMode || "FULL_DETAILS",
-                        syncedCalendarIds: data.syncedCalendarIds || ["primary"]
-                    })
-                    setIsGoogleLinked(data.isGoogleLinked)
-                    setHasRefreshToken(data.hasRefreshToken)
-                    setAvailableCalendars(data.availableCalendars || [])
-                }
-            } catch (error) {
-                console.error("Failed to fetch settings", error)
-            }
-        }
-        fetchSettings()
-    }, [])
 
 
 
@@ -223,190 +184,13 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
         setCurrentDate(new Date())
     }
 
-    const handleConnectGoogle = async () => {
-        toast.loading("Redirecting to Google for authorization...")
-        // Trigger NextAuth sign in with Google provider and extra scopes
-        await signIn('google', {
-            callbackUrl: window.location.href,
-            redirect: true,
-        })
-    }
-
-    const handleUpdateSettings = async (updates: Partial<typeof syncSettings>) => {
-        const newSettings = { ...syncSettings, ...updates }
-
-        // Optimistic UI Update: Frame the future state immediately
-        setSyncSettings(newSettings)
-
-        // If disabling Google Sync, instantly filter out events from the UI
-        if (updates.isGoogleCalendarSyncEnabled === false) {
-            setCalendarData(prev => ({
-                ...prev,
-                events: (prev.events || []).filter(e => e.source !== 'google')
-            }))
-            toast.success("Google Calendar sync disabled")
-        }
-
-        try {
-            const res = await fetch('/api/calendar/settings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newSettings)
-            })
-
-            if (!res.ok) throw new Error("Failed to update settings")
-
-            // Only show success toast if not the "instant off" case to avoid noise or if enabled
-            if (updates.isGoogleCalendarSyncEnabled !== false) {
-                toast.success("Settings updated")
-            }
-
-            // Always refetch to ensure consistency (backend is source of truth), 
-            // but for "OFF" we already cleared the UI so the user doesn't wait.
-            // For "ON", we show a loading toast if needed or just let it happen.
-            if (updates.isGoogleCalendarSyncEnabled === true) {
-                const loadingToast = toast.loading("Syncing with Google...")
-                const calendarRes = await fetch(`/api/calendar?month=${currentDate.getMonth()}&year=${currentDate.getFullYear()}`)
-                if (calendarRes.ok) {
-                    const newData = await calendarRes.json()
-                    setCalendarData(newData)
-                    toast.success("Synced successfully", { id: loadingToast })
-                } else {
-                    toast.dismiss(loadingToast)
-                }
-            } else {
-                // Background sync for consistency without UI blocker
-                const calendarRes = await fetch(`/api/calendar?month=${currentDate.getMonth()}&year=${currentDate.getFullYear()}`)
-                if (calendarRes.ok) {
-                    const newData = await calendarRes.json()
-                    setCalendarData(newData)
-                }
-            }
-
-        } catch (error) {
-            console.error(error)
-            toast.error("Failed to save settings")
-            // Revert on error
-            setSyncSettings(syncSettings)
-            // Ideally revert calendarData too if we filtered it, but typically a refetch is safer.
-        }
-    }
 
     return (
         <div className="space-y-4 md:space-y-6">
             {/* Header */}
             <div className="flex flex-col gap-3 md:gap-4 px-0">
-                {/* Top Row: Settings Button (right) + Title (center) */}
+                {/* Top Row: Title (center) */}
                 <div className="relative flex items-center justify-center min-h-[40px] md:min-h-[36px]">
-                    {/* Settings Button - Absolute right (only in month view) */}
-                    {view === 'month' && (
-                        <div className="absolute right-0 shrink-0">
-                            <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-                                <DialogTrigger asChild>
-                                    <Button variant="outline" size="icon" className="shrink-0 h-10 w-10 md:h-9 md:w-9 rounded-xl md:rounded-md border-2 shadow-sm hover:shadow-md">
-                                        <Settings className="h-4 w-4" />
-                                    </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                    <DialogHeader>
-                                        <DialogTitle>Calendar Settings</DialogTitle>
-                                    </DialogHeader>
-                                    <div className="space-y-6 py-4 min-h-[400px]">
-                                        <div className="flex items-center justify-between space-x-2">
-                                            <div className="space-y-1">
-                                                <Label className="text-base flex items-center gap-2">
-                                                    <PartyPopper className="h-4 w-4" />
-                                                    Show Holidays
-                                                </Label>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Show local holidays (Israel) on the calendar.
-                                                </p>
-                                            </div>
-                                            <Switch
-                                                checked={showHolidays}
-                                                onCheckedChange={setShowHolidays}
-                                            />
-                                        </div>
-                                        <div className="border-t" />
-
-                                        <div className="flex items-center justify-between space-x-2">
-                                            <div className="space-y-1">
-                                                <Label className="text-base">Google Calendar Sync</Label>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Sync events from your Google Calendar.
-                                                    {!syncSettings.isGoogleCalendarSyncEnabled && (
-                                                        <span className="block text-xs text-yellow-600 mt-1">
-                                                            Requires signing in with Google.
-                                                        </span>
-                                                    )}
-                                                </p>
-                                            </div>
-                                            <Switch
-                                                checked={syncSettings.isGoogleCalendarSyncEnabled}
-                                                onCheckedChange={(checked: boolean) => {
-                                                    if (checked) {
-                                                        if (isGoogleLinked && hasRefreshToken) {
-                                                            // If already linked and valid, just enable
-                                                            handleUpdateSettings({ isGoogleCalendarSyncEnabled: true })
-                                                        } else {
-                                                            // Start OAuth flow (force re-auth if missing token)
-                                                            handleConnectGoogle()
-                                                        }
-                                                    } else {
-                                                        handleUpdateSettings({ isGoogleCalendarSyncEnabled: false })
-                                                    }
-                                                }}
-                                            />
-                                        </div>
-
-                                        {syncSettings.isGoogleCalendarSyncEnabled && (
-                                            <>
-
-
-                                                <div className="space-y-2">
-                                                    <Label>Synced Calendars</Label>
-                                                    {availableCalendars.length > 0 ? (
-                                                        <div className="space-y-2 border rounded-md p-3 max-h-40 overflow-y-auto">
-                                                            {availableCalendars.map((cal) => (
-                                                                <div key={cal.id} className="flex items-center space-x-2">
-                                                                    <Checkbox
-                                                                        id={cal.id}
-                                                                        checked={syncSettings.syncedCalendarIds?.includes(cal.id)}
-                                                                        onCheckedChange={(checked) => {
-                                                                            const currentIds = syncSettings.syncedCalendarIds || []
-                                                                            const newIds = checked
-                                                                                ? [...currentIds, cal.id]
-                                                                                : currentIds.filter(id => id !== cal.id)
-
-                                                                            // Optimistic update
-                                                                            setSyncSettings(prev => ({ ...prev, syncedCalendarIds: newIds }))
-                                                                            handleUpdateSettings({ syncedCalendarIds: newIds })
-                                                                        }}
-                                                                    />
-                                                                    <label
-                                                                        htmlFor={cal.id}
-                                                                        className="text-sm cursor-pointer select-none leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                                                        style={{ color: cal.foregroundColor, }} // Optional coloring
-                                                                    >
-                                                                        {cal.summary} {cal.primary && <span className="text-xs text-muted-foreground ml-1">(Primary)</span>}
-                                                                    </label>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    ) : (
-                                                        <div className="text-sm text-muted-foreground italic">
-                                                            {isGoogleLinked ? "Loading calendars..." : "Connect Google Calendar to see available calendars."}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                </DialogContent>
-                            </Dialog>
-                        </div>
-                    )}
-
                     {/* Back Button - Absolute left (only for day view) */}
                     {view === 'day' && (
                         <div className="absolute left-0 shrink-0">

@@ -16,6 +16,7 @@ export function CalendarSettingsButton() {
     const router = useRouter()
     const { } = useLanguage()
     const [settingsOpen, setSettingsOpen] = useState(false)
+    const [showHolidays, setShowHolidays] = useState(false)
     const [syncSettings, setSyncSettings] = useState<{
         isGoogleCalendarSyncEnabled: boolean;
         syncMode: string;
@@ -29,6 +30,14 @@ export function CalendarSettingsButton() {
     const [availableCalendars, setAvailableCalendars] = useState<any[]>([])
     const [isGoogleLinked, setIsGoogleLinked] = useState(false)
     const [hasRefreshToken, setHasRefreshToken] = useState(false)
+
+    // Load showHolidays from localStorage on mount
+    useEffect(() => {
+        const saved = localStorage.getItem('calendar-show-holidays')
+        if (saved !== null) {
+            setShowHolidays(saved === 'true')
+        }
+    }, [])
 
     // Fetch settings and linked status
     useEffect(() => {
@@ -104,7 +113,7 @@ export function CalendarSettingsButton() {
         <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
             <DialogTrigger asChild>
                 <Button variant="ghost" size="icon" className="shrink-0 h-10 w-10 md:h-9 md:w-9">
-                    <Settings className="h-4 w-4" />
+                    <Settings className="h-5 w-5 md:h-4 md:w-4" />
                 </Button>
             </DialogTrigger>
             <DialogContent>
@@ -123,10 +132,11 @@ export function CalendarSettingsButton() {
                             </p>
                         </div>
                         <Switch
-                            checked={syncSettings.isGoogleCalendarSyncEnabled}
+                            checked={showHolidays}
                             onCheckedChange={(checked: boolean) => {
-                                // This is a placeholder - you might want to add a separate state for holidays
-                                handleUpdateSettings({ isGoogleCalendarSyncEnabled: checked })
+                                setShowHolidays(checked)
+                                localStorage.setItem('calendar-show-holidays', checked.toString())
+                                router.refresh()
                             }}
                         />
                     </div>
