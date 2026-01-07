@@ -59,8 +59,8 @@ export function CreateTaskDialog({
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 {mode === 'create' && (
                     <DialogTrigger asChild>
-                        <Button>
-                            <Plus className={cn(isRTL ? "ml-2" : "mr-2", "h-4 w-4")} /> {t('tasks.addTask')}
+                        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 w-full md:w-auto">
+                            <Plus className={cn(isRTL ? "ml-2" : "mr-2", "h-5 w-5")} /> {t('tasks.addTask')}
                         </Button>
                     </DialogTrigger>
                 )}
@@ -99,8 +99,8 @@ export function CreateTaskDialog({
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
             {mode === 'create' && (
                 <SheetTrigger asChild>
-                    <Button>
-                        <Plus className={cn(isRTL ? "ml-2" : "mr-2", "h-4 w-4")} /> {t('tasks.addTask')}
+                    <Button className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg rounded-xl text-base">
+                        <Plus className={cn(isRTL ? "ml-2" : "mr-2", "h-5 w-5")} /> {t('tasks.addTask')}
                     </Button>
                 </SheetTrigger>
             )}

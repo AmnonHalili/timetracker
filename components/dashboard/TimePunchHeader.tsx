@@ -337,12 +337,86 @@ export function TimePunchHeader({ workLocation, activeWorkday }: TimePunchHeader
 
     return (
         <>
-            <Card className="w-full mb-6">
-                <CardContent className="p-4 md:p-6">
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            {/* Mobile View - Only Button at Top (No Card) */}
+            <div className="flex flex-col md:hidden gap-2 mb-1">
+                {/* Action Button - Mobile */}
+                <Button
+                    onClick={isWorking ? handleEndDay : handleStartDay}
+                    disabled={(isProcessing || (workLocation && locationStatus === "outside_area" && !isWorking)) || undefined}
+                    size="lg"
+                    className={`
+                        w-full h-12 text-lg font-bold rounded-3xl
+                        shadow-lg active:scale-[0.98] transition-all duration-200
+                        border-0
+                        ${isWorking
+                            ? "bg-red-500 hover:bg-red-600 text-white"
+                            : "bg-primary hover:bg-primary/90 text-primary-foreground"
+                        }
+                        ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}
+                    `}
+                >
+                    {isWorking ? (
+                        <>
+                            <Square className="mr-2 h-5 w-5" />
+                            End Day
+                        </>
+                    ) : (
+                        <>
+                            {isProcessing ? (
+                                <div className="flex items-center gap-2">
+                                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    Processing...
+                                </div>
+                            ) : (
+                                <>
+                                    <Play className="mr-2 h-5 w-5" />
+                                    Start Day
+                                </>
+                            )}
+                        </>
+                    )}
+                </Button>
+
+                {/* Location Status - Mobile */}
+                {workLocation && (
+                    <div className="flex items-center justify-center gap-2 text-sm">
+                        {getLocationStatusIcon()}
+                        <span className={`
+                            ${locationStatus === "verified" ? "text-green-600" : ""}
+                            ${locationStatus === "unavailable" ? "text-yellow-600" : ""}
+                            ${locationStatus === "outside_area" ? "text-red-600" : ""}
+                            ${locationStatus === "not_required" ? "text-blue-600" : ""}
+                        `}>
+                            {getLocationStatusText()}
+                        </span>
+                    </div>
+                )}
+
+                {/* Working Status - Mobile */}
+                {isWorking && workingSince && (
+                    <div className="text-center text-sm">
+                        <span className="text-muted-foreground">Working since </span>
+                        <span className="font-semibold">
+                            {format(workingSince, "HH:mm")} ({getWorkingDuration()})
+                        </span>
+                    </div>
+                )}
+
+                {/* Warning if outside area - Mobile */}
+                {workLocation && locationStatus === "outside_area" && !isWorking && (
+                    <div className="text-center text-sm text-red-600">
+                        You must be within {workLocation.radius}m of the work location to start your day.
+                    </div>
+                )}
+            </div>
+
+            {/* Desktop View - Original Layout with Card */}
+            <Card className="hidden md:block w-full mb-6">
+                <CardContent className="p-6">
+                    <div className="flex flex-row items-center justify-between gap-4">
                         {/* Time and Status */}
-                        <div className="flex-1 text-center md:text-left">
-                            <div className="text-2xl md:text-3xl font-bold mb-1">{format(currentTime, "HH:mm:ss")}</div>
+                        <div className="flex-1 text-left">
+                            <div className="text-3xl font-bold mb-1">{format(currentTime, "HH:mm:ss")}</div>
                             <div className="text-sm text-muted-foreground mb-2">{format(currentTime, "EEEE, MMMM d, yyyy")}</div>
                             {isWorking && workingSince && (
                                 <div className="text-sm">
@@ -407,9 +481,9 @@ export function TimePunchHeader({ workLocation, activeWorkday }: TimePunchHeader
                         </Button>
                     </div>
 
-                    {/* Warning if outside area */}
+                    {/* Warning if outside area - Desktop */}
                     {workLocation && locationStatus === "outside_area" && !isWorking && (
-                        <div className="text-center text-sm text-red-600 mt-3">
+                        <div className="hidden md:block text-center text-sm text-red-600 mt-3">
                             You must be within {workLocation.radius}m of the work location to start your day.
                         </div>
                     )}

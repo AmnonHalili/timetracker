@@ -3,6 +3,8 @@
 import { useState, useEffect, useMemo } from "react"
 import React from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { useMediaQuery } from "@/hooks/use-media-query"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Clock, Users, CheckCircle2, MessageSquare, Paperclip, Send, FileText, X, AtSign, Link2, Plus, Info, Calendar, ChevronDown, ChevronUp, ListTodo, Trash2, Pencil, MoreVertical } from "lucide-react"
@@ -158,6 +160,7 @@ export function TaskDetailDialog({
     const { data: session } = useSession()
     const currentUserId = session?.user?.id
     const router = useRouter()
+    const isMobile = useMediaQuery("(max-width: 768px)")
 
     // Notes & Files State
     const [activeTab, setActiveTab] = useState("details")
@@ -589,26 +592,12 @@ export function TaskDetailDialog({
 
     if (!task) return null
 
-    return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl h-[600px] max-h-[90vh] flex flex-col p-0 gap-0 data-[state=open]:animate-in data-[state=closed]:animate-out fade-in-0 zoom-in-95 slide-in-from-bottom-[48%] duration-200">
-                <DialogHeader className="p-6 pb-2 flex flex-row items-center justify-between space-y-0">
-                    <div className="flex flex-col gap-1 pr-4 truncate flex-1">
-                        <DialogTitle className="text-2xl truncate">{task.title}</DialogTitle>
-                        {task.labels && task.labels.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-1">
-                                {task.labels.map(label => (
-                                    <Badge key={label.id} variant="outline" className="px-1 py-0 text-[10px] h-4 font-normal" style={{ borderColor: label.color, color: label.color }}>
-                                        {label.name}
-                                    </Badge>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </DialogHeader>
+    // Shared content component
+    const dialogContent = (
+        <>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-                    <div className="px-6 border-b shrink-0">
+                    <div className="px-4 md:px-6 border-b shrink-0">
                         <TabsList className="w-full justify-start h-auto bg-transparent p-0 gap-2">
                             <TabsTrigger
                                 value="details"
@@ -629,7 +618,7 @@ export function TaskDetailDialog({
                     <div className="flex-1 overflow-hidden relative">
                         <TabsContent value="details" className="mt-0 h-full">
                             <ScrollArea className="h-full">
-                                <div className="p-6 space-y-6">
+                                <div className="p-4 md:p-6 space-y-4 md:space-y-6">
                                     {/* Quick Summary Stats */}
                                     {(() => {
                                         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -704,149 +693,6 @@ export function TaskDetailDialog({
                                         </div>
                                     )}
 
-                                    {/* Subtasks Section */}
-                                    <div className="bg-card rounded-lg border border-border/50 p-4 space-y-4">
-                                        <div className="flex items-center justify-between">
-                                            <h3 className="text-sm font-semibold flex items-center gap-2">
-                                                <ListTodo className="h-4 w-4" />
-                                                {t('tasks.subtasks') || "Subtasks"}
-                                            </h3>
-                                            <Badge variant="secondary" className="text-xs h-5 px-1.5">
-                                                {subtasksDone}/{totalSubtasks}
-                                            </Badge>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            {task.subtasks && task.subtasks.length > 0 ? (
-                                                task.subtasks.map((subtask) => (
-                                                    <div key={subtask.id} className="group flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors border border-transparent hover:border-border">
-                                                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                                                            <div
-                                                                className={cn(
-                                                                    "h-4 w-4 rounded border flex items-center justify-center cursor-pointer transition-colors",
-                                                                    subtask.isDone ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/30 hover:border-primary"
-                                                                )}
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation()
-                                                                    if (task) {
-                                                                        onSubtaskToggle?.(task.id, subtask.id, subtask.isDone)
-                                                                    }
-                                                                }}
-                                                            >
-                                                                {subtask.isDone && <CheckCircle2 className="h-3 w-3" />}
-                                                            </div>
-                                                            <div className="flex flex-col flex-1 min-w-0">
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className={cn(
-                                                                        "text-sm font-medium truncate",
-                                                                        subtask.isDone && "text-muted-foreground line-through"
-                                                                    )}>
-                                                                        {subtask.title}
-                                                                    </span>
-
-                                                                    {/* Enhanced Fields Indicators */}
-                                                                    <div className="flex items-center gap-1.5 shrink-0">
-                                                                        {subtask.priority && (
-                                                                            <Badge
-                                                                                variant="outline"
-                                                                                className={cn(
-                                                                                    "text-[9px] h-3.5 px-1 font-medium ring-0 border",
-                                                                                    subtask.priority === 'HIGH' && "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400",
-                                                                                    subtask.priority === 'MEDIUM' && "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950/30 dark:text-yellow-400",
-                                                                                    subtask.priority === 'LOW' && "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400"
-                                                                                )}
-                                                                            >
-                                                                                {subtask.priority.charAt(0)}
-                                                                            </Badge>
-                                                                        )}
-
-                                                                        {subtask.assignedTo && (
-                                                                            <Avatar className="h-4 w-4 border shadow-sm">
-                                                                                <AvatarFallback className="text-[7px] bg-primary/10 text-primary font-bold">
-                                                                                    {subtask.assignedTo.name?.substring(0, 2).toUpperCase() || '??'}
-                                                                                </AvatarFallback>
-                                                                            </Avatar>
-                                                                        )}
-
-                                                                        {(() => {
-                                                                            const indicator = formatDueDateIndicator(subtask.dueDate ?? null, t)
-                                                                            if (!indicator) return null
-                                                                            return (
-                                                                                <span className={cn("text-[8px] font-bold uppercase tracking-tight", indicator.className)}>
-                                                                                    {indicator.text}
-                                                                                </span>
-                                                                            )
-                                                                        })()}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <DropdownMenu>
-                                                                <DropdownMenuTrigger asChild>
-                                                                    <Button variant="ghost" size="icon" className="h-7 w-7">
-                                                                        <MoreVertical className="h-3.5 w-3.5" />
-                                                                    </Button>
-                                                                </DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end">
-                                                                    <DropdownMenuItem className="cursor-pointer" onClick={() => {
-                                                                        setEditingEnhancedSubtask({
-                                                                            subtaskId: subtask.id,
-                                                                            priority: subtask.priority || null,
-                                                                            assignedToId: subtask.assignedToId || null,
-                                                                            dueDate: subtask.dueDate ? new Date(subtask.dueDate) : null
-                                                                        })
-                                                                    }}>
-                                                                        <Pencil className="mr-2 h-3 w-3" />
-                                                                        {t('tasks.editSubtaskDetails') || "Edit Details"}
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuSeparator />
-                                                                    <DropdownMenuItem
-                                                                        className="cursor-pointer text-destructive focus:text-destructive"
-                                                                        onClick={() => {
-                                                                            if (task) {
-                                                                                onSubtaskDelete?.(task.id, subtask.id)
-                                                                            }
-                                                                        }}
-                                                                    >
-                                                                        <Trash2 className="mr-2 h-3 w-3" />
-                                                                        {t('tasks.deleteSubtask') || "Delete"}
-                                                                    </DropdownMenuItem>
-                                                                </DropdownMenuContent>
-                                                            </DropdownMenu>
-                                                        </div>
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                <div className="text-center py-4 bg-muted/20 rounded-lg border border-dashed border-border/60">
-                                                    <p className="text-xs text-muted-foreground">{t('tasks.noSubtasksYet') || "No subtasks yet"}</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Completion Percentage */}
-                                    {totalSubtasks > 0 && (
-                                        <div className="bg-card rounded-lg border border-border/50 p-4">
-                                            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                                                <CheckCircle2 className="h-4 w-4" />
-                                                {t('tasks.completion') || "Completion Progress"}
-                                            </h3>
-                                            <div className="space-y-2">
-                                                <div className="flex items-center justify-between text-sm">
-                                                    <span className="text-muted-foreground">{subtasksDone} of {totalSubtasks} subtasks completed</span>
-                                                    <span className="font-semibold text-primary">{completionPercentage}%</span>
-                                                </div>
-                                                <div className="w-full bg-muted rounded-full h-3">
-                                                    <div
-                                                        className="bg-primary h-3 rounded-full transition-all"
-                                                        style={{ width: `${completionPercentage}%` }}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
 
                                     {/* Team Activity - Summary with total time and individual contributions */}
                                     {task?.assignees && task.assignees.length > 0 && (() => {
@@ -1183,7 +1029,7 @@ export function TaskDetailDialog({
 
                         <TabsContent value="chat" className="mt-0 h-full flex flex-col">
                             {loading ? (
-                                <div className="p-6 space-y-4">
+                                <div className="p-4 md:p-6 space-y-4">
                                     <div className="flex items-center gap-4">
                                         <div className="h-10 w-10 rounded-full bg-muted animate-pulse" />
                                         <div className="space-y-2 flex-1">
@@ -1207,7 +1053,7 @@ export function TaskDetailDialog({
                                     </div>
                                 </div>
                             ) : (
-                                <div className="flex-1 overflow-hidden p-6 pb-2">
+                                <div className="flex-1 overflow-hidden p-4 md:p-6 pb-2">
                                     <UnifiedTimeline
                                         taskId={task.id}
                                         items={unifiedTimeline}
@@ -1474,6 +1320,51 @@ export function TaskDetailDialog({
                         </DialogContent>
                     </Dialog>
                 )}
+        </>
+    )
+
+    // Mobile: Use Sheet
+    if (isMobile) {
+        return (
+            <Sheet open={open} onOpenChange={onOpenChange}>
+                <SheetContent side="bottom" className="h-[95vh] rounded-t-3xl px-4 pb-0 pt-6 flex flex-col gap-0">
+                    <SheetHeader className="pb-2">
+                        <SheetTitle className="text-xl font-semibold truncate">{task.title}</SheetTitle>
+                        {task.labels && task.labels.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                                {task.labels.map(label => (
+                                    <Badge key={label.id} variant="outline" className="px-1 py-0 text-[10px] h-4 font-normal" style={{ borderColor: label.color, color: label.color }}>
+                                        {label.name}
+                                    </Badge>
+                                ))}
+                            </div>
+                        )}
+                    </SheetHeader>
+                    {dialogContent}
+                </SheetContent>
+            </Sheet>
+        )
+    }
+
+    // Desktop: Use Dialog
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-2xl h-[600px] max-h-[90vh] flex flex-col p-0 gap-0 data-[state=open]:animate-in data-[state=closed]:animate-out fade-in-0 zoom-in-95 slide-in-from-bottom-[48%] duration-200">
+                <DialogHeader className="p-6 pb-2 flex flex-row items-center justify-between space-y-0">
+                    <div className="flex flex-col gap-1 pr-4 truncate flex-1">
+                        <DialogTitle className="text-2xl truncate">{task.title}</DialogTitle>
+                        {task.labels && task.labels.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                                {task.labels.map(label => (
+                                    <Badge key={label.id} variant="outline" className="px-1 py-0 text-[10px] h-4 font-normal" style={{ borderColor: label.color, color: label.color }}>
+                                        {label.name}
+                                    </Badge>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </DialogHeader>
+                {dialogContent}
             </DialogContent>
         </Dialog>
     )

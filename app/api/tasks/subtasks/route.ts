@@ -58,14 +58,22 @@ export async function POST(req: Request) {
                 }, { status: 500 })
             }
 
+            // Build data object - only include fields that are provided
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const createData: any = {
+                taskId,
+                title
+            }
+            // Only add optional fields if they are provided
+            if (assignedToId) createData.assignedToId = assignedToId
+            if (dueDate) createData.dueDate = new Date(dueDate)
+            // Only include priority if it's explicitly provided (not null/undefined)
+            if (priority !== undefined && priority !== null) {
+                createData.priority = priority
+            }
+
             subtask = await prismaAny.subTaskItem.create({
-                data: {
-                    taskId,
-                    title,
-                    priority: priority || null,
-                    assignedToId: assignedToId || null,
-                    dueDate: dueDate ? new Date(dueDate) : null
-                },
+                data: createData,
                 include: {
                     assignedTo: {
                         select: { id: true, name: true, image: true }

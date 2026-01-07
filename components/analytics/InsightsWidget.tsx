@@ -56,8 +56,8 @@ export function InsightsWidget() {
     }
 
     return (
-        <Card className="shadow-sm" dir={dir}>
-            <CardContent className="p-4 grid grid-cols-2 lg:grid-cols-4 gap-4 items-center">
+        <Card className="shadow-sm md:shadow-sm border-0 md:border bg-muted/50 md:bg-card" dir={dir}>
+            <CardContent className="p-4 md:p-4 grid grid-cols-2 lg:grid-cols-4 gap-4 items-center rounded-2xl md:rounded-lg">
                 <div className="hidden lg:block">
                     <h3 className="text-sm font-medium text-muted-foreground">{t('insights.productivity')}</h3>
                     <div className="flex items-center gap-1.5 mt-1">

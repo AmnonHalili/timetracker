@@ -228,7 +228,7 @@ export default async function CalendarPage({
     }
 
     return (
-        <div className="container mx-auto p-4 md:p-8 h-screen-minus-header overflow-hidden flex flex-col">
+        <div className="container mx-auto px-4 md:px-8 py-4 md:py-8 flex flex-col">
             <CalendarView initialDate={currentDate} data={data} projectId={currentUser?.projectId || null} />
         </div>
     )

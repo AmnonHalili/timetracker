@@ -180,9 +180,26 @@ interface TasksViewProps {
     currentUserId?: string
     tasksWithActiveTimers?: Record<string, Array<{ id: string; name: string | null }>> // Map of task IDs to users actively working on them
     labels?: Array<{ id: string; name: string; color: string }>
+    isFiltersOpen?: boolean
+    setIsFiltersOpen?: (open: boolean) => void
+    sortBy?: string
+    setSortBy?: (value: string) => void
+    onActiveFiltersCountChange?: (count: number) => void
 }
 
-export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWithActiveTimers = {}, labels = [] }: TasksViewProps) {
+export function TasksView({ 
+    initialTasks, 
+    users, 
+    isAdmin, 
+    currentUserId, 
+    tasksWithActiveTimers = {}, 
+    labels = [],
+    isFiltersOpen: externalIsFiltersOpen,
+    setIsFiltersOpen: externalSetIsFiltersOpen,
+    sortBy: externalSortBy,
+    setSortBy: externalSetSortBy,
+    onActiveFiltersCountChange
+}: TasksViewProps) {
     const router = useRouter()
     const [, startTransition] = useTransition()
     const { t, isRTL, language } = useLanguage()
@@ -242,8 +259,14 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
     const [expandedMobileTaskId, setExpandedMobileTaskId] = useState<string | null>(null)
 
-    // Filters and Sort state
-    const [isFiltersOpen, setIsFiltersOpen] = useState(false)
+    // Filters and Sort state - use external if provided, otherwise use internal
+    const [internalIsFiltersOpen, setInternalIsFiltersOpen] = useState(false)
+    const [internalSortBy, setInternalSortBy] = useState<string>("smart")
+    const isFiltersOpen = externalIsFiltersOpen !== undefined ? externalIsFiltersOpen : internalIsFiltersOpen
+    const setIsFiltersOpen = externalSetIsFiltersOpen || setInternalIsFiltersOpen
+    const sortBy = externalSortBy !== undefined ? externalSortBy : internalSortBy
+    const setSortBy = externalSetSortBy || setInternalSortBy
+    
     const [filters, setFilters] = useState<{
         status: string[];
         deadline: string[];
@@ -259,7 +282,6 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
         assignedToMe: false,
         users: [],
     })
-    const [sortBy, setSortBy] = useState<string>("smart")
     const [viewMode] = useState<'list' | 'board'>('list')
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [taskToDelete, setTaskToDelete] = useState<string | null>(null)
@@ -1130,46 +1152,8 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
     return (
         <Card className="border-none shadow-none bg-transparent">
             <CardHeader className="flex flex-col space-y-4 pb-4 px-0 bg-transparent">
-                {/* Filters and Sort - Above title */}
-                <div className={`flex items-center gap-2 w-full px-4 md:px-0 ${isRTL ? 'flex-row-reverse justify-start' : 'justify-end'}`}>
-                    {/* Filters Button */}
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setIsFiltersOpen(true)}
-                        className={`h-10 text-sm font-semibold flex-1 ${isRTL ? 'flex-row-reverse' : ''}`}
-                    >
-                        <Filter className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-                        {t('tasks.filters')}
-                        {activeFiltersCount > 0 && (
-                            <Badge variant="secondary" className={`h-5 px-1.5 text-xs ${isRTL ? 'mr-2' : 'ml-2'}`}>
-                                {activeFiltersCount}
-                            </Badge>
-                        )}
-                    </Button>
-
-                    {/* Sort Dropdown */}
-                    <Select value={sortBy} onValueChange={setSortBy}>
-                        <SelectTrigger className="h-10 text-sm font-semibold px-3 flex-1 md:w-auto">
-                            <div className={`flex items-center justify-center gap-2 w-full ${isRTL ? 'flex-row-reverse' : ''}`}>
-                                <ArrowUpDown className="h-4 w-4" />
-                                <SelectValue placeholder={t('tasks.sort')} />
-                            </div>
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="smart">{t('tasks.sort')}</SelectItem>
-                            <SelectItem value="deadline-near">{t('tasks.sortByDeadlineNear')}</SelectItem>
-                            <SelectItem value="deadline-far">{t('tasks.sortByDeadlineFar')}</SelectItem>
-                            <SelectItem value="priority-high">{t('tasks.sortByPriorityHigh')}</SelectItem>
-                            <SelectItem value="priority-low">{t('tasks.sortByPriorityLow')}</SelectItem>
-                            <SelectItem value="created-new">{t('tasks.sortByCreatedNew')}</SelectItem>
-                            <SelectItem value="created-old">{t('tasks.sortByCreatedOld')}</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-
                 {/* Title */}
-                <CardTitle className={`px-4 text-center md:text-left ${isRTL ? 'md:text-right' : 'md:text-left'} font-montserrat text-xl font-bold`}>
+                <CardTitle className={`px-4 text-center md:text-left ${isRTL ? 'md:text-right' : 'md:text-left'} text-base md:text-lg font-medium text-primary`}>
                     {t('tasks.allTasks')} ({filteredTasks.length})
                 </CardTitle>
 
@@ -1290,7 +1274,7 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                     <col style={{ width: '11%' }} />
                                     <col style={{ width: '11%' }} />
                                 </colgroup>
-                                <thead className="bg-muted/40 sticky top-0 z-10 border-b border-border">
+                                <thead className="bg-muted/40 sticky top-0 z-40 border-b border-border">
                                     <tr className="border-b border-border/50">
                                         <th className="h-10 px-4 text-left font-normal text-muted-foreground bg-muted/20 first:rounded-tl-md">
                                             {t('tasks.title') || 'Task'}
@@ -1827,64 +1811,18 @@ export function TasksView({ initialTasks, users, isAdmin, currentUserId, tasksWi
                                             localSubtasks={localSubtasks}
                                             expandedMobileTaskId={expandedMobileTaskId}
                                             setExpandedMobileTaskId={setExpandedMobileTaskId}
+                                            handleToggleSubtask={handleToggleSubtask}
+                                            formatDueDateIndicator={formatDueDateIndicator}
+                                            newSubtaskTitle={newSubtaskTitle}
+                                            setNewSubtaskTitle={setNewSubtaskTitle}
+                                            handleAddSubtask={handleAddSubtask}
+                                            isAdmin={isAdmin}
+                                            currentUserId={currentUserId}
+                                            visibleSubtasksMap={visibleSubtasksMap}
+                                            setVisibleSubtasksMap={setVisibleSubtasksMap}
+                                            expandedSubtasks={expandedSubtasks}
+                                            setExpandedSubtasks={setExpandedSubtasks}
                                         />
-
-                                        {/* Mobile Subtasks Expansion */}
-                                        {expandedMobileTaskId === task.id && localSubtasks[task.id] && localSubtasks[task.id].length > 0 && (
-                                            <div className="mt-3 pt-3 border-t border-border/50 animate-in slide-in-from-top-2 fade-in duration-200" onClick={(e) => e.stopPropagation()}>
-                                                <div className="space-y-2">
-                                                    {localSubtasks[task.id].map(subtask => (
-                                                        <div key={subtask.id} className="flex items-start gap-2.5 group">
-                                                            <Checkbox
-                                                                checked={subtask.isDone}
-                                                                onCheckedChange={() => handleToggleSubtask(task.id, subtask.id, subtask.isDone)}
-                                                                className="h-4 w-4 mt-0.5 rounded-full data-[state=checked]:bg-primary/80 data-[state=checked]:border-primary/80"
-                                                            />
-                                                            <div className="flex-1 min-w-0">
-                                                                <div className="flex justify-between items-start gap-2">
-                                                                    <span className={cn(
-                                                                        "text-sm leading-tight break-words",
-                                                                        subtask.isDone && "line-through text-muted-foreground opacity-70"
-                                                                    )}>
-                                                                        {subtask.title}
-                                                                    </span>
-                                                                    {subtask.priority && subtask.priority !== 'LOW' && (
-                                                                        <div className={cn("w-1.5 h-1.5 rounded-full shrink-0 mt-1.5",
-                                                                            subtask.priority === 'HIGH' ? "bg-red-500" :
-                                                                                subtask.priority === 'MEDIUM' ? "bg-yellow-500" : "bg-muted"
-                                                                        )} />
-                                                                    )}
-                                                                </div>
-                                                                <div className="flex items-center gap-2 mt-1">
-                                                                    {subtask.assignedTo && (
-                                                                        <div className="flex items-center gap-1">
-                                                                            <Avatar className="h-3.5 w-3.5">
-                                                                                <AvatarFallback className="text-[6px]">
-                                                                                    {subtask.assignedTo.name?.[0]?.toUpperCase() || 'U'}
-                                                                                </AvatarFallback>
-                                                                            </Avatar>
-                                                                            <span className="text-[10px] text-muted-foreground truncate max-w-[60px]">
-                                                                                {subtask.assignedTo.name?.split(' ')[0]}
-                                                                            </span>
-                                                                        </div>
-                                                                    )}
-                                                                    {subtask.dueDate && (
-                                                                        <span className={cn(
-                                                                            "text-[10px]",
-                                                                            formatDueDateIndicator(subtask.dueDate, t)?.className || "text-muted-foreground"
-                                                                        )}>
-                                                                            {isToday(new Date(subtask.dueDate))
-                                                                                ? t('calendar.today')
-                                                                                : format(new Date(subtask.dueDate), "d MMM")}
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
                                     </div>
                                 ))
                             )}

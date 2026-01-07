@@ -6,13 +6,8 @@ import { Input } from "@/components/ui/input"
 import { useState, useEffect, startTransition } from "react"
 import { useRouter } from "next/navigation"
 import { format, isToday, isYesterday } from "date-fns"
-import { Pencil, MoreVertical, Trash2 } from "lucide-react"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { Pencil, Trash2 } from "lucide-react"
+import { motion, useMotionValue, useTransform, useAnimation } from "framer-motion"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -26,6 +21,7 @@ import {
 import { EditEntryDialog } from "./EditEntryDialog"
 import { useLanguage } from "@/lib/useLanguage"
 import { toast } from "sonner"
+import { SwipeableEntryCard } from "./SwipeableEntryCard"
 
 interface TimeEntry {
     id: string
@@ -251,6 +247,7 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
         return `${formatTime(new Date(start))} - ${formatTime(new Date(end))}`
     }
 
+
     // Group entries by date
     const groupedEntries = localEntries.reduce((groups, entry) => {
         const date = new Date(entry.startTime)
@@ -292,113 +289,32 @@ export function EntryHistory({ entries, tasks, optimisticEntryId, onOptimisticEn
         .map(([key, value]) => [key, value.entries] as [string, TimeEntry[]])
 
     return (
-        <div className="space-y-2 md:space-y-8">
+        <div className="space-y-3 md:space-y-8">
             {groupsList.map(([groupName, groupEntries]) => (
-                <div key={groupName} className="space-y-4">
-                    <h3 className="text-lg font-bold text-black px-1 sticky top-0 bg-background/95 backdrop-blur z-10 py-0 md:py-2 w-fit">
+                <div key={groupName} className="space-y-2 md:space-y-4">
+                    <h3 className="text-base md:text-lg font-bold text-black px-2 md:px-1 sticky top-0 bg-background/95 backdrop-blur z-10 py-1 md:py-2 w-fit">
                         {groupName}
                     </h3>
 
-                    <div className="space-y-4">
+                    <div className="space-y-4 md:space-y-4">
                         {groupEntries.map((entry) => (
-                            <div key={entry.id} className="relative group">
-                                {/* Entry Content */}
-                                <div className="flex flex-row items-center gap-4 p-4 rounded-xl border bg-card/50 hover:bg-card hover:shadow-sm transition-all focus-within:bg-card focus-within:shadow-sm focus-within:ring-1 focus-within:ring-primary/20">
-                                    {/* Content wrapper */}
-                                    <div className="flex flex-col gap-3 flex-1 min-w-0">
-                                        {/* Time Range */}
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-mono text-sm font-medium text-foreground">
-                                                {getTimeRange(entry.startTime, entry.endTime)}
-                                            </span>
-                                        </div>
-
-                                        {/* Description */}
-                                        <div className="flex flex-col gap-1">
-                                            {inlineEditingId === entry.id ? (
-                                                <Input
-                                                    value={tempDescription}
-                                                    onChange={(e) => setTempDescription(e.target.value)}
-                                                    onBlur={saveInlineEdit}
-                                                    onKeyDown={handleInlineKeyDown}
-                                                    autoFocus
-                                                    className="h-7 text-sm px-1 -ml-1 border-transparent hover:border-input focus:border-input bg-transparent focus:bg-background"
-                                                />
-                                            ) : (
-                                                <div className="flex flex-wrap items-center gap-2">
-                                                    <div
-                                                        className="text-sm text-muted-foreground truncate font-medium cursor-text hover:text-foreground transition-colors py-0.5"
-                                                        onClick={() => startInlineEdit(entry)}
-                                                        title="Click to edit"
-                                                    >
-                                                        {entry.description || t('timeEntries.noDescription')}
-                                                    </div>
-                                                    <div className="flex flex-wrap gap-1 min-w-0 flex-1">
-                                                        {entry.tasks && entry.tasks.length > 0 && (
-                                                            <>
-                                                                {entry.tasks.slice(0, 1).map((t, i) => (
-                                                                    <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/20 truncate max-w-[400px]" title={t.title}>
-                                                                        {t.title}
-                                                                    </span>
-                                                                ))}
-                                                                {entry.tasks.length > 1 && (
-                                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground border border-border" title={entry.tasks.slice(1).map(t => t.title).join(', ')}>
-                                                                        +{entry.tasks.length - 1} more
-                                                                    </span>
-                                                                )}
-                                                            </>
-                                                        )}
-                                                        {entry.subtask && (() => {
-                                                            // Try to find the subtask title from tasks array if not provided
-                                                            const subtaskTitle = entry.subtask.title || (() => {
-                                                                const task = tasks.find(t => t.subtasks?.some(st => st.id === entry.subtask?.id))
-                                                                return task?.subtasks?.find(st => st.id === entry.subtask?.id)?.title || entry.subtask.id
-                                                            })()
-                                                            return (
-                                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-secondary/50 text-primary border border-secondary/30 truncate max-w-[150px]" title={subtaskTitle}>
-                                                                    {subtaskTitle}
-                                                                </span>
-                                                            )
-                                                        })()}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Net Work and Menu button - centered vertically */}
-                                    <div className={`flex items-center gap-6 shrink-0 ${isRTL ? 'flex-row-reverse' : 'flex-row'}`}>
-                                        {/* Net Work - first in LTR, second in RTL */}
-                                        <div className={`${isRTL ? 'text-left' : 'text-right'}`}>
-                                            <div className="text-[10px] uppercase text-muted-foreground font-semibold tracking-wider">{t('timeEntries.netWork')}</div>
-                                            <div className="font-mono font-bold text-primary">
-                                                {getDuration(entry.startTime, entry.endTime, entry.breaks)}
-                                            </div>
-                                        </div>
-                                        
-                                        {/* Menu button - second in LTR, first in RTL */}
-                                        <div className="flex items-center shrink-0">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
-                                                        <MoreVertical className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align={isRTL ? "start" : "end"}>
-                                                    <DropdownMenuItem onClick={() => handleEditStart(entry)}>
-                                                        <Pencil className="mr-2 h-4 w-4" />
-                                                        {t('common.edit')}
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleDelete(entry.id)} className="text-destructive focus:text-destructive">
-                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                        {t('common.delete')}
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <SwipeableEntryCard
+                                key={entry.id}
+                                entry={entry}
+                                tasks={tasks}
+                                isRTL={isRTL}
+                                t={t}
+                                onEdit={handleEditStart}
+                                onDelete={handleDelete}
+                                inlineEditingId={inlineEditingId}
+                                tempDescription={tempDescription}
+                                onStartInlineEdit={startInlineEdit}
+                                onSaveInlineEdit={saveInlineEdit}
+                                onTempDescriptionChange={setTempDescription}
+                                onInlineKeyDown={handleInlineKeyDown}
+                                getTimeRange={getTimeRange}
+                                getDuration={getDuration}
+                            />
                         ))}
                     </div>
                 </div>

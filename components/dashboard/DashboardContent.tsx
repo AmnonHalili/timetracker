@@ -55,10 +55,13 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
 
     // Sync with server data when it changes
     useEffect(() => {
+        // Filter out entries that don't have an endTime (they're still active)
+        const completedEntries = historyEntries.filter(entry => entry.endTime !== null)
+        
         // When server entries arrive, check if we should remove optimistic entry
         if (optimisticStoppedEntry) {
             // Check if any server entry matches the optimistic entry
-            const matchingEntry = historyEntries.find(entry => {
+            const matchingEntry = completedEntries.find(entry => {
                 const optStart = new Date(optimisticStoppedEntry.startTime).getTime()
                 const optEnd = optimisticStoppedEntry.endTime ? new Date(optimisticStoppedEntry.endTime).getTime() : null
                 const realStart = new Date(entry.startTime).getTime()
@@ -98,11 +101,17 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
             if (matchingEntry) {
                 // Real entry found (new or merged), remove optimistic one
                 setOptimisticStoppedEntry(null)
+                // Update local entries with server data (this will replace the optimistic one)
+                setLocalHistoryEntries(completedEntries)
+            } else {
+                // No matching entry yet - keep optimistic entry but update local entries
+                // Simply replace with server data - optimistic entry is shown separately via allEntries
+                setLocalHistoryEntries(completedEntries)
             }
+        } else {
+            // No optimistic entry - just update with server data
+            setLocalHistoryEntries(completedEntries)
         }
-
-        // Update local entries with server data
-        setLocalHistoryEntries(historyEntries)
     }, [historyEntries, optimisticStoppedEntry])
 
     // Callback for when timer is stopped - merges with existing entry if found, otherwise creates new
@@ -215,7 +224,8 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
             // Don't set optimistic entry since we merged immediately
             setOptimisticStoppedEntry(null)
         } else {
-            // No matching entry - create new optimistic entry
+            // No matching entry - create new optimistic entry IMMEDIATELY
+            // This ensures the card appears instantly when Stop is clicked
             const optimisticEntry: TimeEntry = {
                 id: `temp-${Date.now()}`, // Temporary ID
                 startTime: stoppedEntry.startTime,
@@ -226,6 +236,8 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
                 tasks: stoppedEntry.tasks || [],
                 subtask: stoppedEntry.subtaskId ? { id: stoppedEntry.subtaskId, title: subtaskTitle } : null
             }
+            // Set optimistic entry immediately - this triggers UI update synchronously
+            // The entry will appear in allEntries via the combination logic below
             setOptimisticStoppedEntry(optimisticEntry)
         }
     }
@@ -313,7 +325,7 @@ export function DashboardContent({ activeEntry, historyEntries, tasks }: Dashboa
                 onTimerStopped={handleTimerStopped}
                 onEntryMerged={handleEntryMerged}
             />
-            <div className="pt-0 md:pt-2">
+            <div className="pt-1 md:pt-2">
                 <InsightsWidget />
             </div>
             <div className="pt-2 md:pt-4">

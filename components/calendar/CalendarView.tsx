@@ -295,10 +295,10 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 px-0">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
                     {/* Back Button / Placeholder-like container for stability */}
-                    <div className="w-10 flex justify-start">
+                    <div className="w-10 flex justify-start shrink-0">
                         {view === 'day' && (
                             <Button
                                 variant="ghost"
@@ -311,7 +311,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                         )}
                     </div>
 
-                    <h2 className="text-3xl font-bold tracking-tight">
+                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight truncate">
                         {view === 'month'
                             ? `${t(`months.${['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'][currentDate.getMonth()]}` as 'months.january' | 'months.february' | 'months.march' | 'months.april' | 'months.may' | 'months.june' | 'months.july' | 'months.august' | 'months.september' | 'months.october' | 'months.november' | 'months.december')} ${currentDate.getFullYear()}`
                             : `${t(`days.${['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][currentDate.getDay()]}` as 'days.sunday' | 'days.monday' | 'days.tuesday' | 'days.wednesday' | 'days.thursday' | 'days.friday' | 'days.saturday')}, ${t(`months.${['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'][currentDate.getMonth()]}` as 'months.january' | 'months.february' | 'months.march' | 'months.april' | 'months.may' | 'months.june' | 'months.july' | 'months.august' | 'months.september' | 'months.october' | 'months.november' | 'months.december')} ${currentDate.getDate()}, ${currentDate.getFullYear()}`
@@ -319,10 +319,10 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                     </h2>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                     <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
                         <DialogTrigger asChild>
-                            <Button variant="outline" size="icon">
+                            <Button variant="outline" size="icon" className="shrink-0">
                                 <Settings className="h-4 w-4" />
                             </Button>
                         </DialogTrigger>
@@ -425,7 +425,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                     </Dialog>
 
                     {/* Navigation Controls */}
-                    <div className="flex items-center border rounded-md bg-background shadow-sm">
+                    <div className="flex items-center border rounded-md bg-background shadow-sm shrink-0">
                         <Button
                             variant="ghost"
                             size="icon"

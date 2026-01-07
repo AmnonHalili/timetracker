@@ -486,10 +486,16 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
 
     return (
         <div className="w-full">
-
-
             {/* Right Side: Unified Tracker */}
-            <div className={`flex flex-col md:flex-row ${!optimisticEntry && isManualMode ? 'items-end' : 'items-center'} justify-between gap-4 bg-muted/30 p-3 rounded-xl`}>
+            <div className={`
+                flex flex-col md:flex-row 
+                ${!optimisticEntry && isManualMode ? 'items-end' : 'items-center'} 
+                justify-between gap-4 
+                bg-muted/50 md:bg-muted/30 
+                p-4 md:p-3 
+                rounded-2xl md:rounded-xl
+                border-0 md:border-0
+            `}>
 
                 {/* Inputs Area */}
                 <div className="flex flex-1 items-center gap-3 w-full">
@@ -518,7 +524,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                                 handleDescriptionUpdate(e.target.value)
                             }
                         }}
-                        className="bg-background border-input hover:bg-accent/50 focus:bg-background shadow-sm h-9 text-sm flex-1 min-w-0"
+                        className="bg-background border-input hover:bg-accent/50 focus:bg-background shadow-sm h-10 md:h-9 text-sm flex-1 min-w-0 rounded-xl md:rounded-md"
                         aria-label={t('dashboard.whatWorkingOn')}
                     />
 
@@ -548,7 +554,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                                 setSelectedSubtaskId(null)
                             }}
                         >
-                            <SelectTrigger className="bg-background border-input hover:bg-accent/50 text-sm h-9 shadow-sm">
+                            <SelectTrigger className="bg-background border-input hover:bg-accent/50 text-sm h-10 md:h-9 shadow-sm rounded-xl md:rounded-md">
                                 <SelectValue placeholder={t('tasks.tasksPlaceholder')} />
                             </SelectTrigger>
                             <SelectContent>
@@ -583,7 +589,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                                             }
                                         }}
                                     >
-                                        <SelectTrigger className="bg-background border-input hover:bg-accent/50 text-sm h-9 shadow-sm">
+                                        <SelectTrigger className="bg-background border-input hover:bg-accent/50 text-sm h-10 md:h-9 shadow-sm rounded-xl md:rounded-md">
                                             <SelectValue placeholder={t('tasks.subtaskPlaceholder')} />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -787,7 +793,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                 </div>
 
                 {/* Controls Area */}
-                <div className={`flex ${!optimisticEntry && isManualMode ? 'items-end' : 'items-center'} gap-4 w-full md:w-auto justify-between md:justify-end`}>
+                <div className={`flex ${!optimisticEntry && isManualMode ? 'items-end' : 'items-center'} gap-2 md:gap-4 w-full md:w-auto justify-between md:justify-end`}>
 
                     {/* Timer / Manual Inputs */}
                     {!optimisticEntry && isManualMode ? (
@@ -882,14 +888,13 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                             )}
                         </div>
                     ) : (
-                        <div className="font-mono text-2xl font-bold text-primary tabular-nums tracking-wider px-2 min-w-[120px] text-center mr-6">
+                        <div className="font-mono text-2xl md:text-2xl font-bold text-primary tabular-nums tracking-wider px-2 min-w-[110px] md:min-w-[120px] text-center">
                             {formatTime(elapsed)}
                         </div>
                     )}
 
-
                     {/* Action Buttons */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-nowrap">
                         {!optimisticEntry ? (
                             <>
                                 <Button
@@ -904,7 +909,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                                             setTimeError("")
                                         }
                                     }}
-                                    className={`h-9 px-3 text-xs font-medium border-dashed ${isManualMode ? 'bg-primary/10 text-primary border-primary/20' : 'text-muted-foreground border-border'}`}
+                                    className={`h-10 md:h-9 w-[85px] md:w-[80px] text-sm md:text-xs font-medium border-dashed rounded-3xl md:rounded-md flex items-center justify-center ${isManualMode ? 'bg-primary/10 text-primary border-primary/20 border-2' : 'text-muted-foreground border-border border-2'}`}
                                 >
                                     {isManualMode ? t('dashboard.timer') : t('dashboard.manual')}
                                 </Button>
@@ -912,7 +917,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                                     size="sm"
                                     onClick={handleStart}
                                     disabled={loading || (isManualMode && (!manualStart || !manualEnd || !!timeError))}
-                                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium min-w-[80px] h-9 shadow-sm"
+                                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium w-[85px] md:w-[80px] h-10 md:h-9 shadow-lg md:shadow-none rounded-3xl md:rounded-md text-sm md:text-sm px-3 md:px-2 border-0 flex items-center justify-center"
                                 >
                                     {isManualMode ? t('dashboard.add') : t('dashboard.start')}
                                 </Button>
@@ -923,7 +928,7 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                                     <Button
                                         size="sm"
                                         variant="outline"
-                                        className="border-primary text-primary hover:bg-primary/5 font-medium h-9 shadow-sm"
+                                        className="border-primary text-primary hover:bg-primary/5 font-medium h-10 md:h-9 w-[85px] md:w-[80px] shadow-lg md:shadow-none rounded-3xl md:rounded-md text-sm md:text-sm border-2 flex items-center justify-center"
                                         onClick={() => handleAction('resume')}
                                         disabled={loading}
                                     >
@@ -933,21 +938,21 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                                     <Button
                                         size="sm"
                                         variant="outline"
-                                        className="border-primary/30 bg-white text-muted-foreground hover:bg-white hover:text-muted-foreground font-medium h-9 shadow-sm"
+                                        className="border-primary/30 bg-white text-muted-foreground hover:bg-white hover:text-muted-foreground font-medium h-10 md:h-9 w-[85px] md:w-[80px] shadow-lg md:shadow-none rounded-3xl md:rounded-md text-sm md:text-sm border-2 flex items-center justify-center"
                                         onClick={() => handleAction('pause')}
                                         disabled={loading}
                                     >
-                                        <Pause className="h-4 w-4 mr-2" />
+                                        <Pause className="h-4 w-4 mr-1.5" />
                                         {t('dashboard.pause')}
                                     </Button>
                                 )}
                                 <Button
                                     size="sm"
-                                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium h-9 shadow-sm"
+                                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium h-10 md:h-9 w-[85px] md:w-[80px] shadow-lg md:shadow-none rounded-3xl md:rounded-md text-sm md:text-sm border-0 flex items-center justify-center px-3 md:px-2"
                                     onClick={() => handleAction('stop')}
                                     disabled={loading || !isDataLoaded}
                                 >
-                                    <Square className="h-4 w-4 mr-2" />
+                                    <Square className="h-4 w-4 mr-1.5" />
                                     {t('dashboard.stop')}
                                 </Button>
                             </>

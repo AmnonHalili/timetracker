@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from "react"
 import { TasksPageHeader } from "./TasksPageHeader"
 import { TasksView } from "./TasksView"
+import { useLanguage } from "@/lib/useLanguage"
 
 interface TasksPageWithOptimisticUpdateProps {
     isAdmin: boolean
@@ -37,6 +38,12 @@ export function TasksPageWithOptimisticUpdate({
     labels
 }: TasksPageWithOptimisticUpdateProps) {
     const [tasks, setTasks] = useState(initialTasks)
+    const { isRTL } = useLanguage()
+    
+    // Filters and Sort state - lifted to parent to share with header
+    const [isFiltersOpen, setIsFiltersOpen] = useState(false)
+    const [sortBy, setSortBy] = useState<string>("smart")
+    const [activeFiltersCount, setActiveFiltersCount] = useState(0)
 
     // Sync tasks when initialTasks changes (from server refresh)
     const prevInitialTasksRef = useRef(initialTasks)
@@ -82,12 +89,18 @@ export function TasksPageWithOptimisticUpdate({
     }, [])
 
     return (
-        <div className="container mx-auto space-y-4 md:space-y-8 relative">
+        <div className="container mx-auto space-y-2 md:space-y-8 relative">
             <TasksPageHeader
                 isAdmin={isAdmin}
                 users={users}
                 currentUserId={currentUserId}
                 onOptimisticTaskCreate={handleOptimisticTaskCreate}
+                isFiltersOpen={isFiltersOpen}
+                setIsFiltersOpen={setIsFiltersOpen}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                activeFiltersCount={activeFiltersCount}
+                isRTL={isRTL}
             />
 
             <TasksView
@@ -97,6 +110,11 @@ export function TasksPageWithOptimisticUpdate({
                 currentUserId={currentUserId}
                 tasksWithActiveTimers={tasksWithActiveTimers}
                 labels={labels}
+                isFiltersOpen={isFiltersOpen}
+                setIsFiltersOpen={setIsFiltersOpen}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                onActiveFiltersCountChange={setActiveFiltersCount}
             />
         </div>
     )
