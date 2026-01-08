@@ -90,29 +90,38 @@ export async function GET(req: NextRequest) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (prisma as any).event.findMany({
                 where: {
-                    participants: { some: { userId: session.user.id } },
-                    ...(currentUserResult?.projectId ? { projectId: currentUserResult.projectId } : {}),
-                    OR: [
+                    AND: [
                         {
-                            // Normal events in range
-                            startTime: { gte: monthStart },
-                            endTime: { lte: monthEnd },
-                            recurrence: null
+                            OR: [
+                                { participants: { some: { userId: session.user.id } } },
+                                { createdById: session.user.id }
+                            ]
                         },
                         {
-                            // Recurring events active during this period
-                            recurrence: { not: null },
-                            startTime: { lte: monthEnd },
                             OR: [
-                                { recurrenceEnd: null },
-                                { recurrenceEnd: { gte: monthStart } }
+                                {
+                                    // Normal events in range
+                                    startTime: { gte: monthStart },
+                                    endTime: { lte: monthEnd },
+                                    recurrence: null
+                                },
+                                {
+                                    // Recurring events active during this period
+                                    recurrence: { not: null },
+                                    startTime: { lte: monthEnd },
+                                    OR: [
+                                        { recurrenceEnd: null },
+                                        { recurrenceEnd: { gte: monthStart } }
+                                    ]
+                                }
                             ]
                         }
-                    ]
+                    ],
+                    ...(currentUserResult?.projectId ? { projectId: currentUserResult.projectId } : {}),
                 },
                 select: {
                     id: true, title: true, description: true, startTime: true, endTime: true, allDay: true, type: true, location: true,
-                    recurrence: true, recurrenceEnd: true,
+                    recurrence: true, recurrenceEnd: true, exDates: true,
                     createdBy: { select: { id: true, name: true, email: true } },
                     participants: { include: { user: { select: { id: true, name: true, email: true } } } }
                 },
@@ -139,6 +148,8 @@ export async function GET(req: NextRequest) {
                 return []
             })()
         ])
+
+
 
         // EXPAND RECURRING EVENTS
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -170,7 +181,14 @@ export async function GET(req: NextRequest) {
                 // Event interval: [current, currentEnd]
                 // Window interval: [monthStart, monthEnd]
                 // Overlap if: current < monthEnd && currentEnd > monthStart
-                if (current < monthEnd && currentEnd > monthStart) {
+                // Check if this date is excluded
+                const isExcluded = event.exDates?.some((exDate: Date) => {
+                    return exDate.getTime() === current.getTime()
+                })
+
+                if (isExcluded) {
+                    // Skip exclusion check overlap if excluded, just logic to advance later
+                } else if (current < monthEnd && currentEnd > monthStart) {
                     expandedEvents.push({
                         ...event,
                         id: `${event.id}_${current.getTime()}`, // Synthetic ID

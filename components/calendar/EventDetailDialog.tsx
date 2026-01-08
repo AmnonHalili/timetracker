@@ -222,31 +222,30 @@ export function EventDetailDialog({ event, open, onOpenChange, onOptimisticEvent
                                 variant="outline"
                                 onClick={() => handleDelete('THIS')}
                                 disabled={isDeleting}
-                                className="justify-start"
                             >
-                                {t('calendar.deleteThisOccurrence') || "Delete this occurrence only"}
+                                {t('calendar.deleteThisOccurrence')}
                             </Button>
                             <Button
                                 variant="outline"
                                 onClick={() => handleDelete('FUTURE')}
                                 disabled={isDeleting}
-                                className="justify-start"
                             >
-                                {t('calendar.deleteFutureOccurrences') || "Delete this and future occurrences"}
+                                {t('calendar.deleteFutureOccurrences')}
                             </Button>
                             <Button
                                 variant="destructive"
                                 onClick={() => handleDelete('ALL')}
                                 disabled={isDeleting}
-                                className="justify-start"
                             >
-                                {t('calendar.deleteAllOccurrences') || "Delete entire series"}
+                                {t('calendar.deleteAllOccurrences')}
                             </Button>
-                            <div className="flex justify-end mt-2">
-                                <Button variant="ghost" onClick={() => setDeleteDialogOpen(false)} disabled={isDeleting}>
-                                    {t('common.cancel')}
-                                </Button>
-                            </div>
+                            <Button
+                                variant="ghost"
+                                onClick={() => setDeleteDialogOpen(false)}
+                                disabled={isDeleting}
+                            >
+                                {t('common.cancel')}
+                            </Button>
                         </div>
                     ) : (
                         <AlertDialogFooter>

@@ -1,5 +1,7 @@
 "use client"
 
+import { useRouter } from "next/navigation"
+
 import { useState, useEffect } from "react"
 import { MonthGrid } from "./MonthGrid"
 import { DayView } from "./DayView"
@@ -61,6 +63,7 @@ interface CalendarViewProps {
 }
 
 export function CalendarView({ initialDate, data, projectId }: CalendarViewProps) {
+    const router = useRouter()
     const { t, isRTL } = useLanguage()
     // const { data: session } = useSession() // Unused
     const [view, setView] = useState<'month' | 'day'>('month')
@@ -134,30 +137,18 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
     useEffect(() => {
         setOptimisticEvents([])
         setOptimisticDeletedIds([])
-    }, [calendarData.events])
+        setCalendarData(data) // Sync local state with prop data
+    }, [data, calendarData.events])
 
-    // Fetch data when month changes
-    useEffect(() => {
-        const loadData = async () => {
-            if (currentDate.getTime() === initialDate.getTime() && calendarData === data) {
-                return
-            }
-
-            setIsLoading(true)
-            try {
-                const res = await fetch(`/api/calendar?month=${currentDate.getMonth()}&year=${currentDate.getFullYear()}`)
-                if (res.ok) {
-                    const newData = await res.json()
-                    setCalendarData(newData)
-                }
-            } finally {
-                setIsLoading(false)
-            }
+    // URL Sync helper
+    const syncUrlWithDate = (date: Date) => {
+        if (date.getMonth() !== currentDate.getMonth() || date.getFullYear() !== currentDate.getFullYear()) {
+            router.push(`/calendar?month=${date.getMonth()}&year=${date.getFullYear()}`)
         }
+    }
 
-        loadData()
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentDate, initialDate, data])
+    // REMOVED: Client-side data fetching. We now rely on URL params driving the Server Component.
+    // useEffect(() => { ... })
 
 
 
@@ -179,23 +170,33 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
             !optimisticDeletedIds.some(deletedId => event.id.startsWith(deletedId + '_')))
 
     const handlePrevMonth = () => {
-        setCurrentDate(prev => subMonths(prev, 1))
+        const newDate = subMonths(currentDate, 1)
+        setCurrentDate(newDate)
+        router.push(`/calendar?month=${newDate.getMonth()}&year=${newDate.getFullYear()}`)
     }
 
     const handleNextMonth = () => {
-        setCurrentDate(prev => addMonths(prev, 1))
+        const newDate = addMonths(currentDate, 1)
+        setCurrentDate(newDate)
+        router.push(`/calendar?month=${newDate.getMonth()}&year=${newDate.getFullYear()}`)
     }
 
     const handlePrevDay = () => {
-        setCurrentDate(prev => subDays(prev, 1))
+        const newDate = subDays(currentDate, 1)
+        setCurrentDate(newDate)
+        syncUrlWithDate(newDate)
     }
 
     const handleNextDay = () => {
-        setCurrentDate(prev => addDays(prev, 1))
+        const newDate = addDays(currentDate, 1)
+        setCurrentDate(newDate)
+        syncUrlWithDate(newDate)
     }
 
     const handleToday = () => {
-        setCurrentDate(new Date())
+        const newDate = new Date()
+        setCurrentDate(newDate)
+        syncUrlWithDate(newDate)
     }
 
 
@@ -294,7 +295,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                         onDayClick={(day) => {
                             setCurrentDate(day)
                             setView('day')
-                            // No URL update
+                            syncUrlWithDate(day)
                         }}
                         projectId={projectId}
                         onOptimisticEventCreate={handleOptimisticCreate}

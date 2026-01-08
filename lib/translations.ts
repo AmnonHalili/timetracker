@@ -301,6 +301,13 @@ export const translations = {
     'calendar.deleteThisOccurrence': 'Delete this occurrence',
     'calendar.deleteFutureOccurrences': 'Delete this and future occurrences',
     'calendar.deleteAllOccurrences': 'Delete entire series',
+    'calendar.editRecurringPrompt': 'This is a recurring event. How would you like to update it?',
+    'calendar.editThisOccurrence': 'Update this occurrence only',
+    'calendar.editThisOccurrenceDesc': 'Only this specific event will change. Other events in the series stay the same.',
+    'calendar.editFutureOccurrences': 'Update this and future occurrences',
+    'calendar.editFutureOccurrencesDesc': 'The series will split. Past events remain unchanged, future events will have the new details.',
+    'calendar.editAllOccurrences': 'Update entire series',
+    'calendar.editAllOccurrencesDesc': 'All events in the series (past and future) will be updated with the new details.',
 
     // Reports
     'reports.monthlyReports': 'Monthly Reports',
@@ -1004,6 +1011,13 @@ export const translations = {
     'calendar.deleteThisOccurrence': 'מחק מופע זה בלבד',
     'calendar.deleteFutureOccurrences': 'מחק מופע זה והבאים',
     'calendar.deleteAllOccurrences': 'מחק את כל הסדרה',
+    'calendar.editRecurringPrompt': 'זהו אירוע חוזר. איך תרצה לעדכן אותו?',
+    'calendar.editThisOccurrence': 'עדכן מופע זה בלבד',
+    'calendar.editThisOccurrenceDesc': 'רק האירוע הספציפי הזה ישתנה. שאר האירועים בסדרה יישארו כפי שהם.',
+    'calendar.editFutureOccurrences': 'עדכן מופע זה והבאים',
+    'calendar.editFutureOccurrencesDesc': 'הסדרה תתפצל. אירועים בעבר יישארו ללא שינוי, אירועים עתידיים יקבלו את הפרטים החדשים.',
+    'calendar.editAllOccurrences': 'עדכן את כל הסדרה',
+    'calendar.editAllOccurrencesDesc': 'כל האירועים בסדרה (עבר ועתיד) יתעדכנו עם הפרטים החדשים.',
 
     // Reports
     'reports.monthlyReports': 'דוחות חודשיים',
