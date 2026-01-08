@@ -86,8 +86,8 @@ export async function deleteOrphanedFiles(): Promise<number> {
 
         // List all files in S3 bucket (in uploads/ prefix)
         let continuationToken: string | undefined
-        let orphanedFiles: string[] = []
-        let totalListed = 0
+        const orphanedFiles: string[] = []
+        // let totalListed = 0 // Unused
 
         do {
             const listCommand = new ListObjectsV2Command({
@@ -97,15 +97,15 @@ export async function deleteOrphanedFiles(): Promise<number> {
             })
 
             const response = await s3Client.send(listCommand)
-            
+
             if (response.Contents) {
-                totalListed += response.Contents.length
-                
+                // totalListed += response.Contents.length
+
                 // Find files that don't exist in DB
                 const orphaned = response.Contents
                     .filter(obj => obj.Key && !dbFileKeys.has(obj.Key))
                     .map(obj => obj.Key!)
-                
+
                 orphanedFiles.push(...orphaned)
             }
 
@@ -122,7 +122,7 @@ export async function deleteOrphanedFiles(): Promise<number> {
 
         for (let i = 0; i < orphanedFiles.length; i += BATCH_SIZE) {
             const batch = orphanedFiles.slice(i, i + BATCH_SIZE)
-            
+
             const deletePromises = batch.map(async (key) => {
                 try {
                     await s3Client.send(new DeleteObjectCommand({

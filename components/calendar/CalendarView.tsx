@@ -71,9 +71,9 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
     const [optimisticEvents, setOptimisticEvents] = useState<CalendarEvent[]>([])
     const [optimisticDeletedIds, setOptimisticDeletedIds] = useState<string[]>([])
 
-    // Client-side data fetching state
+    // Client-side data fetching state (legacy)
     const [calendarData, setCalendarData] = useState(data)
-    const [isLoading, setIsLoading] = useState(false)
+    // const [isLoading, setIsLoading] = useState(false) // Unused
 
     // Local Holidays State - Load from localStorage
     const [showHolidays] = useState(() => {
