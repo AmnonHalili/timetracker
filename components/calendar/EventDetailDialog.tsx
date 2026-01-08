@@ -19,10 +19,12 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { useLanguage } from "@/lib/useLanguage"
 
 interface EventDetailDialogProps {
     event: {
         id: string
+        originalId?: string
         title: string
         description?: string | null
         startTime: Date | string
@@ -30,6 +32,7 @@ interface EventDetailDialogProps {
         allDay: boolean
         type: string
         location?: string | null
+        recurrence?: string | null
         createdBy?: {
             name: string
             email: string
@@ -40,6 +43,7 @@ interface EventDetailDialogProps {
     } | null
     open: boolean
     onOpenChange: (open: boolean) => void
+    onOptimisticEventDelete?: (eventId: string) => void
 }
 
 const eventTypeColors: Record<string, string> = {
@@ -51,8 +55,9 @@ const eventTypeColors: Record<string, string> = {
     OTHER: "bg-orange-500/10 text-orange-700 border-orange-500/20",
 }
 
-export function EventDetailDialog({ event, open, onOpenChange }: EventDetailDialogProps) {
+export function EventDetailDialog({ event, open, onOpenChange, onOptimisticEventDelete }: EventDetailDialogProps) {
     const router = useRouter()
+    const { t } = useLanguage()
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
 
@@ -65,7 +70,18 @@ export function EventDetailDialog({ event, open, onOpenChange }: EventDetailDial
     const handleDelete = async () => {
         setIsDeleting(true)
         try {
-            const res = await fetch(`/api/events/${event.id}`, {
+            // If it's a recurring instance, use the original ID
+            // Otherwise use the event ID (which might be synthetic or real depending on how it was passed, 
+            // but for recurring instances expanded by API, originalId is set)
+            // Fallback: strip suffix if no originalId but ID looks like pattern
+            const idToDelete = event.originalId || (event.id.includes('_') ? event.id.split('_')[0] : event.id)
+
+            // Optimistic update
+            onOpenChange(false)
+            setDeleteDialogOpen(false)
+            onOptimisticEventDelete?.(event.id)
+
+            const res = await fetch(`/api/events/${idToDelete}`, {
                 method: "DELETE",
             })
 
@@ -74,13 +90,13 @@ export function EventDetailDialog({ event, open, onOpenChange }: EventDetailDial
                 throw new Error(data.error || "Failed to delete event")
             }
 
-            toast.success("Event deleted successfully")
+            toast.success(t('calendar.eventDeleted'))
             router.refresh()
             onOpenChange(false)
             setDeleteDialogOpen(false)
         } catch (error) {
             console.error(error)
-            toast.error(error instanceof Error ? error.message : "Failed to delete event")
+            toast.error(error instanceof Error ? error.message : t('calendar.deleteError'))
         } finally {
             setIsDeleting(false)
         }
@@ -97,7 +113,7 @@ export function EventDetailDialog({ event, open, onOpenChange }: EventDetailDial
                                 {event.type}
                             </Badge>
                         </div>
-                        <DialogDescription>Event Details</DialogDescription>
+                        <DialogDescription>{t('calendar.eventDetails')}</DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
@@ -109,7 +125,7 @@ export function EventDetailDialog({ event, open, onOpenChange }: EventDetailDial
                                     {format(start, 'EEEE, MMMM d, yyyy')}
                                 </p>
                                 {event.allDay ? (
-                                    <p className="text-sm text-muted-foreground">All day</p>
+                                    <p className="text-sm text-muted-foreground">{t('calendar.allDay')}</p>
                                 ) : (
                                     <p className="text-sm text-muted-foreground">
                                         {formatTimeWithAMPM(start)} - {formatTimeWithAMPM(end)}
@@ -131,7 +147,7 @@ export function EventDetailDialog({ event, open, onOpenChange }: EventDetailDial
                             <div className="flex items-start gap-3">
                                 <Users className="h-5 w-5 text-muted-foreground mt-0.5" />
                                 <div className="flex-1">
-                                    <p className="text-sm font-medium mb-1">Participants</p>
+                                    <p className="text-sm font-medium mb-1">{t('calendar.participants')}</p>
                                     <div className="flex flex-wrap gap-2">
                                         {event.participants.map((p, i) => (
                                             <Badge key={i} variant="secondary" className="text-xs">
@@ -146,7 +162,7 @@ export function EventDetailDialog({ event, open, onOpenChange }: EventDetailDial
                         {/* Description */}
                         {event.description && (
                             <div className="space-y-2">
-                                <p className="text-sm font-medium">Description</p>
+                                <p className="text-sm font-medium">{t('calendar.description')}</p>
                                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                                     {event.description}
                                 </p>
@@ -157,7 +173,7 @@ export function EventDetailDialog({ event, open, onOpenChange }: EventDetailDial
                         {event.createdBy && (
                             <div className="pt-4 border-t">
                                 <p className="text-xs text-muted-foreground">
-                                    Created by {event.createdBy.name}
+                                    {t('calendar.createdBy')} {event.createdBy.name}
                                 </p>
                             </div>
                         )}
@@ -168,14 +184,14 @@ export function EventDetailDialog({ event, open, onOpenChange }: EventDetailDial
                             variant="outline"
                             onClick={() => onOpenChange(false)}
                         >
-                            Close
+                            {t('common.close')}
                         </Button>
                         <Button
                             variant="destructive"
                             onClick={() => setDeleteDialogOpen(true)}
                         >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete Event
+                            <Trash2 className="h-4 w-4 me-2" />
+                            {t('calendar.deleteEvent')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -185,19 +201,19 @@ export function EventDetailDialog({ event, open, onOpenChange }: EventDetailDial
             <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Event</AlertDialogTitle>
+                        <AlertDialogTitle>{t('calendar.deleteEvent')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to delete &quot;{event.title}&quot;? This action cannot be undone.
+                            {t('calendar.deleteConfirm').replace('{title}', event.title)}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel disabled={isDeleting}>{t('common.cancel')}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleDelete}
                             disabled={isDeleting}
                             className="bg-destructive hover:bg-destructive/90"
                         >
-                            {isDeleting ? "Deleting..." : "Delete"}
+                            {isDeleting ? t('calendar.deleting') : t('common.delete')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

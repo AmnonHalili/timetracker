@@ -17,6 +17,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { useLanguage } from "@/lib/useLanguage"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -50,6 +51,7 @@ interface EventCardProps {
     onClick?: () => void
     size?: 'sm' | 'md' | 'lg'
     showDelete?: boolean
+    onOptimisticEventDelete?: (eventId: string) => void
 }
 
 
@@ -78,8 +80,9 @@ const eventTypeBadgeColors = {
     HOLIDAY: "bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800",
 }
 
-export function EventCard({ event, onClick, size = 'md', showDelete = false }: EventCardProps) {
+export function EventCard({ event, onClick, size = 'md', showDelete = false, onOptimisticEventDelete }: EventCardProps) {
     const router = useRouter()
+    const { t } = useLanguage()
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [editDialogOpen, setEditDialogOpen] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
@@ -103,6 +106,7 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
         // Optimistic update: Hide event immediately and close dialog
         setDeleteDialogOpen(false)
         setIsDeleted(true)
+        onOptimisticEventDelete?.(event.id)
 
         try {
             const endpoint = event.type === 'TASK_TIME'
@@ -120,11 +124,11 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
                 throw new Error(data.error || "Failed to delete item")
             }
 
-            toast.success(`${event.type === 'TASK_TIME' ? 'Task' : 'Event'} deleted successfully`)
+            toast.success(event.type === 'TASK_TIME' ? t('tasks.taskDeleted') : t('calendar.eventDeleted'))
             router.refresh()
         } catch (error) {
             console.error(error)
-            toast.error(error instanceof Error ? error.message : "Failed to delete item")
+            toast.error(error instanceof Error ? error.message : (event.type === 'TASK_TIME' ? t('tasks.deleteError') : t('calendar.deleteError')))
             setIsDeleted(false) // Show it again if failed
         } finally {
             setIsDeleting(false)
@@ -148,11 +152,11 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
                 throw new Error(data.error || "Failed to mark task as done")
             }
 
-            toast.success("Task marked as done")
+            toast.success(t('tasks.markedDone'))
             router.refresh()
         } catch (error) {
             console.error(error)
-            toast.error(error instanceof Error ? error.message : "Failed to mark task as done")
+            toast.error(error instanceof Error ? error.message : t('tasks.markDoneError'))
         } finally {
             setIsMarkingDone(false)
         }
@@ -179,9 +183,9 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
                 {size !== 'sm' && (
                     <div className={cn(
                         "absolute z-10 flex items-center",
-                        showDelete && event.type !== 'EXTERNAL' ? "right-10" : "right-2"
+                        showDelete && event.type !== 'EXTERNAL' ? "end-10" : "end-2"
                     )}
-                    style={{ top: '50%', transform: 'translateY(-50%)' }}
+                        style={{ top: '50%', transform: 'translateY(-50%)' }}
                     >
                         <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 h-5", badgeColor)}>
                             {event.type}
@@ -191,58 +195,58 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
 
                 {/* Actions Menu (Edit/Delete) - absolutely positioned */}
                 {showDelete && event.type !== 'EXTERNAL' && (
-                    <div className="absolute right-2 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex items-center"
-                    style={{ top: '50%', transform: 'translateY(-50%)' }}
+                    <div className="absolute end-2 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex items-center"
+                        style={{ top: '50%', transform: 'translateY(-50%)' }}
                     >
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-6 w-6 hover:bg-slate-200/50"
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        <MoreVertical className="h-3 w-3" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-32">
-                                    {event.type === 'TASK_TIME' && (
-                                        <DropdownMenuItem
-                                            className="flex items-center gap-2 text-green-600 focus:text-green-700 focus:bg-green-50 cursor-pointer"
-                                            onClick={(e) => {
-                                                e.stopPropagation()
-                                                handleMarkDone()
-                                            }}
-                                            disabled={isMarkingDone}
-                                        >
-                                            <Check className="h-4 w-4" />
-                                            <span>{isMarkingDone ? 'Marking...' : 'Done'}</span>
-                                        </DropdownMenuItem>
-                                    )}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 hover:bg-slate-200/50"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <MoreVertical className="h-3 w-3" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-32">
+                                {event.type === 'TASK_TIME' && (
                                     <DropdownMenuItem
-                                        className="flex items-center gap-2 cursor-pointer"
+                                        className="flex items-center gap-2 text-green-600 focus:text-green-700 focus:bg-green-50 cursor-pointer"
                                         onClick={(e) => {
                                             e.stopPropagation()
-                                            setEditDialogOpen(true)
+                                            handleMarkDone()
                                         }}
+                                        disabled={isMarkingDone}
                                     >
-                                        <Pencil className="h-4 w-4" />
-                                        <span>Edit</span>
+                                        <Check className="h-4 w-4" />
+                                        <span>{isMarkingDone ? t('tasks.marking') : t('tasks.statusDone')}</span>
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        className="flex items-center gap-2 text-red-600 focus:text-red-700 focus:bg-red-50 cursor-pointer"
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-                                            setDeleteDialogOpen(true)
-                                        }}
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                        <span>Delete</span>
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-                    )}
+                                )}
+                                <DropdownMenuItem
+                                    className="flex items-center gap-2 cursor-pointer"
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        setEditDialogOpen(true)
+                                    }}
+                                >
+                                    <Pencil className="h-4 w-4" />
+                                    <span>{t('common.edit')}</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    className="flex items-center gap-2 text-red-600 focus:text-red-700 focus:bg-red-50 cursor-pointer"
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        setDeleteDialogOpen(true)
+                                    }}
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                    <span>{t('common.delete')}</span>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                )}
 
                 {/* Content area */}
                 <div className="flex-1 space-y-1 min-w-0">
@@ -253,7 +257,7 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
                             size === 'sm' && "text-xs",
                             size === 'md' && "text-sm",
                             size === 'lg' && "text-base",
-                            size !== 'sm' && (showDelete && event.type !== 'EXTERNAL' ? "pr-20" : "pr-12")
+                            size !== 'sm' && (showDelete && event.type !== 'EXTERNAL' ? "pe-20" : "pe-12")
                         )}>
                             {event.title}
                         </span>
@@ -334,19 +338,22 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false }: E
             <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Event</AlertDialogTitle>
+                        <AlertDialogTitle>{event.type === 'TASK_TIME' ? t('tasks.delete') : t('calendar.deleteEvent')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to delete &quot;{event.title}&quot;? This action cannot be undone.
+                            {event.type === 'TASK_TIME'
+                                ? t('tasks.deleteConfirm')
+                                : t('calendar.deleteConfirm').replace('{title}', event.title)
+                            }
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel disabled={isDeleting}>{t('common.cancel')}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleDelete}
                             disabled={isDeleting}
                             className="bg-destructive hover:bg-destructive/90"
                         >
-                            {isDeleting ? "Deleting..." : "Delete"}
+                            {isDeleting ? t('calendar.deleting') : t('common.delete')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

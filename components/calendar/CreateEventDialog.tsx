@@ -67,6 +67,8 @@ export function CreateEventDialog({
     const [users, setUsers] = useState<Array<{ id: string; name: string | null; email: string | null; managerId?: string | null; depth?: number }>>([])
     const [participantIds, setParticipantIds] = useState<string[]>([])
     const [showEventToMe, setShowEventToMe] = useState(false)
+    const [recurrence, setRecurrence] = useState<string>("NONE")
+    const [recurrenceEnd, setRecurrenceEnd] = useState("")
 
     // Helper to sort users: Current User first, then Hierarchy
     const sortUsersHierarchically = (usersToSort: Array<{ id: string; name: string | null; email: string | null; managerId?: string | null }>, meId?: string) => {
@@ -215,6 +217,13 @@ export function CreateEventDialog({
                 setStartTime(start.toTimeString().slice(0, 5))
                 setEndDate(formatDateLocal(end))
                 setEndTime(end.toTimeString().slice(0, 5))
+
+                // Populate recurrence
+                // Populate recurrence
+                // Cast to unknown first to avoid ESLint any error, assuming event has these fields at runtime
+                const recurrenceEvent = event as unknown as { recurrence?: string; recurrenceEnd?: string | Date }
+                setRecurrence(recurrenceEvent.recurrence || "NONE")
+                setRecurrenceEnd(recurrenceEvent.recurrenceEnd ? formatDateLocal(new Date(recurrenceEvent.recurrenceEnd)) : "")
             } else {
                 // Reset for create mode
                 resetForm()
@@ -306,7 +315,9 @@ export function CreateEventDialog({
                     location: location || null,
                     projectId,
                     participantIds: finalParticipantIds,
-                    reminderMinutes: []
+                    reminderMinutes: [],
+                    recurrence: recurrence === "NONE" ? null : recurrence,
+                    recurrenceEnd: (recurrence !== "NONE" && recurrenceEnd) ? new Date(recurrenceEnd).toISOString() : null
                 })
             })
 
@@ -337,6 +348,8 @@ export function CreateEventDialog({
         setAllDay(false)
         setParticipantIds(session?.user?.id ? [session.user.id] : [])
         setShowEventToMe(false)
+        setRecurrence("NONE")
+        setRecurrenceEnd("")
 
         const baseDate = defaultDate || new Date()
         const dateStr = formatDateLocal(baseDate)
@@ -436,6 +449,36 @@ export function CreateEventDialog({
                                     <SelectItem value="OTHER">{t('calendar.other')}</SelectItem>
                                 </SelectContent>
                             </Select>
+                        </div>
+
+                        {/* Recurrence */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="recurrence">{t('calendar.recurrence') || "Recurrence"}</Label>
+                                <Select value={recurrence} onValueChange={setRecurrence}>
+                                    <SelectTrigger id="recurrence">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="NONE">{t('calendar.recurrenceNone') || "None"}</SelectItem>
+                                        <SelectItem value="DAILY">{t('calendar.recurrenceDaily') || "Daily"}</SelectItem>
+                                        <SelectItem value="WEEKLY">{t('calendar.recurrenceWeekly') || "Weekly"}</SelectItem>
+                                        <SelectItem value="MONTHLY">{t('calendar.recurrenceMonthly') || "Monthly"}</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            {recurrence !== "NONE" && (
+                                <div className="space-y-2">
+                                    <Label htmlFor="recurrenceEnd">{t('calendar.recurrenceEnd') || "End Date"}</Label>
+                                    <Input
+                                        id="recurrenceEnd"
+                                        type="date"
+                                        value={recurrenceEnd}
+                                        onChange={(e) => setRecurrenceEnd(e.target.value)}
+                                        min={startDate}
+                                    />
+                                </div>
+                            )}
                         </div>
 
                         {/* All Day Toggle */}

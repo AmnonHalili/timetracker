@@ -43,9 +43,10 @@ interface DayViewProps {
     projectId?: string | null
     onBack?: () => void
     onOptimisticEventCreate?: (event: CalendarEvent) => void
+    onOptimisticEventDelete?: (eventId: string) => void
 }
 
-export function DayView({ date, events, tasks, projectId, onOptimisticEventCreate }: DayViewProps) {
+export function DayView({ date, events, tasks, projectId, onOptimisticEventCreate, onOptimisticEventDelete }: DayViewProps) {
     const { t } = useLanguage()
     const [createDialogOpen, setCreateDialogOpen] = useState(false)
     const [selectedHour, setSelectedHour] = useState<Date | undefined>()
@@ -145,6 +146,7 @@ export function DayView({ date, events, tasks, projectId, onOptimisticEventCreat
                                 event={event}
                                 size="md"
                                 showDelete={true}
+                                onOptimisticEventDelete={onOptimisticEventDelete}
                             />
                         ))}
                     </div>
@@ -196,6 +198,7 @@ export function DayView({ date, events, tasks, projectId, onOptimisticEventCreat
                                                 event={event}
                                                 size="sm"
                                                 showDelete={true}
+                                                onOptimisticEventDelete={onOptimisticEventDelete}
                                             />
                                         ))}
                                     </div>

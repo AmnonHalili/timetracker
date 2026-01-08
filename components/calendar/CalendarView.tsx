@@ -66,6 +66,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
     const [view, setView] = useState<'month' | 'day'>('month')
     const [currentDate, setCurrentDate] = useState(initialDate)
     const [optimisticEvents, setOptimisticEvents] = useState<CalendarEvent[]>([])
+    const [optimisticDeletedIds, setOptimisticDeletedIds] = useState<string[]>([])
 
     // Client-side data fetching state
     const [calendarData, setCalendarData] = useState(data)
@@ -132,6 +133,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
     // Reset optimistic state when server data changes
     useEffect(() => {
         setOptimisticEvents([])
+        setOptimisticDeletedIds([])
     }, [calendarData.events])
 
     // Fetch data when month changes
@@ -160,9 +162,21 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
 
 
 
-    const addOptimisticEvent = (newEvent: CalendarEvent) => {
+    const handleOptimisticCreate = (newEvent: CalendarEvent) => {
         setOptimisticEvents(prev => [...prev, newEvent])
     }
+
+    const handleOptimisticDelete = (eventId: string) => {
+        setOptimisticDeletedIds(prev => [...prev, eventId])
+        // If it was an optimistic event, remove it from that list too
+        setOptimisticEvents(prev => prev.filter(e => e.id !== eventId))
+    }
+
+    // Filter out deleted events from display
+    const visibleEvents = [...(calendarData.events || []), ...optimisticEvents, ...holidayEvents]
+        .filter(event => !optimisticDeletedIds.includes(event.id) &&
+            // Check for synthetic IDs of recurring events if the parent was deleted
+            !optimisticDeletedIds.some(deletedId => event.id.startsWith(deletedId + '_')))
 
     const handlePrevMonth = () => {
         setCurrentDate(prev => subMonths(prev, 1))
@@ -275,7 +289,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                         date={currentDate}
                         data={{
                             ...calendarData,
-                            events: [...(calendarData.events || []), ...optimisticEvents, ...holidayEvents]
+                            events: visibleEvents
                         }}
                         onDayClick={(day) => {
                             setCurrentDate(day)
@@ -283,23 +297,19 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                             // No URL update
                         }}
                         projectId={projectId}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        onOptimisticEventCreate={(event: any) => {
-                            addOptimisticEvent(event)
-                        }}
+                        onOptimisticEventCreate={handleOptimisticCreate}
+                        onOptimisticEventDelete={handleOptimisticDelete}
                         isLoading={isLoading}
                     />
                 ) : (
                     <DayView
                         date={currentDate}
-                        events={[...(calendarData.events || []), ...optimisticEvents, ...holidayEvents]}
+                        events={visibleEvents}
                         tasks={calendarData.tasks || []}
                         projectId={projectId}
                         onBack={() => setView('month')}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        onOptimisticEventCreate={(event: any) => {
-                            addOptimisticEvent(event)
-                        }}
+                        onOptimisticEventCreate={handleOptimisticCreate}
+                        onOptimisticEventDelete={handleOptimisticDelete}
                     />
                 )}
             </div>

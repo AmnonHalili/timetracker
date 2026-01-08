@@ -55,6 +55,7 @@ interface MonthGridProps {
     onDayClick?: (day: Date) => void
     projectId?: string | null
     onOptimisticEventCreate?: (event: MonthGridEvent) => void
+    onOptimisticEventDelete?: (eventId: string) => void
     isLoading?: boolean
 }
 
@@ -82,8 +83,8 @@ export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEvent
             {/* Add Event Button - Fixed bottom left on mobile (opposite to accessibility button) */}
             <div className={`fixed bottom-6 z-50 md:relative md:bottom-auto md:z-auto ${isRTL ? 'right-6 md:right-auto' : 'left-6 md:left-auto'}`}>
                 <div className="flex items-center justify-end md:mb-0 mb-0">
-                    <Button 
-                        size="sm" 
+                    <Button
+                        size="sm"
                         onClick={() => { setSelectedDate(new Date()); setCreateDialogOpen(true) }}
                         className="h-11 md:h-9 rounded-xl md:rounded-md shadow-lg md:shadow-none bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-4 md:px-3"
                     >

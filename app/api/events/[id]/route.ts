@@ -16,7 +16,9 @@ export async function PATCH(
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
         }
 
-        const eventId = params.id
+        const eventId = params.id.includes("_")
+            ? params.id.split("_")[0]
+            : params.id
         const body = await req.json()
 
         // Check if user owns the event
@@ -127,7 +129,13 @@ export async function DELETE(
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
         }
 
-        const eventId = params.id
+        let eventId = params.id
+
+        // Handle recurring event instances (synthetic IDs like cuid_timestamp)
+        // If we receive a synthetic ID, we want to operate on the original event series
+        if (eventId.includes("_")) {
+            eventId = eventId.split("_")[0]
+        }
 
         // Check if user owns the event
         const existingEvent = await prisma.event.findUnique({

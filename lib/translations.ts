@@ -229,6 +229,10 @@ export const translations = {
     'tasks.taskCreated': 'Task created successfully',
     'tasks.taskUpdated': 'Task updated successfully',
     'tasks.errorCreatingTask': 'Failed to create task',
+    'tasks.taskDeleted': 'Task deleted successfully',
+    'tasks.markedDone': 'Task marked as done',
+    'tasks.markDoneError': 'Failed to mark task as done',
+    'tasks.marking': 'Marking...',
 
     // Time Entries
     'timeEntries.today': 'Today',
@@ -266,6 +270,19 @@ export const translations = {
     'calendar.showThisEventToMe': 'Show this event to me',
     'calendar.allDay': 'All Day',
     'calendar.clickToAddEvent': 'Click to add event',
+    'calendar.deleteEvent': 'Delete Event',
+    'calendar.deleteConfirm': 'Are you sure you want to delete "{title}"? This action cannot be undone.',
+    'calendar.deleting': 'Deleting...',
+    'calendar.eventDeleted': 'Event deleted successfully',
+    'calendar.deleteError': 'Failed to delete event',
+    'calendar.eventDetails': 'Event Details',
+    'calendar.createdBy': 'Created by',
+    'calendar.recurrence': 'Recurrence',
+    'calendar.recurrenceNone': 'None',
+    'calendar.recurrenceDaily': 'Daily',
+    'calendar.recurrenceWeekly': 'Weekly',
+    'calendar.recurrenceMonthly': 'Monthly',
+    'calendar.recurrenceEnd': 'Ends On',
 
     // Reports
     'reports.monthlyReports': 'Monthly Reports',
@@ -895,6 +912,10 @@ export const translations = {
     'tasks.taskCreated': 'המשימה נוצרה בהצלחה',
     'tasks.taskUpdated': 'המשימה עודכנה בהצלחה',
     'tasks.errorCreatingTask': 'שגיאה ביצירת המשימה',
+    'tasks.taskDeleted': 'המשימה נמחקה בהצלחה',
+    'tasks.markedDone': 'המשימה סומנה כהושלמה',
+    'tasks.markDoneError': 'שגיאה בסימון המשימה כהושלמה',
+    'tasks.marking': 'מסמן...',
 
     // Time Entries
     'timeEntries.today': 'היום',
@@ -932,6 +953,19 @@ export const translations = {
     'calendar.other': 'אחר',
     'calendar.allDay': 'כל היום',
     'calendar.clickToAddEvent': 'לחץ להוספת אירוע',
+    'calendar.deleteEvent': 'מחק אירוע',
+    'calendar.deleteConfirm': 'האם אתה בטוח שברצונך למחוק את "{title}"? פעולה זו לא ניתנת לביטול.',
+    'calendar.deleting': 'מוחק...',
+    'calendar.eventDeleted': 'האירוע נמחק בהצלחה',
+    'calendar.deleteError': 'שגיאה במחיקת האירוע',
+    'calendar.eventDetails': 'פרטי אירוע',
+    'calendar.createdBy': 'נוצר על ידי',
+    'calendar.recurrence': 'חזרתיות',
+    'calendar.recurrenceNone': 'ללא',
+    'calendar.recurrenceDaily': 'יומי',
+    'calendar.recurrenceWeekly': 'שבועי',
+    'calendar.recurrenceMonthly': 'חודשי',
+    'calendar.recurrenceEnd': 'מסתיים ב',
 
     // Reports
     'reports.monthlyReports': 'דוחות חודשיים',
