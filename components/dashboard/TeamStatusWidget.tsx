@@ -48,8 +48,8 @@ export function TeamStatusWidget({ teamStatus }: TeamStatusWidgetProps) {
                                     </div>
                                     <div className="min-w-0 flex-1 overflow-hidden">
                                         <p className="text-sm font-medium leading-none truncate">{member.name || member.email}</p>
-                                        <p className="text-[10px] text-muted-foreground mt-0.5 truncate" title={member.jobTitle || (member.role === 'ADMIN' ? t('common.founder') : t('common.employee'))}>
-                                            {member.jobTitle || (member.role === 'ADMIN' ? t('common.founder') : t('common.employee'))}
+                                        <p className="text-[10px] text-muted-foreground mt-0.5 truncate" title={member.jobTitle || (member.role === 'ADMIN' ? t('common.founder') : t('roles.member'))}>
+                                            {member.jobTitle || (member.role === 'ADMIN' ? t('common.founder') : t('roles.member'))}
                                         </p>
                                         <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
                                             {member.status === 'OFFLINE' ? t('common.offline') : (
