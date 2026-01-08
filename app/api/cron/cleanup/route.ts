@@ -36,26 +36,22 @@ export async function POST(req: Request) {
         const archiveThresholdDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
         archiveThresholdDate.setHours(0, 0, 0, 0) // Start of day
 
-        const tasksToArchive = await prisma.task.findMany({
+        const tasksToArchive = await (prisma.task as any).findMany({
             where: {
                 status: 'DONE',
-                // @ts-ignore - isArchived exists in schema but client might need regeneration
                 isArchived: false,
-                // @ts-ignore
                 updatedAt: { lte: archiveThresholdDate }
             },
             select: { id: true }
         })
 
         if (tasksToArchive.length > 0) {
-            await prisma.task.updateMany({
+            await (prisma.task as any).updateMany({
                 where: {
-                    id: { in: tasksToArchive.map(t => t.id) }
+                    id: { in: tasksToArchive.map((t: { id: string }) => t.id) }
                 },
                 data: {
-                    // @ts-ignore
                     isArchived: true,
-                    // @ts-ignore
                     archivedAt: now
                 }
             })
@@ -136,11 +132,9 @@ export async function POST(req: Request) {
 
         // 9. Permanently delete archived tasks older than 1 year
         // Note: This will cascade delete related data (attachments, notes, etc.)
-        const oldArchivedTasks = await prisma.task.findMany({
+        const oldArchivedTasks = await (prisma.task as any).findMany({
             where: {
-                // @ts-ignore
                 isArchived: true,
-                // @ts-ignore
                 archivedAt: {
                     lte: oneYearAgo,
                     not: null
@@ -150,7 +144,7 @@ export async function POST(req: Request) {
         })
 
         if (oldArchivedTasks.length > 0) {
-            const taskIds = oldArchivedTasks.map(t => t.id)
+            const taskIds = oldArchivedTasks.map((t: { id: string }) => t.id)
 
             // Delete attachments from S3 first (before DB deletion)
             try {
