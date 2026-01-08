@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 import { startOfDay, endOfDay, startOfMonth } from "date-fns"
+import { isDatabaseError, createDatabaseErrorResponse } from "@/lib/db-error-handler"
 // Note: Location verification is now handled by Workday, not TimeEntry
 
 // GET: Fetch currently running entry + recent history
@@ -47,7 +48,11 @@ export async function GET() {
         const activeEntry = entries.find(e => e.endTime === null)
 
         return NextResponse.json({ entries, activeEntry })
-    } catch {
+    } catch (error) {
+        if (isDatabaseError(error)) {
+            return createDatabaseErrorResponse(error)
+        }
+        console.error("Error fetching entries:", error)
         return NextResponse.json({ message: "Error fetching entries" }, { status: 500 })
     }
 }
@@ -556,6 +561,9 @@ export async function POST(req: Request) {
         return NextResponse.json({ message: "Invalid action" }, { status: 400 })
 
     } catch (error) {
+        if (isDatabaseError(error)) {
+            return createDatabaseErrorResponse(error)
+        }
         console.error(error)
         return NextResponse.json({ message: "Internal Server Error" }, { status: 500 })
     }
@@ -598,7 +606,11 @@ export async function PATCH(req: Request) {
         })
 
         return NextResponse.json({ entry: updated })
-    } catch {
+    } catch (error) {
+        if (isDatabaseError(error)) {
+            return createDatabaseErrorResponse(error)
+        }
+        console.error("Error updating entry:", error)
         return NextResponse.json({ message: "Error updating entry" }, { status: 500 })
     }
 }
@@ -619,7 +631,11 @@ export async function DELETE(req: Request) {
         })
 
         return NextResponse.json({ message: "Deleted" })
-    } catch {
+    } catch (error) {
+        if (isDatabaseError(error)) {
+            return createDatabaseErrorResponse(error)
+        }
+        console.error("Error deleting entry:", error)
         return NextResponse.json({ message: "Error deleting entry" }, { status: 500 })
     }
 }

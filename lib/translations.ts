@@ -29,6 +29,9 @@ export const translations = {
     'common.cookies.learnMore': 'to learn more.',
     'common.cookies.accept': 'Accept',
     'common.cookies.decline': 'Decline',
+    'common.databaseError.title': 'Database Connection Issue',
+    'common.databaseError.message': 'We are experiencing issues with our database service. We will be back online shortly. Please try again in a few moments.',
+    'common.databaseError.retry': 'Try Again',
 
     // Notifications
     'notifications.title': 'Notifications',
@@ -729,6 +732,9 @@ export const translations = {
     'common.cookies.learnMore': 'שלנו כדי ללמוד עוד.',
     'common.cookies.accept': 'קבל',
     'common.cookies.decline': 'דחה',
+    'common.databaseError.title': 'בעיה בחיבור לבסיס הנתונים',
+    'common.databaseError.message': 'יש לנו בעיה עם שירות בסיס הנתונים. נחזור לתפקוד בקרוב. אנא נסה שוב בעוד כמה רגעים.',
+    'common.databaseError.retry': 'נסה שוב',
 
     // Notifications
     'notifications.title': 'התראות',
