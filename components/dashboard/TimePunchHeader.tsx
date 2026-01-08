@@ -416,18 +416,8 @@ export function TimePunchHeader({ workLocation, activeWorkday, activeEntry }: Ti
             </div>
 
             {/* Mobile Fixed Button at Bottom */}
-            <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-white dark:bg-background border-t border-border">
-                <div className="px-4 pt-3 pb-4 bg-white dark:bg-background">
-                    {/* Working since - Mobile */}
-                    {isWorking && workingSince && (
-                        <div className="text-center text-sm mb-3">
-                            <span className="text-muted-foreground">Working since </span>
-                            <span className="font-semibold">
-                                {format(workingSince, "HH:mm")} ({getWorkingDuration()})
-                            </span>
-                        </div>
-                    )}
-                    
+            <div className="fixed bottom-4 left-0 right-0 z-40 md:hidden">
+                <div className="px-4 pt-4 pb-4 bg-white dark:bg-background border border-border rounded-2xl shadow-lg mx-4">
                     <Button
                         onClick={isWorking ? handleEndDay : handleStartDay}
                         disabled={(isProcessing || (workLocation && locationStatus === "outside_area" && !isWorking)) || undefined}
@@ -435,7 +425,7 @@ export function TimePunchHeader({ workLocation, activeWorkday, activeEntry }: Ti
                         className={`
                             w-full h-12 text-lg font-bold rounded-full
                             shadow-lg active:scale-[0.98] transition-all duration-200
-                            border-0
+                            border-0 mb-3
                             ${isWorking
                                 ? "bg-red-500 hover:bg-red-600 text-white"
                                 : "bg-primary hover:bg-primary/90 text-primary-foreground"
@@ -464,11 +454,21 @@ export function TimePunchHeader({ workLocation, activeWorkday, activeEntry }: Ti
                             </>
                         )}
                     </Button>
+                    
+                    {/* Working since - Mobile (Below Button) */}
+                    {isWorking && workingSince && (
+                        <div className="text-center text-sm">
+                            <span className="text-muted-foreground">Working since </span>
+                            <span className="font-semibold">
+                                {format(workingSince, "HH:mm")} ({getWorkingDuration()})
+                            </span>
+                        </div>
+                    )}
                 </div>
             </div>
 
             {/* Mobile Accessibility Button - Above Main Button (Fixed) */}
-            <div className={`fixed right-4 z-50 md:hidden transition-all duration-200 ${isWorking && workingSince ? 'bottom-[104px]' : 'bottom-[88px]'}`}>
+            <div className="fixed bottom-[112px] right-4 z-50 md:hidden transition-all duration-200">
                 <AccessibilityButton className="h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-shadow" />
             </div>
 

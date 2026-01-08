@@ -162,7 +162,90 @@ export default function HierarchyPage() {
     }
 
     const handleZoomReset = () => {
-        fitToScreen()
+        const container = document.querySelector('[data-hierarchy-container]') as HTMLElement
+        if (!container) {
+            fitToScreen()
+            return
+        }
+
+        const parentContainer = container.parentElement
+        if (!parentContainer) {
+            fitToScreen()
+            return
+        }
+
+        const parentRect = parentContainer.getBoundingClientRect()
+
+        // Get header height (mobile sticky header)
+        const headerElement = document.querySelector('[data-hierarchy-header]') as HTMLElement
+        const headerHeight = headerElement ? headerElement.getBoundingClientRect().height : (window.innerWidth < 768 ? 140 : 200)
+        const availableHeight = parentRect.height - headerHeight - 40
+        const availableWidth = parentRect.width - 40
+
+        // Use offsetWidth/offsetHeight for unscaled dimensions
+        const containerWidth = container.offsetWidth
+        const containerHeight = container.offsetHeight
+
+        if (containerWidth === 0 || containerHeight === 0) {
+            setTimeout(() => handleZoomReset(), 50)
+            return
+        }
+
+        // Calculate required zoom based on UNTRANSFORMED dimensions
+        const widthZoom = availableWidth / containerWidth
+        const heightZoom = availableHeight / containerHeight
+
+        // Optimal zoom to fit the whole tree
+        const optimalZoom = Math.max(0.4, Math.min(widthZoom, heightZoom, 1.0))
+
+        setBaseZoom(optimalZoom)
+        setZoomLevel(optimalZoom)
+
+        // Get project card element to get its actual dimensions
+        const projectCardElement = container.querySelector('.bg-primary') as HTMLElement
+        if (!projectCardElement) {
+            // Fallback to centering if project card not found
+            const scaledWidth = containerWidth * optimalZoom
+            const scaledHeight = containerHeight * optimalZoom
+            const targetX = (availableWidth / 2) - (scaledWidth / 2)
+            const targetY = (headerHeight + 20) - (16 * optimalZoom) // marginTop: 1rem = 16px
+            setPanPosition({ x: targetX, y: targetY })
+            setIsInitialized(true)
+            return
+        }
+
+        // Project card dimensions (unscaled)
+        const projectCardWidth = projectCardElement.offsetWidth
+        const projectCardHeight = projectCardElement.offsetHeight
+
+        // Project card position relative to container (before scaling):
+        // - Container has items-center, so project card is centered horizontally in container
+        // - Project card center X = containerWidth / 2 (relative to container left)
+        // - Project card top Y = marginTop: 1rem = 16px (from container top)
+        const projectCardCenterX = containerWidth / 2
+        const projectCardTopY = 16 // marginTop: 1rem = 16px
+
+        // Target: Place project card at top center of available space
+        // Project card center should be at screen center horizontally
+        // Project card top should be just below header (with small margin)
+        const targetProjectCardCenterX = availableWidth / 2
+        const targetProjectCardTopY = headerHeight + 20
+
+        // Calculate pan position to achieve this:
+        // After transform with translate and scale:
+        // - Project card center X = panX + (projectCardCenterX * zoom)
+        // - Project card top Y = panY + (projectCardTopY * zoom)
+        // 
+        // We want:
+        // - panX + (projectCardCenterX * zoom) = targetProjectCardCenterX
+        // - panY + (projectCardTopY * zoom) = targetProjectCardTopY
+        //
+        // So:
+        const targetX = targetProjectCardCenterX - (projectCardCenterX * optimalZoom)
+        const targetY = targetProjectCardTopY - (projectCardTopY * optimalZoom)
+
+        setPanPosition({ x: targetX, y: targetY })
+        setIsInitialized(true)
     }
 
     // Handle mouse wheel for zoom with mouse point focus
