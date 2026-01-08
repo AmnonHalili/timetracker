@@ -1,9 +1,3 @@
 {
-    "buildCommand": "npm run build",
-    "crons": [
-        {
-            "path": "/api/cron/cleanup",
-            "schedule": "0 3 * * *"
-        }
-    ]
+    "buildCommand": "npm run build"
 }
