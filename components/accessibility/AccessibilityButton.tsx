@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
     Popover,
@@ -18,14 +19,24 @@ type AccessibilityPreferences = {
     reduceMotion: boolean
 }
 
-export function AccessibilityButton() {
+interface AccessibilityButtonProps {
+    className?: string
+    hideOnDashboard?: boolean
+}
+
+export function AccessibilityButton({ className, hideOnDashboard = false }: AccessibilityButtonProps = {} as AccessibilityButtonProps) {
     const { t, isRTL } = useLanguage()
+    const pathname = usePathname()
     const [open, setOpen] = useState(false)
     const [preferences, setPreferences] = useState<AccessibilityPreferences>({
         fontSize: 'normal',
         highContrast: false,
         reduceMotion: false,
     })
+
+    // Hide on dashboard page in mobile if hideOnDashboard is true
+    const isDashboard = pathname === '/dashboard'
+    const shouldHide = hideOnDashboard && isDashboard
 
     // Apply preferences to the document
     const applyPreferences = (prefs: AccessibilityPreferences) => {
@@ -76,14 +87,16 @@ export function AccessibilityButton() {
         applyPreferences(newPrefs)
     }
 
+    // Default className - hide on dashboard mobile if hideOnDashboard is true
+    const defaultClassName = `fixed bottom-4 z-50 h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-shadow ${isRTL ? 'left-4 md:left-6' : 'right-4 md:right-6'} ${shouldHide ? 'hidden md:block' : ''}`
+
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
                 <Button
                     variant="outline"
                     size="icon"
-                    className={`fixed bottom-4 z-50 h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-shadow ${isRTL ? 'left-4 md:left-6' : 'right-4 md:right-6'
-                        }`}
+                    className={className || defaultClassName}
                     aria-label={t('accessibility.options')}
                 >
                     <Accessibility className="h-5 w-5" aria-hidden="true" />

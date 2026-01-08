@@ -119,7 +119,7 @@ export function getMonthlyReport(
             const sessionEndTime = workday.workdayEndTime 
                 ? new Date(workday.workdayEndTime) 
                 : (isSameDay(day, today) ? new Date() : null)
-            
+
             if (sessionEndTime) {
                 const sessionDuration = (sessionEndTime.getTime() - sessionStartTime.getTime()) / (1000 * 60 * 60)
                 const duration = Math.max(0, sessionDuration)

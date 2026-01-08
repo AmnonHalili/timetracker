@@ -18,6 +18,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { AccessibilityButton } from "@/components/accessibility/AccessibilityButton"
 
 interface TimePunchHeaderProps {
     workLocation: WorkLocation | null
@@ -25,11 +26,18 @@ interface TimePunchHeaderProps {
         id: string
         workdayStartTime: Date | string
     } | null
+    activeEntry: {
+        startTime: Date | string
+        breaks?: Array<{
+            startTime: Date | string
+            endTime: Date | string | null
+        }>
+    } | null
 }
 
 type LocationStatus = "verified" | "unavailable" | "outside_area" | "not_required" | "checking"
 
-export function TimePunchHeader({ workLocation, activeWorkday }: TimePunchHeaderProps) {
+export function TimePunchHeader({ workLocation, activeWorkday, activeEntry }: TimePunchHeaderProps) {
     const router = useRouter()
     const [currentTime, setCurrentTime] = useState(new Date())
     const [locationStatus, setLocationStatus] = useState<LocationStatus>(
@@ -44,14 +52,48 @@ export function TimePunchHeader({ workLocation, activeWorkday }: TimePunchHeader
     const [workingSince, setWorkingSince] = useState<Date | null>(
         activeWorkday ? new Date(activeWorkday.workdayStartTime) : null
     )
+    const [elapsed, setElapsed] = useState(0)
 
     // Update current time every second
     useEffect(() => {
-        const interval = setInterval(() => {
+        const timeInterval = setInterval(() => {
             setCurrentTime(new Date())
         }, 1000)
-        return () => clearInterval(interval)
+        return () => clearInterval(timeInterval)
     }, [])
+
+    // Calculate elapsed time for task timer
+    useEffect(() => {
+        if (!activeEntry) {
+            setElapsed(0)
+            return
+        }
+
+        const calculate = () => {
+            const now = new Date().getTime()
+            const start = new Date(activeEntry.startTime).getTime()
+            let totalBreakTime = 0
+
+            activeEntry.breaks?.forEach((b) => {
+                const bStart = new Date(b.startTime).getTime()
+                const bEnd = b.endTime ? new Date(b.endTime).getTime() : now
+                totalBreakTime += (bEnd - bStart)
+            })
+
+            setElapsed(Math.max(0, Math.floor((now - start - totalBreakTime) / 1000)))
+        }
+
+        calculate()
+        const timerInterval = setInterval(calculate, 1000)
+        return () => clearInterval(timerInterval)
+    }, [activeEntry])
+
+    const formatTimerTime = (seconds: number) => {
+        const h = Math.floor(seconds / 3600)
+        const m = Math.floor((seconds % 3600) / 60)
+        const s = seconds % 60
+        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+    }
 
     // Update working state when activeWorkday changes
     useEffect(() => {
@@ -337,46 +379,19 @@ export function TimePunchHeader({ workLocation, activeWorkday }: TimePunchHeader
 
     return (
         <>
-            {/* Mobile View - Only Button at Top (No Card) */}
-            <div className="flex flex-col md:hidden gap-2 mb-1">
-                {/* Action Button - Mobile */}
-                <Button
-                    onClick={isWorking ? handleEndDay : handleStartDay}
-                    disabled={(isProcessing || (workLocation && locationStatus === "outside_area" && !isWorking)) || undefined}
-                    size="lg"
-                    className={`
-                        w-full h-12 text-lg font-bold rounded-3xl
-                        shadow-lg active:scale-[0.98] transition-all duration-200
-                        border-0
-                        ${isWorking
-                            ? "bg-red-500 hover:bg-red-600 text-white"
-                            : "bg-primary hover:bg-primary/90 text-primary-foreground"
-                        }
-                        ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}
-                    `}
-                >
-                    {isWorking ? (
-                        <>
-                            <Square className="mr-2 h-5 w-5" />
-                            End Day
-                        </>
-                    ) : (
-                        <>
-                            {isProcessing ? (
-                                <div className="flex items-center gap-2">
-                                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                    Processing...
-                                </div>
-                            ) : (
-                                <>
-                                    <Play className="mr-2 h-5 w-5" />
-                                    Start Day
-                                </>
-                            )}
-                        </>
-                    )}
-                </Button>
+            {/* Mobile View - Timer at Top (Fixed), Button at Bottom (Fixed) */}
+            {/* Task Timer Display - Mobile (fixed at top) */}
+            {activeEntry ? (
+                <div className="fixed top-[56px] left-0 right-0 z-40 md:hidden bg-background/95 backdrop-blur border-b border-border/40 py-2">
+                    <div className="text-center">
+                        <div className="font-mono text-2xl font-bold text-primary tabular-nums tracking-wider">
+                            {formatTimerTime(elapsed)}
+                        </div>
+                    </div>
+                </div>
+            ) : null}
 
+            <div className={`flex flex-col md:hidden gap-2 mb-1 ${activeEntry ? 'pt-[96px]' : ''}`}>
                 {/* Location Status - Mobile */}
                 {workLocation && (
                     <div className="flex items-center justify-center gap-2 text-sm">
@@ -392,22 +407,69 @@ export function TimePunchHeader({ workLocation, activeWorkday }: TimePunchHeader
                     </div>
                 )}
 
-                {/* Working Status - Mobile */}
-                {isWorking && workingSince && (
-                    <div className="text-center text-sm">
-                        <span className="text-muted-foreground">Working since </span>
-                        <span className="font-semibold">
-                            {format(workingSince, "HH:mm")} ({getWorkingDuration()})
-                        </span>
-                    </div>
-                )}
-
                 {/* Warning if outside area - Mobile */}
                 {workLocation && locationStatus === "outside_area" && !isWorking && (
                     <div className="text-center text-sm text-red-600">
                         You must be within {workLocation.radius}m of the work location to start your day.
                     </div>
                 )}
+            </div>
+
+            {/* Mobile Fixed Button at Bottom */}
+            <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-white dark:bg-background border-t border-border">
+                <div className="px-4 pt-3 pb-4 bg-white dark:bg-background">
+                    {/* Working since - Mobile */}
+                    {isWorking && workingSince && (
+                        <div className="text-center text-sm mb-3">
+                            <span className="text-muted-foreground">Working since </span>
+                            <span className="font-semibold">
+                                {format(workingSince, "HH:mm")} ({getWorkingDuration()})
+                            </span>
+                        </div>
+                    )}
+                    
+                    <Button
+                        onClick={isWorking ? handleEndDay : handleStartDay}
+                        disabled={(isProcessing || (workLocation && locationStatus === "outside_area" && !isWorking)) || undefined}
+                        size="lg"
+                        className={`
+                            w-full h-12 text-lg font-bold rounded-full
+                            shadow-lg active:scale-[0.98] transition-all duration-200
+                            border-0
+                            ${isWorking
+                                ? "bg-red-500 hover:bg-red-600 text-white"
+                                : "bg-primary hover:bg-primary/90 text-primary-foreground"
+                            }
+                            ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}
+                        `}
+                    >
+                        {isWorking ? (
+                            <>
+                                <Square className="mr-2 h-5 w-5" />
+                                End Day
+                            </>
+                        ) : (
+                            <>
+                                {isProcessing ? (
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                        Processing...
+                                    </div>
+                                ) : (
+                                    <>
+                                        <Play className="mr-2 h-5 w-5" />
+                                        Start Day
+                                    </>
+                                )}
+                            </>
+                        )}
+                    </Button>
+                </div>
+            </div>
+
+            {/* Mobile Accessibility Button - Above Main Button (Fixed) */}
+            <div className={`fixed right-4 z-50 md:hidden transition-all duration-200 ${isWorking && workingSince ? 'bottom-[104px]' : 'bottom-[88px]'}`}>
+                <AccessibilityButton className="h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-shadow" />
             </div>
 
             {/* Desktop View - Original Layout with Card */}

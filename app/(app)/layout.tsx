@@ -24,7 +24,7 @@ export default function AppLayout({
                 <div className="flex-1 flex flex-col overflow-hidden relative">
                     <ProjectLoadingOverlay />
                     <AppHeader />
-                    <main className="flex-1 overflow-y-scroll" id="main-content" role="main">
+                    <main className="flex-1 overflow-y-scroll pt-[56px] md:pt-0" id="main-content" role="main">
                         <div className="px-2 md:px-8 pb-8 pt-2">
                         <Suspense fallback={
                             <div className="flex h-[50vh] w-full items-center justify-center">
@@ -36,7 +36,7 @@ export default function AppLayout({
                     </div>
                 </main>
                 </div>
-                <AccessibilityButton />
+                <AccessibilityButton hideOnDashboard />
                 <AdBanner />
             </div>
         </ProjectProvider>

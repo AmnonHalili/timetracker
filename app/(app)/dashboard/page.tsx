@@ -229,12 +229,13 @@ export default async function DashboardPage() {
     const showSidebar = showStats || showTeamStatus
 
     return (
-        <div className="w-full">
+        <div className="w-full pb-20 md:pb-0">
             <div className={`grid grid-cols-1 ${showSidebar ? "xl:grid-cols-[1fr_300px] lg:grid-cols-[1fr_280px]" : ""} gap-4 md:gap-6 items-start`}>
                 <div className="flex flex-col gap-2 md:gap-6 min-w-0">
                     <TimePunchHeader
                         activeWorkday={activeWorkday}
                         workLocation={workLocation}
+                        activeEntry={activeEntry}
                     />
 
                     <DashboardContent
