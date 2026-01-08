@@ -120,7 +120,7 @@ export function AdBanner() {
                     <div className={`flex-1 ${isRTL ? 'text-right' : 'text-left'}`}>
                         <h3 className="font-bold text-2xl mb-1 text-pink-600 dark:text-pink-500">Flaminga</h3>
                         <p className="text-sm text-pink-500 dark:text-pink-400">
-                            Rent your dress here
+                            Coming soon
                         </p>
                     </div>
                 </div>
