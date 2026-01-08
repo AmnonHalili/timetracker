@@ -38,7 +38,8 @@ export async function POST(req: Request) {
         if (tasksToArchive.length === 0) {
             return NextResponse.json({ 
                 message: "No tasks to archive",
-                archived: 0
+                archived: 0,
+                timestamp: new Date().toISOString()
             })
         }
 
@@ -55,15 +56,20 @@ export async function POST(req: Request) {
             }
         })
 
+        console.log(`Auto-archived ${result.count} tasks`)
+
         return NextResponse.json({ 
             message: "Tasks archived successfully",
-            archived: result.count
+            archived: result.count,
+            timestamp: new Date().toISOString()
         })
     } catch (error) {
         console.error("Error auto-archiving tasks:", error)
+        const errorMessage = error instanceof Error ? error.message : "Unknown error"
         return NextResponse.json({ 
             message: "Error archiving tasks",
-            error: error instanceof Error ? error.message : "Unknown error"
+            error: errorMessage,
+            timestamp: new Date().toISOString()
         }, { status: 500 })
     }
 }

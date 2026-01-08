@@ -154,6 +154,7 @@ model Workday {
   @@index([userId, workdayStartTime])
   @@index([userId])
   @@index([projectId])
+  @@index([workdayStartTime])
 }
 
 model TimeEntry {
@@ -174,6 +175,8 @@ model TimeEntry {
   tasks       Task[]       @relation("TaskToTimeEntry")
 
   @@index([projectId])
+  @@index([startTime])
+  @@index([userId, startTime])
 }
 
 model TimeBreak {
@@ -296,6 +299,9 @@ model Notification {
   isRead    Boolean          @default(false)
   createdAt DateTime         @default(now())
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt])
+  @@index([createdAt])
 }
 
 model Event {
@@ -322,6 +328,7 @@ model Event {
   @@index([createdById])
   @@index([projectId])
   @@index([startTime])
+  @@index([endTime])
 }
 
 model EventParticipant {
@@ -357,6 +364,7 @@ model TaskActivity {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
+  @@index([createdAt])
 }
 
 model Account {
@@ -450,6 +458,7 @@ model Recommendation {
 
   @@index([userId])
   @@index([dismissed])
+  @@index([dismissed, createdAt])
 }
 
 model CalendarSettings {

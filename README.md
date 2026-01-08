@@ -65,6 +65,7 @@ Edit `.env` and add your database URLs:
 - `DIRECT_URL`: Your Neon direct connection string (for migrations)
 - `NEXTAUTH_SECRET`: Generate with `openssl rand -base64 32`
 - `NEXTAUTH_URL`: Your app URL (http://localhost:3000 for development)
+- `CRON_SECRET`: (Optional) Secret key for cron job authentication. Generate with `openssl rand -base64 32`. Required for production cron jobs.
 
 4. Generate Prisma Client:
 ```bash
