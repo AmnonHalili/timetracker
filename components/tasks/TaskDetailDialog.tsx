@@ -7,7 +7,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Clock, Users, MessageSquare, Paperclip, Send, FileText, X, AtSign, Link2, Plus, Info, Calendar, ChevronDown, ChevronUp } from "lucide-react"
+import { Clock, Users, MessageSquare, Paperclip, Send, FileText, X, AtSign, Link2, Plus, Info, Calendar, ChevronDown, ChevronUp, ArrowLeftFromLine, ArrowRightFromLine } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { useLanguage } from "@/lib/useLanguage"
@@ -883,117 +883,160 @@ export function TaskDetailDialog({
                                     )
                                 })()}
 
-                                <div className="space-y-4">
-                                    <h3 className="text-sm font-semibold flex items-center gap-2 text-foreground/80">
-                                        <Link2 className="h-4 w-4" />
-                                        Dependencies
-                                        <TooltipProvider>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                                                </TooltipTrigger>
-                                                <TooltipContent className="max-w-xs p-4 bg-popover border-border shadow-xl">
-                                                    <div className="space-y-3">
-                                                        <h4 className="font-semibold text-sm">Task Dependencies</h4>
-                                                        <div className="space-y-2 text-xs text-muted-foreground">
-                                                            <p>Reference tasks that are related to this one&apos;s progress:</p>
-                                                            <ul className="list-disc pl-4 space-y-1">
-                                                                <li>
-                                                                    <span className="font-medium text-foreground">Blocked By:</span> Tasks that must be completed <em>before</em> this task can start.
-                                                                </li>
-                                                                <li>
-                                                                    <span className="font-medium text-foreground">Blocking:</span> Tasks that cannot start <em>until</em> this task is finished.
-                                                                </li>
-                                                                <li>
-                                                                    <span className="font-medium text-foreground">Note:</span> One&apos;s output is another&apos;s input.
-                                                                </li>
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </TooltipProvider>
-                                    </h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {/* Blocked By */}
-                                        <div className="border rounded-md p-3 space-y-2">
-                                            <div className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1">
-                                                Blocked By
-                                                {task.blockedBy && task.blockedBy.length > 0 && <Badge variant="secondary" className="h-4 px-1 text-[10px]">{task.blockedBy.length}</Badge>}
-                                            </div>
-                                            <div className="space-y-1">
-                                                {task.blockedBy?.map(t => (
-                                                    <div key={t.id} className="flex items-center justify-between text-sm bg-muted/50 p-2 rounded group">
-                                                        <span className="truncate flex-1 mr-2">{t.title}</span>
-                                                        <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleRemoveDependency('BLOCKED_BY', t.id)}>
-                                                            <X className="w-3 h-3" />
-                                                        </Button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <Button variant="outline" size="sm" className="w-full text-xs dashed h-7">
-                                                        <Plus className="w-3 h-3 mr-1" /> Add
-                                                    </Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="p-0" align="start">
-                                                    <Command>
-                                                        <CommandInput placeholder="Search task..." />
-                                                        <CommandList>
-                                                            <CommandEmpty>No task found.</CommandEmpty>
-                                                            <CommandGroup>
-                                                                {allTasks?.filter(t => t.id !== task.id && !task.blockedBy?.some(dep => dep.id === t.id)).map(t => (
-                                                                    <CommandItem key={t.id} onSelect={() => handleAddDependency('BLOCKED_BY', t.id)}>
-                                                                        <span>{t.title}</span>
-                                                                    </CommandItem>
-                                                                ))}
-                                                            </CommandGroup>
-                                                        </CommandList>
-                                                    </Command>
-                                                </PopoverContent>
-                                            </Popover>
-                                        </div>
+                                {/* Dependencies Section - Redesigned */}
+                                <div className="space-y-3 pt-2">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-sm font-semibold flex items-center gap-2 text-foreground/80">
+                                            <Link2 className="h-4 w-4" />
+                                            Dependencies
+                                        </h3>
 
-                                        {/* Blocking */}
-                                        <div className="border rounded-md p-3 space-y-2">
-                                            <div className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1">
-                                                Blocking
-                                                {task.blocking && task.blocking.length > 0 && <Badge variant="secondary" className="h-4 px-1 text-[10px]">{task.blocking.length}</Badge>}
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground">
+                                                    <Plus className="w-3.5 h-3.5" />
+                                                    Add Dependency
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-56 p-1" align="end">
+                                                <div className="flex flex-col gap-1">
+                                                    <Popover>
+                                                        <PopoverTrigger asChild>
+                                                            <Button variant="ghost" className="w-full justify-start text-xs font-normal h-8">
+                                                                <div className="h-1.5 w-1.5 rounded-full bg-orange-500 mr-2" />
+                                                                Add "Blocked By" (Waiting For)
+                                                            </Button>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="p-0" align="start" side="left">
+                                                            <Command>
+                                                                <CommandInput placeholder="Search task to wait for..." />
+                                                                <CommandList>
+                                                                    <CommandEmpty>No task found.</CommandEmpty>
+                                                                    <CommandGroup>
+                                                                        {allTasks?.filter(t => t.id !== task.id && !task.blockedBy?.some(dep => dep.id === t.id) && !task.blocking?.some(dep => dep.id === t.id)).map(t => (
+                                                                            <CommandItem key={t.id} onSelect={() => handleAddDependency('BLOCKED_BY', t.id)}>
+                                                                                <span className="truncate">{t.title}</span>
+                                                                            </CommandItem>
+                                                                        ))}
+                                                                    </CommandGroup>
+                                                                </CommandList>
+                                                            </Command>
+                                                        </PopoverContent>
+                                                    </Popover>
+
+                                                    <Popover>
+                                                        <PopoverTrigger asChild>
+                                                            <Button variant="ghost" className="w-full justify-start text-xs font-normal h-8">
+                                                                <div className="h-1.5 w-1.5 rounded-full bg-blue-500 mr-2" />
+                                                                Add "Blocking" (Blocks)
+                                                            </Button>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="p-0" align="start" side="left">
+                                                            <Command>
+                                                                <CommandInput placeholder="Search task to block..." />
+                                                                <CommandList>
+                                                                    <CommandEmpty>No task found.</CommandEmpty>
+                                                                    <CommandGroup>
+                                                                        {allTasks?.filter(t => t.id !== task.id && !task.blocking?.some(dep => dep.id === t.id) && !task.blockedBy?.some(dep => dep.id === t.id)).map(t => (
+                                                                            <CommandItem key={t.id} onSelect={() => handleAddDependency('BLOCKING', t.id)}>
+                                                                                <span className="truncate">{t.title}</span>
+                                                                            </CommandItem>
+                                                                        ))}
+                                                                    </CommandGroup>
+                                                                </CommandList>
+                                                            </Command>
+                                                        </PopoverContent>
+                                                    </Popover>
+                                                </div>
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
+
+                                    {/* Dependencies List */}
+                                    <div className="space-y-2">
+                                        {(!task.blockedBy?.length && !task.blocking?.length) && (
+                                            <div className="text-xs text-muted-foreground italic px-1">
+                                                No dependencies linked.
                                             </div>
-                                            <div className="space-y-1">
-                                                {task.blocking?.map(t => (
-                                                    <div key={t.id} className="flex items-center justify-between text-sm bg-muted/50 p-2 rounded group">
-                                                        <span className="truncate flex-1 mr-2">{t.title}</span>
-                                                        <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleRemoveDependency('BLOCKING', t.id)}>
-                                                            <X className="w-3 h-3" />
-                                                        </Button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <Button variant="outline" size="sm" className="w-full text-xs dashed h-7">
-                                                        <Plus className="w-3 h-3 mr-1" /> Add
+                                        )}
+
+                                        {/* Blocked By Items */}
+                                        {task.blockedBy?.map(t => (
+                                            <div key={t.id} className="group flex items-center gap-3 p-2.5 rounded-lg border border-orange-200/50 bg-orange-50/50 dark:bg-orange-950/20 hover:border-orange-300 transition-colors">
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <div className="h-6 w-6 rounded-md bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center shrink-0 border border-orange-200 dark:border-orange-800">
+                                                                <ArrowLeftFromLine className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />
+                                                            </div>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>This task is <strong>blocked by</strong> {t.title}</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+
+                                                <div className="flex-1 min-w-0 flex flex-col">
+                                                    <span className="text-xs text-orange-600 dark:text-orange-400 font-medium tracking-wide uppercase text-[10px] mb-0.5">
+                                                        Waiting For
+                                                    </span>
+                                                    <span className="text-sm font-medium truncate text-foreground/90">{t.title}</span>
+                                                </div>
+
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant="outline" className="text-[10px] h-5 px-1.5 font-normal bg-background/50">
+                                                        {t.status}
+                                                    </Badge>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-6 w-6 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        onClick={() => handleRemoveDependency('BLOCKED_BY', t.id)}
+                                                    >
+                                                        <X className="h-3.5 w-3.5" />
                                                     </Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="p-0" align="start">
-                                                    <Command>
-                                                        <CommandInput placeholder="Search task..." />
-                                                        <CommandList>
-                                                            <CommandEmpty>No task found.</CommandEmpty>
-                                                            <CommandGroup>
-                                                                {allTasks?.filter(t => t.id !== task.id && !task.blocking?.some(dep => dep.id === t.id)).map(t => (
-                                                                    <CommandItem key={t.id} onSelect={() => handleAddDependency('BLOCKING', t.id)}>
-                                                                        <span>{t.title}</span>
-                                                                    </CommandItem>
-                                                                ))}
-                                                            </CommandGroup>
-                                                        </CommandList>
-                                                    </Command>
-                                                </PopoverContent>
-                                            </Popover>
-                                        </div>
+                                                </div>
+                                            </div>
+                                        ))}
+
+                                        {/* Blocking Items */}
+                                        {task.blocking?.map(t => (
+                                            <div key={t.id} className="group flex items-center gap-3 p-2.5 rounded-lg border border-blue-200/50 bg-blue-50/50 dark:bg-blue-950/20 hover:border-blue-300 transition-colors">
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <div className="h-6 w-6 rounded-md bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0 border border-blue-200 dark:border-blue-800">
+                                                                <ArrowRightFromLine className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                                                            </div>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>This task is <strong>blocking</strong> {t.title}</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+
+                                                <div className="flex-1 min-w-0 flex flex-col">
+                                                    <span className="text-xs text-blue-600 dark:text-blue-400 font-medium tracking-wide uppercase text-[10px] mb-0.5">
+                                                        Blocking
+                                                    </span>
+                                                    <span className="text-sm font-medium truncate text-foreground/90">{t.title}</span>
+                                                </div>
+
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant="outline" className="text-[10px] h-5 px-1.5 font-normal bg-background/50">
+                                                        {t.status}
+                                                    </Badge>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-6 w-6 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        onClick={() => handleRemoveDependency('BLOCKING', t.id)}
+                                                    >
+                                                        <X className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
