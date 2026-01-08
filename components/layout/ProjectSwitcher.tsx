@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Check, ChevronsUpDown, PlusCircle, Building2, LogOut, AlertTriangle, MoreVertical } from "lucide-react"
+import { Check, ChevronsUpDown, PlusCircle, Building2, LogOut, AlertTriangle } from "lucide-react"
 import { useLanguage } from "@/lib/useLanguage"
 import {
     AlertDialog,

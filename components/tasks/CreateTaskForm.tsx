@@ -15,6 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useLanguage } from "@/lib/useLanguage"
+import { TranslationKey } from "@/lib/translations"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner" // Assuming sonner is used, or update to use toast hook
 
@@ -697,7 +698,7 @@ export function CreateTaskForm({
                                                                             p === 'MEDIUM' ? "bg-amber-500" :
                                                                                 "bg-rose-500"
                                                                 )} />
-                                                                {t(`tasks.priority${p.charAt(0) + p.slice(1).toLowerCase()}` as any)}
+                                                                {t(`tasks.priority${p.charAt(0) + p.slice(1).toLowerCase()}` as TranslationKey)}
                                                             </div>
                                                         </SelectItem>
                                                     ))}
