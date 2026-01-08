@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { hash } from "bcryptjs"
 import { NextResponse } from "next/server"
-import { Role, Status } from "@prisma/client"
+import { Role } from "@prisma/client"
 import { createNotification } from "@/lib/create-notification"
 import { validatePassword } from "@/lib/password-validation"
 
@@ -44,13 +44,41 @@ export async function POST(req: Request) {
             if (existingUser.status === "PENDING") {
                 const hashedPassword = await hash(password, 10)
 
+                // Check if they need a project (for legacy pending users)
+                let newProjectId = existingUser.projectId
+                let newRole = existingUser.role
+
+                if (!existingUser.projectId && !projectName /* Only if not joining a specific new team via join */) {
+                    const joinCode = Math.random().toString(36).substring(2, 8).toUpperCase()
+                    const project = await prisma.project.create({
+                        data: {
+                            name: `${name || existingUser.name}'s Workspace`,
+                            joinCode
+                        }
+                    })
+                    newProjectId = project.id
+                    newRole = "ADMIN"
+
+                    // Add membership
+                    await prisma.projectMember.create({
+                        data: {
+                            userId: existingUser.id,
+                            projectId: project.id,
+                            role: "ADMIN",
+                            status: "ACTIVE"
+                        }
+                    })
+                }
+
                 const updatedUser = await prisma.user.update({
                     where: { id: existingUser.id },
                     data: {
                         name: name || existingUser.name, // Update name if provided, else keep existing
                         password: hashedPassword,
                         status: "ACTIVE",
-                        // Keep their role, manager, project, etc. as set by Admin
+                        projectId: newProjectId,
+                        role: newRole
+                        // Keep other fields
                     }
                 })
 
@@ -69,64 +97,98 @@ export async function POST(req: Request) {
 
         const hashedPassword = await hash(password, 10)
 
-        // If creating a team (ADMIN)
-        let projectId = null
-        let userRole = "MEMBER"
-        const userStatus = "ACTIVE" // Default to ACTIVE for both (admins auto-active, members independent active)
-        let pendingProjectId = null
+        // Transaction to ensure User, Project, and Memberships are created atomically
+        const { user, pendingProjectId } = await prisma.$transaction(async (tx) => {
+            let activeProjectId: string | null = null
+            const activeRole: Role = "ADMIN" // Default to ADMIN (Owner of the created project)
+            let pendingProjectId: string | null = null
+            let userJobTitle: string | undefined = undefined
 
-        if (role === "ADMIN") {
-            if (!projectName) {
-                return NextResponse.json({ message: "Project Name is required" }, { status: 400 })
-            }
-
-            // Generate a random 6-character code
-            const joinCode = Math.random().toString(36).substring(2, 8).toUpperCase()
-
-            const project = await prisma.project.create({
-                data: {
-                    name: projectName,
-                    joinCode: joinCode
+            // Scenario A: User creating a specific Team (ADMIN flow)
+            if (role === "ADMIN") {
+                if (!projectName) {
+                    throw new Error("Project Name is required")
                 }
-            })
-            projectId = project.id
-            userRole = "ADMIN"
-        } else {
-            // Member Registration
-            // If they provided a project name (now interpreted as Join Code) to join
-            if (projectName) {
-                // Find project by JOIN CODE
-                const projectToJoin = await prisma.project.findUnique({
-                    where: {
-                        joinCode: projectName.toUpperCase()
+                userJobTitle = "Company Owner"
+
+                const joinCode = Math.random().toString(36).substring(2, 8).toUpperCase()
+                const project = await tx.project.create({
+                    data: {
+                        name: projectName,
+                        joinCode: joinCode
                     }
                 })
+                activeProjectId = project.id
+            }
+            // Scenario B: User is a Member (Solo or Joining) -> Create Personal Workspace
+            else {
+                userJobTitle = !projectName ? "Freelancer" : "Team Member"
 
-                if (projectToJoin) {
-                    pendingProjectId = projectToJoin.id
+                // Always create a Personal Workspace
+                const joinCode = Math.random().toString(36).substring(2, 8).toUpperCase()
+                const personalProject = await tx.project.create({
+                    data: {
+                        name: `${name}'s Workspace`,
+                        joinCode: joinCode
+                    }
+                })
+                activeProjectId = personalProject.id
 
-                    // Create Notification for Project Admins
-                    // We'll do this AFTER creating the user so we have the userId for reference if needed
-                } else {
-                    return NextResponse.json({ message: "Invalid Team Code" }, { status: 400 })
+                // If they have a Join Code, validate it and set pending
+                if (projectName) {
+                    const projectToJoin = await tx.project.findUnique({
+                        where: {
+                            joinCode: projectName.toUpperCase()
+                        }
+                    })
+
+                    if (projectToJoin) {
+                        pendingProjectId = projectToJoin.id
+                    } else {
+                        throw new Error("Invalid Team Code")
+                    }
                 }
             }
-        }
 
-        const user = await prisma.user.create({
-            data: {
-                email,
-                password: hashedPassword,
-                name,
-                role: userRole as Role,
-                status: userStatus as Status,
-                projectId,
-                pendingProjectId: pendingProjectId ?? undefined,
-                // Set default jobTitle: "Founder" for ADMIN users who create a team, "single" for members without a team
-                jobTitle: role === "ADMIN" ? "Company Owner" : (!projectName ? "single" : undefined),
-                // workDays and dailyTarget are now handled by DB defaults (or lack thereof)
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            } as any,
+            // Create the User
+            const user = await tx.user.create({
+                data: {
+                    email,
+                    password: hashedPassword,
+                    name,
+                    role: activeRole,
+                    status: "ACTIVE", // Always active as they own their current workspace
+                    projectId: activeProjectId,
+                    pendingProjectId: pendingProjectId ?? undefined,
+                    jobTitle: userJobTitle,
+                }
+            })
+
+            // Create Active Membership for the Current Project (Personal or Team)
+            if (activeProjectId) {
+                await tx.projectMember.create({
+                    data: {
+                        userId: user.id,
+                        projectId: activeProjectId,
+                        role: "ADMIN",
+                        status: "ACTIVE"
+                    }
+                })
+            }
+
+            // Create Pending Membership if joining another team
+            if (pendingProjectId) {
+                await tx.projectMember.create({
+                    data: {
+                        userId: user.id,
+                        projectId: pendingProjectId,
+                        role: "EMPLOYEE",
+                        status: "PENDING"
+                    }
+                })
+            }
+
+            return { user, pendingProjectId }
         })
 
         // Send Notification to Admins if pendingProjectId is set

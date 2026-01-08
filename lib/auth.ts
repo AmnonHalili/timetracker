@@ -71,6 +71,7 @@ export const authOptions: NextAuthOptions = {
                     role: user.role,
                     status: user.status,
                     plan: user.plan,
+                    projectId: user.projectId,
                 }
             },
         }),

@@ -15,10 +15,10 @@ export async function DELETE(req: Request) {
 
         const currentUser = await prisma.user.findUnique({
             where: { id: session.user.id },
-            select: { 
+            select: {
                 id: true,
-                role: true, 
-                projectId: true 
+                role: true,
+                projectId: true
             }
         })
 
@@ -36,6 +36,23 @@ export async function DELETE(req: Request) {
             })
 
             if (adminCount <= 1) {
+                // Check if they are the ONLY member (solo project or just last person left)
+                const memberCount = await prisma.projectMember.count({
+                    where: {
+                        projectId: currentUser.projectId,
+                        status: { not: "REJECTED" }
+                    }
+                })
+
+                if (memberCount <= 1) {
+                    // Solo admin - Delete User first (clears references), then Project
+                    await prisma.$transaction([
+                        prisma.user.delete({ where: { id: currentUser.id } }),
+                        prisma.project.delete({ where: { id: currentUser.projectId } })
+                    ])
+                    return NextResponse.json({ message: "Account and personal workspace deleted successfully" })
+                }
+
                 // If no new admin provided, require admin transfer
                 if (!newAdminId) {
                     return NextResponse.json({

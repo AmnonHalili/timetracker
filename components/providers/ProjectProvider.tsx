@@ -57,12 +57,16 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
                     // Only sync if we are not in an optimistic state OR if session has caught up
                     if (!optimisticProjectId.current || optimisticProjectId.current === session.user.projectId) {
                         setActiveProject(prev => {
-                            // Only update if it actually changed to prevent unnecessary re-renders
-                            if (prev?.id !== current?.id) {
-                                return current || null
-                            }
+                            // If we already have the correct project active, don't update
+                            if (prev?.id === current?.id) return prev
+
+                            // If we found the project in the list, set it
+                            if (current) return current
+
+                            // If not found (maybe session has ID but API list doesn't include it yet?), keep prev or null
                             return prev
                         })
+
                         if (optimisticProjectId.current === session.user.projectId) {
                             optimisticProjectId.current = null // Reset if matched
                         }
