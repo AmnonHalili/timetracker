@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     // Optional: Add API key authentication for cron jobs
     const authHeader = req.headers.get("authorization")
     const cronSecret = process.env.CRON_SECRET
-    
+
     if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
@@ -24,18 +24,45 @@ export async function POST(req: Request) {
         workdays: 0,
         archivedTasks: 0,
         archivedTaskAttachments: 0,
-        oldTimeEntries: 0
+        oldTimeEntries: 0,
+        newlyArchivedTasks: 0
     }
 
     try {
         const now = new Date()
 
-        // 1. Delete old notifications
+        // 0. Auto-archive old DONE tasks (previously in separate cron)
+        // Archives tasks that have been DONE for 7 days or more
+        const archiveThresholdDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+        archiveThresholdDate.setHours(0, 0, 0, 0) // Start of day
+
+        const tasksToArchive = await prisma.task.findMany({
+            where: {
+                status: 'DONE',
+                isArchived: false,
+                updatedAt: { lte: archiveThresholdDate }
+            },
+            select: { id: true }
+        })
+
+        if (tasksToArchive.length > 0) {
+            await prisma.task.updateMany({
+                where: {
+                    id: { in: tasksToArchive.map(t => t.id) }
+                },
+                data: {
+                    isArchived: true,
+                    archivedAt: now
+                }
+            })
+            // Log for debugging/results (we'll add a field to results object below)
+        }
+
         // - Read notifications older than 7 days
         // - Unread notifications older than 30 days
         const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
         const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-        
+
         results.notifications = await prisma.notification.deleteMany({
             where: {
                 OR: [
@@ -108,7 +135,7 @@ export async function POST(req: Request) {
         const oldArchivedTasks = await prisma.task.findMany({
             where: {
                 isArchived: true,
-                archivedAt: { 
+                archivedAt: {
                     lte: oneYearAgo,
                     not: null
                 }
@@ -118,7 +145,7 @@ export async function POST(req: Request) {
 
         if (oldArchivedTasks.length > 0) {
             const taskIds = oldArchivedTasks.map(t => t.id)
-            
+
             // Delete attachments from S3 first (before DB deletion)
             try {
                 results.archivedTaskAttachments = await deleteTaskAttachments(taskIds)
@@ -126,7 +153,7 @@ export async function POST(req: Request) {
                 console.error("Error deleting task attachments from S3:", error)
                 // Continue with DB deletion even if S3 cleanup fails
             }
-            
+
             // Delete tasks (cascade will handle related data in DB)
             results.archivedTasks = await prisma.task.deleteMany({
                 where: {
