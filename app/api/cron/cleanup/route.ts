@@ -36,6 +36,7 @@ export async function POST(req: Request) {
         const archiveThresholdDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
         archiveThresholdDate.setHours(0, 0, 0, 0) // Start of day
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const tasksToArchive = await (prisma.task as any).findMany({
             where: {
                 status: 'DONE',
@@ -46,6 +47,7 @@ export async function POST(req: Request) {
         })
 
         if (tasksToArchive.length > 0) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             await (prisma.task as any).updateMany({
                 where: {
                     id: { in: tasksToArchive.map((t: { id: string }) => t.id) }
@@ -132,6 +134,7 @@ export async function POST(req: Request) {
 
         // 9. Permanently delete archived tasks older than 1 year
         // Note: This will cascade delete related data (attachments, notes, etc.)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const oldArchivedTasks = await (prisma.task as any).findMany({
             where: {
                 isArchived: true,
