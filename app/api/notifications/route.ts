@@ -5,6 +5,9 @@ import { NextResponse } from "next/server"
 import { createNotification } from "@/lib/create-notification"
 import { NotificationType } from "@prisma/client"
 
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 export async function GET() {
     const session = await getServerSession(authOptions)
     if (!session) return NextResponse.json({ message: "Unauthorized" }, { status: 401 })

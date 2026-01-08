@@ -127,13 +127,7 @@ export function DayView({ date, events, tasks, projectId, onOptimisticEventCreat
 
     return (
         <div className="space-y-4">
-            {/* Header - Buttons only (Date title is in parent) */}
-            <div className="flex items-center justify-end">
-                <Button size="sm" onClick={() => { setSelectedHour(undefined); setCreateDialogOpen(true) }}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    {t('calendar.addEvent')}
-                </Button>
-            </div>
+
 
             {/* All-day events section */}
             {allDayEvents.length > 0 && (

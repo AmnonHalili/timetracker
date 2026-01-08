@@ -4,6 +4,9 @@ import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { TasksPageWithOptimisticUpdate } from "@/components/tasks/TasksPageWithOptimisticUpdate"
 
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 export default async function TasksPage() {
     const session = await getServerSession(authOptions)
 

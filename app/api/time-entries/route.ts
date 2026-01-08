@@ -4,6 +4,9 @@ import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 import { startOfDay, endOfDay, startOfMonth } from "date-fns"
 import { isDatabaseError, createDatabaseErrorResponse } from "@/lib/db-error-handler"
+
+export const dynamic = "force-dynamic"
+export const revalidate = 0
 // Note: Location verification is now handled by Workday, not TimeEntry
 
 // GET: Fetch currently running entry + recent history
