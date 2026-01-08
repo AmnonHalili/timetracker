@@ -283,11 +283,16 @@ export const translations = {
     'calendar.recurrenceWeekly': 'Weekly',
     'calendar.recurrenceMonthly': 'Monthly',
     'calendar.recurrenceEnd': 'Ends On',
+    'calendar.deleteRecurringPrompt': 'This is a recurring event. How would you like to delete it?',
+    'calendar.deleteThisOccurrence': 'Delete this occurrence',
+    'calendar.deleteFutureOccurrences': 'Delete this and future occurrences',
+    'calendar.deleteAllOccurrences': 'Delete entire series',
 
     // Reports
     'reports.monthlyReports': 'Monthly Reports',
     'reports.viewDetailedHistory': 'View your detailed work history',
     'reports.exportCSV': 'Export Excel',
+    'reports.export': 'Export',
     'reports.period': 'Period',
     'reports.user': 'User',
     'reports.allUsers': 'All Users',
@@ -967,11 +972,16 @@ export const translations = {
     'calendar.recurrenceWeekly': 'שבועי',
     'calendar.recurrenceMonthly': 'חודשי',
     'calendar.recurrenceEnd': 'מסתיים ב',
+    'calendar.deleteRecurringPrompt': 'זהו אירוע חוזר. איך תרצה למחוק אותו?',
+    'calendar.deleteThisOccurrence': 'מחק מופע זה בלבד',
+    'calendar.deleteFutureOccurrences': 'מחק מופע זה והבאים',
+    'calendar.deleteAllOccurrences': 'מחק את כל הסדרה',
 
     // Reports
     'reports.monthlyReports': 'דוחות חודשיים',
     'reports.viewDetailedHistory': 'צפה בהיסטוריית העבודה המפורטת שלך',
     'reports.exportCSV': 'ייצא Excel',
+    'reports.export': 'ייצוא',
     'reports.period': 'תקופה',
     'reports.user': 'משתמש',
     'reports.allUsers': 'כל המשתמשים',

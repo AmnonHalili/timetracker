@@ -21,8 +21,8 @@ interface ReportsControlsProps {
 }
 
 export function ReportsControls({ projectUsers, targetUserId, loggedInUserId, currentYear, currentMonth }: ReportsControlsProps) {
-    const { t, isRTL } = useLanguage()
-    
+    const { t } = useLanguage()
+
     return (
         <div className="w-full md:w-auto">
             <div className="flex flex-col gap-4 md:gap-6">
