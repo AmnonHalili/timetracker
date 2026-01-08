@@ -105,30 +105,17 @@ export function getMonthlyReport(
             workdayEndTime = dayWorkday.workdayEndTime ? new Date(dayWorkday.workdayEndTime) : null
         }
 
-        // REMOVED LEGACY LOGIC THAT OVERWROTE dailyDuration
-        // The new logic above calculates dailyDuration from all entries.
-        // We do NOT want to overwrite it with "workday" duration anymore unless we fell back to it.
-
-        /*
-        if (workdayStartTime) {
-            // ... (legacy logic removed to avoid conflict)
-        }
-        */
-
-
-
-        // Check for time entries (tasks/sessions)
+        // Check for time entries (for calculating totalDurationHours and netHours)
         const dayEntries = entries.filter(e => isSameDay(new Date(e.startTime), day))
         dayEntries.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
 
         const hasManualEntries = dayEntries.some(e => e.isManual)
 
-        // Calculate total duration from ALL entries for the day (not just main workday)
+        // Calculate total duration from ALL entries for the day (for totalDurationHours and netHours)
         // totalDurationHours = sum of all session durations (including breaks)
         // netHours = sum of all session durations (excluding breaks)
         let totalDuration = 0 // Total hours including breaks
         let netDuration = 0 // Net hours excluding breaks
-        const sessionStrings: string[] = []
 
         dayEntries.forEach(entry => {
             const start = new Date(entry.startTime)
@@ -149,28 +136,20 @@ export function getMonthlyReport(
                     })
                 }
                 netDuration += Math.max(0, netSessionDuration) // ensure no negative duration
-
-                // Format string: HH:mm-HH:mm
-                sessionStrings.push(`${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`)
-            } else {
-                sessionStrings.push(`${format(start, 'HH:mm')} - ...`)
             }
         })
 
-        // If no entries but we have a main workday (fallback for backward compatibility or simple start/end usage without tasks)
-        // Actually, requirement says "show all sessions". If there are entries, we use them.
-        // If there are NO entries but there IS a workday (Start Day - End Day), we should usage that as a single session.
-        if (dayEntries.length === 0 && dayWorkday) {
-            if (workdayStartTime) {
-                const endTime = workdayEndTime || (isSameDay(day, today) ? new Date() : null)
-                if (endTime) {
-                    const duration = (endTime.getTime() - workdayStartTime.getTime()) / (1000 * 60 * 60)
-                    totalDuration = Math.max(0, duration)
-                    netDuration = Math.max(0, duration) // Workday sessions don't have breaks tracked separately
-                    sessionStrings.push(`${format(workdayStartTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}`)
-                } else {
-                    sessionStrings.push(`${format(workdayStartTime, 'HH:mm')} - ...`)
-                }
+        // Sessions should be based on Workday (Start Day / End Day), NOT on TimeEntries
+        // The formattedSessions should show the workday times, not the timer times
+        const sessionStrings: string[] = []
+        
+        if (dayWorkday && workdayStartTime) {
+            // Use workday times for sessions display
+            const endTime = workdayEndTime || (isSameDay(day, today) ? new Date() : null)
+            if (endTime) {
+                sessionStrings.push(`${format(workdayStartTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}`)
+            } else {
+                sessionStrings.push(`${format(workdayStartTime, 'HH:mm')} - ...`)
             }
         }
 
