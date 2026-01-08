@@ -904,7 +904,7 @@ export function TaskDetailDialog({
                                                         <PopoverTrigger asChild>
                                                             <Button variant="ghost" className="w-full justify-start text-xs font-normal h-8">
                                                                 <div className="h-1.5 w-1.5 rounded-full bg-orange-500 mr-2" />
-                                                                Add "Blocked By" (Waiting For)
+                                                                Add &quot;Blocked By&quot; (Waiting For)
                                                             </Button>
                                                         </PopoverTrigger>
                                                         <PopoverContent className="p-0" align="start" side="left">
@@ -928,7 +928,7 @@ export function TaskDetailDialog({
                                                         <PopoverTrigger asChild>
                                                             <Button variant="ghost" className="w-full justify-start text-xs font-normal h-8">
                                                                 <div className="h-1.5 w-1.5 rounded-full bg-blue-500 mr-2" />
-                                                                Add "Blocking" (Blocks)
+                                                                Add &quot;Blocking&quot; (Blocks)
                                                             </Button>
                                                         </PopoverTrigger>
                                                         <PopoverContent className="p-0" align="start" side="left">

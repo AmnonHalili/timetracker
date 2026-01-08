@@ -42,7 +42,7 @@ export function PreventBackToAuth() {
         }
 
         // Handle browser back/forward navigation (including mobile swipe-back gesture)
-        const handlePopState = (event: PopStateEvent) => {
+        const handlePopState = () => {
             if (!session) return
 
             // Check current URL after popstate

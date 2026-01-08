@@ -13,7 +13,6 @@ import {
     isToday,
     isSameDay
 } from "date-fns"
-import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/lib/useLanguage"
 
 
@@ -56,8 +55,8 @@ interface MonthGridProps {
     isLoading?: boolean
 }
 
-export function MonthGrid({ date, data, onDayClick, projectId, onOptimisticEventCreate, isLoading }: MonthGridProps) {
-    const { t, isRTL } = useLanguage()
+export function MonthGrid({ date, data, onDayClick, isLoading }: MonthGridProps) {
+    const { t } = useLanguage()
     const monthStart = startOfMonth(date)
     const monthEnd = endOfMonth(date)
     const startDate = startOfWeek(monthStart)

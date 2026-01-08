@@ -109,12 +109,11 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
             try {
                 const rawHolidays = await getHolidaysForRange(bufferStart, bufferEnd)
                 // Server actions serialize Dates to strings, so we must parse them back
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const holidays = rawHolidays.map((h: any) => ({
+                const holidays = rawHolidays.map((h: { startTime: Date | string, endTime: Date | string }) => ({
                     ...h,
                     startTime: new Date(h.startTime),
                     endTime: new Date(h.endTime)
-                }))
+                })) as CalendarEvent[]
 
                 setHolidayEvents(holidays)
 
@@ -223,7 +222,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                     {view === 'month' ? (
                         <div className="flex items-center gap-2 text-2xl font-bold tracking-tight text-primary">
                             <span>
-                                {t(`months.${['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'][currentDate.getMonth()]}` as any)}
+                                {t(`months.${['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'][currentDate.getMonth()]}` as unknown as import("@/lib/translations").TranslationKey)}
                             </span>
                             <span className="text-muted-foreground font-medium">
                                 {currentDate.getFullYear()}
@@ -232,10 +231,10 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                     ) : (
                         <div className="flex flex-col">
                             <h2 className="text-xl font-bold tracking-tight text-primary">
-                                {t(`days.${['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][currentDate.getDay()]}` as any)}
+                                {t(`days.${['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][currentDate.getDay()]}` as unknown as import("@/lib/translations").TranslationKey)}
                             </h2>
                             <span className="text-sm text-muted-foreground">
-                                {t(`months.${['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'][currentDate.getMonth()]}` as any)} {currentDate.getFullYear()}
+                                {t(`months.${['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'][currentDate.getMonth()]}` as unknown as import("@/lib/translations").TranslationKey)} {currentDate.getFullYear()}
                             </span>
                         </div>
                     )}
