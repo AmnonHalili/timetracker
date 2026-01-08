@@ -67,7 +67,7 @@ export function EventDetailDialog({ event, open, onOpenChange, onOptimisticEvent
     const end = new Date(event.endTime)
     const badgeColor = eventTypeColors[event.type] || eventTypeColors.OTHER
 
-    const handleDelete = async () => {
+    const handleDelete = async (scope: 'THIS' | 'FUTURE' | 'ALL' = 'ALL') => {
         setIsDeleting(true)
         try {
             // If it's a recurring instance, use the original ID
@@ -81,7 +81,14 @@ export function EventDetailDialog({ event, open, onOpenChange, onOptimisticEvent
             setDeleteDialogOpen(false)
             onOptimisticEventDelete?.(event.id)
 
-            const res = await fetch(`/api/events/${idToDelete}`, {
+            // Build query params
+            const params = new URLSearchParams()
+            if (scope && scope !== 'ALL') {
+                params.append('scope', scope)
+                params.append('date', start.toISOString()) // Use the occurrence start date
+            }
+
+            const res = await fetch(`/api/events/${idToDelete}?${params.toString()}`, {
                 method: "DELETE",
             })
 
@@ -197,27 +204,64 @@ export function EventDetailDialog({ event, open, onOpenChange, onOptimisticEvent
                 </DialogContent>
             </Dialog>
 
+
+
             {/* Delete Confirmation Dialog */}
-            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            < AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen} >
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>{t('calendar.deleteEvent')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            {t('calendar.deleteConfirm').replace('{title}', event.title)}
+                            {event.recurrence ? t('calendar.deleteRecurringPrompt') || "This is a recurring event. How would you like to delete it?" : t('calendar.deleteConfirm').replace('{title}', event.title)}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isDeleting}>{t('common.cancel')}</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handleDelete}
-                            disabled={isDeleting}
-                            className="bg-destructive hover:bg-destructive/90"
-                        >
-                            {isDeleting ? t('calendar.deleting') : t('common.delete')}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
+
+                    {event.recurrence ? (
+                        <div className="flex flex-col gap-2 mt-4">
+                            <Button
+                                variant="outline"
+                                onClick={() => handleDelete('THIS')}
+                                disabled={isDeleting}
+                                className="justify-start"
+                            >
+                                {t('calendar.deleteThisOccurrence') || "Delete this occurrence only"}
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={() => handleDelete('FUTURE')}
+                                disabled={isDeleting}
+                                className="justify-start"
+                            >
+                                {t('calendar.deleteFutureOccurrences') || "Delete this and future occurrences"}
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                onClick={() => handleDelete('ALL')}
+                                disabled={isDeleting}
+                                className="justify-start"
+                            >
+                                {t('calendar.deleteAllOccurrences') || "Delete entire series"}
+                            </Button>
+                            <div className="flex justify-end mt-2">
+                                <Button variant="ghost" onClick={() => setDeleteDialogOpen(false)} disabled={isDeleting}>
+                                    {t('common.cancel')}
+                                </Button>
+                            </div>
+                        </div>
+                    ) : (
+                        <AlertDialogFooter>
+                            <AlertDialogCancel disabled={isDeleting}>{t('common.cancel')}</AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={() => handleDelete('ALL')}
+                                disabled={isDeleting}
+                                className="bg-destructive hover:bg-destructive/90"
+                            >
+                                {isDeleting ? t('calendar.deleting') : t('common.delete')}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    )}
                 </AlertDialogContent>
-            </AlertDialog>
+            </AlertDialog >
         </>
     )
 }

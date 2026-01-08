@@ -129,10 +129,13 @@ export async function DELETE(
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
         }
 
+        const { searchParams } = new URL(req.url)
+        const scope = searchParams.get("scope") // 'THIS', 'FUTURE', 'ALL'
+        const dateStr = searchParams.get("date") // ISO string for the occurrence
+
         let eventId = params.id
 
-        // Handle recurring event instances (synthetic IDs like cuid_timestamp)
-        // If we receive a synthetic ID, we want to operate on the original event series
+        // Handle recurring event instances (synthetic IDs)
         if (eventId.includes("_")) {
             eventId = eventId.split("_")[0]
         }
@@ -153,7 +156,37 @@ export async function DELETE(
             )
         }
 
-        // Delete event (participants and reminders cascade)
+        // Handle specific scopes for recurring events
+        if (scope === "THIS" && dateStr && existingEvent.recurrence) {
+            // Add date to exDates
+            const exDate = new Date(dateStr)
+
+            // Ensure we don't duplicate dates (though array push is fine, let's just push)
+            await prisma.event.update({
+                where: { id: eventId },
+                data: {
+                    exDates: {
+                        push: exDate
+                    }
+                }
+            })
+            return NextResponse.json({ message: "Occurrence deleted successfully" })
+
+        } else if (scope === "FUTURE" && dateStr && existingEvent.recurrence) {
+            // End recurrence before this date
+            const cutOffDate = new Date(dateStr)
+            cutOffDate.setDate(cutOffDate.getDate() - 1) // One day before
+
+            await prisma.event.update({
+                where: { id: eventId },
+                data: {
+                    recurrenceEnd: cutOffDate
+                }
+            })
+            return NextResponse.json({ message: "Future occurrences deleted successfully" })
+        }
+
+        // Default: Delete ALL (entire series)
         await prisma.event.delete({
             where: { id: eventId }
         })

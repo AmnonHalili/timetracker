@@ -309,6 +309,7 @@ model Event {
   type          EventType          @default(MEETING)
   recurrence    RecurrenceType?
   recurrenceEnd DateTime?
+  exDates       DateTime[]         @default([])
   createdById   String
   projectId     String?
   createdAt     DateTime           @default(now())

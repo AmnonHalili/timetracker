@@ -8,13 +8,6 @@ import { ExportButton } from "./ExportButton"
 interface ReportsControlsProps {
     projectUsers: { id: string; name: string | null; email: string }[]
     targetUserId: string
-    currentYear: number
-    currentMonth: number
-}
-
-interface ReportsControlsProps {
-    projectUsers: { id: string; name: string | null; email: string }[]
-    targetUserId: string
     loggedInUserId: string
     currentYear: number
     currentMonth: number
@@ -45,4 +38,3 @@ export function ReportsControls({ projectUsers, targetUserId, loggedInUserId, cu
         </div>
     )
 }
-
