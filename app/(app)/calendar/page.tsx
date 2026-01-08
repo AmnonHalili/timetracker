@@ -114,6 +114,7 @@ export default async function CalendarPage({
     // Fetch events for this month
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     // Fetch events (matching api/calendar logic)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const eventWhereClause: any = {
         AND: [
             {
@@ -187,6 +188,7 @@ export default async function CalendarPage({
     // Helper for recurrence expansion (simple version for server component)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const expandedEvents: any[] = []
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     fetchedEvents.forEach((event: any) => {
         if (!event.recurrence) {
             expandedEvents.push(event)
