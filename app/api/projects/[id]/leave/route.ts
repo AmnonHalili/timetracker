@@ -20,9 +20,9 @@ export async function POST(
         // 1. Check if the user is a member of the project
         const membership = await prisma.projectMember.findUnique({
             where: {
-                projectId_userId: {
-                    projectId,
-                    userId
+                userId_projectId: {
+                    userId,
+                    projectId
                 }
             }
         })
@@ -52,9 +52,9 @@ export async function POST(
         // 3. Remove the membership
         await prisma.projectMember.delete({
             where: {
-                projectId_userId: {
-                    projectId,
-                    userId
+                userId_projectId: {
+                    userId,
+                    projectId
                 }
             }
         })
