@@ -236,7 +236,7 @@ export function ProjectSwitcher({ className }: { className?: string }) {
                                     <AvatarImage
                                         src={activeProject.logo}
                                         alt={activeProject.name}
-                                        className="object-cover"
+                                        className="object-cover contrast-[1.1] saturate-[1.1]"
                                     />
                                 )}
                                 <AvatarFallback className="text-[10px]">{activeProject?.name?.substring(0, 2).toUpperCase()}</AvatarFallback>
@@ -273,12 +273,17 @@ export function ProjectSwitcher({ className }: { className?: string }) {
                                         }}
                                         className="text-sm"
                                     >
-                                        <Avatar className="mr-2 h-5 w-5">
+                                        <Avatar className="mr-2 h-5 w-5 transition-all">
                                             {project.logo && (
                                                 <AvatarImage
                                                     src={project.logo}
                                                     alt={project.name}
-                                                    className="grayscale"
+                                                    className={cn(
+                                                        "object-cover transition-all duration-300",
+                                                        activeProject?.id === project.id
+                                                            ? "grayscale-0 !grayscale-0 contrast-125 saturate-150 brightness-110"
+                                                            : "grayscale opacity-40 brightness-90"
+                                                    )}
                                                 />
                                             )}
                                             <AvatarFallback className="text-[10px]">{project.name.substring(0, 2).toUpperCase()}</AvatarFallback>
