@@ -25,12 +25,13 @@ export async function POST(req: Request) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
-    // Use the plan from the session, which includes inheritance logic
+    /* 
+    Plan check removed as per user request to open file uploads for everyone
     const userPlan = session.user.plan
-
     if (!userPlan || userPlan === 'FREE') {
         return NextResponse.json({ message: "Uploads are restricted to premium plans" }, { status: 403 })
     }
+    */
 
     try {
         const { fileName, fileType, fileSize, taskId } = await req.json()
