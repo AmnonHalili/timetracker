@@ -86,7 +86,7 @@ export async function POST(req: Request) {
                 assignees: {
                     connect: (assignedToIds as string[]).map(id => ({ id }))
                 },
-                priority: priority || "MEDIUM",
+                priority: priority || "NONE",
                 startDate: startDate ? new Date(startDate) : null,
                 deadline: deadline ? new Date(deadline) : null,
                 description,
@@ -96,7 +96,7 @@ export async function POST(req: Request) {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     create: subtasks.map((st: any) => ({
                         title: st.title,
-                        priority: st.priority || "LOW",
+                        priority: st.priority || "NONE",
                         assignedToId: st.assignedToId || null,
                         startDate: st.startDate ? new Date(st.startDate) : null,
                         dueDate: st.dueDate ? new Date(st.dueDate) : null

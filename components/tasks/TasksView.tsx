@@ -168,7 +168,7 @@ interface TasksViewProps {
             id: string;
             title: string;
             isDone: boolean;
-            priority?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+            priority?: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | null;
             assignedToId?: string | null;
             assignedTo?: { id: string; name: string | null; image?: string | null } | null;
             startDate?: Date | string | null;
@@ -217,7 +217,7 @@ export function TasksView({
         taskId: string;
         subtaskId: string;
         title: string;
-        priority: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+        priority: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | null;
         assignedToId: string | null;
         startDate: Date | null;
         dueDate: Date | null;
@@ -227,7 +227,7 @@ export function TasksView({
         id: string;
         title: string;
         isDone: boolean;
-        priority?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+            priority?: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | null;
         assignedToId?: string | null;
         assignedTo?: { id: string; name: string | null; image?: string | null } | null;
         startDate?: Date | string | null;
@@ -304,7 +304,7 @@ export function TasksView({
             id: string;
             title: string;
             isDone: boolean;
-            priority?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+            priority?: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | null;
             assignedToId?: string | null;
             assignedTo?: { id: string; name: string | null; image?: string | null } | null;
             startDate?: Date | string | null;
@@ -316,7 +316,7 @@ export function TasksView({
                     id: string;
                     title: string;
                     isDone: boolean;
-                    priority?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+                    priority?: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | null;
                     assignedToId?: string | null;
                     assignedTo?: { id: string; name: string | null; image?: string | null } | null;
                     startDate?: Date | string | null;
@@ -1037,7 +1037,7 @@ export function TasksView({
         subtaskId: string,
         updates?: {
             title?: string;
-            priority?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+            priority?: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | null;
             assignedToId?: string | null;
             startDate?: Date | null;
             dueDate?: Date | null;
@@ -1047,7 +1047,7 @@ export function TasksView({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const updateData: {
             title?: string;
-            priority?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+            priority?: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | null;
             assignedToId?: string | null;
             startDate?: string | null;
             dueDate?: string | null;
@@ -1597,7 +1597,7 @@ export function TasksView({
                                                 h-8 w-full max-w-[140px] mx-auto flex items-center justify-center gap-1.5 text-xs font-semibold shadow-sm p-2 rounded-md border
                                                 ${getPriorityColor(task.priority)}
                                             `}>
-                                                            <span>{task.priority === 'HIGH' ? t('tasks.priorityHigh') : task.priority === 'MEDIUM' ? t('tasks.priorityMedium') : t('tasks.priorityLow')}</span>
+                                                            <span>{task.priority === 'HIGH' ? t('tasks.priorityHigh') : task.priority === 'MEDIUM' ? t('tasks.priorityMedium') : task.priority === 'LOW' ? t('tasks.priorityLow') : t('tasks.priorityNone')}</span>
                                                         </div>
                                                     </td>
 
@@ -1830,7 +1830,7 @@ export function TasksView({
                                                                                     h-6 w-full max-w-[100px] mx-auto flex items-center justify-center gap-1 text-[10px] font-semibold shadow-sm p-1.5 rounded-md border
                                                                                     ${getPriorityColor(subtask.priority)}
                                                                                 `}>
-                                                                                    <span>{subtask.priority === 'HIGH' ? t('tasks.priorityHigh') : subtask.priority === 'MEDIUM' ? t('tasks.priorityMedium') : t('tasks.priorityLow')}</span>
+                                                                                    <span>{subtask.priority === 'HIGH' ? t('tasks.priorityHigh') : subtask.priority === 'MEDIUM' ? t('tasks.priorityMedium') : subtask.priority === 'LOW' ? t('tasks.priorityLow') : t('tasks.priorityNone')}</span>
                                                                                 </div>
                                                                             ) : (
                                                                                 <span className="text-muted-foreground/30 text-[10px]">-</span>
@@ -2197,11 +2197,11 @@ export function TasksView({
                                         {t('tasks.subtaskPriority')}
                                     </label>
                                     <Select
-                                        value={editingEnhancedSubtask.priority || 'none'}
+                                        value={editingEnhancedSubtask.priority || 'NONE'}
                                         onValueChange={(v) => setEditingEnhancedSubtask(prev =>
                                             prev ? {
                                                 ...prev,
-                                                priority: v === 'none' ? null : v as 'LOW' | 'MEDIUM' | 'HIGH'
+                                                priority: v === 'none' || v === 'NONE' ? 'NONE' : v as 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH'
                                             } : null
                                         )}
                                     >
@@ -2209,11 +2209,16 @@ export function TasksView({
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="none">{t('tasks.subtaskNoPriority')}</SelectItem>
-                                            <SelectItem value="HIGH">
+                                            <SelectItem value="NONE">
                                                 <div className="flex items-center gap-2">
-                                                    <Badge variant="secondary" className={cn("text-[10px] px-1 h-5 min-w-[1.5rem] justify-center", getPriorityColor('HIGH'))}>H</Badge>
-                                                    {t('tasks.priorityHigh')}
+                                                    <Badge variant="secondary" className={cn("text-[10px] px-1 h-5 min-w-[1.5rem] justify-center", getPriorityColor('NONE'))}>-</Badge>
+                                                    {t('tasks.priorityNone') || 'None'}
+                                                </div>
+                                            </SelectItem>
+                                            <SelectItem value="LOW">
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant="secondary" className={cn("text-[10px] px-1 h-5 min-w-[1.5rem] justify-center", getPriorityColor('LOW'))}>L</Badge>
+                                                    {t('tasks.priorityLow')}
                                                 </div>
                                             </SelectItem>
                                             <SelectItem value="MEDIUM">
@@ -2222,10 +2227,10 @@ export function TasksView({
                                                     {t('tasks.priorityMedium')}
                                                 </div>
                                             </SelectItem>
-                                            <SelectItem value="LOW">
+                                            <SelectItem value="HIGH">
                                                 <div className="flex items-center gap-2">
-                                                    <Badge variant="secondary" className={cn("text-[10px] px-1 h-5 min-w-[1.5rem] justify-center", getPriorityColor('LOW'))}>L</Badge>
-                                                    {t('tasks.priorityLow')}
+                                                    <Badge variant="secondary" className={cn("text-[10px] px-1 h-5 min-w-[1.5rem] justify-center", getPriorityColor('HIGH'))}>H</Badge>
+                                                    {t('tasks.priorityHigh')}
                                                 </div>
                                             </SelectItem>
                                         </SelectContent>

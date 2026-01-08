@@ -192,7 +192,7 @@ model Task {
   title       String
   description String?
   status      TaskStatus       @default(TODO)
-  priority    TaskPriority     @default(MEDIUM)
+  priority    TaskPriority     @default(NONE)
   deadline    DateTime?
   isCompleted Boolean          @default(false)
   isArchived  Boolean          @default(false)
@@ -481,6 +481,7 @@ enum TaskStatus {
 }
 
 enum TaskPriority {
+  NONE
   LOW
   MEDIUM
   HIGH

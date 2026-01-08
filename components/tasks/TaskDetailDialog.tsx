@@ -46,7 +46,7 @@ interface TaskDetailDialogProps {
             id: string;
             title: string;
             isDone: boolean;
-            priority?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+            priority?: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | null;
             assignedToId?: string | null;
             assignedTo?: { id: string; name: string | null; image?: string | null } | null;
             dueDate?: Date | string | null;
@@ -77,7 +77,7 @@ interface TaskDetailDialogProps {
 
     onSubtaskUpdate?: (taskId: string, subtaskId: string, updates: {
         title?: string;
-        priority?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+        priority?: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | null;
         assignedToId?: string | null;
         dueDate?: Date | null;
     }) => void
@@ -149,7 +149,7 @@ export function TaskDetailDialog({
     const [newNote, setNewNote] = useState("")
     const [editingEnhancedSubtask, setEditingEnhancedSubtask] = useState<{
         subtaskId: string;
-        priority?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+        priority?: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | null;
         assignedToId?: string | null;
         dueDate?: Date | null;
     } | null>(null)
@@ -1168,12 +1168,20 @@ export function TaskDetailDialog({
                                     {t('tasks.subtaskPriority') || "Priority"}
                                 </label>
                                 <div className="flex flex-wrap gap-2">
+                                    <Button
+                                        variant={(editingEnhancedSubtask.priority === 'NONE' || !editingEnhancedSubtask.priority) ? 'default' : 'outline'}
+                                        size="sm"
+                                        onClick={() => setEditingEnhancedSubtask(prev => prev ? { ...prev, priority: 'NONE' } : null)}
+                                        className="flex-1"
+                                    >
+                                        {t('tasks.priorityNone') || "None"}
+                                    </Button>
                                     {['LOW', 'MEDIUM', 'HIGH'].map((p) => (
                                         <Button
                                             key={p}
                                             variant={editingEnhancedSubtask.priority === p ? 'default' : 'outline'}
                                             size="sm"
-                                            onClick={() => setEditingEnhancedSubtask(prev => prev ? { ...prev, priority: p as 'LOW' | 'MEDIUM' | 'HIGH' } : null)}
+                                            onClick={() => setEditingEnhancedSubtask(prev => prev ? { ...prev, priority: p as 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' } : null)}
                                             className={cn(
                                                 "flex-1",
                                                 editingEnhancedSubtask.priority === p && p === 'HIGH' && "bg-red-600 hover:bg-red-700",
@@ -1185,14 +1193,6 @@ export function TaskDetailDialog({
                                             {t(`tasks.priority${p.charAt(0) + p.slice(1).toLowerCase()}` as any) || p}
                                         </Button>
                                     ))}
-                                    <Button
-                                        variant={!editingEnhancedSubtask.priority ? 'default' : 'outline'}
-                                        size="sm"
-                                        onClick={() => setEditingEnhancedSubtask(prev => prev ? { ...prev, priority: null } : null)}
-                                        className="flex-1"
-                                    >
-                                        {t('tasks.subtaskNoPriority') || "None"}
-                                    </Button>
                                 </div>
                             </div>
 

@@ -42,7 +42,7 @@ export function CreateTaskForm({
 
     const [title, setTitle] = useState("")
     const [assignedToIds, setAssignedToIds] = useState<string[]>([])
-    const [priority, setPriority] = useState("LOW")
+    const [priority, setPriority] = useState("NONE")
     const [startDate, setStartDate] = useState("")
     const [startDateTime, setStartDateTime] = useState("")
     const [deadline, setDeadline] = useState("")
@@ -55,7 +55,7 @@ export function CreateTaskForm({
     // Subtasks State
     const [subtasks, setSubtasks] = useState<Array<{ id: string; title: string; priority: string; assignedToId: string | null; startDate: string | null; dueDate: string | null; isDone: boolean }>>([])
     const [newSubtaskTitle, setNewSubtaskTitle] = useState("")
-    const [newSubtaskPriority, setNewSubtaskPriority] = useState("LOW")
+    const [newSubtaskPriority, setNewSubtaskPriority] = useState("NONE")
     const [newSubtaskAssignee, setNewSubtaskAssignee] = useState<string | null>(null)
     const [newSubtaskStartDate, setNewSubtaskStartDate] = useState("")
     const [newSubtaskStartDateTime, setNewSubtaskStartDateTime] = useState("")
@@ -148,7 +148,7 @@ export function CreateTaskForm({
         if (mode === 'edit' && task) {
             setTitle(task.title || "")
             setDescription(task.description || "")
-            setPriority(task.priority || "LOW")
+            setPriority(task.priority || "NONE")
 
             if (task.startDate) {
                 const d = new Date(task.startDate)
@@ -186,7 +186,7 @@ export function CreateTaskForm({
             setTitle("")
             setAssignedToIds([])
             setShowToMe(true)
-            setPriority("LOW")
+            setPriority("NONE")
             setStartDate("")
             setStartDateTime("")
             setDeadline("")
@@ -256,7 +256,7 @@ export function CreateTaskForm({
                 setTitle("")
                 setAssignedToIds([])
                 setShowToMe(true)
-                setPriority("LOW")
+                setPriority("NONE")
                 setStartDate("")
                 setStartDateTime("")
                 setDeadline("")
@@ -264,7 +264,7 @@ export function CreateTaskForm({
                 setDescription("")
                 setSubtasks([])
                 setNewSubtaskTitle("")
-                setNewSubtaskPriority("LOW")
+                setNewSubtaskPriority("NONE")
                 setNewSubtaskAssignee(null)
                 setNewSubtaskStartDate("")
                 setNewSubtaskStartDateTime("")
@@ -398,6 +398,12 @@ export function CreateTaskForm({
                                 <SelectValue placeholder={t('tasks.priority')} />
                             </SelectTrigger>
                             <SelectContent>
+                                <SelectItem value="NONE">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-muted-foreground/30" />
+                                        {t('tasks.priorityNone') || 'None'}
+                                    </div>
+                                </SelectItem>
                                 <SelectItem value="LOW">
                                     <div className="flex items-center gap-2">
                                         <div className="w-2 h-2 rounded-full bg-green-500" />
@@ -572,6 +578,12 @@ export function CreateTaskForm({
                                                     <SelectValue placeholder={t('tasks.priority')} />
                                                 </SelectTrigger>
                                                 <SelectContent>
+                                                    <SelectItem value="NONE">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-2 h-2 rounded-full bg-muted-foreground/30" />
+                                                            {t('tasks.priorityNone') || 'None'}
+                                                        </div>
+                                                    </SelectItem>
                                                     <SelectItem value="LOW">
                                                         <div className="flex items-center gap-2">
                                                             <div className="w-2 h-2 rounded-full bg-green-500" />
@@ -704,7 +716,8 @@ export function CreateTaskForm({
                                                                     "w-2 h-2 rounded-full",
                                                                     st.priority === 'HIGH' ? "bg-red-500" :
                                                                         st.priority === 'MEDIUM' ? "bg-yellow-500" :
-                                                                            "bg-green-500"
+                                                                            st.priority === 'LOW' ? "bg-green-500" :
+                                                                                "bg-muted-foreground/30"
                                                                 )} />
                                                             </div>
                                                         </div>
@@ -714,15 +727,20 @@ export function CreateTaskForm({
                                                                 "h-6 text-[10px] gap-1.5 pl-1.5 pr-2.5",
                                                                 st.priority === 'HIGH' ? "bg-red-50 text-red-700 border-red-200" :
                                                                     st.priority === 'MEDIUM' ? "bg-yellow-50 text-yellow-700 border-yellow-200" :
-                                                                        "bg-green-50 text-green-700 border-green-200"
+                                                                        st.priority === 'LOW' ? "bg-green-50 text-green-700 border-green-200" :
+                                                                            "bg-muted/50 text-muted-foreground border-muted"
                                                             )}>
                                                                 <div className={cn(
                                                                     "w-1.5 h-1.5 rounded-full",
                                                                     st.priority === 'HIGH' ? "bg-red-500" :
                                                                         st.priority === 'MEDIUM' ? "bg-yellow-500" :
-                                                                            "bg-green-500"
+                                                                            st.priority === 'LOW' ? "bg-green-500" :
+                                                                                "bg-muted-foreground/30"
                                                                 )} />
-                                                                {st.priority || 'LOW'}
+                                                                {st.priority === 'HIGH' ? t('tasks.priorityHigh') : 
+                                                                    st.priority === 'MEDIUM' ? t('tasks.priorityMedium') : 
+                                                                    st.priority === 'LOW' ? t('tasks.priorityLow') : 
+                                                                    t('tasks.priorityNone')}
                                                             </Badge>
                                                         </div>
 

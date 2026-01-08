@@ -46,7 +46,7 @@ interface MonthGridProps {
             id: string;
             title: string;
             deadline: Date | string | null;
-            priority: 'HIGH' | 'MEDIUM' | 'LOW';
+            priority: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH';
             status: string;
             assignees: Array<{ name: string; email: string }>;
         }>

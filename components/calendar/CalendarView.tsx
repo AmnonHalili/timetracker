@@ -50,7 +50,7 @@ interface CalendarViewProps {
             id: string;
             title: string;
             deadline: Date | string | null;
-            priority: 'HIGH' | 'MEDIUM' | 'LOW';
+            priority: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH';
             status: string;
             description: string | null;
             assignees: Array<{ name: string; email: string }>;
