@@ -113,7 +113,7 @@ export function CalendarSettingsButton() {
         <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
             <DialogTrigger asChild>
                 <Button variant="ghost" size="icon" className="shrink-0 h-10 w-10 md:h-9 md:w-9">
-                    <Settings className="h-5 w-5 md:h-4 md:w-4" />
+                    <Settings className="h-6 w-6 md:h-5 md:w-5" />
                 </Button>
             </DialogTrigger>
             <DialogContent>

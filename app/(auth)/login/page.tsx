@@ -36,7 +36,8 @@ export default function LoginPage() {
             if (res?.error) {
                 setError(res.error)
             } else {
-                router.push("/dashboard")
+                // Use replace instead of push to prevent back navigation to login page
+                router.replace("/dashboard")
                 router.refresh()
             }
         } catch {

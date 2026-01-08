@@ -8,6 +8,7 @@ import { AdBanner } from "@/components/ads/AdBanner"
 import { HeartbeatTracker } from "@/components/auth/HeartbeatTracker"
 import { ProjectProvider } from "@/components/providers/ProjectProvider"
 import { ProjectLoadingOverlay } from "@/components/layout/ProjectLoadingOverlay"
+import { PreventBackToAuth } from "@/components/layout/PreventBackToAuth"
 
 export default function AppLayout({
     children,
@@ -16,6 +17,7 @@ export default function AppLayout({
 }) {
     return (
         <ProjectProvider>
+            <PreventBackToAuth />
             <div className="flex h-screen overflow-hidden bg-background">
                 <HeartbeatTracker />
                 <Sidebar />

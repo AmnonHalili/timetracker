@@ -222,6 +222,10 @@ export default function HierarchyPage() {
         if (target.closest('button') || target.closest('a') || target.closest('input') || target.closest('[role="button"]') || target.closest('[role="dialog"]')) {
             return
         }
+        // Prevent panning if starting in header area
+        if (target.closest('[data-hierarchy-header]')) {
+            return
+        }
         setIsDragging(true)
         setDragStart({
             x: e.clientX - panPosition.x,
@@ -254,10 +258,13 @@ export default function HierarchyPage() {
     // Handle touch events for mobile panning
     const handleTouchStart = (e: React.TouchEvent) => {
         const touch = e.touches[0]
-        // Prevent if touching interactive elements? Maybe not needed for simple pan
-        // But let's mirror mouse logic safely
+        // Prevent if touching interactive elements
         const target = e.target as HTMLElement
-        if (target.closest('button') || target.closest('a') || target.closest('input')) {
+        if (target.closest('button') || target.closest('a') || target.closest('input') || target.closest('[role="button"]') || target.closest('[role="dialog"]')) {
+            return
+        }
+        // Prevent panning if starting in header area
+        if (target.closest('[data-hierarchy-header]')) {
             return
         }
 
@@ -493,7 +500,7 @@ export default function HierarchyPage() {
 
     return (
         <div
-            className="w-full bg-background/50 relative"
+            className="w-full bg-background/50 relative flex flex-col"
             dir="ltr"
             style={{
                 overflow: 'hidden',
@@ -501,36 +508,23 @@ export default function HierarchyPage() {
                 height: 'calc(100vh - 4rem)',
                 maxHeight: 'calc(100vh - 4rem)',
                 position: 'relative',
-                clipPath: 'inset(0)'
             }}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseLeave}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            onWheel={handleWheel}
         >
             {/* Header and Controls - Fixed at top */}
-            <div className="p-4 md:p-8 pb-4 relative z-20 bg-background/95 backdrop-blur-sm border-b">
-                <div className="relative max-w-5xl mx-auto mb-4 md:mb-8 flex flex-col md:block">
+            <div data-hierarchy-header className="px-2 md:px-8 py-3 md:py-8 absolute top-0 left-0 right-0 z-20 bg-background/95 backdrop-blur-sm border-b shrink-0">
+                <div className="relative max-w-5xl mx-auto flex flex-col md:block">
                     {/* Title */}
-                    <h1 className="text-xl md:text-2xl font-bold text-center w-full mb-4 md:mb-0 order-1 md:order-none">{t('hierarchy.organizationHierarchy')}</h1>
-                    {/* DEBUG INFO */}
-                    <div className="text-xs text-center text-muted-foreground mt-1">
-                        Role: {session?.user?.role || 'None'} | Project: {projectName} | Can Edit: {hasProject && session?.user?.role === "ADMIN" ? 'Yes' : 'No'}
-                    </div>
+                    <h1 className="text-lg md:text-2xl font-bold text-center w-full mb-3 md:mb-0 order-1 md:order-none">{t('hierarchy.organizationHierarchy')}</h1>
 
                     {/* Controls Row - Mobile: Flow, Desktop: Absolute Overlay */}
-                    <div className="flex items-center justify-between w-full order-2 md:absolute md:top-0 md:left-0 md:h-full pointer-events-none">
+                    <div className="flex items-center justify-between w-full order-2 gap-2 md:absolute md:top-0 md:left-0 md:h-full pointer-events-none md:gap-0">
 
                         {/* Left Controls Group */}
-                        <div className="flex items-center gap-2 pointer-events-auto">
+                        <div className="flex items-center gap-1.5 pointer-events-auto md:gap-2">
                             {/* Mobile Back Button */}
-                            <Button variant="ghost" size="icon" asChild className="md:hidden mr-1 text-muted-foreground">
+                            <Button variant="ghost" size="icon" asChild className="md:hidden h-9 w-9 rounded-xl">
                                 <Link href="/team" aria-label="Back to Team">
-                                    <ArrowRight className="h-5 w-5 rotate-180" />
+                                    <ArrowRight className="h-4 w-4 rotate-180" />
                                 </Link>
                             </Button>
 
@@ -538,37 +532,37 @@ export default function HierarchyPage() {
                                 variant="outline"
                                 size="sm"
                                 onClick={handleZoomReset}
-                                className="bg-background/50 backdrop-blur-sm gap-2 h-8 px-2"
+                                className="bg-background/50 backdrop-blur-sm gap-1.5 h-9 px-3 rounded-xl md:rounded-md md:h-8 md:px-2 md:gap-2 shadow-sm md:shadow-none"
                             >
-                                <Eye className="h-4 w-4" />
-                                <span className="hidden sm:inline">{t('hierarchy.overview')}</span>
+                                <Eye className="h-4 w-4 shrink-0" />
+                                <span className="hidden sm:inline text-xs md:text-sm">{t('hierarchy.overview')}</span>
                             </Button>
                             <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={handleFindMe}
-                                className="bg-background/50 backdrop-blur-sm gap-2 h-8 px-2"
+                                className="bg-background/50 backdrop-blur-sm gap-1.5 h-9 px-3 rounded-xl md:rounded-md md:h-8 md:px-2 md:gap-2 shadow-sm md:shadow-none"
                             >
-                                <Crosshair className="h-4 w-4" />
-                                <span className="hidden sm:inline">{t('hierarchy.findMe')}</span>
+                                <Crosshair className="h-4 w-4 shrink-0" />
+                                <span className="hidden sm:inline text-xs md:text-sm">{t('hierarchy.findMe')}</span>
                             </Button>
                         </div>
 
                         {/* Right Controls Group */}
-                        <div className="flex items-center gap-2 pointer-events-auto">
+                        <div className="flex items-center gap-1.5 pointer-events-auto md:gap-2">
                             {hasProject && (
-                                <div className="flex items-center gap-1 bg-background/50 backdrop-blur-sm border rounded-md p-1">
+                                <div className="flex items-center gap-0.5 bg-background/50 backdrop-blur-sm border rounded-xl md:rounded-md p-0.5 md:p-1 shadow-sm md:shadow-none">
                                     <Button
                                         variant="ghost"
                                         size="icon"
                                         onClick={handleZoomOut}
                                         disabled={zoomLevel <= baseZoom}
-                                        className="h-7 w-7 md:h-8 md:w-8"
+                                        className="h-8 w-8 md:h-8 md:w-8 rounded-lg"
                                         aria-label="Zoom out"
                                     >
                                         <ZoomOut className="h-4 w-4" />
                                     </Button>
-                                    <span className="text-[10px] md:text-xs font-mono w-8 text-center">
+                                    <span className="text-[10px] md:text-xs font-mono w-7 md:w-8 text-center">
                                         {getRelativeZoomPercent(zoomLevel)}%
                                     </span>
                                     <Button
@@ -576,7 +570,7 @@ export default function HierarchyPage() {
                                         size="icon"
                                         onClick={handleZoomIn}
                                         disabled={zoomLevel >= maxZoom}
-                                        className="h-7 w-7 md:h-8 md:w-8"
+                                        className="h-8 w-8 md:h-8 md:w-8 rounded-lg"
                                         aria-label="Zoom in"
                                     >
                                         <ZoomIn className="h-4 w-4" />
@@ -603,34 +597,49 @@ export default function HierarchyPage() {
                 </div>
 
                 {session?.user?.role === "ADMIN" && hasProject && (
-                    <div className="max-w-2xl mx-auto mb-4">
+                    <div className="max-w-2xl mx-auto mb-2 md:mb-4 mt-2 md:mt-0">
                         <JoinRequestsWidget />
                     </div>
                 )}
 
                 {/* Show Onboarding Widget for Private Workspace */}
                 {!hasProject && (
-                    <div className="max-w-2xl mx-auto mb-4">
+                    <div className="max-w-2xl mx-auto mb-2 md:mb-4 mt-2 md:mt-0">
                         <TeamOnboardingWidget />
                     </div>
                 )}
             </div>
 
-            {/* Zoom Container - wraps both project card and tree */}
+            {/* Pan Container - wraps the zoom container and handles pan/drag events */}
             <div
-                data-hierarchy-container
-                className="flex flex-col items-center pb-20"
+                className="flex-1 overflow-hidden relative pt-[140px] md:pt-[150px]"
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseLeave}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                onWheel={handleWheel}
                 style={{
-                    marginTop: '1rem',
-                    width: 'fit-content',
-                    minWidth: '100%',
-                    transform: `translate(${panPosition.x}px, ${panPosition.y}px) scale(${zoomLevel})`,
-                    transformOrigin: '0 0',
-                    cursor: isDragging ? 'grabbing' : 'grab',
-                    userSelect: 'none',
-                    visibility: isInitialized ? 'visible' : 'hidden'
+                    touchAction: 'none', // Prevent default touch scrolling
                 }}
             >
+                {/* Zoom Container - wraps both project card and tree */}
+                <div
+                    data-hierarchy-container
+                    className="flex flex-col items-center pb-20"
+                    style={{
+                        marginTop: '1rem',
+                        width: 'fit-content',
+                        minWidth: '100%',
+                        transform: `translate(${panPosition.x}px, ${panPosition.y}px) scale(${zoomLevel})`,
+                        transformOrigin: '0 0',
+                        cursor: isDragging ? 'grabbing' : 'grab',
+                        userSelect: 'none',
+                        visibility: isInitialized ? 'visible' : 'hidden'
+                    }}
+                >
                 {/* Project Root Node Section */}
                 <div className="flex flex-col items-center mb-8 relative">
                     {/* Project Card */}
@@ -887,6 +896,7 @@ export default function HierarchyPage() {
                         {!tree?.length && <div className="text-muted-foreground">No users found.</div>}
                     </div>
                 </div>
+            </div>
             </div>
 
             <ImageCropperDialog
