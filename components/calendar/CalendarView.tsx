@@ -300,7 +300,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                         projectId={projectId}
                         onOptimisticEventCreate={handleOptimisticCreate}
                         onOptimisticEventDelete={handleOptimisticDelete}
-                        isLoading={isLoading}
+
                     />
                 ) : (
                     <DayView
