@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { usePathname } from "next/navigation"
 import { NotificationBell } from "@/components/layout/NotificationBell"
 import { MobileSidebar } from "@/components/layout/MobileSidebar"
 import { TeamStatusButton } from "@/components/dashboard/TeamStatusButton"
@@ -19,7 +18,6 @@ interface TeamMemberStatus {
 
 export function AppHeader() {
     const { isRTL } = useLanguage()
-    const pathname = usePathname()
     const [teamStatus, setTeamStatus] = useState<TeamMemberStatus[]>([])
 
     useEffect(() => {
