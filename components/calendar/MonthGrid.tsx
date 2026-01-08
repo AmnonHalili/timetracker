@@ -72,9 +72,9 @@ export function MonthGrid({ date, data, onDayClick, isLoading }: MonthGridProps)
     ]
 
     return (
-        <div className="h-full flex flex-col relative space-y-0">
-            <div className="flex-1 overflow-y-auto relative">
-                <div className="grid grid-cols-7 gap-1 text-center mb-0 shrink-0 sticky top-0 z-40 bg-background py-2">
+        <div className="flex flex-col relative space-y-0">
+            <div className="relative">
+                <div className="grid grid-cols-7 gap-1 text-center mb-0 shrink-0 sticky top-[56px] md:top-0 z-40 bg-background py-2 shadow-sm md:shadow-none">
                     {weekDays.map((day) => (
                         <div key={day} className="text-xs md:text-sm font-semibold md:font-medium text-muted-foreground uppercase">
                             {t(day).substring(0, 3)}

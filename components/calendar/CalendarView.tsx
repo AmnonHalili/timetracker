@@ -204,7 +204,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
 
 
     return (
-        <div className="flex flex-col h-[calc(100vh-6rem)] md:h-[calc(100vh-8rem)] overflow-hidden gap-4 md:gap-6">
+        <div className="flex flex-col gap-4 md:gap-6 pb-20 md:pb-0">
             <HeaderPortal>
                 <div className="hidden md:flex items-center justify-between w-full gap-4">
                     {/* Left: Settings & Title */}
@@ -376,7 +376,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
             </div>
 
             {/* Calendar Grid */}
-            <div className="bg-background flex-1 overflow-hidden">
+            <div className="bg-background flex-1">
                 {view === 'month' ? (
                     <MonthGrid
                         date={currentDate}

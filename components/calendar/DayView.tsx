@@ -8,7 +8,8 @@ import { cn } from "@/lib/utils"
 import { Plus } from "lucide-react"
 import { useState } from "react"
 import { useLanguage } from "@/lib/useLanguage"
-
+import { startOfDay, endOfDay, setHours } from "date-fns"
+import { useRef, useEffect } from "react"
 interface CalendarEvent {
     id: string
     title: string
@@ -51,13 +52,27 @@ export function DayView({ date, events, tasks, projectId, onOptimisticEventCreat
     const [createDialogOpen, setCreateDialogOpen] = useState(false)
     const [selectedHour, setSelectedHour] = useState<Date | undefined>()
 
-    // Generate hours from 6 AM to 11 PM
-    const dayStart = new Date(date)
-    dayStart.setHours(6, 0, 0, 0)
-    const dayEnd = new Date(date)
-    dayEnd.setHours(23, 0, 0, 0)
-
+    // Generate hours for the full day (00:00 - 23:59)
+    const dayStart = startOfDay(date)
+    const dayEnd = endOfDay(date)
     const hours = eachHourOfInterval({ start: dayStart, end: dayEnd })
+
+    // Auto-scroll logic
+    const scrollContainerRef = useRef<HTMLDivElement>(null)
+    const hourRefs = useRef<Map<number, HTMLDivElement>>(new Map())
+
+    useEffect(() => {
+        // Scroll to 06:00 on mount or date change
+        const hourTarget = 6
+        const element = hourRefs.current.get(hourTarget)
+
+        if (element && scrollContainerRef.current) {
+            // Use setTimeout to ensure layout is ready
+            setTimeout(() => {
+                element.scrollIntoView({ behavior: "smooth", block: "start" })
+            }, 100)
+        }
+    }, [date])
 
     // Process tasks into event-like objects
     const taskEvents = tasks
@@ -126,7 +141,7 @@ export function DayView({ date, events, tasks, projectId, onOptimisticEventCreat
     }
 
     return (
-        <div className="space-y-4">
+        <div className="flex flex-col h-full gap-4">
 
 
             {/* All-day events section */}
@@ -148,7 +163,10 @@ export function DayView({ date, events, tasks, projectId, onOptimisticEventCreat
             )}
 
             {/* Timeline */}
-            <div className="border rounded-lg bg-background overflow-hidden">
+            <div
+                ref={scrollContainerRef}
+                className="border rounded-lg bg-background scroll-smooth relative"
+            >
                 {hours.map((hour) => {
                     const hourEvents = eventsByHour.get(hour.getHours()) || []
                     const isCurrentHour = isSameHour(hour, new Date())
@@ -156,6 +174,10 @@ export function DayView({ date, events, tasks, projectId, onOptimisticEventCreat
                     return (
                         <div
                             key={hour.toISOString()}
+                            ref={(el) => {
+                                if (el) hourRefs.current.set(hour.getHours(), el)
+                                else hourRefs.current.delete(hour.getHours())
+                            }}
                             className={cn(
                                 "grid grid-cols-[70px_1fr] border-b last:border-b-0 min-h-[60px]",
                                 isCurrentHour && "bg-primary/5"
