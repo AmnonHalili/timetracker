@@ -11,7 +11,8 @@ export type DailyReport = {
     isWorkDay: boolean
     startTime: Date | null
     endTime: Date | null
-    totalDurationHours: number
+    totalDurationHours: number // Total hours including breaks (sum of all session durations)
+    netHours: number // Net work hours excluding breaks (sum of all session durations minus breaks)
     status: 'MET' | 'MISSED' | 'OFF' | 'PENDING'
     hasManualEntries: boolean
     formattedSessions: string
@@ -123,7 +124,10 @@ export function getMonthlyReport(
         const hasManualEntries = dayEntries.some(e => e.isManual)
 
         // Calculate total duration from ALL entries for the day (not just main workday)
-        let dailyDuration = 0
+        // totalDurationHours = sum of all session durations (including breaks)
+        // netHours = sum of all session durations (excluding breaks)
+        let totalDuration = 0 // Total hours including breaks
+        let netDuration = 0 // Net hours excluding breaks
         const sessionStrings: string[] = []
 
         dayEntries.forEach(entry => {
@@ -131,19 +135,20 @@ export function getMonthlyReport(
             const end = entry.endTime ? new Date(entry.endTime) : (isSameDay(day, today) ? new Date() : null)
 
             if (end) {
-                // Determine duration
-                let duration = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
+                // Total duration (including breaks)
+                const totalSessionDuration = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
+                totalDuration += Math.max(0, totalSessionDuration)
 
-                // Subtract breaks if supported in future/data
+                // Net duration (excluding breaks)
+                let netSessionDuration = totalSessionDuration
                 if (entry.breaks) {
                     entry.breaks.forEach(b => {
                         const bStart = new Date(b.startTime).getTime()
                         const bEnd = b.endTime ? new Date(b.endTime).getTime() : Date.now()
-                        duration -= (bEnd - bStart) / (1000 * 60 * 60)
+                        netSessionDuration -= (bEnd - bStart) / (1000 * 60 * 60)
                     })
                 }
-
-                dailyDuration += Math.max(0, duration) // ensure no negative duration
+                netDuration += Math.max(0, netSessionDuration) // ensure no negative duration
 
                 // Format string: HH:mm-HH:mm
                 sessionStrings.push(`${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`)
@@ -160,7 +165,8 @@ export function getMonthlyReport(
                 const endTime = workdayEndTime || (isSameDay(day, today) ? new Date() : null)
                 if (endTime) {
                     const duration = (endTime.getTime() - workdayStartTime.getTime()) / (1000 * 60 * 60)
-                    dailyDuration = Math.max(0, duration)
+                    totalDuration = Math.max(0, duration)
+                    netDuration = Math.max(0, duration) // Workday sessions don't have breaks tracked separately
                     sessionStrings.push(`${format(workdayStartTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}`)
                 } else {
                     sessionStrings.push(`${format(workdayStartTime, 'HH:mm')} - ...`)
@@ -168,18 +174,18 @@ export function getMonthlyReport(
             }
         }
 
-        totalMonthlyHours += dailyDuration
+        totalMonthlyHours += netDuration // Use net hours for monthly total
         if (isWorkDay && day <= today) {
             totalTargetHours += hoursForDay
         }
 
-        // Determine Status
+        // Determine Status (based on net hours)
         let status: DailyReport['status'] = 'OFF'
 
         if (isWorkDay) {
             if (day > today) {
                 status = 'PENDING'
-            } else if (dailyDuration >= hoursForDay) {
+            } else if (netDuration >= hoursForDay) {
                 status = 'MET'
             } else {
                 status = 'MISSED'
@@ -194,7 +200,8 @@ export function getMonthlyReport(
             isWorkDay,
             startTime: workdayStartTime, // Keep legacy or first punch? Not strictly needed for UI if we use formattedSessions
             endTime: workdayEndTime,
-            totalDurationHours: dailyDuration,
+            totalDurationHours: totalDuration, // Total hours including breaks
+            netHours: netDuration, // Net hours excluding breaks
             status,
             hasManualEntries,
             formattedSessions
