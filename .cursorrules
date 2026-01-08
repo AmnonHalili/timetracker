@@ -1,0 +1,38 @@
+# User Rules
+
+## Workflow & Verification
+- **Always run `npm run build` locally** before finalizing a task or asking for deployment. This ensures the codebase is clean and prevents Vercel build failures.
+- Run `npx prisma generate` after any modification to `schema.prisma`.
+
+## Tech Stack & Styling
+- **Framework**: Next.js 14+ (App Router).
+- **UI Component Library**: Shadcn UI (`@/components/ui`). Prefer using existing components over creating new ones.
+- **Styling**: Tailwind CSS.
+- **Icons**: Lucide React.
+- **Class Merging**: Always use the `cn()` utility when merging Tailwind classes or accepting `className` props.
+
+## Next.js App Router Guidelines
+- **Server First**: Default to Server Components. Use `'use client'` only when necessary (e.g., usage of `useState`, `useEffect`, or browser-only APIs).
+- **Data Mutation**: Prefer Server Actions for data mutations over API routes where possible.
+- **Navigation**: Use the standard `Link` component from `next/link`.
+
+## Coding Standards
+- **TypeScript**: Strict type checking. Avoid `any`. Define interfaces/types for all props and data structures (exported from a `/types` folder if reusable).
+- **Safety**: Always check for `null` or `undefined` values, especially for data coming from the database (Prisma).
+- **Functional Components**: Use functional components with named exports.
+- **Clean Code**: Remove unused variables, imports, and console logs to satisfy ESLint.
+
+## Internationalization (i18n) & RTL
+- The app supports Hebrew.
+- **Logical Properties**: Prefer Tailwind logical properties over physical ones for better RTL support without complex conditionals:
+    - Use `ms-` / `me-` (margin start/end) instead of `ml-` / `mr-`.
+    - Use `ps-` / `pe-` (padding start/end) instead of `pl-` / `pr-`.
+    - Use `text-start` / `text-end` instead of `text-left` / `text-right`.
+- Use the `useLanguage` hook for translations. Do not hardcode user-facing text strings.
+
+## Project Structure
+- Components: `/components` (UI in `/components/ui`, Feature-specific in `/components/feature-name`)
+- Pages/Routes: `/app`
+- Database/ORM: `/prisma`
+- Utilities: `/lib`
+- Server Actions: `/actions` (if applicable)
