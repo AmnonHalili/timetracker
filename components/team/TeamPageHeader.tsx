@@ -47,7 +47,7 @@ export function TeamPageHeader({ projectName, membersCount, isManager }: TeamPag
                                 </div>
                             )}
                         </div>
-                    </div>
+            </div>
                     
                     {/* Action Buttons - More app-like with better styling */}
                     <div className={cn(
@@ -72,8 +72,8 @@ export function TeamPageHeader({ projectName, membersCount, isManager }: TeamPag
                                 <span className="font-medium truncate">
                                     {t('team.hierarchy')}
                                 </span>
-                            </Button>
-                        </Link>
+                    </Button>
+                </Link>
                         {isManager && (
                             <div className="flex-1 md:flex-initial">
                                 <AddMemberDialog />

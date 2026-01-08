@@ -86,72 +86,64 @@ export function getMonthlyReport(
         const hoursForDay = getHoursForDay(weeklyHours, workDays, dailyTarget, dayOfWeek)
         const isWorkDay = hoursForDay > 0
 
-        // Find workday for this day (Start Day / End Day times)
-        // Prefer active workday (workdayEndTime is null) over completed ones
-        // If multiple workdays exist, use the most recent one (workdays are sorted desc by workdayStartTime)
+        // Find ALL workdays for this day (Start Day / End Day times)
+        // We want to show all sessions, not just one
         const dayWorkdays = workdays.filter(w => isSameDay(new Date(w.workdayStartTime), day))
-        // First try to find active workday (not ended yet)
-        const activeWorkday = dayWorkdays.find(w => !w.workdayEndTime)
-        // If no active workday, use the most recent completed one (first in array since sorted desc)
-        const dayWorkday = activeWorkday || dayWorkdays[0]
+        // Sort by start time (earliest first)
+        dayWorkdays.sort((a, b) => new Date(a.workdayStartTime).getTime() - new Date(b.workdayStartTime).getTime())
 
-        // Get start/end times from workday (Start Day / End Day button presses)
+        // Get start/end times from the first workday (for legacy compatibility)
         let workdayStartTime: Date | null = null
         let workdayEndTime: Date | null = null
 
-        if (dayWorkday) {
-            workdayStartTime = new Date(dayWorkday.workdayStartTime)
-            // Only set endTime if workdayEndTime exists (user pressed End Day)
-            workdayEndTime = dayWorkday.workdayEndTime ? new Date(dayWorkday.workdayEndTime) : null
+        if (dayWorkdays.length > 0) {
+            const firstWorkday = dayWorkdays[0]
+            workdayStartTime = new Date(firstWorkday.workdayStartTime)
+            workdayEndTime = firstWorkday.workdayEndTime ? new Date(firstWorkday.workdayEndTime) : null
         }
 
-        // Check for time entries (for calculating totalDurationHours and netHours)
+        // Check for time entries (for hasManualEntries flag)
         const dayEntries = entries.filter(e => isSameDay(new Date(e.startTime), day))
         dayEntries.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
 
         const hasManualEntries = dayEntries.some(e => e.isManual)
 
-        // Calculate total duration from ALL entries for the day (for totalDurationHours and netHours)
-        // totalDurationHours = sum of all session durations (including breaks)
-        // netHours = sum of all session durations (excluding breaks)
-        let totalDuration = 0 // Total hours including breaks
-        let netDuration = 0 // Net hours excluding breaks
+        // Calculate total duration from ALL workday sessions (Start Day / End Day)
+        // totalDurationHours = sum of all workday session durations
+        // netHours = same as totalDuration (workday sessions don't include breaks in the calculation)
+        let totalDuration = 0 // Total hours from all workday sessions
+        let netDuration = 0 // Net hours (same as total for workdays)
 
-        dayEntries.forEach(entry => {
-            const start = new Date(entry.startTime)
-            const end = entry.endTime ? new Date(entry.endTime) : (isSameDay(day, today) ? new Date() : null)
-
-            if (end) {
-                // Total duration (including breaks)
-                const totalSessionDuration = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
-                totalDuration += Math.max(0, totalSessionDuration)
-
-                // Net duration (excluding breaks)
-                let netSessionDuration = totalSessionDuration
-                if (entry.breaks) {
-                    entry.breaks.forEach(b => {
-                        const bStart = new Date(b.startTime).getTime()
-                        const bEnd = b.endTime ? new Date(b.endTime).getTime() : Date.now()
-                        netSessionDuration -= (bEnd - bStart) / (1000 * 60 * 60)
-                    })
-                }
-                netDuration += Math.max(0, netSessionDuration) // ensure no negative duration
+        dayWorkdays.forEach(workday => {
+            const sessionStartTime = new Date(workday.workdayStartTime)
+            const sessionEndTime = workday.workdayEndTime 
+                ? new Date(workday.workdayEndTime) 
+                : (isSameDay(day, today) ? new Date() : null)
+            
+            if (sessionEndTime) {
+                const sessionDuration = (sessionEndTime.getTime() - sessionStartTime.getTime()) / (1000 * 60 * 60)
+                const duration = Math.max(0, sessionDuration)
+                totalDuration += duration
+                netDuration += duration // For workdays, net = total (breaks are not tracked in workday sessions)
             }
         })
 
-        // Sessions should be based on Workday (Start Day / End Day), NOT on TimeEntries
-        // The formattedSessions should show the workday times, not the timer times
+        // Sessions should be based on ALL Workdays (Start Day / End Day), NOT on TimeEntries
+        // The formattedSessions should show all workday sessions for the day
         const sessionStrings: string[] = []
         
-        if (dayWorkday && workdayStartTime) {
-            // Use workday times for sessions display
-            const endTime = workdayEndTime || (isSameDay(day, today) ? new Date() : null)
-            if (endTime) {
-                sessionStrings.push(`${format(workdayStartTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}`)
+        dayWorkdays.forEach(workday => {
+            const sessionStartTime = new Date(workday.workdayStartTime)
+            const sessionEndTime = workday.workdayEndTime 
+                ? new Date(workday.workdayEndTime) 
+                : (isSameDay(day, today) ? new Date() : null)
+            
+            if (sessionEndTime) {
+                sessionStrings.push(`${format(sessionStartTime, 'HH:mm')} - ${format(sessionEndTime, 'HH:mm')}`)
             } else {
-                sessionStrings.push(`${format(workdayStartTime, 'HH:mm')} - ...`)
+                sessionStrings.push(`${format(sessionStartTime, 'HH:mm')} - ...`)
             }
-        }
+        })
 
         totalMonthlyHours += netDuration // Use net hours for monthly total
         if (isWorkDay && day <= today) {

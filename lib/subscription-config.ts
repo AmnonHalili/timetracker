@@ -18,7 +18,7 @@ export const PLANS = [
         slug: "tier1",
         quota: 10,
         price: {
-            amount: 49,
+            amount: 29,
             priceIds: {
                 test: "price_tier1_test", // User to replace
                 production: "",
@@ -30,7 +30,7 @@ export const PLANS = [
         slug: "tier2",
         quota: 20,
         price: {
-            amount: 99,
+            amount: 49,
             priceIds: {
                 test: "price_tier2_test", // User to replace
                 production: "",
@@ -42,8 +42,8 @@ export const PLANS = [
         slug: "tier3",
         quota: Infinity, // Unlimited
         price: {
-            amount: 199, // Base price
-            perUserPrice: 8, // Per user above 20
+            amount: 99, // Base price
+            perUserPrice: 10, // Per user above 20
             priceIds: {
                 test: "price_tier3_test", // User to replace
                 production: "",
@@ -82,7 +82,7 @@ export function getRequiredTier(userCount: number): { tier: string; slug: string
 
 // Calculate Company tier price based on user count
 export function calculateCompanyPrice(userCount: number): number {
-    const basePrice = 199
+    const basePrice = 99
     const usersAbove20 = Math.max(0, userCount - 20)
-    return basePrice + (usersAbove20 * 8)
+    return basePrice + (usersAbove20 * 10)
 }

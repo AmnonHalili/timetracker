@@ -188,7 +188,7 @@ export function PricingContent() {
                 <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
                     {t('pricing.title')}
                 </h1>
-                <p className={`text-lg md:text-xl text-muted-foreground mx-auto ${isRTL ? 'text-right' : 'text-left'} inline-block`}>
+                <p className="text-lg md:text-xl text-muted-foreground mx-auto text-center max-w-3xl">
                     {t('pricing.subtitle')}
                 </p>
             </div>
@@ -227,11 +227,11 @@ export function PricingContent() {
                                         <div className="mt-2 space-y-1">
                                             {userCount > 20 ? (
                                                 <div className="text-xs text-muted-foreground">
-                                                    {t('pricing.tier3.basePrice')} + $8.00 × {userCount - 20} {t('pricing.tier3.usersAbove50')} = ${calculateCompanyPrice(userCount).toFixed(2)}/month
+                                                    {t('pricing.tier3.basePrice')} + $10.00 × {userCount - 20} {t('pricing.tier3.usersAbove50')} = ${calculateCompanyPrice(userCount).toFixed(2)}/month
                                                 </div>
                                             ) : (
                                                 <div className="text-xs text-muted-foreground">
-                                                    {t('pricing.tier3.basePrice')} + $8.00 {t('pricing.tier3.perUserAbove50')}
+                                                    {t('pricing.tier3.basePrice')} + $10.00 {t('pricing.tier3.perUserAbove50')}
                                                 </div>
                                             )}
                                         </div>

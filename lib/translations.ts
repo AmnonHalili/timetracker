@@ -557,7 +557,7 @@ export const translations = {
 
     // Team (Tier 1)
     'pricing.tier1.name': 'Team',
-    'pricing.tier1.price': '$49 / month',
+    'pricing.tier1.price': '$29 / month',
     'pricing.tier1.description': 'For growing teams',
     'pricing.tier1.users': '4-10 participants',
     'pricing.tier1.feature1': 'All Free features',
@@ -566,7 +566,7 @@ export const translations = {
 
     // Business (Tier 2)
     'pricing.tier2.name': 'Business',
-    'pricing.tier2.price': '$99 / month',
+    'pricing.tier2.price': '$49 / month',
     'pricing.tier2.description': 'For established teams',
     'pricing.tier2.users': '10-20 participants',
     'pricing.tier2.feature1': 'All Team features',
@@ -575,10 +575,10 @@ export const translations = {
 
     // Company (Tier 3)
     'pricing.tier3.name': 'Company',
-    'pricing.tier3.price': '$199 / month',
+    'pricing.tier3.price': '$99 / month',
     'pricing.tier3.description': 'For large organizations',
     'pricing.tier3.users': '20+ participants',
-    'pricing.tier3.basePrice': 'Base: $199/month',
+    'pricing.tier3.basePrice': 'Base: $99/month',
     'pricing.tier3.perUserAbove50': 'per user above 20',
     'pricing.tier3.usersAbove50': 'users above 20',
     'pricing.tier3.feature1': 'All Business features',
@@ -1268,7 +1268,7 @@ export const translations = {
 
     // Team (Tier 1)
     'pricing.tier1.name': 'צוות',
-    'pricing.tier1.price': '$49 / חודש',
+    'pricing.tier1.price': '$29 / חודש',
     'pricing.tier1.description': 'לצוותים גדלים',
     'pricing.tier1.users': '4-10 משתתפים',
     'pricing.tier1.feature1': 'כל התכונות של החינם',
@@ -1277,7 +1277,7 @@ export const translations = {
 
     // Business (Tier 2)
     'pricing.tier2.name': 'עסק',
-    'pricing.tier2.price': '$99 / חודש',
+    'pricing.tier2.price': '$49 / חודש',
     'pricing.tier2.description': 'לצוותים מבוססים',
     'pricing.tier2.users': '10-20 משתתפים',
     'pricing.tier2.feature1': 'כל התכונות של צוות',
@@ -1286,10 +1286,10 @@ export const translations = {
 
     // Company (Tier 3)
     'pricing.tier3.name': 'חברה',
-    'pricing.tier3.price': '$199 / חודש',
+    'pricing.tier3.price': '$99 / חודש',
     'pricing.tier3.description': 'לארגונים גדולים',
     'pricing.tier3.users': '20+ משתתפים',
-    'pricing.tier3.basePrice': 'בסיס: $199/חודש',
+    'pricing.tier3.basePrice': 'בסיס: $99/חודש',
     'pricing.tier3.perUserAbove50': 'לכל משתמש מעל 20',
     'pricing.tier3.usersAbove50': 'משתמשים מעל 20',
     'pricing.tier3.feature1': 'כל התכונות של עסק',

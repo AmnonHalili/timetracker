@@ -298,16 +298,16 @@ export function ReportTable({ days, userId }: ReportTableProps) {
 
             {/* Desktop Table View */}
             <div className="hidden md:block rounded-md border">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className={cn(isRTL ? "text-right" : "text-left", "w-[12%]")}>{t('reports.date')}</TableHead>
-                            <TableHead className={cn(isRTL ? "text-right" : "text-left", "w-[18%]")}>{t('reports.day')}</TableHead>
-                            <TableHead className={cn(isRTL ? "text-right" : "text-left", "w-[44%]")}>{t('reports.sessions') || "Sessions"}</TableHead>
-                            <TableHead className={cn(isRTL ? "text-left" : "text-right", "w-[22%]")}>{t('reports.totalHours')}</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead className={cn(isRTL ? "text-right" : "text-left", "w-[12%]")}>{t('reports.date')}</TableHead>
+                        <TableHead className={cn(isRTL ? "text-right" : "text-left", "w-[18%]")}>{t('reports.day')}</TableHead>
+                        <TableHead className={cn(isRTL ? "text-right" : "text-left", "w-[44%]")}>{t('reports.sessions') || "Sessions"}</TableHead>
+                        <TableHead className={cn(isRTL ? "text-left" : "text-right", "w-[22%]")}>{t('reports.totalHours')}</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
                     {sortedDays.map((day) => {
                         // Format date as YYYY-MM-DD in local timezone
                         const dayKey = format(day.date, 'yyyy-MM-dd')
@@ -443,7 +443,7 @@ export function ReportTable({ days, userId }: ReportTableProps) {
                     })}
                 </TableBody>
             </Table>
-            </div>
+        </div>
         </>
     )
 }

@@ -554,20 +554,20 @@ export function CreateTaskForm({
                                             <Label htmlFor="subtask-title" className="text-base font-semibold">
                                                 {t('tasks.titleLabel')}
                                             </Label>
-                                            <Input
+                                        <Input
                                                 id="subtask-title"
-                                                placeholder={t('tasks.subtaskTitlePlaceholder') || "What needs to be done?"}
-                                                value={newSubtaskTitle}
-                                                onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                                            placeholder={t('tasks.subtaskTitlePlaceholder') || "What needs to be done?"}
+                                            value={newSubtaskTitle}
+                                            onChange={(e) => setNewSubtaskTitle(e.target.value)}
                                                 className="h-10 border-input bg-transparent"
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') {
-                                                        e.preventDefault()
-                                                        handleAddSubtask()
-                                                    }
-                                                }}
-                                            />
-                                        </div>
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault()
+                                                    handleAddSubtask()
+                                                }
+                                            }}
+                                        />
+                                    </div>
 
                                         <div className="grid gap-2">
                                             <Label htmlFor="subtask-priority" className="text-base font-semibold">
@@ -605,7 +605,7 @@ export function CreateTaskForm({
                                                 </SelectContent>
                                             </Select>
                                         </div>
-                                    </div>
+                                        </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="grid gap-2">
@@ -634,11 +634,11 @@ export function CreateTaskForm({
                                                 {t('tasks.deadline')}
                                             </Label>
                                             <div className="flex gap-2">
-                                                <Input
+                                        <Input
                                                     id="subtask-deadline"
-                                                    type="date"
-                                                    value={newSubtaskDueDate}
-                                                    onChange={(e) => setNewSubtaskDueDate(e.target.value)}
+                                            type="date"
+                                            value={newSubtaskDueDate}
+                                            onChange={(e) => setNewSubtaskDueDate(e.target.value)}
                                                     className="h-10"
                                                 />
                                                 <Input
@@ -708,56 +708,56 @@ export function CreateTaskForm({
                                                 const dueDateFormatted = st.dueDate ? new Date(st.dueDate).toLocaleDateString() : null
                                                 
                                                 return (
-                                                    <div key={st.id} className="flex items-center px-4 py-2.5 hover:bg-muted/30 transition-colors group text-sm">
-                                                        <div className="flex-1 font-medium flex items-center gap-2">
-                                                            {st.title}
-                                                            <div className="md:hidden flex gap-1">
-                                                                <div className={cn(
-                                                                    "w-2 h-2 rounded-full",
-                                                                    st.priority === 'HIGH' ? "bg-red-500" :
-                                                                        st.priority === 'MEDIUM' ? "bg-yellow-500" :
+                                                <div key={st.id} className="flex items-center px-4 py-2.5 hover:bg-muted/30 transition-colors group text-sm">
+                                                    <div className="flex-1 font-medium flex items-center gap-2">
+                                                        {st.title}
+                                                        <div className="md:hidden flex gap-1">
+                                                            <div className={cn(
+                                                                "w-2 h-2 rounded-full",
+                                                                st.priority === 'HIGH' ? "bg-red-500" :
+                                                                    st.priority === 'MEDIUM' ? "bg-yellow-500" :
                                                                             st.priority === 'LOW' ? "bg-green-500" :
                                                                                 "bg-muted-foreground/30"
-                                                                )} />
-                                                            </div>
+                                                            )} />
                                                         </div>
+                                                    </div>
 
-                                                        <div className="w-[100px] hidden md:flex items-center">
-                                                            <Badge variant="outline" className={cn(
-                                                                "h-6 text-[10px] gap-1.5 pl-1.5 pr-2.5",
-                                                                st.priority === 'HIGH' ? "bg-red-50 text-red-700 border-red-200" :
-                                                                    st.priority === 'MEDIUM' ? "bg-yellow-50 text-yellow-700 border-yellow-200" :
+                                                    <div className="w-[100px] hidden md:flex items-center">
+                                                        <Badge variant="outline" className={cn(
+                                                            "h-6 text-[10px] gap-1.5 pl-1.5 pr-2.5",
+                                                            st.priority === 'HIGH' ? "bg-red-50 text-red-700 border-red-200" :
+                                                                st.priority === 'MEDIUM' ? "bg-yellow-50 text-yellow-700 border-yellow-200" :
                                                                         st.priority === 'LOW' ? "bg-green-50 text-green-700 border-green-200" :
                                                                             "bg-muted/50 text-muted-foreground border-muted"
-                                                            )}>
-                                                                <div className={cn(
-                                                                    "w-1.5 h-1.5 rounded-full",
-                                                                    st.priority === 'HIGH' ? "bg-red-500" :
-                                                                        st.priority === 'MEDIUM' ? "bg-yellow-500" :
+                                                        )}>
+                                                            <div className={cn(
+                                                                "w-1.5 h-1.5 rounded-full",
+                                                                st.priority === 'HIGH' ? "bg-red-500" :
+                                                                    st.priority === 'MEDIUM' ? "bg-yellow-500" :
                                                                             st.priority === 'LOW' ? "bg-green-500" :
                                                                                 "bg-muted-foreground/30"
-                                                                )} />
+                                                            )} />
                                                                 {st.priority === 'HIGH' ? t('tasks.priorityHigh') : 
                                                                     st.priority === 'MEDIUM' ? t('tasks.priorityMedium') : 
                                                                     st.priority === 'LOW' ? t('tasks.priorityLow') : 
                                                                     t('tasks.priorityNone')}
-                                                            </Badge>
-                                                        </div>
+                                                        </Badge>
+                                                    </div>
 
-                                                        <div className="w-[120px] hidden md:flex items-center text-muted-foreground text-xs">
-                                                            {st.assignedToId ? (
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[10px] text-primary font-bold">
-                                                                        {users.find(u => u.id === st.assignedToId)?.name?.charAt(0) || "U"}
-                                                                    </div>
-                                                                    <span className="truncate max-w-[85px]">
-                                                                        {users.find(u => u.id === st.assignedToId)?.name || "User"}
-                                                                    </span>
+                                                    <div className="w-[120px] hidden md:flex items-center text-muted-foreground text-xs">
+                                                        {st.assignedToId ? (
+                                                            <div className="flex items-center gap-1.5">
+                                                                <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[10px] text-primary font-bold">
+                                                                    {users.find(u => u.id === st.assignedToId)?.name?.charAt(0) || "U"}
                                                                 </div>
-                                                            ) : (
-                                                                <span className="opacity-50">-</span>
-                                                            )}
-                                                        </div>
+                                                                <span className="truncate max-w-[85px]">
+                                                                    {users.find(u => u.id === st.assignedToId)?.name || "User"}
+                                                                </span>
+                                                            </div>
+                                                        ) : (
+                                                            <span className="opacity-50">-</span>
+                                                        )}
+                                                    </div>
 
                                                         <div className="w-[110px] hidden md:flex items-center text-muted-foreground text-xs">
                                                             {startDateFormatted || <span className="opacity-50">-</span>}
@@ -765,20 +765,20 @@ export function CreateTaskForm({
 
                                                         <div className="w-[110px] hidden md:flex items-center text-muted-foreground text-xs">
                                                             {dueDateFormatted || <span className="opacity-50">-</span>}
-                                                        </div>
-
-                                                        <div className="w-8 flex justify-end">
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={() => handleDeleteSubtask(st.id)}
-                                                                className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        </div>
                                                     </div>
+
+                                                    <div className="w-8 flex justify-end">
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handleDeleteSubtask(st.id)}
+                                                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
                                                 )
                                             })}
                                         </div>
