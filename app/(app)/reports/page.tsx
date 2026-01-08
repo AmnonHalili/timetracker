@@ -187,8 +187,8 @@ export default async function ReportsPage({
         const validUsersData = allUsersData.filter((data): data is NonNullable<typeof data> => data !== null)
 
         return (
-            <div className="container mx-auto p-4 md:p-8 space-y-8">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="container mx-auto px-4 md:px-8 py-4 md:py-8 space-y-5 md:space-y-8">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-4">
                     <ReportsPageHeader />
                     <ReportsControls
                         projectUsers={projectUsers}
@@ -203,7 +203,7 @@ export default async function ReportsPage({
 
                 {validUsersData.length === 0 ? (
                     <div className="text-center py-12 bg-muted/20 rounded-lg border border-dashed">
-                        <p className="text-muted-foreground">No reports available for this period yet.</p>
+                        <p className="text-sm md:text-base text-muted-foreground">No reports available for this period yet.</p>
                     </div>
                 ) : (
                     <AllUsersReportTable
@@ -222,8 +222,8 @@ export default async function ReportsPage({
     const { report } = data
 
     return (
-        <div className="container mx-auto p-4 md:p-8 space-y-8">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="container mx-auto px-4 md:px-8 py-4 md:py-8 space-y-5 md:space-y-8">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-4">
                 <ReportsPageHeader />
                 <ReportsControls
                     projectUsers={projectUsers}
@@ -238,7 +238,7 @@ export default async function ReportsPage({
 
             {report.days.length === 0 ? (
                 <div className="text-center py-12 bg-muted/20 rounded-lg border border-dashed">
-                    <p className="text-muted-foreground">No reports available for this period yet.</p>
+                    <p className="text-sm md:text-base text-muted-foreground">No reports available for this period yet.</p>
                 </div>
             ) : (
                 <>

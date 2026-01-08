@@ -21,23 +21,25 @@ interface ReportsControlsProps {
 }
 
 export function ReportsControls({ projectUsers, targetUserId, loggedInUserId, currentYear, currentMonth }: ReportsControlsProps) {
-    const { t } = useLanguage()
+    const { t, isRTL } = useLanguage()
     
     return (
-        <div className="flex flex-col gap-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="w-full md:w-auto">
+            <div className="flex flex-col gap-4 md:gap-6">
                 {projectUsers.length > 0 && (
-                    <div className="flex flex-col gap-2">
-                        <label className="text-sm font-medium text-muted-foreground">{t('reports.user')}</label>
+                    <div className="flex flex-col gap-2 w-full md:w-auto">
+                        <label className="text-xs md:text-sm font-medium text-muted-foreground">{t('reports.user')}</label>
                         <UserSelector currentUserId={targetUserId} loggedInUserId={loggedInUserId} users={projectUsers} />
                     </div>
                 )}
-                <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4">
-                    <div className="flex flex-col gap-2">
-                        <label className="text-sm font-medium text-muted-foreground">{t('reports.period')}</label>
+                <div className="flex flex-col gap-3 md:flex-row md:items-end md:gap-4">
+                    <div className="flex flex-col gap-2 flex-1 md:flex-initial">
+                        <label className="text-xs md:text-sm font-medium text-muted-foreground">{t('reports.period')}</label>
                         <MonthSelector year={currentYear} month={currentMonth} />
                     </div>
-                    <ExportButton userId={targetUserId} year={currentYear} month={currentMonth} projectUsers={projectUsers} />
+                    <div className="flex items-end">
+                        <ExportButton userId={targetUserId} year={currentYear} month={currentMonth} projectUsers={projectUsers} />
+                    </div>
                 </div>
             </div>
         </div>

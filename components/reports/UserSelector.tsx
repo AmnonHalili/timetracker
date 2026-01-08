@@ -35,7 +35,7 @@ export function UserSelector({ users, currentUserId, loggedInUserId }: UserSelec
 
     return (
         <Select value={displayValue} onValueChange={handleUserChange}>
-            <SelectTrigger className="w-[200px]">
+            <SelectTrigger className="w-full md:w-[200px] h-10 rounded-xl">
                 <SelectValue placeholder="Select User" />
             </SelectTrigger>
             <SelectContent>

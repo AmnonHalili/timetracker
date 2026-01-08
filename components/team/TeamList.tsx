@@ -35,7 +35,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2, Trash2, Edit, Check } from "lucide-react"
 import { useLanguage } from "@/lib/useLanguage"
-import { Card } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { canManageUser } from "@/lib/hierarchy-utils"
 import { toast } from "sonner"
@@ -525,9 +525,70 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
         return <div className="text-center text-muted-foreground py-8">{t('team.noTeamMembersYet')}</div>
     }
 
+    // Helper function to get job title
+    const getJobTitle = (user: User) => {
+        if (user.jobTitle) return user.jobTitle
+        if (user.role === "ADMIN") return "Founder"
+        return user.role.toLowerCase().replace('_', ' ')
+    }
+
     return (
         <>
-            <div className="rounded-md border">
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-2.5">
+                {localUsers.map((user) => (
+                    <Card
+                        key={user.id}
+                        className={`${currentUserRole !== 'EMPLOYEE' ? 'cursor-pointer hover:bg-muted/50 transition-all duration-200 hover:shadow-md' : ''} border-border/60 shadow-sm`}
+                        onClick={() => openDialog(user)}
+                    >
+                        <CardContent className="p-4">
+                            <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                                <Avatar className="h-12 w-12 flex-shrink-0 ring-2 ring-background">
+                                    <AvatarImage src={user.image || undefined} alt={user.name} />
+                                    <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                                        {user.name.substring(0, 2).toUpperCase()}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className={`flex-1 min-w-0 ${isRTL ? 'text-right' : 'text-left'}`}>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <h3 className="font-semibold text-base truncate">
+                                            {user.name}
+                                        </h3>
+                                        {user.id === currentUserId && (
+                                            <span className="text-xs text-muted-foreground font-normal whitespace-nowrap">
+                                                {t('common.you')}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-sm text-muted-foreground truncate mb-1">
+                                        {user.email}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground capitalize">
+                                        {getJobTitle(user)}
+                                    </p>
+                                </div>
+                                {currentUserRole !== 'EMPLOYEE' && (
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-9 w-9 flex-shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            openDeleteDialog(user)
+                                        }}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block rounded-md border">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -559,14 +620,7 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
                                 <TableCell className={isRTL ? 'text-right' : 'text-left'}>{user.email}</TableCell>
                                 <TableCell className={isRTL ? 'text-right' : 'text-left'}>
                                     <span className="capitalize">
-                                        {(() => {
-                                            // If user has a jobTitle, use it
-                                            if (user.jobTitle) return user.jobTitle
-                                            // Default to "Founder" for ADMIN users with a team
-                                            if (user.role === "ADMIN") return "Founder"
-                                            // Otherwise fall back to role
-                                            return user.role.toLowerCase().replace('_', ' ')
-                                        })()}
+                                        {getJobTitle(user)}
                                     </span>
                                 </TableCell>
                                 <TableCell className={isRTL ? 'text-left' : 'text-right'} onClick={(e) => e.stopPropagation()}>

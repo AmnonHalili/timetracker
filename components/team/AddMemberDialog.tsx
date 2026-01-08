@@ -210,7 +210,9 @@ export function AddMemberDialog({
                 {customTrigger ? (
                     customTrigger
                 ) : (
-                    <Button>
+                    <Button 
+                        className="h-10 rounded-xl font-medium shadow-sm hover:shadow transition-all duration-200 w-full md:w-auto"
+                    >
                         <UserPlus className="mr-2 h-4 w-4" />
                         {defaultTriggerLabel}
                     </Button>

@@ -65,40 +65,40 @@ export function TeamRequestsList({ initialRequests }: TeamRequestsListProps) {
     if (requests.length === 0) return null
 
     return (
-        <Card className="border-l-4 border-l-primary mb-8 animate-in fade-in slide-in-from-top-4">
-            <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
+        <Card className="border-l-4 border-l-primary mb-6 md:mb-8 animate-in fade-in slide-in-from-top-4">
+            <CardHeader className="pb-3 px-4 md:px-6 pt-4 md:pt-6">
+                <CardTitle className="text-base md:text-lg flex items-center gap-2">
                     Pending Join Requests
                     <span className="bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">
                         {requests.length}
                     </span>
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-sm">
                     These users have requested to join your team via your Team Code.
                 </CardDescription>
             </CardHeader>
-            <CardContent>
-                <div className="space-y-4">
+            <CardContent className="px-4 md:px-6 pb-4 md:pb-6">
+                <div className="space-y-3 md:space-y-4">
                     {requests.map((request) => (
                         <div
                             key={request.id}
-                            className="flex items-center justify-between p-3 rounded-lg border bg-card/50"
+                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 md:p-4 rounded-lg border bg-card/50"
                         >
-                            <div className="flex items-center gap-3">
-                                <Avatar>
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <Avatar className="h-10 w-10 md:h-12 md:w-12 flex-shrink-0">
                                     <AvatarImage src={request.image || ""} />
                                     <AvatarFallback>{request.name.slice(0, 2).toUpperCase()}</AvatarFallback>
                                 </Avatar>
-                                <div>
-                                    <div className="font-semibold">{request.name}</div>
-                                    <div className="text-sm text-muted-foreground">{request.email}</div>
+                                <div className="min-w-0 flex-1">
+                                    <div className="font-semibold text-sm md:text-base truncate">{request.name}</div>
+                                    <div className="text-xs md:text-sm text-muted-foreground truncate">{request.email}</div>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 sm:flex-shrink-0">
                                 <Button
                                     size="sm"
                                     variant="outline"
-                                    className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
+                                    className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20 flex-1 sm:flex-initial"
                                     disabled={processingId === request.id}
                                     onClick={() => handleAction(request.id, "REJECT")}
                                 >
@@ -113,7 +113,7 @@ export function TeamRequestsList({ initialRequests }: TeamRequestsListProps) {
                                 </Button>
                                 <Button
                                     size="sm"
-                                    className="bg-green-600 hover:bg-green-700 text-white"
+                                    className="bg-green-600 hover:bg-green-700 text-white flex-1 sm:flex-initial"
                                     disabled={processingId === request.id}
                                     onClick={() => handleAction(request.id, "APPROVE")}
                                 >

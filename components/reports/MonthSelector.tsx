@@ -55,7 +55,7 @@ export function MonthSelector({ year: propsYear, month: propsMonth }: MonthSelec
     return (
         <div className="flex gap-2">
             <Select value={currentMonth.toString()} onValueChange={handleMonthChange}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full md:w-[180px] h-10 rounded-xl">
                     <SelectValue placeholder={t('months.month')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -68,7 +68,7 @@ export function MonthSelector({ year: propsYear, month: propsMonth }: MonthSelec
             </Select>
 
             <Select value={currentYear.toString()} onValueChange={handleYearChange}>
-                <SelectTrigger className="w-[120px]">
+                <SelectTrigger className="w-full md:w-[120px] h-10 rounded-xl">
                     <SelectValue placeholder={t('months.year')} />
                 </SelectTrigger>
                 <SelectContent>
