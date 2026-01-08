@@ -1,14 +1,12 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
 import { format, eachHourOfInterval, isSameHour, isSameDay } from "date-fns"
 import { EventCard } from "./EventCard"
 import { CreateEventDialog } from "./CreateEventDialog"
 import { cn } from "@/lib/utils"
-import { Plus } from "lucide-react"
 import { useState } from "react"
 import { useLanguage } from "@/lib/useLanguage"
-import { startOfDay, endOfDay, setHours } from "date-fns"
+import { startOfDay, endOfDay } from "date-fns"
 import { useRef, useEffect } from "react"
 interface CalendarEvent {
     id: string

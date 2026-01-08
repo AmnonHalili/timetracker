@@ -21,7 +21,6 @@ export function AppHeader() {
     const { isRTL } = useLanguage()
     const pathname = usePathname()
     const [teamStatus, setTeamStatus] = useState<TeamMemberStatus[]>([])
-    const isCalendarPage = pathname === '/calendar'
 
     useEffect(() => {
         fetch('/api/team-status')

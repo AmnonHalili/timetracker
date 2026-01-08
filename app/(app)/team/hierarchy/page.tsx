@@ -206,17 +206,12 @@ export default function HierarchyPage() {
         if (!projectCardElement) {
             // Fallback to centering if project card not found
             const scaledWidth = containerWidth * optimalZoom
-            const scaledHeight = containerHeight * optimalZoom
             const targetX = (availableWidth / 2) - (scaledWidth / 2)
             const targetY = (headerHeight + 20) - (16 * optimalZoom) // marginTop: 1rem = 16px
             setPanPosition({ x: targetX, y: targetY })
             setIsInitialized(true)
             return
         }
-
-        // Project card dimensions (unscaled)
-        const projectCardWidth = projectCardElement.offsetWidth
-        const projectCardHeight = projectCardElement.offsetHeight
 
         // Project card position relative to container (before scaling):
         // - Container has items-center, so project card is centered horizontally in container
@@ -723,263 +718,263 @@ export default function HierarchyPage() {
                         visibility: isInitialized ? 'visible' : 'hidden'
                     }}
                 >
-                {/* Project Root Node Section */}
-                <div className="flex flex-col items-center mb-8 relative">
-                    {/* Project Card */}
-                    <div className="bg-primary text-primary-foreground px-16 py-4 rounded-xl shadow-lg border-2 border-primary-foreground/20 z-10 mb-8 flex flex-row items-center justify-center relative">
-                        {/* Logo Placeholder - Absolute Left */}
-                        <div
-                            className="absolute left-3 h-10 w-10 bg-white/95 rounded-lg flex items-center justify-center border-2 border-dashed border-primary/20 cursor-pointer hover:bg-white transition-colors overflow-hidden group/logo shadow-sm"
-                            onClick={() => hasProject && session?.user?.role === "ADMIN" && document.getElementById('logo-upload')?.click()}
-                        >
-                            {projectLogo ? (
-                                <>
-                                    <Image
-                                        src={projectLogo}
-                                        alt="Logo"
-                                        fill
-                                        className="object-contain p-1"
-                                        unoptimized // Allow external/data URLs without config
-                                    />
-                                    {/* Overlay for Edit */}
-                                    {hasProject && session?.user?.role === "ADMIN" && (
-                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity">
-                                            <Pencil className="h-4 w-4 text-white" />
-                                        </div>
-                                    )}
-                                </>
-                            ) : (
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    className="text-primary/40"
-                                >
-                                    <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-                                    <circle cx="9" cy="9" r="2" />
-                                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                                </svg>
-                            )}
-                            <input
-                                type="file"
-                                id="logo-upload"
-                                className="hidden"
-                                accept="image/*"
-                                onChange={handleLogoUpload}
-                            />
+                    {/* Project Root Node Section */}
+                    <div className="flex flex-col items-center mb-8 relative">
+                        {/* Project Card */}
+                        <div className="bg-primary text-primary-foreground px-16 py-4 rounded-xl shadow-lg border-2 border-primary-foreground/20 z-10 mb-8 flex flex-row items-center justify-center relative">
+                            {/* Logo Placeholder - Absolute Left */}
+                            <div
+                                className="absolute left-3 h-10 w-10 bg-white/95 rounded-lg flex items-center justify-center border-2 border-dashed border-primary/20 cursor-pointer hover:bg-white transition-colors overflow-hidden group/logo shadow-sm"
+                                onClick={() => hasProject && session?.user?.role === "ADMIN" && document.getElementById('logo-upload')?.click()}
+                            >
+                                {projectLogo ? (
+                                    <>
+                                        <Image
+                                            src={projectLogo}
+                                            alt="Logo"
+                                            fill
+                                            className="object-contain p-1"
+                                            unoptimized // Allow external/data URLs without config
+                                        />
+                                        {/* Overlay for Edit */}
+                                        {hasProject && session?.user?.role === "ADMIN" && (
+                                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity">
+                                                <Pencil className="h-4 w-4 text-white" />
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        className="text-primary/40"
+                                    >
+                                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                                        <circle cx="9" cy="9" r="2" />
+                                        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                                    </svg>
+                                )}
+                                <input
+                                    type="file"
+                                    id="logo-upload"
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={handleLogoUpload}
+                                />
+                            </div>
+
+                            <h2 className="text-xl font-bold tracking-tight text-center">{projectName}</h2>
                         </div>
 
-                        <h2 className="text-xl font-bold tracking-tight text-center">{projectName}</h2>
-                    </div>
+                        {/* Connector to Roots */}
+                        {tree && tree.length > 0 && (
+                            <>
+                                {/* Vertical line from Project Card down */}
+                                <div className="absolute top-[2rem] h-16 w-[2px] bg-slate-300 dark:bg-slate-600" />
 
-                    {/* Connector to Roots */}
-                    {tree && tree.length > 0 && (
-                        <>
-                            {/* Vertical line from Project Card down */}
-                            <div className="absolute top-[2rem] h-16 w-[2px] bg-slate-300 dark:bg-slate-600" />
-
-                            {/* Horizontal Line spanning first to last root */}
-                            {tree.length > 1 && (
-                                <div className="absolute top-[5.5rem] h-[2px] bg-slate-300 dark:bg-slate-600 w-full max-w-[calc(100%-16rem)] hidden" />
-                            )}
+                                {/* Horizontal Line spanning first to last root */}
+                                {tree.length > 1 && (
+                                    <div className="absolute top-[5.5rem] h-[2px] bg-slate-300 dark:bg-slate-600 w-full max-w-[calc(100%-16rem)] hidden" />
+                                )}
 
 
-                            <div className="absolute top-[5.5rem] w-full flex justify-center">
-                                {/* This is the horizontal bus line from which roots hang */}
-                                {/* Ideally, we want a line traversing the tops of the root nodes. 
+                                <div className="absolute top-[5.5rem] w-full flex justify-center">
+                                    {/* This is the horizontal bus line from which roots hang */}
+                                    {/* Ideally, we want a line traversing the tops of the root nodes. 
                                      The root nodes are rendered below in a flex row.
                                  */}
-                            </div>
-                        </>
-                    )}
-                </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
 
-                {/* Tree Container */}
-                <div className="flex justify-center">
-                    <div className="flex gap-8 relative items-start">
-                        {/* Group shared chiefs and render them together */}
-                        {(() => {
-                            // Group root nodes by sharedChiefGroupId
-                            const grouped: Array<{ type: 'shared' | 'independent', nodes: TreeNode[], groupId?: string }> = []
-                            const processed = new Set<string>()
+                    {/* Tree Container */}
+                    <div className="flex justify-center">
+                        <div className="flex gap-8 relative items-start">
+                            {/* Group shared chiefs and render them together */}
+                            {(() => {
+                                // Group root nodes by sharedChiefGroupId
+                                const grouped: Array<{ type: 'shared' | 'independent', nodes: TreeNode[], groupId?: string }> = []
+                                const processed = new Set<string>()
 
-                            tree?.forEach((node) => {
-                                if (processed.has(node.id)) return
+                                tree?.forEach((node) => {
+                                    if (processed.has(node.id)) return
 
-                                if (node.sharedChiefGroupId && node.role === 'ADMIN') {
-                                    // Find all nodes in the same shared group
-                                    const sharedGroup = tree.filter(n =>
-                                        n.sharedChiefGroupId === node.sharedChiefGroupId &&
-                                        n.role === 'ADMIN' &&
-                                        !n.managerId
-                                    )
-                                    sharedGroup.forEach(n => processed.add(n.id))
-                                    grouped.push({ type: 'shared', nodes: sharedGroup, groupId: node.sharedChiefGroupId })
-                                } else {
-                                    processed.add(node.id)
-                                    grouped.push({ type: 'independent', nodes: [node] })
-                                }
-                            })
+                                    if (node.sharedChiefGroupId && node.role === 'ADMIN') {
+                                        // Find all nodes in the same shared group
+                                        const sharedGroup = tree.filter(n =>
+                                            n.sharedChiefGroupId === node.sharedChiefGroupId &&
+                                            n.role === 'ADMIN' &&
+                                            !n.managerId
+                                        )
+                                        sharedGroup.forEach(n => processed.add(n.id))
+                                        grouped.push({ type: 'shared', nodes: sharedGroup, groupId: node.sharedChiefGroupId })
+                                    } else {
+                                        processed.add(node.id)
+                                        grouped.push({ type: 'independent', nodes: [node] })
+                                    }
+                                })
 
-                            return grouped.map((group, groupIndex) => {
-                                if (group.type === 'shared' && group.nodes.length > 1) {
-                                    // Merge all children from all partners in the group
-                                    const mergedChildren: TreeNode[] = []
-                                    const childrenSet = new Set<string>()
+                                return grouped.map((group, groupIndex) => {
+                                    if (group.type === 'shared' && group.nodes.length > 1) {
+                                        // Merge all children from all partners in the group
+                                        const mergedChildren: TreeNode[] = []
+                                        const childrenSet = new Set<string>()
 
-                                    group.nodes.forEach(partner => {
-                                        partner.children.forEach(child => {
-                                            if (!childrenSet.has(child.id)) {
-                                                childrenSet.add(child.id)
-                                                mergedChildren.push(child)
-                                            }
+                                        group.nodes.forEach(partner => {
+                                            partner.children.forEach(child => {
+                                                if (!childrenSet.has(child.id)) {
+                                                    childrenSet.add(child.id)
+                                                    mergedChildren.push(child)
+                                                }
+                                            })
                                         })
-                                    })
 
-                                    // Render shared chiefs connected by a horizontal line
-                                    return (
-                                        <div key={group.groupId} className="relative flex flex-col items-center">
-                                            {/* Shared Chiefs - horizontal layout */}
-                                            <div className="flex gap-8 items-center relative">
-                                                {group.nodes.map((node, nodeIndex) => {
-                                                    // Create a version of the node without children (they'll be rendered separately below)
-                                                    const nodeWithoutChildren = { ...node, children: [] }
-
-                                                    return (
-                                                        <div key={node.id} className="relative flex flex-col items-center">
-                                                            <RecursiveNode
-                                                                node={nodeWithoutChildren}
-                                                                allUsers={users}
-                                                                onAddClick={handleAddClick}
-                                                                depth={0}
-                                                                onlineUserIds={onlineUserIds}
-                                                            />
-
-                                                            {/* Horizontal connecting line between partners (except for the last one) */}
-                                                            {nodeIndex < group.nodes.length - 1 && (
-                                                                <div
-                                                                    className="absolute top-1/2 -translate-y-1/2 left-full h-[2px] bg-slate-300 dark:bg-slate-600 z-0"
-                                                                    style={{ width: '2rem' }}
-                                                                />
-                                                            )}
-                                                        </div>
-                                                    )
-                                                })}
-                                            </div>
-
-                                            {/* Vertical line up to the Project Bus (from center of group) */}
-                                            <div className="h-8 w-[1px] bg-slate-300 dark:bg-slate-600 absolute -top-8 left-1/2 -translate-x-1/2" />
-
-                                            {/* Horizontal connector to siblings */}
-                                            {groupIndex < grouped.length - 1 && (
-                                                <div className="absolute top-[-2rem] right-[-1rem] h-[2px] bg-slate-300 dark:bg-slate-600 w-[calc(50%+1rem)]" />
-                                            )}
-                                            {groupIndex > 0 && (
-                                                <div className="absolute top-[-2rem] left-[-1rem] h-[2px] bg-slate-300 dark:bg-slate-600 w-[calc(50%+1rem)]" />
-                                            )}
-
-                                            {/* Render merged children below the partner group */}
-                                            {mergedChildren.length > 0 && (
-                                                <div className="relative flex flex-col items-center mt-16">
-                                                    {/* Vertical connector from partners to children horizontal bus - shortened to stop at bus line */}
-                                                    <div className="absolute -top-16 h-8 w-[2px] bg-slate-300 dark:bg-slate-600" />
-
-                                                    {/* Children in a horizontal row */}
-                                                    <div className="flex gap-8 relative items-start">
-                                                        {mergedChildren.map((child, childIndex) => {
-                                                            const isFirst = childIndex === 0
-                                                            const isLast = childIndex === mergedChildren.length - 1
-                                                            const isOnly = mergedChildren.length === 1
-
-                                                            return (
-                                                                <div key={child.id} className="relative flex flex-col items-center">
-                                                                    {/* Horizontal connector segments (bus line) */}
-                                                                    {!isOnly && (
-                                                                        <>
-                                                                            {/* Right segment - extends to right edge of this card */}
-                                                                            {!isLast && (
-                                                                                <div
-                                                                                    className="absolute -top-8 right-[-1rem] h-[2px] bg-slate-300 dark:bg-slate-600"
-                                                                                    style={{ width: 'calc(50% + 1rem)' }}
-                                                                                />
-                                                                            )}
-                                                                            {/* Left segment - extends from left edge of this card */}
-                                                                            {!isFirst && (
-                                                                                <div
-                                                                                    className="absolute -top-8 left-[-1rem] h-[2px] bg-slate-300 dark:bg-slate-600"
-                                                                                    style={{ width: 'calc(50% + 1rem)' }}
-                                                                                />
-                                                                            )}
-                                                                        </>
-                                                                    )}
-
-                                                                    {/* Vertical drop line from bus to child card */}
-                                                                    <div className="h-8 w-[2px] bg-slate-300 dark:bg-slate-600 absolute -top-8" />
-
-                                                                    <RecursiveNode
-                                                                        node={child}
-                                                                        allUsers={users}
-                                                                        onAddClick={handleAddClick}
-                                                                        depth={1}
-                                                                        hideConnectorLines={true}
-                                                                        onlineUserIds={onlineUserIds}
-                                                                    />
-                                                                </div>
-                                                            )
-                                                        })}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )
-                                } else {
-                                    // Render independent nodes normally
-                                    return group.nodes.map((rootNode, nodeIndex) => {
-                                        const isFirst = groupIndex === 0 && nodeIndex === 0
-                                        const isLast = groupIndex === grouped.length - 1 && nodeIndex === group.nodes.length - 1
-                                        const isOnly = grouped.length === 1 && group.nodes.length === 1
-
+                                        // Render shared chiefs connected by a horizontal line
                                         return (
-                                            <div key={rootNode.id} className="relative flex flex-col items-center">
-                                                {/* Horizontal Segments */}
-                                                {!isOnly && (
-                                                    <>
-                                                        {/* Connector to Right Sibling (for First and Middle) */}
-                                                        {!isLast && (
-                                                            <div className="absolute top-[-2rem] right-[-1rem] h-[2px] bg-slate-300 dark:bg-slate-600 w-[calc(50%+1rem)]" />
-                                                        )}
-                                                        {/* Connector to Left Sibling (for Last and Middle) */}
-                                                        {!isFirst && (
-                                                            <div className="absolute top-[-2rem] left-[-1rem] h-[2px] bg-slate-300 dark:bg-slate-600 w-[calc(50%+1rem)]" />
-                                                        )}
-                                                    </>
+                                            <div key={group.groupId} className="relative flex flex-col items-center">
+                                                {/* Shared Chiefs - horizontal layout */}
+                                                <div className="flex gap-8 items-center relative">
+                                                    {group.nodes.map((node, nodeIndex) => {
+                                                        // Create a version of the node without children (they'll be rendered separately below)
+                                                        const nodeWithoutChildren = { ...node, children: [] }
+
+                                                        return (
+                                                            <div key={node.id} className="relative flex flex-col items-center">
+                                                                <RecursiveNode
+                                                                    node={nodeWithoutChildren}
+                                                                    allUsers={users}
+                                                                    onAddClick={handleAddClick}
+                                                                    depth={0}
+                                                                    onlineUserIds={onlineUserIds}
+                                                                />
+
+                                                                {/* Horizontal connecting line between partners (except for the last one) */}
+                                                                {nodeIndex < group.nodes.length - 1 && (
+                                                                    <div
+                                                                        className="absolute top-1/2 -translate-y-1/2 left-full h-[2px] bg-slate-300 dark:bg-slate-600 z-0"
+                                                                        style={{ width: '2rem' }}
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                        )
+                                                    })}
+                                                </div>
+
+                                                {/* Vertical line up to the Project Bus (from center of group) */}
+                                                <div className="h-8 w-[1px] bg-slate-300 dark:bg-slate-600 absolute -top-8 left-1/2 -translate-x-1/2" />
+
+                                                {/* Horizontal connector to siblings */}
+                                                {groupIndex < grouped.length - 1 && (
+                                                    <div className="absolute top-[-2rem] right-[-1rem] h-[2px] bg-slate-300 dark:bg-slate-600 w-[calc(50%+1rem)]" />
+                                                )}
+                                                {groupIndex > 0 && (
+                                                    <div className="absolute top-[-2rem] left-[-1rem] h-[2px] bg-slate-300 dark:bg-slate-600 w-[calc(50%+1rem)]" />
                                                 )}
 
-                                                {/* Vertical line up to the Project Bus */}
-                                                <div className="h-8 w-[1px] bg-slate-300 dark:bg-slate-600 absolute -top-8" />
-                                                <RecursiveNode
-                                                    node={rootNode}
-                                                    allUsers={users}
-                                                    onAddClick={handleAddClick}
-                                                    depth={0}
-                                                    onlineUserIds={onlineUserIds}
-                                                />
+                                                {/* Render merged children below the partner group */}
+                                                {mergedChildren.length > 0 && (
+                                                    <div className="relative flex flex-col items-center mt-16">
+                                                        {/* Vertical connector from partners to children horizontal bus - shortened to stop at bus line */}
+                                                        <div className="absolute -top-16 h-8 w-[2px] bg-slate-300 dark:bg-slate-600" />
+
+                                                        {/* Children in a horizontal row */}
+                                                        <div className="flex gap-8 relative items-start">
+                                                            {mergedChildren.map((child, childIndex) => {
+                                                                const isFirst = childIndex === 0
+                                                                const isLast = childIndex === mergedChildren.length - 1
+                                                                const isOnly = mergedChildren.length === 1
+
+                                                                return (
+                                                                    <div key={child.id} className="relative flex flex-col items-center">
+                                                                        {/* Horizontal connector segments (bus line) */}
+                                                                        {!isOnly && (
+                                                                            <>
+                                                                                {/* Right segment - extends to right edge of this card */}
+                                                                                {!isLast && (
+                                                                                    <div
+                                                                                        className="absolute -top-8 right-[-1rem] h-[2px] bg-slate-300 dark:bg-slate-600"
+                                                                                        style={{ width: 'calc(50% + 1rem)' }}
+                                                                                    />
+                                                                                )}
+                                                                                {/* Left segment - extends from left edge of this card */}
+                                                                                {!isFirst && (
+                                                                                    <div
+                                                                                        className="absolute -top-8 left-[-1rem] h-[2px] bg-slate-300 dark:bg-slate-600"
+                                                                                        style={{ width: 'calc(50% + 1rem)' }}
+                                                                                    />
+                                                                                )}
+                                                                            </>
+                                                                        )}
+
+                                                                        {/* Vertical drop line from bus to child card */}
+                                                                        <div className="h-8 w-[2px] bg-slate-300 dark:bg-slate-600 absolute -top-8" />
+
+                                                                        <RecursiveNode
+                                                                            node={child}
+                                                                            allUsers={users}
+                                                                            onAddClick={handleAddClick}
+                                                                            depth={1}
+                                                                            hideConnectorLines={true}
+                                                                            onlineUserIds={onlineUserIds}
+                                                                        />
+                                                                    </div>
+                                                                )
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         )
-                                    })
-                                }
-                            })
-                        })()}
-                        {!tree?.length && <div className="text-muted-foreground">No users found.</div>}
+                                    } else {
+                                        // Render independent nodes normally
+                                        return group.nodes.map((rootNode, nodeIndex) => {
+                                            const isFirst = groupIndex === 0 && nodeIndex === 0
+                                            const isLast = groupIndex === grouped.length - 1 && nodeIndex === group.nodes.length - 1
+                                            const isOnly = grouped.length === 1 && group.nodes.length === 1
+
+                                            return (
+                                                <div key={rootNode.id} className="relative flex flex-col items-center">
+                                                    {/* Horizontal Segments */}
+                                                    {!isOnly && (
+                                                        <>
+                                                            {/* Connector to Right Sibling (for First and Middle) */}
+                                                            {!isLast && (
+                                                                <div className="absolute top-[-2rem] right-[-1rem] h-[2px] bg-slate-300 dark:bg-slate-600 w-[calc(50%+1rem)]" />
+                                                            )}
+                                                            {/* Connector to Left Sibling (for Last and Middle) */}
+                                                            {!isFirst && (
+                                                                <div className="absolute top-[-2rem] left-[-1rem] h-[2px] bg-slate-300 dark:bg-slate-600 w-[calc(50%+1rem)]" />
+                                                            )}
+                                                        </>
+                                                    )}
+
+                                                    {/* Vertical line up to the Project Bus */}
+                                                    <div className="h-8 w-[1px] bg-slate-300 dark:bg-slate-600 absolute -top-8" />
+                                                    <RecursiveNode
+                                                        node={rootNode}
+                                                        allUsers={users}
+                                                        onAddClick={handleAddClick}
+                                                        depth={0}
+                                                        onlineUserIds={onlineUserIds}
+                                                    />
+                                                </div>
+                                            )
+                                        })
+                                    }
+                                })
+                            })()}
+                            {!tree?.length && <div className="text-muted-foreground">No users found.</div>}
+                        </div>
                     </div>
                 </div>
-            </div>
             </div>
 
             <ImageCropperDialog
