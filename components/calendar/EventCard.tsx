@@ -47,6 +47,7 @@ interface EventCardProps {
                 email: string
             }
         }>
+        recurrence?: string | null
     }
     onClick?: () => void
     size?: 'sm' | 'md' | 'lg'
@@ -99,6 +100,9 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false, onO
         lg: "p-3 text-base"
     }
 
+    const isRecurring = !!event.recurrence && event.recurrence !== 'NONE'
+    const [recurrenceScope, setRecurrenceScope] = useState<'THIS' | 'FUTURE' | 'ALL'>('THIS')
+
     const handleDelete = async () => {
         // e.stopPropagation() is already handled in the dropdown handler if triggered from there
         setIsDeleting(true)
@@ -109,9 +113,15 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false, onO
         onOptimisticEventDelete?.(event.id)
 
         try {
-            const endpoint = event.type === 'TASK_TIME'
+            let endpoint = event.type === 'TASK_TIME'
                 ? `/api/tasks/${event.id}`
                 : `/api/events/${event.id}`
+
+            // Add scope and date params for recurring events
+            if (isRecurring && event.type !== 'TASK_TIME') {
+                const dateParam = new Date(event.startTime).toISOString()
+                endpoint += `?scope=${recurrenceScope}&date=${dateParam}`
+            }
 
             const res = await fetch(endpoint, {
                 method: "DELETE",
@@ -340,13 +350,65 @@ export function EventCard({ event, onClick, size = 'md', showDelete = false, onO
                     <AlertDialogHeader>
                         <AlertDialogTitle>{event.type === 'TASK_TIME' ? t('tasks.delete') : t('calendar.deleteEvent')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            {event.type === 'TASK_TIME'
-                                ? t('tasks.deleteConfirm')
-                                : t('calendar.deleteConfirm').replace('{title}', event.title)
-                            }
+                            {isRecurring ? (
+                                <div className="space-y-3 pt-2">
+                                    <p className="text-sm text-muted-foreground mb-2">This is a recurring event. How would you like to delete it?</p>
+                                    <div className="flex flex-col gap-2">
+                                        <div
+                                            className={cn(
+                                                "flex items-center gap-3 p-3 rounded-md border cursor-pointer hover:bg-accent transition-colors",
+                                                recurrenceScope === 'THIS' ? "border-primary bg-accent" : "border-border"
+                                            )}
+                                            onClick={() => setRecurrenceScope('THIS')}
+                                        >
+                                            <div className={cn("w-4 h-4 rounded-full border flex items-center justify-center shrink-0", recurrenceScope === 'THIS' ? "border-primary" : "border-muted-foreground")}>
+                                                {recurrenceScope === 'THIS' && <div className="w-2 h-2 rounded-full bg-primary" />}
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-medium">Delete this event only</span>
+                                                <span className="text-xs text-muted-foreground">Removes only this specific occurrence.</span>
+                                            </div>
+                                        </div>
+                                        <div
+                                            className={cn(
+                                                "flex items-center gap-3 p-3 rounded-md border cursor-pointer hover:bg-accent transition-colors",
+                                                recurrenceScope === 'FUTURE' ? "border-primary bg-accent" : "border-border"
+                                            )}
+                                            onClick={() => setRecurrenceScope('FUTURE')}
+                                        >
+                                            <div className={cn("w-4 h-4 rounded-full border flex items-center justify-center shrink-0", recurrenceScope === 'FUTURE' ? "border-primary" : "border-muted-foreground")}>
+                                                {recurrenceScope === 'FUTURE' && <div className="w-2 h-2 rounded-full bg-primary" />}
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-medium">Delete this and future events</span>
+                                                <span className="text-xs text-muted-foreground">Deletes this event and all following occurrences.</span>
+                                            </div>
+                                        </div>
+                                        <div
+                                            className={cn(
+                                                "flex items-center gap-3 p-3 rounded-md border cursor-pointer hover:bg-accent transition-colors",
+                                                recurrenceScope === 'ALL' ? "border-primary bg-accent" : "border-border"
+                                            )}
+                                            onClick={() => setRecurrenceScope('ALL')}
+                                        >
+                                            <div className={cn("w-4 h-4 rounded-full border flex items-center justify-center shrink-0", recurrenceScope === 'ALL' ? "border-primary" : "border-muted-foreground")}>
+                                                {recurrenceScope === 'ALL' && <div className="w-2 h-2 rounded-full bg-primary" />}
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-medium">Delete entire series</span>
+                                                <span className="text-xs text-muted-foreground">Deletes all past and future occurrences.</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                event.type === 'TASK_TIME'
+                                    ? t('tasks.deleteConfirm')
+                                    : t('calendar.deleteConfirm').replace('{title}', event.title)
+                            )}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
+                    <AlertDialogFooter className="mt-2">
                         <AlertDialogCancel disabled={isDeleting}>{t('common.cancel')}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleDelete}
