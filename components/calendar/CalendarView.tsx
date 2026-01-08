@@ -6,11 +6,12 @@ import { useState, useEffect } from "react"
 import { MonthGrid } from "./MonthGrid"
 import { DayView } from "./DayView"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react"
 import { addMonths, subMonths, addDays, subDays, startOfMonth, endOfMonth } from "date-fns"
 import { useLanguage } from "@/lib/useLanguage"
 import { toast } from "sonner"
 import { getHolidaysForRange } from "@/lib/holidays"
+import { CreateEventDialog } from "./CreateEventDialog"
 
 // ... (omitting lines for brevity in prompt but I need to target specific chunks)
 // I will split this into multiple chunks or just do the import change and variable changes separately if needed.
@@ -70,6 +71,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
     const [currentDate, setCurrentDate] = useState(initialDate)
     const [optimisticEvents, setOptimisticEvents] = useState<CalendarEvent[]>([])
     const [optimisticDeletedIds, setOptimisticDeletedIds] = useState<string[]>([])
+    const [createDialogOpen, setCreateDialogOpen] = useState(false)
 
     // Client-side data fetching state (legacy)
     const [calendarData, setCalendarData] = useState(data)
@@ -201,58 +203,52 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
 
 
     return (
-        <div className="space-y-4 md:space-y-6">
+        <div className="flex flex-col h-[calc(100vh-6rem)] md:h-[calc(100vh-8rem)] overflow-hidden gap-4 md:gap-6">
             {/* Header */}
-            <div className="flex flex-col gap-3 md:gap-4 px-0">
-                {/* Top Row: Title (center) */}
-                <div className="relative flex items-center justify-center min-h-[40px] md:min-h-[36px]">
-                    {/* Back Button - Absolute left (only for day view) */}
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-0 shrink-0 py-2 md:border-none">
+                {/* Left: Title */}
+                <div className="flex items-center gap-3 w-full md:w-auto justify-center md:justify-start">
+                    {/* Back Button (Day View) */}
                     {view === 'day' && (
-                        <div className="absolute left-0 shrink-0">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setView('month')}
-                                className="h-10 w-10 md:h-9 md:w-9"
-                            >
-                                <ChevronLeft className={`h-5 w-5 ${isRTL ? 'rotate-180' : ''}`} />
-                            </Button>
-                        </div>
-                    )}
-
-                    {/* Title - Centered absolutely */}
-                    <div className="absolute left-1/2 -translate-x-1/2">
-                        {view === 'month' ? (
-                            <div className="flex items-center gap-2">
-                                <h2 className="text-xl md:text-3xl font-medium md:font-bold tracking-tight text-primary">
-                                    {t(`months.${['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'][currentDate.getMonth()]}` as 'months.january' | 'months.february' | 'months.march' | 'months.april' | 'months.may' | 'months.june' | 'months.july' | 'months.august' | 'months.september' | 'months.october' | 'months.november' | 'months.december')}
-                                </h2>
-                                <span className="text-xl md:text-3xl font-medium md:font-bold tracking-tight text-primary">
-                                    {currentDate.getFullYear()}
-                                </span>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center text-center">
-                                <h2 className="text-xl md:text-3xl font-medium md:font-bold tracking-tight text-primary">
-                                    {t(`days.${['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][currentDate.getDay()]}` as 'days.sunday' | 'days.monday' | 'days.tuesday' | 'days.wednesday' | 'days.thursday' | 'days.friday' | 'days.saturday')}
-                                </h2>
-                                <div className="flex items-center gap-2 text-lg md:text-2xl font-medium md:font-bold tracking-tight text-primary">
-                                    <span>{t(`months.${['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'][currentDate.getMonth()]}` as 'months.january' | 'months.february' | 'months.march' | 'months.april' | 'months.may' | 'months.june' | 'months.july' | 'months.august' | 'months.september' | 'months.october' | 'months.november' | 'months.december')}</span>
-                                    <span>{currentDate.getFullYear()}</span>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Navigation Controls - Centered below title */}
-                <div className={`flex items-center justify-center gap-3 mb-4 md:mb-0 ${view === 'day' ? 'mt-4 md:mt-6' : ''}`}>
-                    {/* Navigation Controls */}
-                    <div className="flex items-center border-2 rounded-xl md:rounded-md bg-background shadow-sm hover:shadow-md shrink-0 overflow-hidden">
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-10 w-10 md:h-9 md:w-9 rounded-none"
+                            onClick={() => setView('month')}
+                            className="h-9 w-9"
+                        >
+                            <ChevronLeft className={`h-5 w-5 ${isRTL ? 'rotate-180' : ''}`} />
+                        </Button>
+                    )}
+
+                    {view === 'month' ? (
+                        <div className="flex items-center gap-2 text-2xl font-bold tracking-tight text-primary">
+                            <span>
+                                {t(`months.${['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'][currentDate.getMonth()]}` as any)}
+                            </span>
+                            <span className="text-muted-foreground font-medium">
+                                {currentDate.getFullYear()}
+                            </span>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col">
+                            <h2 className="text-xl font-bold tracking-tight text-primary">
+                                {t(`days.${['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][currentDate.getDay()]}` as any)}
+                            </h2>
+                            <span className="text-sm text-muted-foreground">
+                                {t(`months.${['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'][currentDate.getMonth()]}` as any)} {currentDate.getFullYear()}
+                            </span>
+                        </div>
+                    )}
+                </div>
+
+                {/* Right: Controls & Actions */}
+                <div className="flex items-center gap-3 w-full md:w-auto justify-center md:justify-end">
+                    {/* Navigation */}
+                    <div className="flex items-center border rounded-lg bg-background shadow-sm shrink-0 overflow-hidden">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-none border-r"
                             onClick={view === 'month'
                                 ? (isRTL ? handleNextMonth : handlePrevMonth)
                                 : (isRTL ? handleNextDay : handlePrevDay)
@@ -263,7 +259,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="text-sm font-semibold border-x-2 rounded-none px-4 md:px-3 h-10 md:h-9"
+                            className="text-sm font-medium rounded-none px-3 h-8 hover:bg-transparent"
                             onClick={handleToday}
                         >
                             {t('calendar.today')}
@@ -271,7 +267,7 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-10 w-10 md:h-9 md:w-9 rounded-none"
+                            className="h-8 w-8 rounded-none border-l"
                             onClick={view === 'month'
                                 ? (isRTL ? handlePrevMonth : handleNextMonth)
                                 : (isRTL ? handlePrevDay : handleNextDay)
@@ -280,11 +276,33 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                             <ChevronRight className={`h-4 w-4 ${isRTL ? 'rotate-180' : ''}`} />
                         </Button>
                     </div>
+
+                    {/* Add Event Button (Desktop Only) */}
+                    <Button
+                        size="sm"
+                        onClick={() => setCreateDialogOpen(true)}
+                        className="h-9 shadow-sm bg-primary text-primary-foreground font-medium px-4 gap-2 hidden md:flex"
+                    >
+                        <Plus className="h-4 w-4" />
+                        {t('calendar.addEvent')}
+                    </Button>
                 </div>
             </div>
 
+            {/* Floating Action Button (Mobile Only) */}
+            <div className={`fixed bottom-6 z-50 md:hidden ${isRTL ? 'right-6' : 'left-6'}`}>
+                <Button
+                    size="sm"
+                    onClick={() => { setCreateDialogOpen(true) }}
+                    className="h-11 rounded-xl shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-4"
+                >
+                    <Plus className="h-4 w-4 mr-2" />
+                    {t('calendar.addEvent')}
+                </Button>
+            </div>
+
             {/* Calendar Grid */}
-            <div className="bg-background">
+            <div className="bg-background flex-1 overflow-hidden">
                 {view === 'month' ? (
                     <MonthGrid
                         date={currentDate}
@@ -314,6 +332,13 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
                     />
                 )}
             </div>
+            <CreateEventDialog
+                open={createDialogOpen}
+                onOpenChange={setCreateDialogOpen}
+                defaultDate={currentDate}
+                projectId={projectId}
+                onOptimisticEventCreate={handleOptimisticCreate}
+            />
         </div>
     )
 }
