@@ -12,6 +12,8 @@ import { useLanguage } from "@/lib/useLanguage"
 import { toast } from "sonner"
 import { getHolidaysForRange } from "@/lib/holidays"
 import { CreateEventDialog } from "./CreateEventDialog"
+import { HeaderPortal } from "@/components/layout/HeaderPortal"
+import { CalendarSettingsButton } from "./CalendarSettingsButton"
 
 // ... (omitting lines for brevity in prompt but I need to target specific chunks)
 // I will split this into multiple chunks or just do the import change and variable changes separately if needed.
@@ -203,87 +205,160 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
 
     return (
         <div className="flex flex-col h-[calc(100vh-6rem)] md:h-[calc(100vh-8rem)] overflow-hidden gap-4 md:gap-6">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-0 shrink-0 py-2 md:border-none">
-                {/* Left: Title */}
-                <div className="flex items-center gap-3 w-full md:w-auto justify-center md:justify-start">
-                    {/* Back Button (Day View) */}
-                    {view === 'day' && (
+            <HeaderPortal>
+                <div className="hidden md:flex items-center justify-between w-full gap-4">
+                    {/* Left: Settings & Title */}
+                    <div className="flex items-center gap-2 md:gap-4 shrink-0">
+                        <CalendarSettingsButton />
+
+                        <div className="flex items-center gap-2 md:gap-3">
+                            {/* Back Button (Day View) */}
+                            {view === 'day' && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setView('month')}
+                                    className="h-8 w-8"
+                                >
+                                    <ChevronLeft className={`h-4 w-4 ${isRTL ? 'rotate-180' : ''}`} />
+                                </Button>
+                            )}
+
+                            {view === 'month' ? (
+                                <div className="flex items-center gap-1.5 md:gap-2 text-base md:text-xl font-bold tracking-tight text-primary">
+                                    <span>
+                                        {t(`months.${['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'][currentDate.getMonth()]}` as unknown as import("@/lib/translations").TranslationKey)}
+                                    </span>
+                                    <span className="text-muted-foreground font-medium">
+                                        {currentDate.getFullYear()}
+                                    </span>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col leading-none">
+                                    <h2 className="text-sm md:text-lg font-bold tracking-tight text-primary">
+                                        {t(`days.${['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][currentDate.getDay()]}` as unknown as import("@/lib/translations").TranslationKey)}
+                                    </h2>
+                                    <span className="text-[10px] md:text-xs text-muted-foreground font-medium">
+                                        {t(`months.${['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'][currentDate.getMonth()]}` as unknown as import("@/lib/translations").TranslationKey)} {currentDate.getFullYear()}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Navigation (Moved to Left) */}
+                        <div className="flex items-center border rounded-lg bg-background shadow-xs shrink-0 overflow-hidden ml-2 md:ml-4">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 md:h-8 md:w-8 rounded-none border-r"
+                                onClick={view === 'month'
+                                    ? (isRTL ? handleNextMonth : handlePrevMonth)
+                                    : (isRTL ? handleNextDay : handlePrevDay)
+                                }
+                            >
+                                <ChevronLeft className={`h-3.5 w-3.5 md:h-4 md:w-4 ${isRTL ? 'rotate-180' : ''}`} />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-[10px] md:text-sm font-medium rounded-none px-2 md:px-3 h-7 md:h-8 hover:bg-transparent"
+                                onClick={handleToday}
+                            >
+                                {t('calendar.today')}
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 md:h-8 md:w-8 rounded-none border-l"
+                                onClick={view === 'month'
+                                    ? (isRTL ? handlePrevMonth : handleNextMonth)
+                                    : (isRTL ? handlePrevDay : handleNextDay)
+                                }
+                            >
+                                <ChevronRight className={`h-3.5 w-3.5 md:h-4 md:w-4 ${isRTL ? 'rotate-180' : ''}`} />
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Right: Controls & Actions */}
+                    <div className="flex items-center gap-2 md:gap-3 shrink-0">
+                        {/* Add Event Button (Desktop Only) */}
+                        <Button
+                            size="sm"
+                            onClick={() => setCreateDialogOpen(true)}
+                            className="h-8 shadow-sm bg-primary text-primary-foreground text-xs font-medium px-3 gap-1.5 hidden md:flex"
+                        >
+                            <Plus className="h-3.5 w-3.5" />
+                            {t('calendar.addEvent')}
+                        </Button>
+                    </div>
+                </div>
+            </HeaderPortal>
+
+            {/* Mobile Header (Inline - Restored Original Layout) */}
+            <div className="flex flex-col items-center gap-4 py-2 shrink-0 md:hidden">
+                {/* Title */}
+                {view === 'month' ? (
+                    <div className="flex items-center gap-2 text-xl font-bold tracking-tight text-primary">
+                        <span>
+                            {t(`months.${['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'][currentDate.getMonth()]}` as unknown as import("@/lib/translations").TranslationKey)}
+                        </span>
+                        <span className="text-muted-foreground font-medium">
+                            {currentDate.getFullYear()}
+                        </span>
+                    </div>
+                ) : (
+                    <div className="relative w-full flex items-center justify-center">
                         <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => setView('month')}
-                            className="h-9 w-9"
+                            className="absolute left-0 h-8 w-8"
                         >
                             <ChevronLeft className={`h-5 w-5 ${isRTL ? 'rotate-180' : ''}`} />
                         </Button>
-                    )}
-
-                    {view === 'month' ? (
-                        <div className="flex items-center gap-2 text-2xl font-bold tracking-tight text-primary">
-                            <span>
-                                {t(`months.${['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'][currentDate.getMonth()]}` as unknown as import("@/lib/translations").TranslationKey)}
-                            </span>
-                            <span className="text-muted-foreground font-medium">
-                                {currentDate.getFullYear()}
-                            </span>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col">
-                            <h2 className="text-xl font-bold tracking-tight text-primary">
+                        <div className="flex flex-col items-center">
+                            <h2 className="text-lg font-bold tracking-tight text-primary">
                                 {t(`days.${['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][currentDate.getDay()]}` as unknown as import("@/lib/translations").TranslationKey)}
                             </h2>
-                            <span className="text-sm text-muted-foreground">
+                            <span className="text-xs text-muted-foreground font-medium">
                                 {t(`months.${['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'][currentDate.getMonth()]}` as unknown as import("@/lib/translations").TranslationKey)} {currentDate.getFullYear()}
                             </span>
                         </div>
-                    )}
-                </div>
-
-                {/* Right: Controls & Actions */}
-                <div className="flex items-center gap-3 w-full md:w-auto justify-center md:justify-end">
-                    {/* Navigation */}
-                    <div className="flex items-center border rounded-lg bg-background shadow-sm shrink-0 overflow-hidden">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-none border-r"
-                            onClick={view === 'month'
-                                ? (isRTL ? handleNextMonth : handlePrevMonth)
-                                : (isRTL ? handleNextDay : handlePrevDay)
-                            }
-                        >
-                            <ChevronLeft className={`h-4 w-4 ${isRTL ? 'rotate-180' : ''}`} />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-sm font-medium rounded-none px-3 h-8 hover:bg-transparent"
-                            onClick={handleToday}
-                        >
-                            {t('calendar.today')}
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-none border-l"
-                            onClick={view === 'month'
-                                ? (isRTL ? handlePrevMonth : handleNextMonth)
-                                : (isRTL ? handlePrevDay : handleNextDay)
-                            }
-                        >
-                            <ChevronRight className={`h-4 w-4 ${isRTL ? 'rotate-180' : ''}`} />
-                        </Button>
                     </div>
+                )}
 
-                    {/* Add Event Button (Desktop Only) */}
+                {/* Navigation (Mobile Centered) */}
+                <div className="flex items-center border rounded-lg bg-background shadow-sm shrink-0 overflow-hidden">
                     <Button
-                        size="sm"
-                        onClick={() => setCreateDialogOpen(true)}
-                        className="h-9 shadow-sm bg-primary text-primary-foreground font-medium px-4 gap-2 hidden md:flex"
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 rounded-none border-r"
+                        onClick={view === 'month'
+                            ? (isRTL ? handleNextMonth : handlePrevMonth)
+                            : (isRTL ? handleNextDay : handlePrevDay)
+                        }
                     >
-                        <Plus className="h-4 w-4" />
-                        {t('calendar.addEvent')}
+                        <ChevronLeft className={`h-4 w-4 ${isRTL ? 'rotate-180' : ''}`} />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-sm font-medium rounded-none px-4 h-9 hover:bg-transparent min-w-[80px]"
+                        onClick={handleToday}
+                    >
+                        {t('calendar.today')}
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 rounded-none border-l"
+                        onClick={view === 'month'
+                            ? (isRTL ? handlePrevMonth : handleNextMonth)
+                            : (isRTL ? handlePrevDay : handleNextDay)
+                        }
+                    >
+                        <ChevronRight className={`h-4 w-4 ${isRTL ? 'rotate-180' : ''}`} />
                     </Button>
                 </div>
             </div>

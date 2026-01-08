@@ -5,6 +5,9 @@ import { NextResponse } from "next/server"
 import { subDays } from "date-fns"
 import { calculatePeakHours, analyzeWorkPatterns } from "@/lib/analytics/productivity-calculator"
 
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 export async function GET(req: Request) {
     const session = await getServerSession(authOptions)
     if (!session) {
