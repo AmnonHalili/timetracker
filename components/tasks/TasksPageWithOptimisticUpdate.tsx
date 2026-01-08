@@ -22,8 +22,19 @@ interface TasksPageWithOptimisticUpdateProps {
         blocking?: Array<{ id: string; title: string; status: string }>;
         blockedBy?: Array<{ id: string; title: string; status: string }>;
         checklist: Array<{ id: string; text: string; isDone: boolean }>;
-        subtasks?: Array<{ id: string; title: string; isDone: boolean }>;
+        subtasks?: Array<{
+            id: string;
+            title: string;
+            isDone: boolean;
+            priority?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+            assignedToId?: string | null;
+            assignedTo?: { id: string; name: string | null; image?: string | null } | null;
+            startDate?: Date | string | null;
+            dueDate?: Date | string | null;
+        }>;
         createdAt?: Date | string;
+        isArchived?: boolean;
+        archivedAt?: Date | string | null;
     }>
     tasksWithActiveTimers?: Record<string, Array<{ id: string; name: string | null }>>
     labels?: Array<{ id: string; name: string; color: string }>
@@ -44,6 +55,7 @@ export function TasksPageWithOptimisticUpdate({
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
     const [sortBy, setSortBy] = useState<string>("smart")
     const [activeFiltersCount, setActiveFiltersCount] = useState(0)
+    const [showArchived, setShowArchived] = useState(false)
 
     // Sync tasks when initialTasks changes (from server refresh)
     const prevInitialTasksRef = useRef(initialTasks)
@@ -67,6 +79,7 @@ export function TasksPageWithOptimisticUpdate({
             priority?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
             assignedToId?: string | null;
             assignedTo?: { id: string; name: string | null; image?: string | null } | null;
+            startDate?: Date | string | null;
             dueDate?: Date | string | null;
         }>
         createdAt: Date
@@ -100,6 +113,8 @@ export function TasksPageWithOptimisticUpdate({
                 setSortBy={setSortBy}
                 activeFiltersCount={activeFiltersCount}
                 isRTL={isRTL}
+                showArchived={showArchived}
+                setShowArchived={setShowArchived}
             />
 
             <TasksView
@@ -114,6 +129,7 @@ export function TasksPageWithOptimisticUpdate({
                 sortBy={sortBy}
                 setSortBy={setSortBy}
                 onActiveFiltersCountChange={setActiveFiltersCount}
+                showArchived={showArchived}
             />
         </div>
     )

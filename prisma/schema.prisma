@@ -195,6 +195,8 @@ model Task {
   priority    TaskPriority     @default(MEDIUM)
   deadline    DateTime?
   isCompleted Boolean          @default(false)
+  isArchived  Boolean          @default(false)
+  archivedAt DateTime?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   startDate   DateTime?
@@ -213,6 +215,8 @@ model Task {
   watchers    User[]           @relation("TaskWatchers")
 
   @@index([projectId])
+  @@index([isArchived, updatedAt])
+  @@index([status, isArchived])
 }
 
 model ChecklistItem {
@@ -272,6 +276,7 @@ model SubTaskItem {
   isDone       Boolean       @default(false)
   priority     TaskPriority?
   assignedToId String?
+  startDate    DateTime?
   dueDate      DateTime?
   createdAt    DateTime      @default(now())
   task         Task          @relation(fields: [taskId], references: [id], onDelete: Cascade)

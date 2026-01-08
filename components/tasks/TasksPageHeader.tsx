@@ -3,7 +3,7 @@
 import { useLanguage } from "@/lib/useLanguage"
 import { CreateTaskDialog } from "./CreateTaskDialog"
 import { Button } from "@/components/ui/button"
-import { Filter, ArrowUpDown } from "lucide-react"
+import { Filter, ArrowUpDown, Archive } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import {
     Select,
@@ -33,6 +33,8 @@ interface TasksPageHeaderProps {
     setSortBy?: (value: string) => void
     activeFiltersCount?: number
     isRTL?: boolean
+    showArchived?: boolean
+    setShowArchived?: (show: boolean) => void
 }
 
 export function TasksPageHeader({
@@ -44,7 +46,9 @@ export function TasksPageHeader({
     sortBy,
     setSortBy,
     activeFiltersCount = 0,
-    isRTL
+    isRTL,
+    showArchived = false,
+    setShowArchived
 }: TasksPageHeaderProps) {
     const { t } = useLanguage()
 
@@ -74,6 +78,18 @@ export function TasksPageHeader({
             {/* Filters and Sort - Below, right aligned on desktop */}
             {setIsFiltersOpen && setSortBy && (
                 <div className={`flex items-center gap-2 md:gap-2 w-full md:w-auto md:justify-end mt-2 md:mt-6 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    {/* Archive Toggle Button */}
+                    {setShowArchived && (
+                        <Button
+                            variant={showArchived ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setShowArchived(!showArchived)}
+                            className={`h-11 md:h-10 text-sm font-semibold flex-1 md:flex-initial rounded-xl md:rounded-md ${isRTL ? 'flex-row-reverse' : ''}`}
+                        >
+                            <Archive className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                            {t('tasks.viewArchived')}
+                        </Button>
+                    )}
                     {/* Filters Button */}
                     <Button
                         variant="outline"

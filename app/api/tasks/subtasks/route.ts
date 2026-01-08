@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     if (!session) return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
 
     try {
-        const { taskId, title, priority, assignedToId, dueDate } = await req.json()
+        const { taskId, title, priority, assignedToId, startDate, dueDate } = await req.json()
 
         if (!taskId || !title) {
             return NextResponse.json({ message: "Task ID and title are required" }, { status: 400 })
@@ -66,6 +66,7 @@ export async function POST(req: Request) {
             }
             // Only add optional fields if they are provided
             if (assignedToId) createData.assignedToId = assignedToId
+            if (startDate) createData.startDate = new Date(startDate)
             if (dueDate) createData.dueDate = new Date(dueDate)
             // Only include priority if it's explicitly provided (not null/undefined)
             if (priority !== undefined && priority !== null) {
@@ -108,7 +109,7 @@ export async function PATCH(req: Request) {
     if (!session) return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
 
     try {
-        const { id, title, isDone, priority, assignedToId, dueDate } = await req.json()
+        const { id, title, isDone, priority, assignedToId, startDate, dueDate } = await req.json()
 
         if (!id) {
             return NextResponse.json({ message: "Subtask ID is required" }, { status: 400 })
@@ -172,6 +173,7 @@ export async function PATCH(req: Request) {
         if (isDone !== undefined) updateData.isDone = isDone
         if (priority !== undefined) updateData.priority = priority
         if (assignedToId !== undefined) updateData.assignedToId = assignedToId
+        if (startDate !== undefined) updateData.startDate = startDate ? new Date(startDate) : null
         if (dueDate !== undefined) updateData.dueDate = dueDate ? new Date(dueDate) : null
 
         const updated = await prismaAny.subTaskItem.update({

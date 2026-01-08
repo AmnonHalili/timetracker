@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState, useEffect, useRef, useTransition } from "react"
-import { Trash2, Plus, MoreVertical, Pencil, Play, Square, CheckCircle2, AlertCircle, X } from "lucide-react"
+import { Trash2, Plus, MoreVertical, Pencil, Play, Square, CheckCircle2, AlertCircle, X, Archive } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -171,9 +171,12 @@ interface TasksViewProps {
             priority?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
             assignedToId?: string | null;
             assignedTo?: { id: string; name: string | null; image?: string | null } | null;
+            startDate?: Date | string | null;
             dueDate?: Date | string | null;
         }>;
         createdAt?: Date | string;
+        isArchived?: boolean;
+        archivedAt?: Date | string | null;
     }>
     users: User[]
     isAdmin: boolean
@@ -185,8 +188,7 @@ interface TasksViewProps {
     sortBy?: string
     setSortBy?: (sortBy: string) => void
     onActiveFiltersCountChange?: (count: number) => void
-
-
+    showArchived?: boolean
 }
 
 export function TasksView({
@@ -199,8 +201,7 @@ export function TasksView({
     isFiltersOpen: externalIsFiltersOpen,
     setIsFiltersOpen: externalSetIsFiltersOpen,
     sortBy: externalSortBy,
-
-
+    showArchived: externalShowArchived = false
 }: TasksViewProps) {
     const router = useRouter()
     const [, startTransition] = useTransition()
@@ -215,8 +216,10 @@ export function TasksView({
     const [editingEnhancedSubtask, setEditingEnhancedSubtask] = useState<{
         taskId: string;
         subtaskId: string;
+        title: string;
         priority: 'LOW' | 'MEDIUM' | 'HIGH' | null;
         assignedToId: string | null;
+        startDate: Date | null;
         dueDate: Date | null;
     } | null>(null)
 
@@ -227,6 +230,7 @@ export function TasksView({
         priority?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
         assignedToId?: string | null;
         assignedTo?: { id: string; name: string | null; image?: string | null } | null;
+        startDate?: Date | string | null;
         dueDate?: Date | string | null;
     }>>>({})
     const [expandedSubtasks, setExpandedSubtasks] = useState<Record<string, boolean>>({})
@@ -287,16 +291,46 @@ export function TasksView({
     const [viewMode] = useState<'list' | 'board'>('list')
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [taskToDelete, setTaskToDelete] = useState<string | null>(null)
+    const [archiveDialogOpen, setArchiveDialogOpen] = useState(false)
+    const [taskToArchive, setTaskToArchive] = useState<string | null>(null)
+    const showArchived = externalShowArchived
 
     // Sync local state when server data changes (e.g., after task creation)
     useEffect(() => {
         setTasks(initialTasks)
 
         // Sync subtasks from server data
-        const subtasksMap: Record<string, Array<{ id: string; title: string; isDone: boolean }>> = {}
+        const subtasksMap: Record<string, Array<{
+            id: string;
+            title: string;
+            isDone: boolean;
+            priority?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+            assignedToId?: string | null;
+            assignedTo?: { id: string; name: string | null; image?: string | null } | null;
+            startDate?: Date | string | null;
+            dueDate?: Date | string | null;
+        }>> = {}
         initialTasks.forEach(task => {
             if (task.subtasks && task.subtasks.length > 0) {
-                subtasksMap[task.id] = task.subtasks
+                subtasksMap[task.id] = task.subtasks.map((st: {
+                    id: string;
+                    title: string;
+                    isDone: boolean;
+                    priority?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+                    assignedToId?: string | null;
+                    assignedTo?: { id: string; name: string | null; image?: string | null } | null;
+                    startDate?: Date | string | null;
+                    dueDate?: Date | string | null;
+                }) => ({
+                    id: st.id,
+                    title: st.title,
+                    isDone: st.isDone,
+                    priority: st.priority || null,
+                    assignedToId: st.assignedToId || null,
+                    assignedTo: st.assignedTo || null,
+                    startDate: st.startDate || null,
+                    dueDate: st.dueDate || null
+                }))
             }
         })
         setLocalSubtasks(subtasksMap)
@@ -339,6 +373,22 @@ export function TasksView({
 
     // Apply filters
     const applyFilters = (task: TasksViewProps['initialTasks'][0]) => {
+        // Archive filter - must be checked first
+        // Treat undefined as false (not archived)
+        const isArchived = task.isArchived ?? false
+        
+        if (showArchived) {
+            // Show only archived tasks
+            if (!isArchived) {
+                return false
+            }
+        } else {
+            // Show only non-archived tasks
+            if (isArchived) {
+                return false
+            }
+        }
+
         // Status filter
         if (filters.status.length > 0) {
             const taskStatus = task.status === 'DONE' ? 'DONE' :
@@ -736,7 +786,92 @@ export function TasksView({
             })
     }
 
+    const [isArchiving, setIsArchiving] = useState(false)
 
+    const handleArchive = (id: string) => {
+        const task = tasks.find(t => t.id === id)
+        const isCurrentlyArchived = task?.isArchived ?? false
+        setTaskToArchive(id)
+        setIsArchiving(!isCurrentlyArchived) // true for archive, false for unarchive
+        setArchiveDialogOpen(true)
+    }
+
+    const confirmArchive = async () => {
+        if (!taskToArchive) return
+
+        const id = taskToArchive
+        const shouldArchive = isArchiving
+        setArchiveDialogOpen(false)
+
+        // Store the task for potential revert
+        const taskToUpdate = tasks.find(t => t.id === id)
+        if (!taskToUpdate) return
+
+        // Optimistic update: Mark as archived/unarchived immediately
+        setTasks(prev => prev.map(t => 
+            t.id === id 
+                ? { 
+                    ...t, 
+                    isArchived: shouldArchive, 
+                    archivedAt: shouldArchive ? new Date().toISOString() : null 
+                }
+                : t
+        ))
+
+        // Fire and forget - API call in background
+        fetch("/api/tasks", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id, action: shouldArchive ? 'archive' : 'unarchive' })
+        })
+            .then(async (res) => {
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}))
+                    const errorMessage = data.error || data.message || (shouldArchive ? "Failed to archive task" : "Failed to unarchive task")
+                    console.error("Archive API error:", errorMessage, data)
+                    throw new Error(errorMessage)
+                }
+                const updatedTask = await res.json()
+                // Update the task with server response to ensure consistency
+                setTasks(prev => prev.map(t => 
+                    t.id === id 
+                        ? { 
+                            ...t, 
+                            isArchived: updatedTask.isArchived ?? shouldArchive, 
+                            archivedAt: updatedTask.archivedAt ?? (shouldArchive ? new Date().toISOString() : null)
+                        }
+                        : t
+                ))
+                // Refresh to get updated data from server
+                router.refresh()
+                setTaskToArchive(null)
+                setIsArchiving(false)
+                toast.success(shouldArchive 
+                    ? (t('tasks.archiveSuccess') || "Task archived successfully")
+                    : (t('tasks.unarchiveSuccess') || "Task unarchived successfully")
+                )
+            })
+            .catch((error) => {
+                console.error(`Failed to ${shouldArchive ? 'archive' : 'unarchive'} task:`, error)
+                // Revert on error - restore the original task
+                setTasks(prev => prev.map(t => 
+                    t.id === id 
+                        ? { 
+                            ...t, 
+                            isArchived: taskToUpdate.isArchived ?? false, 
+                            archivedAt: taskToUpdate.archivedAt ?? null 
+                        }
+                        : t
+                ))
+                const errorMessage = error.message || (shouldArchive 
+                    ? (t('tasks.archiveError') || "Failed to archive task. Please try again.")
+                    : (t('tasks.unarchiveError') || "Failed to unarchive task. Please try again.")
+                )
+                toast.error(errorMessage)
+                setTaskToArchive(null)
+                setIsArchiving(false)
+            })
+    }
 
     const handleAddSubtask = async (taskId: string) => {
         const trimmedTitle = (newSubtaskTitle[taskId] || "").trim()
@@ -904,6 +1039,7 @@ export function TasksView({
             title?: string;
             priority?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
             assignedToId?: string | null;
+            startDate?: Date | null;
             dueDate?: Date | null;
         }
     ) => {
@@ -913,6 +1049,7 @@ export function TasksView({
             title?: string;
             priority?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
             assignedToId?: string | null;
+            startDate?: string | null;
             dueDate?: string | null;
         } = {}
 
@@ -936,6 +1073,9 @@ export function TasksView({
         // Add other updates
         if (updates?.priority !== undefined) updateData.priority = updates.priority
         if (updates?.assignedToId !== undefined) updateData.assignedToId = updates.assignedToId
+        if (updates?.startDate !== undefined) {
+            updateData.startDate = updates.startDate ? updates.startDate.toISOString() : null
+        }
         if (updates?.dueDate !== undefined) {
             updateData.dueDate = updates.dueDate ? updates.dueDate.toISOString() : null
         }
@@ -1413,6 +1553,12 @@ export function TasksView({
                                                                                 {t('tasks.edit')}
                                                                             </DropdownMenuItem>
                                                                             <DropdownMenuItem
+                                                                                onClick={() => handleArchive(task.id)}
+                                                                            >
+                                                                                <Archive className="h-4 w-4 mr-2" />
+                                                                                {(task.isArchived ?? false) ? t('tasks.unarchive') : t('tasks.archive')}
+                                                                            </DropdownMenuItem>
+                                                                            <DropdownMenuItem
                                                                                 onClick={() => handleDelete(task.id)}
                                                                                 className="text-destructive focus:text-destructive"
                                                                             >
@@ -1560,13 +1706,13 @@ export function TasksView({
                                                             {displaySubtasks.map((subtask, index) => {
                                                                 const isLast = index === displaySubtasks.length - 1 && !hasMore
                                                                 return (
-                                                                    <tr key={subtask.id} className="group/subtask bg-muted/5 hover:bg-muted/10 relative">
-                                                                        {/* Spacing for Task Title (nested) */}
-                                                                        <td className="p-2 pl-12 border-r border-border/50 relative">
+                                                                    <tr key={subtask.id} className="group/subtask bg-muted/3 hover:bg-muted/8 relative">
+                                                                        {/* Title Column (nested) */}
+                                                                        <td className="p-1.5 pl-12 border-r border-border/30 relative">
                                                                             {/* Continuous Hierarchy Line */}
-                                                                            <div className="absolute left-[36px] top-0 bottom-0 w-[1px] bg-border/50 group-last/subtask:bottom-1/2"></div>
+                                                                            <div className="absolute left-[36px] top-0 bottom-0 w-[1px] bg-border/40 group-last/subtask:bottom-1/2"></div>
                                                                             {/* Branch Line */}
-                                                                            <div className="absolute left-[36px] top-1/2 w-4 h-[1px] bg-border/50"></div>
+                                                                            <div className="absolute left-[36px] top-1/2 w-4 h-[1px] bg-border/40"></div>
                                                                             {/* Mask bottom part of line for last item if no "Show More" */}
                                                                             {isLast && !hasMore && (
                                                                                 <div className="absolute left-[36px] top-1/2 bottom-0 w-[2px] bg-background translate-x-[-0.5px]"></div>
@@ -1575,7 +1721,7 @@ export function TasksView({
                                                                             <div className="flex items-center gap-2 relative">
                                                                                 <Checkbox
                                                                                     checked={subtask.isDone}
-                                                                                    className="rounded-full w-4 h-4 border-2"
+                                                                                    className="rounded-full w-3.5 h-3.5 border-2"
                                                                                     onCheckedChange={() => handleToggleSubtask(task.id, subtask.id, subtask.isDone)}
                                                                                 />
 
@@ -1589,11 +1735,11 @@ export function TasksView({
                                                                                         }}
                                                                                         onBlur={() => handleUpdateSubtask(task.id, subtask.id)}
                                                                                         autoFocus
-                                                                                        className="h-7 text-sm"
+                                                                                        className="h-6 text-xs"
                                                                                     />
                                                                                 ) : (
                                                                                     <span
-                                                                                        className={`text-sm truncate cursor-pointer hover:underline ${subtask.isDone ? 'line-through text-muted-foreground' : ''}`}
+                                                                                        className={`text-xs truncate cursor-pointer hover:underline ${subtask.isDone ? 'line-through text-muted-foreground' : ''}`}
                                                                                         onClick={() => {
                                                                                             setEditingSubtask({ taskId: task.id, subtaskId: subtask.id })
                                                                                             setEditingSubtaskTitle(subtask.title)
@@ -1601,55 +1747,6 @@ export function TasksView({
                                                                                     >
                                                                                         {subtask.title}
                                                                                     </span>
-                                                                                )}
-
-                                                                                {/* Visual Indicators for Enhanced Subtasks */}
-                                                                                {!editingSubtask || editingSubtask.subtaskId !== subtask.id ? (
-                                                                                    <div className="flex items-center gap-1.5 ml-2">
-                                                                                        {/* Priority Badge */}
-                                                                                        {/* Priority Badge */}
-                                                                                        {subtask.priority && (
-                                                                                            <Badge
-                                                                                                variant="secondary"
-                                                                                                className={cn(
-                                                                                                    "text-[10px] h-5 px-2 font-semibold border-0",
-                                                                                                    getPriorityColor(subtask.priority)
-                                                                                                )}
-                                                                                            >
-                                                                                                {subtask.priority.charAt(0)}
-                                                                                            </Badge>
-                                                                                        )}
-
-                                                                                        {/* Assigned User */}
-                                                                                        {subtask.assignedTo && (
-                                                                                            <Avatar className="h-4 w-4 border">
-                                                                                                <AvatarFallback className="text-[8px] bg-primary/10 text-primary">
-                                                                                                    {subtask.assignedTo.name?.substring(0, 2).toUpperCase() || '??'}
-                                                                                                </AvatarFallback>
-                                                                                            </Avatar>
-                                                                                        )}
-
-                                                                                        {/* Due Date */}
-                                                                                        {(() => {
-                                                                                            const indicator = formatDueDateIndicator(subtask.dueDate ?? null, t)
-                                                                                            if (!indicator) return null
-                                                                                            return (
-                                                                                                <span className={cn("text-[9px] font-medium whitespace-nowrap", indicator.className)}>
-                                                                                                    {indicator.text}
-                                                                                                </span>
-                                                                                            )
-                                                                                        })()}
-                                                                                    </div>
-                                                                                ) : null}
-
-                                                                                {tasksWithActiveTimers[subtask.id] && tasksWithActiveTimers[subtask.id].length > 0 && (
-                                                                                    <Badge variant="secondary" className="bg-[#fdab3d]/10 text-[#fdab3d] hover:bg-[#fdab3d]/20 border-none text-[10px] h-5 px-1.5 flex items-center gap-1">
-                                                                                        {tasksWithActiveTimers[subtask.id].length > 1
-                                                                                            ? t('tasks.usersWorking').replace('{count}', tasksWithActiveTimers[subtask.id].length.toString())
-                                                                                            : (tasksWithActiveTimers[subtask.id][0].id === currentUserId
-                                                                                                ? (t('tasks.youAreOnIt') || 'You are on it')
-                                                                                                : t('tasks.userIsWorking').replace('{name}', tasksWithActiveTimers[subtask.id][0].name?.split(' ')[0] || 'User'))}
-                                                                                    </Badge>
                                                                                 )}
 
                                                                                 <div className="ml-auto opacity-0 group-hover/subtask:opacity-100">
@@ -1677,16 +1774,6 @@ export function TasksView({
                                                                                                     {t('tasks.startWorking')}
                                                                                                 </DropdownMenuItem>
                                                                                             )}
-                                                                                            <DropdownMenuItem
-                                                                                                onClick={() => {
-                                                                                                    setEditingSubtask({ taskId: task.id, subtaskId: subtask.id })
-                                                                                                    setEditingSubtaskTitle(subtask.title)
-                                                                                                }}
-                                                                                                className="cursor-pointer"
-                                                                                            >
-                                                                                                <Pencil className="mr-2 h-4 w-4" />
-                                                                                                {t('tasks.editSubtask')}
-                                                                                            </DropdownMenuItem>
 
                                                                                             {/* Edit Enhanced Fields */}
                                                                                             <DropdownMenuItem
@@ -1694,8 +1781,10 @@ export function TasksView({
                                                                                                     setEditingEnhancedSubtask({
                                                                                                         taskId: task.id,
                                                                                                         subtaskId: subtask.id,
+                                                                                                        title: subtask.title,
                                                                                                         priority: subtask.priority || null,
                                                                                                         assignedToId: subtask.assignedToId || null,
+                                                                                                        startDate: subtask.startDate ? new Date(subtask.startDate) : null,
                                                                                                         dueDate: subtask.dueDate ? new Date(subtask.dueDate) : null
                                                                                                     })
                                                                                                 }}
@@ -1718,12 +1807,130 @@ export function TasksView({
                                                                                 </div>
                                                                             </div>
                                                                         </td>
-                                                                        <td className="p-2 border-r border-border/50"></td>
-                                                                        <td className="p-2 border-r border-border/50"></td>
-                                                                        <td className="p-2 border-r border-border/50"></td>
-                                                                        <td className="p-2"></td>
-                                                                        <td className="p-2"></td>
-                                                                        <td className="p-2"></td>
+
+                                                                        {/* Assigned To - Subtask */}
+                                                                        <td className="p-2 border-r border-border/30 w-[80px]">
+                                                                            {subtask.assignedTo ? (
+                                                                                <div className="flex -space-x-2 overflow-hidden justify-center pl-2">
+                                                                                    <Avatar className="inline-block h-6 w-6 rounded-full ring-2 ring-background border bg-muted">
+                                                                                        <AvatarFallback className="text-[9px] font-medium bg-primary/10 text-primary">
+                                                                                            {subtask.assignedTo.name ? subtask.assignedTo.name.substring(0, 2).toUpperCase() : "??"}
+                                                                                        </AvatarFallback>
+                                                                                    </Avatar>
+                                                                                </div>
+                                                                            ) : (
+                                                                                <span className="text-muted-foreground/30 text-[10px]">-</span>
+                                                                            )}
+                                                                        </td>
+
+                                                                        {/* Priority - Subtask */}
+                                                                        <td className="p-1 align-middle text-center border-r border-border/30">
+                                                                            {subtask.priority ? (
+                                                                                <div className={`
+                                                                                    h-6 w-full max-w-[100px] mx-auto flex items-center justify-center gap-1 text-[10px] font-semibold shadow-sm p-1.5 rounded-md border
+                                                                                    ${getPriorityColor(subtask.priority)}
+                                                                                `}>
+                                                                                    <span>{subtask.priority === 'HIGH' ? t('tasks.priorityHigh') : subtask.priority === 'MEDIUM' ? t('tasks.priorityMedium') : t('tasks.priorityLow')}</span>
+                                                                                </div>
+                                                                            ) : (
+                                                                                <span className="text-muted-foreground/30 text-[10px]">-</span>
+                                                                            )}
+                                                                        </td>
+
+                                                                        {/* Date - Subtask */}
+                                                                        <td className="p-1 align-middle text-center border-r border-border/30">
+                                                                            {(subtask.startDate || subtask.dueDate) ? (
+                                                                                (() => {
+                                                                                    const dueDate = subtask.dueDate ? new Date(subtask.dueDate) : null
+                                                                                    const startDate = subtask.startDate ? new Date(subtask.startDate) : null
+                                                                                    const progress = calculateDeadlineProgress(startDate, dueDate)
+                                                                                    const isOverdue = dueDate && isPast(dueDate) && !isToday(dueDate) && !subtask.isDone
+
+                                                                                    // Format date range text
+                                                                                    let dateText = ''
+                                                                                    if (startDate && dueDate) {
+                                                                                        dateText = `${format(startDate, 'MMM d', { locale: dateLocale })} - ${format(dueDate, 'MMM d', { locale: dateLocale })}`
+                                                                                    } else if (dueDate) {
+                                                                                        dateText = format(dueDate, 'MMM d', { locale: dateLocale })
+                                                                                    } else if (startDate) {
+                                                                                        dateText = format(startDate, 'MMM d', { locale: dateLocale })
+                                                                                    }
+
+                                                                                    return (
+                                                                                        <div className="flex flex-col items-center justify-center gap-1 w-full max-w-[140px] mx-auto">
+                                                                                            {/* Progress Bar Pill - Smaller for subtask */}
+                                                                                            <div className="relative w-full h-5 rounded-full overflow-hidden border border-border/30 shadow-sm bg-background">
+                                                                                                {/* Time Passed */}
+                                                                                                <div
+                                                                                                    className={`absolute top-0 bottom-0 left-0 transition-all duration-500 ease-out z-0 ${isOverdue
+                                                                                                        ? 'bg-destructive/80'
+                                                                                                        : 'bg-primary/80'
+                                                                                                        }`}
+                                                                                                    style={{
+                                                                                                        width: `${Math.max(0, Math.min(100, progress))}%`
+                                                                                                    }}
+                                                                                                />
+                                                                                                {/* Time Remaining */}
+                                                                                                <div
+                                                                                                    className={`absolute top-0 bottom-0 right-0 transition-all duration-500 ease-out z-0 ${isOverdue
+                                                                                                        ? 'bg-destructive/40'
+                                                                                                        : 'bg-primary/40'
+                                                                                                        }`}
+                                                                                                    style={{
+                                                                                                        width: `${Math.max(0, Math.min(100, 100 - progress))}%`
+                                                                                                    }}
+                                                                                                />
+                                                                                                {/* Date Text Overlay */}
+                                                                                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                                                                                                    <span className={`text-[9px] font-semibold px-1.5 truncate max-w-full drop-shadow-sm ${isOverdue
+                                                                                                        ? 'text-destructive-foreground'
+                                                                                                        : 'text-white dark:text-gray-900'
+                                                                                                        }`}>
+                                                                                                        {dateText}
+                                                                                                    </span>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    )
+                                                                                })()
+                                                                            ) : (
+                                                                                <span className="text-muted-foreground/30 text-[10px]">-</span>
+                                                                            )}
+                                                                        </td>
+
+                                                                        {/* Status - Subtask (only show if overdue or working, hide if done or todo) */}
+                                                                        <td className="p-1 align-middle text-center">
+                                                                            {(() => {
+                                                                                const isOverdue = subtask.dueDate && isPast(new Date(subtask.dueDate)) && !isToday(new Date(subtask.dueDate)) && !subtask.isDone
+                                                                                const hasActiveTimer = tasksWithActiveTimers[subtask.id] && tasksWithActiveTimers[subtask.id].length > 0
+                                                                                
+                                                                                // Only show status if overdue or has active timer
+                                                                                if (isOverdue || hasActiveTimer) {
+                                                                                    return (
+                                                                                        <div
+                                                                                            className={`
+                                                                h-6 w-full max-w-[120px] mx-auto flex items-center justify-center gap-1.5 text-[10px] font-semibold shadow-sm rounded-md transition-all
+                                                                ${isOverdue ? 'bg-[#e2445c]/80 hover:bg-[#d00000] text-white' :
+                                                                    hasActiveTimer ? 'bg-[#fdab3d]/80 hover:bg-[#fdab3d] text-white' : ''}
+                                                            `}
+                                                                                        >
+                                                                                            {isOverdue && <AlertCircle className="h-3 w-3" />}
+
+                                                                                            <span className="truncate">
+                                                                                                {isOverdue ? t('tasks.statusOverdue') :
+                                                                                                    hasActiveTimer ? (tasksWithActiveTimers[subtask.id].length > 1
+                                                                                                        ? t('tasks.usersWorking').replace('{count}', tasksWithActiveTimers[subtask.id].length.toString())
+                                                                                                        : (tasksWithActiveTimers[subtask.id][0].id === currentUserId
+                                                                                                            ? (t('tasks.youAreOnIt') || 'You are on it')
+                                                                                                            : t('tasks.userIsWorking').replace('{name}', tasksWithActiveTimers[subtask.id][0].name?.split(' ')[0] || 'User'))) : ''}
+                                                                                            </span>
+                                                                                        </div>
+                                                                                    )
+                                                                                }
+                                                                                // Show nothing if done or todo
+                                                                                return <span className="text-muted-foreground/30 text-[10px]">-</span>
+                                                                            })()}
+                                                                        </td>
                                                                     </tr>
                                                                 )
                                                             })}
@@ -1805,6 +2012,7 @@ export function TasksView({
                                                 setIsEditDialogOpen(true)
                                             }}
                                             handleDelete={handleDelete}
+                                            handleArchive={handleArchive}
                                             onClick={() => {
                                                 setSelectedTask(task)
                                                 setIsDetailOpen(true)
@@ -1919,6 +2127,37 @@ export function TasksView({
                 </AlertDialogContent>
             </AlertDialog>
 
+            {/* Archive/Unarchive Task Confirmation Dialog */}
+            <AlertDialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            {isArchiving ? t('tasks.archive') : t('tasks.unarchive')}?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {isArchiving 
+                                ? (t('tasks.archiveConfirm') || 'Are you sure you want to archive this task? It will be moved to the archive.')
+                                : (t('tasks.unarchiveConfirm') || 'Are you sure you want to unarchive this task? It will be moved back to the active tasks.')
+                            }
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => {
+                            setTaskToArchive(null)
+                            setIsArchiving(false)
+                        }}>
+                            {t('common.cancel')}
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmArchive}
+                            className="bg-amber-500 hover:bg-amber-600 text-white"
+                        >
+                            {isArchiving ? t('tasks.archive') : t('tasks.unarchive')}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
             {/* Enhanced Subtask Edit Dialog */}
             {editingEnhancedSubtask && (() => {
                 const task = tasks.find(t => t.id === editingEnhancedSubtask.taskId)
@@ -1937,10 +2176,20 @@ export function TasksView({
 
                             <div className="space-y-4 py-4">
                                 <div>
-                                    <label className="text-sm font-medium text-muted-foreground">
+                                    <label className="text-sm font-medium mb-2 block">
                                         {t('tasks.titleLabel')}
                                     </label>
-                                    <p className="text-sm mt-1">{subtask.title}</p>
+                                    <Input
+                                        value={editingEnhancedSubtask.title}
+                                        onChange={(e) => setEditingEnhancedSubtask(prev =>
+                                            prev ? {
+                                                ...prev,
+                                                title: e.target.value
+                                            } : null
+                                        )}
+                                        placeholder={t('tasks.subtaskTitlePlaceholder') || 'Subtask title'}
+                                        className="w-full"
+                                    />
                                 </div>
 
                                 <div>
@@ -2015,6 +2264,25 @@ export function TasksView({
 
                                 <div>
                                     <label className="text-sm font-medium mb-2 block">
+                                        {t('tasks.startDate')}
+                                    </label>
+                                    <Input
+                                        type="date"
+                                        value={editingEnhancedSubtask.startDate
+                                            ? editingEnhancedSubtask.startDate.toISOString().split('T')[0]
+                                            : ''}
+                                        onChange={(e) => setEditingEnhancedSubtask(prev =>
+                                            prev ? {
+                                                ...prev,
+                                                startDate: e.target.value ? new Date(e.target.value) : null
+                                            } : null
+                                        )}
+                                        className="w-full"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="text-sm font-medium mb-2 block">
                                         {t('tasks.subtaskDueDate')}
                                     </label>
                                     <Input
@@ -2047,8 +2315,10 @@ export function TasksView({
                                         editingEnhancedSubtask.taskId,
                                         editingEnhancedSubtask.subtaskId,
                                         {
+                                            title: editingEnhancedSubtask.title,
                                             priority: editingEnhancedSubtask.priority,
                                             assignedToId: editingEnhancedSubtask.assignedToId,
+                                            startDate: editingEnhancedSubtask.startDate,
                                             dueDate: editingEnhancedSubtask.dueDate
                                         }
                                     )

@@ -22,6 +22,7 @@ export default async function TasksPage() {
 
     // Fetch Tasks
     // Strict Project Isolation
+    // Note: We fetch both archived and non-archived tasks, filtering happens in client
     const where: import("@prisma/client").Prisma.TaskWhereInput = {
         projectId: currentUser?.projectId // Ensure task belongs to current project
     }
@@ -48,7 +49,12 @@ export default async function TasksPage() {
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
                 subtasks: {
-                    orderBy: { createdAt: 'asc' }
+                    orderBy: { createdAt: 'asc' },
+                    include: {
+                        assignedTo: {
+                            select: { id: true, name: true, image: true }
+                        }
+                    }
                 }
             },
             orderBy: { createdAt: "desc" }

@@ -98,13 +98,20 @@ export async function POST(req: Request) {
                         title: st.title,
                         priority: st.priority || "LOW",
                         assignedToId: st.assignedToId || null,
+                        startDate: st.startDate ? new Date(st.startDate) : null,
                         dueDate: st.dueDate ? new Date(st.dueDate) : null
                     }))
                 } : undefined
             },
             include: {
                 assignees: true,
-                subtasks: true
+                subtasks: {
+                    include: {
+                        assignedTo: {
+                            select: { id: true, name: true, image: true }
+                        }
+                    }
+                }
             }
         })
 
@@ -139,8 +146,69 @@ export async function PATCH(req: Request) {
     if (!session) return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
 
     try {
-        const { id, status, isCompleted, priority, deadline } = await req.json()
+        const { id, status, isCompleted, priority, deadline, action } = await req.json()
 
+        // Handle archive/unarchive action
+        if (action === 'archive' || action === 'unarchive') {
+            // Get task to check permissions
+            const taskToCheck = await prisma.task.findUnique({
+                where: { id },
+                include: { assignees: { select: { id: true } } }
+            })
+
+            if (!taskToCheck) return NextResponse.json({ message: "Task not found" }, { status: 404 })
+
+            // Permission check (same as update)
+            let hasPermission = false
+            if (session.user.role === "ADMIN") {
+                hasPermission = true
+            } else {
+                if (taskToCheck.assignees.some(u => u.id === session.user.id)) {
+                    hasPermission = true
+                }
+                if (!hasPermission && session.user.role === "MANAGER") {
+                    const currentUser = await prisma.user.findUnique({
+                        where: { id: session.user.id },
+                        select: { id: true, projectId: true }
+                    })
+                    if (currentUser?.projectId) {
+                        const allUsers = await prisma.user.findMany({
+                            where: { projectId: currentUser.projectId },
+                            select: { id: true, managerId: true }
+                        })
+                        const descendants = new Set(getAllDescendants(currentUser.id, allUsers))
+                        if (taskToCheck.assignees.some(u => descendants.has(u.id))) {
+                            hasPermission = true
+                        }
+                    }
+                }
+            }
+
+            if (!hasPermission) {
+                return NextResponse.json({ message: "Forbidden" }, { status: 403 })
+            }
+
+            const task = await prisma.task.update({
+                where: { id },
+                data: {
+                    isArchived: action === 'archive',
+                    archivedAt: action === 'archive' ? new Date() : null
+                },
+                include: {
+                    assignees: {
+                        select: {
+                            id: true,
+                            name: true,
+                            image: true
+                        }
+                    }
+                }
+            })
+
+            return NextResponse.json(task)
+        }
+
+        // Regular update logic
         let newStatus = status
         if (isCompleted !== undefined && !status) {
             newStatus = isCompleted ? "DONE" : "TODO"
@@ -207,8 +275,13 @@ export async function PATCH(req: Request) {
         })
 
         return NextResponse.json(task)
-    } catch {
-        return NextResponse.json({ message: "Error updating task" }, { status: 500 })
+    } catch (error) {
+        console.error("Error updating task:", error)
+        const errorMessage = error instanceof Error ? error.message : "Unknown error"
+        return NextResponse.json({ 
+            message: "Error updating task",
+            error: errorMessage
+        }, { status: 500 })
     }
 }
 

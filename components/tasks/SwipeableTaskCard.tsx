@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion, useMotionValue, useTransform, useAnimation } from "framer-motion"
-import { Play, Pause, Trash2, Pencil } from "lucide-react"
+import { Play, Pause, Trash2, Pencil, Archive } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
@@ -21,6 +21,8 @@ interface Task {
     deadline: Date | string | null;
     startDate?: Date | string | null;
     checklist: Array<{ id: string; text: string; isDone: boolean }>;
+    isArchived?: boolean;
+    archivedAt?: Date | string | null;
 }
 
 interface SwipeableTaskCardProps {
@@ -34,6 +36,7 @@ interface SwipeableTaskCardProps {
     handleStopWorking: (taskId: string) => void
     handleEdit: (task: Task) => void
     handleDelete: (taskId: string) => void
+    handleArchive: (taskId: string) => void
     onClick: () => void
     isTimerRunning: boolean
     localSubtasks: Record<string, Array<{ id: string; title: string; isDone: boolean; priority?: string | null; assignedToId?: string | null; assignedTo?: { id: string; name: string | null; image?: string | null } | null; dueDate?: Date | string | null }>>
@@ -63,6 +66,7 @@ export function SwipeableTaskCard({
     handleStopWorking,
     handleEdit,
     handleDelete,
+    handleArchive,
     onClick,
     isTimerRunning,
     localSubtasks,
@@ -85,7 +89,7 @@ export function SwipeableTaskCard({
     const [revealSide, setRevealSide] = useState<'left' | 'right' | null>(null)
 
     const LEFT_REVEAL_WIDTH = 80 // Width for single button (Start Working)
-    const RIGHT_REVEAL_WIDTH = 160 // Width for two buttons (Edit and Delete)
+    const RIGHT_REVEAL_WIDTH = 240 // Width for three buttons (Edit, Archive, and Delete)
     const SWIPE_THRESHOLD = 50 // Minimum swipe to trigger snap
 
     // Transform values for reveal animations
@@ -150,7 +154,7 @@ export function SwipeableTaskCard({
                 style={{ opacity: rightButtonsOpacity }}
                 className="absolute inset-y-0 right-0 flex items-center h-full"
             >
-                <div className="flex h-full w-[160px]">
+                <div className="flex h-full w-[240px]">
                     {/* Edit Button */}
                     <button
                         onClick={(e) => {
@@ -163,6 +167,21 @@ export function SwipeableTaskCard({
                         <Pencil className="h-5 w-5" />
                         <span className="text-[10px] font-bold uppercase tracking-wider leading-tight">
                             {t('common.edit')}
+                        </span>
+                    </button>
+
+                    {/* Archive/Unarchive Button */}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            handleArchive(task.id)
+                            closeActions()
+                        }}
+                        className="w-20 h-full bg-amber-500 active:bg-amber-600 flex flex-col items-center justify-center text-white gap-1 transition-colors px-2 text-center"
+                    >
+                        <Archive className="h-5 w-5" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider leading-tight">
+                            {(task.isArchived ?? false) ? t('tasks.unarchive') : t('tasks.archive')}
                         </span>
                     </button>
 

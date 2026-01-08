@@ -233,6 +233,16 @@ export const translations = {
     'tasks.markedDone': 'Task marked as done',
     'tasks.markDoneError': 'Failed to mark task as done',
     'tasks.marking': 'Marking...',
+    'tasks.archive': 'Archive',
+    'tasks.archiveConfirm': 'Are you sure you want to archive this task? It will be moved to the archive.',
+    'tasks.archiveSuccess': 'Task archived successfully',
+    'tasks.archiveError': 'Failed to archive task',
+    'tasks.archived': 'Archived',
+    'tasks.viewArchived': 'View Archived',
+    'tasks.unarchive': 'Unarchive',
+    'tasks.unarchiveConfirm': 'Are you sure you want to unarchive this task? It will be moved back to the active tasks.',
+    'tasks.unarchiveSuccess': 'Task unarchived successfully',
+    'tasks.unarchiveError': 'Failed to unarchive task',
 
     // Time Entries
     'timeEntries.today': 'Today',
@@ -917,6 +927,16 @@ export const translations = {
     'tasks.markedDone': 'המשימה סומנה כהושלמה',
     'tasks.markDoneError': 'שגיאה בסימון המשימה כהושלמה',
     'tasks.marking': 'מסמן...',
+    'tasks.archive': 'ארכיון',
+    'tasks.archiveConfirm': 'האם אתה בטוח שברצונך להעביר את המשימה לארכיון?',
+    'tasks.unarchiveConfirm': 'האם אתה בטוח שברצונך להסיר את המשימה מהארכיון? היא תחזור למשימות הפעילות.',
+    'tasks.archiveSuccess': 'המשימה הועברה לארכיון בהצלחה',
+    'tasks.archiveError': 'שגיאה בהעברת המשימה לארכיון',
+    'tasks.archived': 'בארכיון',
+    'tasks.viewArchived': 'הצג ארכיון',
+    'tasks.unarchive': 'הסר מארכיון',
+    'tasks.unarchiveSuccess': 'המשימה הוסרה מהארכיון בהצלחה',
+    'tasks.unarchiveError': 'שגיאה בהסרת המשימה מהארכיון',
 
     // Time Entries
     'timeEntries.today': 'היום',

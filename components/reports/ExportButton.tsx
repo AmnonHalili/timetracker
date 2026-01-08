@@ -72,7 +72,7 @@ export function ExportButton({ userId, year, month }: ExportButtonProps) {
         >
             <Download className="mr-2 h-4 w-4" />
             <span className="hidden sm:inline">{loading ? t('common.loading') : t('reports.exportCSV')}</span>
-            <span className="sm:hidden">{loading ? t('common.loading') : t('reports.export') || 'Export'}</span>
+            <span className="sm:hidden">{loading ? t('common.loading') : t('reports.exportCSV')}</span>
         </Button>
     )
 }

@@ -53,11 +53,14 @@ export function CreateTaskForm({
     const [showToMe, setShowToMe] = useState(true)
 
     // Subtasks State
-    const [subtasks, setSubtasks] = useState<Array<{ id: string; title: string; priority: string; assignedToId: string | null; dueDate: string | null; isDone: boolean }>>([])
+    const [subtasks, setSubtasks] = useState<Array<{ id: string; title: string; priority: string; assignedToId: string | null; startDate: string | null; dueDate: string | null; isDone: boolean }>>([])
     const [newSubtaskTitle, setNewSubtaskTitle] = useState("")
     const [newSubtaskPriority, setNewSubtaskPriority] = useState("LOW")
     const [newSubtaskAssignee, setNewSubtaskAssignee] = useState<string | null>(null)
+    const [newSubtaskStartDate, setNewSubtaskStartDate] = useState("")
+    const [newSubtaskStartDateTime, setNewSubtaskStartDateTime] = useState("")
     const [newSubtaskDueDate, setNewSubtaskDueDate] = useState("")
+    const [newSubtaskDueDateTime, setNewSubtaskDueDateTime] = useState("")
     const [isSubtasksExpanded, setIsSubtasksExpanded] = useState(false)
 
     useEffect(() => {
@@ -263,7 +266,10 @@ export function CreateTaskForm({
                 setNewSubtaskTitle("")
                 setNewSubtaskPriority("LOW")
                 setNewSubtaskAssignee(null)
+                setNewSubtaskStartDate("")
+                setNewSubtaskStartDateTime("")
                 setNewSubtaskDueDate("")
+                setNewSubtaskDueDateTime("")
                 setIsSubtasksExpanded(false)
             }
         } else {
@@ -323,12 +329,31 @@ export function CreateTaskForm({
     const handleAddSubtask = () => {
         if (!newSubtaskTitle.trim()) return
 
+        let finalStartDate = null
+        if (newSubtaskStartDate) {
+            if (newSubtaskStartDateTime) {
+                finalStartDate = new Date(`${newSubtaskStartDate}T${newSubtaskStartDateTime}:00`).toISOString()
+            } else {
+                finalStartDate = new Date(newSubtaskStartDate).toISOString()
+            }
+        }
+
+        let finalDueDate = null
+        if (newSubtaskDueDate) {
+            if (newSubtaskDueDateTime) {
+                finalDueDate = new Date(`${newSubtaskDueDate}T${newSubtaskDueDateTime}:00`).toISOString()
+            } else {
+                finalDueDate = new Date(newSubtaskDueDate).toISOString()
+            }
+        }
+
         const newSubtask = {
             id: `temp-${Date.now()}`,
             title: newSubtaskTitle,
             priority: newSubtaskPriority,
             assignedToId: newSubtaskAssignee,
-            dueDate: newSubtaskDueDate || null,
+            startDate: finalStartDate,
+            dueDate: finalDueDate,
             isDone: false
         }
 
@@ -336,7 +361,10 @@ export function CreateTaskForm({
         setNewSubtaskTitle("")
         setNewSubtaskPriority("LOW")
         setNewSubtaskAssignee(null)
+        setNewSubtaskStartDate("")
+        setNewSubtaskStartDateTime("")
         setNewSubtaskDueDate("")
+        setNewSubtaskDueDateTime("")
     }
 
     const handleDeleteSubtask = (id: string) => {
@@ -512,88 +540,142 @@ export function CreateTaskForm({
                         </Button>
 
                         {isSubtasksExpanded && (
-                            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                                <div className="flex flex-col md:flex-row gap-3 p-4 bg-muted/40 rounded-xl border items-start md:items-center shadow-sm">
-                                    <div className="flex-1 w-full md:w-auto">
-                                        <Input
-                                            placeholder={t('tasks.subtaskTitlePlaceholder') || "What needs to be done?"}
-                                            value={newSubtaskTitle}
-                                            onChange={(e) => setNewSubtaskTitle(e.target.value)}
-                                            className="h-9 bg-background"
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') {
-                                                    e.preventDefault()
-                                                    handleAddSubtask()
-                                                }
-                                            }}
-                                        />
-                                    </div>
+                            <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-200">
+                                {/* Subtask Form - Similar to main task form */}
+                                <div className="space-y-4 p-4 bg-muted/20 rounded-lg border">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="subtask-title" className="text-base font-semibold">
+                                                {t('tasks.titleLabel')}
+                                            </Label>
+                                            <Input
+                                                id="subtask-title"
+                                                placeholder={t('tasks.subtaskTitlePlaceholder') || "What needs to be done?"}
+                                                value={newSubtaskTitle}
+                                                onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                                                className="h-10 border-input bg-transparent"
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault()
+                                                        handleAddSubtask()
+                                                    }
+                                                }}
+                                            />
+                                        </div>
 
-                                    <div className="flex gap-2 w-full md:w-auto">
-                                        <div className="w-[110px]">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="subtask-priority" className="text-base font-semibold">
+                                                {t('tasks.priority')}
+                                            </Label>
                                             <Select value={newSubtaskPriority} onValueChange={setNewSubtaskPriority}>
-                                                <SelectTrigger className="h-9 bg-background text-xs">
+                                                <SelectTrigger id="subtask-priority" className="h-10">
                                                     <SelectValue placeholder={t('tasks.priority')} />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="LOW">
-                                                        <div className="flex items-center gap-1.5">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-2 h-2 rounded-full bg-green-500" />
                                                             {t('tasks.priorityLow')}
                                                         </div>
                                                     </SelectItem>
                                                     <SelectItem value="MEDIUM">
-                                                        <div className="flex items-center gap-1.5">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-2 h-2 rounded-full bg-yellow-500" />
                                                             {t('tasks.priorityMedium')}
                                                         </div>
                                                     </SelectItem>
                                                     <SelectItem value="HIGH">
-                                                        <div className="flex items-center gap-1.5">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-2 h-2 rounded-full bg-red-500" />
                                                             {t('tasks.priorityHigh')}
                                                         </div>
                                                     </SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
+                                    </div>
 
-                                        <div className="w-[140px]">
-                                            <Select
-                                                value={newSubtaskAssignee || "unassigned"}
-                                                onValueChange={(val) => setNewSubtaskAssignee(val === "unassigned" ? null : val)}
-                                            >
-                                                <SelectTrigger className="h-9 bg-background text-xs">
-                                                    <SelectValue placeholder={t('tasks.assignTo')} />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="unassigned">{t('tasks.subtaskNoAssignee') || 'Unassigned'}</SelectItem>
-                                                    {users
-                                                        .filter(user => assignedToIds.includes(user.id))
-                                                        .map(user => (
-                                                            <SelectItem key={user.id} value={user.id}>
-                                                                {user.name || user.email}
-                                                            </SelectItem>
-                                                        ))}
-                                                </SelectContent>
-                                            </Select>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="subtask-startDate" className="text-base font-semibold">
+                                                {t('tasks.startDate') || 'Start Date'}
+                                            </Label>
+                                            <div className="flex gap-2">
+                                                <Input
+                                                    id="subtask-startDate"
+                                                    type="date"
+                                                    value={newSubtaskStartDate}
+                                                    onChange={(e) => setNewSubtaskStartDate(e.target.value)}
+                                                    className="h-10"
+                                                />
+                                                <Input
+                                                    id="subtask-startDate-time"
+                                                    type="time"
+                                                    value={newSubtaskStartDateTime}
+                                                    onChange={(e) => setNewSubtaskStartDateTime(e.target.value)}
+                                                    className="h-10 w-[110px]"
+                                                />
+                                            </div>
                                         </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="subtask-deadline" className="text-base font-semibold">
+                                                {t('tasks.deadline')}
+                                            </Label>
+                                            <div className="flex gap-2">
+                                                <Input
+                                                    id="subtask-deadline"
+                                                    type="date"
+                                                    value={newSubtaskDueDate}
+                                                    onChange={(e) => setNewSubtaskDueDate(e.target.value)}
+                                                    className="h-10"
+                                                />
+                                                <Input
+                                                    id="subtask-deadline-time"
+                                                    type="time"
+                                                    value={newSubtaskDueDateTime}
+                                                    onChange={(e) => setNewSubtaskDueDateTime(e.target.value)}
+                                                    className="h-10 w-[110px]"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                        <Input
-                                            type="date"
-                                            value={newSubtaskDueDate}
-                                            onChange={(e) => setNewSubtaskDueDate(e.target.value)}
-                                            className="h-9 w-[130px] text-xs bg-background"
-                                        />
+                                    {users.filter(user => assignedToIds.includes(user.id)).length > 0 && (
+                                        <div className="grid gap-2">
+                                            <Label className="text-base font-semibold">
+                                                {t('tasks.assignTo')}
+                                            </Label>
+                                            <div className="border rounded-md max-h-48 overflow-y-auto p-3 space-y-2 bg-background/50">
+                                                {users
+                                                    .filter(user => assignedToIds.includes(user.id))
+                                                    .map(user => (
+                                                        <div key={user.id} className="flex items-center gap-3 p-1 rounded hover:bg-muted/50 transition-colors">
+                                                            <Checkbox
+                                                                id={`subtask-user-${user.id}`}
+                                                                checked={newSubtaskAssignee === user.id}
+                                                                onCheckedChange={(checked) => setNewSubtaskAssignee(checked ? user.id : null)}
+                                                            />
+                                                            <Label htmlFor={`subtask-user-${user.id}`} className="cursor-pointer text-sm font-medium flex-1">
+                                                                {user.name || user.email}
+                                                                {currentUserId && user.id === currentUserId && (
+                                                                    <span className="text-muted-foreground ms-1 text-xs">({t('common.you')})</span>
+                                                                )}
+                                                            </Label>
+                                                        </div>
+                                                    ))}
+                                            </div>
+                                        </div>
+                                    )}
 
+                                    <div className="flex justify-end">
                                         <Button
                                             type="button"
-                                            size="sm"
                                             onClick={handleAddSubtask}
                                             disabled={!newSubtaskTitle.trim()}
-                                            className="h-9 w-9 p-0 shrink-0"
+                                            className="h-10"
                                         >
-                                            <Plus className="h-4 w-4" />
+                                            <Plus className={cn(isRTL ? "ml-2" : "mr-2", "h-4 w-4")} />
+                                            {t('tasks.addSubTask') || 'Add Subtask'}
                                         </Button>
                                     </div>
                                 </div>
@@ -604,73 +686,83 @@ export function CreateTaskForm({
                                             <div className="flex-1">{t('tasks.subtaskTitlePlaceholder') || 'Title'}</div>
                                             <div className="w-[100px] hidden md:block">{t('tasks.priority')}</div>
                                             <div className="w-[120px] hidden md:block">{t('tasks.assignTo')}</div>
-                                            <div className="w-[100px] hidden md:block">{t('tasks.dueDate') || 'Due Date'}</div>
+                                            <div className="w-[110px] hidden md:block">{t('tasks.startDate') || 'Start Date'}</div>
+                                            <div className="w-[110px] hidden md:block">{t('tasks.dueDate') || 'Due Date'}</div>
                                             <div className="w-8"></div>
                                         </div>
                                         <div className="max-h-[200px] overflow-y-auto bg-background/50 divide-y">
-                                            {subtasks.map((st) => (
-                                                <div key={st.id} className="flex items-center px-4 py-2.5 hover:bg-muted/30 transition-colors group text-sm">
-                                                    <div className="flex-1 font-medium flex items-center gap-2">
-                                                        {st.title}
-                                                        <div className="md:hidden flex gap-1">
-                                                            <div className={cn(
-                                                                "w-2 h-2 rounded-full",
-                                                                st.priority === 'HIGH' ? "bg-red-500" :
-                                                                    st.priority === 'MEDIUM' ? "bg-yellow-500" :
-                                                                        "bg-green-500"
-                                                            )} />
+                                            {subtasks.map((st) => {
+                                                const startDateFormatted = st.startDate ? new Date(st.startDate).toLocaleDateString() : null
+                                                const dueDateFormatted = st.dueDate ? new Date(st.dueDate).toLocaleDateString() : null
+                                                
+                                                return (
+                                                    <div key={st.id} className="flex items-center px-4 py-2.5 hover:bg-muted/30 transition-colors group text-sm">
+                                                        <div className="flex-1 font-medium flex items-center gap-2">
+                                                            {st.title}
+                                                            <div className="md:hidden flex gap-1">
+                                                                <div className={cn(
+                                                                    "w-2 h-2 rounded-full",
+                                                                    st.priority === 'HIGH' ? "bg-red-500" :
+                                                                        st.priority === 'MEDIUM' ? "bg-yellow-500" :
+                                                                            "bg-green-500"
+                                                                )} />
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="w-[100px] hidden md:flex items-center">
+                                                            <Badge variant="outline" className={cn(
+                                                                "h-6 text-[10px] gap-1.5 pl-1.5 pr-2.5",
+                                                                st.priority === 'HIGH' ? "bg-red-50 text-red-700 border-red-200" :
+                                                                    st.priority === 'MEDIUM' ? "bg-yellow-50 text-yellow-700 border-yellow-200" :
+                                                                        "bg-green-50 text-green-700 border-green-200"
+                                                            )}>
+                                                                <div className={cn(
+                                                                    "w-1.5 h-1.5 rounded-full",
+                                                                    st.priority === 'HIGH' ? "bg-red-500" :
+                                                                        st.priority === 'MEDIUM' ? "bg-yellow-500" :
+                                                                            "bg-green-500"
+                                                                )} />
+                                                                {st.priority || 'LOW'}
+                                                            </Badge>
+                                                        </div>
+
+                                                        <div className="w-[120px] hidden md:flex items-center text-muted-foreground text-xs">
+                                                            {st.assignedToId ? (
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[10px] text-primary font-bold">
+                                                                        {users.find(u => u.id === st.assignedToId)?.name?.charAt(0) || "U"}
+                                                                    </div>
+                                                                    <span className="truncate max-w-[85px]">
+                                                                        {users.find(u => u.id === st.assignedToId)?.name || "User"}
+                                                                    </span>
+                                                                </div>
+                                                            ) : (
+                                                                <span className="opacity-50">-</span>
+                                                            )}
+                                                        </div>
+
+                                                        <div className="w-[110px] hidden md:flex items-center text-muted-foreground text-xs">
+                                                            {startDateFormatted || <span className="opacity-50">-</span>}
+                                                        </div>
+
+                                                        <div className="w-[110px] hidden md:flex items-center text-muted-foreground text-xs">
+                                                            {dueDateFormatted || <span className="opacity-50">-</span>}
+                                                        </div>
+
+                                                        <div className="w-8 flex justify-end">
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => handleDeleteSubtask(st.id)}
+                                                                className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
                                                         </div>
                                                     </div>
-
-                                                    <div className="w-[100px] hidden md:flex items-center">
-                                                        <Badge variant="outline" className={cn(
-                                                            "h-6 text-[10px] gap-1.5 pl-1.5 pr-2.5",
-                                                            st.priority === 'HIGH' ? "bg-red-50 text-red-700 border-red-200" :
-                                                                st.priority === 'MEDIUM' ? "bg-yellow-50 text-yellow-700 border-yellow-200" :
-                                                                    "bg-green-50 text-green-700 border-green-200"
-                                                        )}>
-                                                            <div className={cn(
-                                                                "w-1.5 h-1.5 rounded-full",
-                                                                st.priority === 'HIGH' ? "bg-red-500" :
-                                                                    st.priority === 'MEDIUM' ? "bg-yellow-500" :
-                                                                        "bg-green-500"
-                                                            )} />
-                                                            {st.priority || 'LOW'}
-                                                        </Badge>
-                                                    </div>
-
-                                                    <div className="w-[120px] hidden md:flex items-center text-muted-foreground text-xs">
-                                                        {st.assignedToId ? (
-                                                            <div className="flex items-center gap-1.5">
-                                                                <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[10px] text-primary font-bold">
-                                                                    {users.find(u => u.id === st.assignedToId)?.name?.charAt(0) || "U"}
-                                                                </div>
-                                                                <span className="truncate max-w-[85px]">
-                                                                    {users.find(u => u.id === st.assignedToId)?.name || "User"}
-                                                                </span>
-                                                            </div>
-                                                        ) : (
-                                                            <span className="opacity-50">-</span>
-                                                        )}
-                                                    </div>
-
-                                                    <div className="w-[100px] hidden md:flex items-center text-muted-foreground text-xs">
-                                                        {st.dueDate ? st.dueDate : <span className="opacity-50">-</span>}
-                                                    </div>
-
-                                                    <div className="w-8 flex justify-end">
-                                                        <Button
-                                                            type="button"
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => handleDeleteSubtask(st.id)}
-                                                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            ))}
+                                                )
+                                            })}
                                         </div>
                                     </div>
                                 )}
