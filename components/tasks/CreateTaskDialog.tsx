@@ -67,7 +67,7 @@ export function CreateTaskDialog({
                 <DialogContent
                     className={cn(
                         "sm:max-w-2xl",
-                        "max-h-[85vh] overflow-y-auto overflow-x-hidden",
+                        "h-[85vh] overflow-hidden flex flex-col",
                         isRTL && "[&>button]:left-4 [&>button]:right-auto"
                     )}
                     dir={isRTL ? "rtl" : "ltr"}
