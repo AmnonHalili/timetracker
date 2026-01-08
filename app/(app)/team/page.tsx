@@ -73,7 +73,7 @@ export default async function TeamPage() {
         })
 
         return (
-            <div className="container mx-auto px-4 md:px-6 lg:px-8 space-y-6 md:space-y-8 py-4 md:py-6">
+            <div className="container mx-auto px-2 md:px-6 lg:px-8 space-y-6 md:space-y-8 py-4 md:py-6">
                 <div>
                     <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Private Session</h1>
                     <p className="text-sm md:text-base text-muted-foreground">You are currently working independently.</p>
@@ -305,7 +305,7 @@ export default async function TeamPage() {
     const isManager = ["ADMIN", "MANAGER"].includes(currentUser.role)
 
     return (
-        <div className="container mx-auto px-4 md:px-6 lg:px-8 space-y-5 md:space-y-6 py-4 md:py-6">
+        <div className="container mx-auto px-2 md:px-6 lg:px-8 space-y-5 md:space-y-6 py-4 md:py-6">
             {/* Show invitations if any */}
             {pendingInvitations.length > 0 && (
                 <TeamInvitationsList invitations={pendingInvitations} />

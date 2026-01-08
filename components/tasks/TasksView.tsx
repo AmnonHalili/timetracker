@@ -1295,13 +1295,13 @@ export function TasksView({
         <Card className="border-none shadow-none bg-transparent">
             <CardHeader className="flex flex-col space-y-4 pb-4 px-0 bg-transparent">
                 {/* Title */}
-                <CardTitle className={`px-4 text-center md:text-left ${isRTL ? 'md:text-right' : 'md:text-left'} text-base md:text-lg font-medium text-primary`}>
+                <CardTitle className={`px-2 md:px-4 text-center md:text-left ${isRTL ? 'md:text-right' : 'md:text-left'} text-base md:text-lg font-medium text-primary`}>
                     {t('tasks.allTasks')} ({filteredTasks.length})
                 </CardTitle>
 
                 {/* Active Filter Chips */}
                 {activeFiltersCount > 0 && (
-                    <div className="flex overflow-x-auto md:flex-wrap gap-1.5 items-center px-4 md:px-0 pb-2 md:pb-0 mask-fade-right md:mask-none no-scrollbar">
+                    <div className="flex overflow-x-auto md:flex-wrap gap-1.5 items-center px-2 md:px-0 pb-2 md:pb-0 mask-fade-right md:mask-none no-scrollbar">
                         {filters.status.map(status => (
                             <Badge key={status} variant="secondary" className="h-6 text-xs px-2">
                                 {getFilterLabel('status', status)}
@@ -1395,7 +1395,7 @@ export function TasksView({
             </CardHeader>
             <CardContent className="p-0 bg-transparent">
                 {viewMode === 'board' ? (
-                    <div className="h-[calc(100vh-250px)] px-4 pb-4 bg-muted/30 dark:bg-muted/20 rounded-md">
+                    <div className="h-[calc(100vh-250px)] px-2 md:px-4 pb-4 bg-muted/30 dark:bg-muted/20 rounded-md">
                         <TasksBoard
                             tasks={filteredTasks}
                             onTaskClick={(task) => {

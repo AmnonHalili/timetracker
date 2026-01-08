@@ -222,7 +222,7 @@ export default async function ReportsPage({
     const { report } = data
 
     return (
-        <div className="container mx-auto px-4 md:px-8 py-4 md:py-8 space-y-5 md:space-y-8">
+        <div className="container mx-auto px-2 md:px-8 py-4 md:py-8 space-y-5 md:space-y-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-4">
                 <ReportsPageHeader />
                 <ReportsControls

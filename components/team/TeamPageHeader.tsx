@@ -66,11 +66,11 @@ export function TeamPageHeader({ projectName, membersCount, isManager }: TeamPag
                                 )}
                             >
                                 <Network className={cn(
-                                    "h-4 w-4",
-                                    isRTL ? "md:ml-2" : "md:mr-2"
+                                    "h-4 w-4 shrink-0",
+                                    isRTL ? "ml-2" : "mr-2"
                                 )} />
-                                <span className="hidden md:inline font-medium">
-                                    {t('team.viewHierarchy')}
+                                <span className="font-medium truncate">
+                                    {t('team.hierarchy')}
                                 </span>
                             </Button>
                         </Link>

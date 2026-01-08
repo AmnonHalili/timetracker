@@ -53,7 +53,7 @@ export function TasksPageHeader({
     const { t } = useLanguage()
 
     return (
-        <div className="flex flex-col gap-1.5 px-4 md:px-0">
+        <div className="flex flex-col gap-1.5 px-2 md:px-0">
             {/* Title and Add Task - Same row on desktop */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div className="flex flex-col gap-1.5">
@@ -77,17 +77,18 @@ export function TasksPageHeader({
 
             {/* Filters and Sort - Below, right aligned on desktop */}
             {setIsFiltersOpen && setSortBy && (
-                <div className={`flex items-center gap-2 md:gap-2 w-full md:w-auto md:justify-end mt-2 md:mt-6 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <div className={`flex flex-wrap items-center gap-2 md:gap-2 w-full md:w-auto md:justify-end mt-2 md:mt-6 ${isRTL ? 'flex-row-reverse' : ''}`}>
                     {/* Archive Toggle Button */}
                     {setShowArchived && (
                         <Button
                             variant={showArchived ? "default" : "outline"}
                             size="sm"
                             onClick={() => setShowArchived(!showArchived)}
-                            className={`h-11 md:h-10 text-sm font-semibold flex-1 md:flex-initial rounded-xl md:rounded-md ${isRTL ? 'flex-row-reverse' : ''}`}
+                            className={`h-11 md:h-10 text-sm font-semibold w-11 md:w-auto md:flex-initial rounded-xl md:rounded-md ${isRTL ? 'flex-row-reverse' : ''}`}
+                            title={t('tasks.viewArchived')}
                         >
-                            <Archive className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-                            {t('tasks.viewArchived')}
+                            <Archive className="h-4 w-4 shrink-0" />
+                            <span className="hidden md:inline md:ml-2">{t('tasks.viewArchived')}</span>
                         </Button>
                     )}
                     {/* Filters Button */}
@@ -95,12 +96,12 @@ export function TasksPageHeader({
                         variant="outline"
                         size="sm"
                         onClick={() => setIsFiltersOpen(true)}
-                        className={`h-11 md:h-10 text-sm font-semibold flex-1 md:flex-initial rounded-xl md:rounded-md ${isRTL ? 'flex-row-reverse' : ''}`}
+                        className={`h-11 md:h-10 text-sm font-semibold flex-1 min-w-[100px] md:flex-initial md:min-w-0 rounded-xl md:rounded-md ${isRTL ? 'flex-row-reverse' : ''}`}
                     >
-                        <Filter className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-                        {t('tasks.filters')}
+                        <Filter className={`h-4 w-4 shrink-0 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                        <span className="truncate">{t('tasks.filters')}</span>
                         {activeFiltersCount > 0 && (
-                            <Badge variant="secondary" className={`h-5 px-1.5 text-xs ${isRTL ? 'mr-2' : 'ml-2'}`}>
+                            <Badge variant="secondary" className={`h-5 px-1.5 text-xs shrink-0 ${isRTL ? 'mr-2' : 'ml-2'}`}>
                                 {activeFiltersCount}
                             </Badge>
                         )}
@@ -108,10 +109,10 @@ export function TasksPageHeader({
 
                     {/* Sort Dropdown */}
                     <Select value={sortBy} onValueChange={setSortBy}>
-                        <SelectTrigger className="h-11 md:h-10 text-sm font-semibold px-4 md:px-3 flex-1 md:flex-initial md:w-auto rounded-xl md:rounded-md">
-                            <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                                <ArrowUpDown className="h-4 w-4" />
-                                <SelectValue placeholder={t('tasks.sort')} />
+                        <SelectTrigger className="h-11 md:h-10 text-sm font-semibold px-4 md:px-3 flex-1 min-w-[100px] md:flex-initial md:min-w-0 md:w-auto rounded-xl md:rounded-md">
+                            <div className={`flex items-center gap-2 w-full ${isRTL ? 'flex-row-reverse' : ''}`}>
+                                <ArrowUpDown className="h-4 w-4 shrink-0" />
+                                <SelectValue placeholder={t('tasks.sort')} className="truncate" />
                             </div>
                         </SelectTrigger>
                         <SelectContent>

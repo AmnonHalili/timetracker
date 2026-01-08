@@ -114,7 +114,7 @@ export default async function SettingsPage() {
     if (!user) return null
 
     return (
-        <div className="container max-w-4xl py-6 space-y-8">
+        <div className="container max-w-4xl py-6 space-y-8 px-2 md:px-4">
             <SettingsHeader />
 
             <Tabs defaultValue="profile" className="w-full">

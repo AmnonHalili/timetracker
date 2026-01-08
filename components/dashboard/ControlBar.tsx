@@ -834,11 +834,15 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                                             setTimeError("")
                                         }
                                     }}
-                                    className={`w-full sm:w-[95px] h-9 text-sm bg-background border-input shadow-sm rounded-xl md:rounded-md [&::-webkit-calendar-picker-indicator]:ml-auto text-center pl-8 ${timeError ? 'border-destructive' : ''}`}
+                                    className={`w-full sm:w-[95px] h-11 sm:h-9 text-base sm:text-sm bg-background border-input shadow-sm rounded-xl md:rounded-md text-center px-3 sm:px-2 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer ${timeError ? 'border-destructive' : ''}`}
+                                    style={{
+                                        WebkitAppearance: 'none',
+                                        MozAppearance: 'textfield',
+                                    } as React.CSSProperties}
                                     aria-label="Start time"
                                 />
                             </div>
-                            <span className="text-muted-foreground mb-2" aria-hidden="true">-</span>
+                            <span className="text-muted-foreground mb-2 hidden sm:inline" aria-hidden="true">-</span>
                             <div className="flex flex-col gap-1 flex-1 sm:flex-none">
                                 <label htmlFor="manual-end-time" className="text-xs sm:text-[10px] text-muted-foreground font-medium">
                                     {t('dashboard.endTime')}
@@ -875,13 +879,17 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                                             setTimeError("")
                                         }
                                     }}
-                                    className={`w-full sm:w-[95px] h-9 text-sm bg-background border-input shadow-sm rounded-xl md:rounded-md [&::-webkit-calendar-picker-indicator]:ml-auto text-center pl-8 ${timeError ? 'border-destructive' : ''}`}
+                                    className={`w-full sm:w-[95px] h-11 sm:h-9 text-base sm:text-sm bg-background border-input shadow-sm rounded-xl md:rounded-md text-center px-3 sm:px-2 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer ${timeError ? 'border-destructive' : ''}`}
+                                    style={{
+                                        WebkitAppearance: 'none',
+                                        MozAppearance: 'textfield',
+                                    } as React.CSSProperties}
                                     aria-label="End time"
                                 />
                             </div>
                             {timeError && (
-                                <div className="absolute -bottom-5 left-0">
-                                    <p className="text-[10px] text-destructive px-1 whitespace-nowrap">
+                                <div className="absolute -bottom-5 left-0 right-0 sm:right-auto">
+                                    <p className="text-[10px] text-destructive px-1 whitespace-nowrap text-center sm:text-left">
                                         {timeError}
                                     </p>
                                 </div>
