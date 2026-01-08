@@ -528,8 +528,9 @@ export function TeamList({ users, allUsers, currentUserId, currentUserRole }: Te
     // Helper function to get job title
     const getJobTitle = (user: User) => {
         if (user.jobTitle) return user.jobTitle
-        if (user.role === "ADMIN") return "Founder"
-        return user.role.toLowerCase().replace('_', ' ')
+        if (user.role === "ADMIN") return t('roles.admin')
+        if (user.role === "MANAGER") return t('roles.manager')
+        return t('roles.member')
     }
 
     return (

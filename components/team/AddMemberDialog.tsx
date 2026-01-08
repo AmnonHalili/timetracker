@@ -210,7 +210,7 @@ export function AddMemberDialog({
                 {customTrigger ? (
                     customTrigger
                 ) : (
-                    <Button 
+                    <Button
                         className="h-10 rounded-xl font-medium shadow-sm hover:shadow transition-all duration-200 w-full md:w-auto"
                     >
                         <UserPlus className="mr-2 h-4 w-4" />
@@ -221,12 +221,12 @@ export function AddMemberDialog({
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader className="text-left">
                     <DialogTitle className="text-left">
-                        {role === "ADMIN" ? "Invite New Chief" : "Invite Team Member"}
+                        {role === "ADMIN" ? t('team.addNewChief') : t('team.addTeamMember')}
                     </DialogTitle>
                     <DialogDescription className="text-left">
                         {role === "ADMIN"
-                            ? "Send an email invitation to a new chief. They will set their own password."
-                            : "Send an email invitation to a new team member. They will set their own password."}
+                            ? t('team.createChiefAccount')
+                            : t('team.createEmployeeAccount')}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -237,8 +237,8 @@ export function AddMemberDialog({
                 }} className="w-full">
                     {isAdmin && (
                         <TabsList className="grid w-full grid-cols-2 mb-4">
-                            <TabsTrigger value="employee">Team Member</TabsTrigger>
-                            <TabsTrigger value="chief">Chief (Admin)</TabsTrigger>
+                            <TabsTrigger value="employee">{t('roles.member')}</TabsTrigger>
+                            <TabsTrigger value="chief">{t('roles.admin')}</TabsTrigger>
                         </TabsList>
                     )}
 
@@ -276,7 +276,7 @@ export function AddMemberDialog({
                             {!hideManagerSelect && role === "EMPLOYEE" && (
                                 <div className="grid grid-cols-4 items-center gap-4">
                                     <Label htmlFor="manager" className="text-left">
-                                        Reports To
+                                        {t('team.reportsTo')}
                                         <span className="text-destructive ml-1">*</span>
                                     </Label>
                                     <div className="col-span-3">
@@ -288,7 +288,7 @@ export function AddMemberDialog({
                                             required
                                         >
                                             <SelectTrigger className={!managerId ? "border-destructive" : ""}>
-                                                <SelectValue placeholder="Select Manager (Required)" />
+                                                <SelectValue placeholder={t('team.selectManagerRequired')} />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 {/* For Employees, show all managers */}
@@ -300,7 +300,7 @@ export function AddMemberDialog({
                                             </SelectContent>
                                         </Select>
                                         <p className="text-[10px] text-muted-foreground mt-1 mx-1">
-                                            Team members must report to a manager.
+                                            {t('team.teamMemberMustReport')}
                                         </p>
                                     </div>
                                 </div>

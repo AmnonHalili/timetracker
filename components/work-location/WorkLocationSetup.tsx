@@ -49,7 +49,7 @@ export function WorkLocationSetup({ onSave, onSkip, initialLocation, isOptional 
                 setLongitude(position.coords.longitude)
                 setIsGettingLocation(false)
                 toast.success("Location captured successfully")
-                
+
                 // Try to reverse geocode to get address
                 fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${position.coords.longitude},${position.coords.latitude}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN || ''}`)
                     .then(res => res.json())
@@ -112,7 +112,7 @@ export function WorkLocationSetup({ onSave, onSkip, initialLocation, isOptional 
                     {isOptional ? "Set Work Location (Optional)" : "Set Work Location"}
                 </CardTitle>
                 <CardDescription>
-                    Define a work location for GPS verification. Employees will need to be within this area to start their work day.
+                    Define a work location for GPS verification. Members will need to be within this area to start their work day.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">

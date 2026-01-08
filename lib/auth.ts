@@ -89,6 +89,9 @@ export const authOptions: NextAuthOptions = {
 
                     // Prepare update data
                     const updateData: Record<string, unknown> = { role }
+                    let activeProjectId: string | null = null
+                    let memberRole: "ADMIN" | "EMPLOYEE" = "ADMIN"
+                    let memberStatus: "ACTIVE" | "PENDING" = "ACTIVE"
 
                     // Handle Project Logic
                     if (role === "ADMIN") {
@@ -100,32 +103,61 @@ export const authOptions: NextAuthOptions = {
                                 joinCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
                             }
                         })
+                        activeProjectId = project.id
                         updateData.projectId = project.id
-                        updateData.status = "ACTIVE" // Admins are active by default
+                        updateData.status = "ACTIVE"
+                        memberRole = "ADMIN"
+                        memberStatus = "ACTIVE"
                     } else if (role === "EMPLOYEE") {
                         // If join code provided, try to find project
                         if (decodedProjectInfo) {
                             const project = await prisma.project.findUnique({
-                                where: { joinCode: decodedProjectInfo }
+                                where: { joinCode: decodedProjectInfo.toUpperCase() }
                             })
 
                             if (project) {
-                                // Add to project but keep as PENDING until approved
+                                // Add to existing project as PENDING
+                                activeProjectId = project.id
                                 updateData.projectId = project.id
                                 updateData.status = "PENDING"
-                            } else {
-                                // Invalid code, still create user but without project
-                                updateData.status = "PENDING"
+                                memberRole = "EMPLOYEE"
+                                memberStatus = "PENDING"
                             }
-                        } else {
-                            updateData.status = "PENDING"
+                        }
+
+                        // If no project joined (or code was invalid), create a Personal Workspace
+                        if (!activeProjectId) {
+                            const personalProject = await prisma.project.create({
+                                data: {
+                                    name: `${user.name}'s Workspace`,
+                                    joinCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+                                }
+                            })
+                            activeProjectId = personalProject.id
+                            updateData.projectId = personalProject.id
+                            updateData.status = "ACTIVE"
+                            memberRole = "ADMIN"
+                            memberStatus = "ACTIVE"
                         }
                     }
 
+                    // Update the user record
                     await prisma.user.update({
                         where: { id: user.id },
                         data: updateData
                     })
+
+                    // Create the membership record
+                    if (activeProjectId) {
+                        await prisma.projectMember.create({
+                            data: {
+                                userId: user.id,
+                                projectId: activeProjectId,
+                                role: memberRole,
+                                status: memberStatus
+                            }
+                        })
+                    }
                 }
             } catch (error) {
                 console.error("Error in createUser event:", error)

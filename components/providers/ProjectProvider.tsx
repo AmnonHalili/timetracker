@@ -24,6 +24,7 @@ type ProjectContextType = {
     createProject: (name: string) => Promise<void>
     joinProject: (joinCode: string) => Promise<void>
     respondToInvitation: (projectId: string, action: 'ACCEPT' | 'REJECT') => Promise<void>
+    leaveProject: (projectId: string) => Promise<void>
     refreshProjects: () => Promise<void>
 }
 
@@ -203,6 +204,37 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         }
     }
 
+    const leaveProject = async (projectId: string) => {
+        const loadingToast = toast.loading("Leaving workspace...")
+        try {
+            const res = await fetch(`/api/projects/${projectId}/leave`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" }
+            })
+
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.message || data.error || "Failed to leave workspace")
+
+            toast.success("Successfully left the workspace", { id: loadingToast })
+            await refreshProjects()
+
+            // If we left the current project, the API already updated the DB, but we need to update session
+            if (activeProject?.id === projectId) {
+                // Fetch fresh session or update it
+                const nextProject = projects.find(p => p.id !== projectId && p.status === "ACTIVE")
+                await update({ projectId: nextProject?.id || null })
+
+                startTransition(() => {
+                    router.refresh()
+                })
+            }
+        } catch (error) {
+            console.error(error)
+            toast.error(error instanceof Error ? error.message : "Failed to leave workspace", { id: loadingToast })
+            throw error
+        }
+    }
+
     return (
         <ProjectContext.Provider value={{
             projects,
@@ -213,6 +245,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
             createProject,
             joinProject,
             respondToInvitation,
+            leaveProject,
             refreshProjects
         }}>
             {children}

@@ -1,7 +1,18 @@
 "use client"
 
 import * as React from "react"
-import { Check, ChevronsUpDown, PlusCircle, Building2 } from "lucide-react"
+import { Check, ChevronsUpDown, PlusCircle, Building2, LogOut, AlertTriangle, MoreVertical } from "lucide-react"
+import { useLanguage } from "@/lib/useLanguage"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -33,7 +44,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useProject } from "@/components/providers/ProjectProvider"
 
 export function ProjectSwitcher({ className }: { className?: string }) {
-    const { projects, activeProject, switchProject, createProject, joinProject, respondToInvitation, isLoading } = useProject()
+    const { projects, activeProject, switchProject, createProject, joinProject, respondToInvitation, leaveProject, isLoading } = useProject()
+    const { t, isRTL } = useLanguage()
 
     // Switcher State
     const [open, setOpen] = React.useState(false)
@@ -42,6 +54,11 @@ export function ProjectSwitcher({ className }: { className?: string }) {
     const [showCreateDialog, setShowCreateDialog] = React.useState(false)
     const [showJoinDialog, setShowJoinDialog] = React.useState(false)
     const [invitationDialog, setInvitationDialog] = React.useState<{ open: boolean; projectId: string; projectName: string }>({
+        open: false,
+        projectId: "",
+        projectName: ""
+    })
+    const [leaveDialog, setLeaveDialog] = React.useState<{ open: boolean; projectId: string; projectName: string }>({
         open: false,
         projectId: "",
         projectName: ""
@@ -271,37 +288,54 @@ export function ProjectSwitcher({ className }: { className?: string }) {
                                                 setOpen(false)
                                             }
                                         }}
-                                        className="text-sm"
+                                        className="text-sm group flex items-center justify-between"
                                     >
-                                        <Avatar className="mr-2 h-5 w-5 transition-all">
-                                            {project.logo && (
-                                                <AvatarImage
-                                                    src={project.logo}
-                                                    alt={project.name}
-                                                    className={cn(
-                                                        "object-cover transition-all duration-300",
-                                                        activeProject?.id === project.id
-                                                            ? "grayscale-0 !grayscale-0 contrast-125 saturate-150 brightness-110"
-                                                            : "grayscale opacity-40 brightness-90"
-                                                    )}
-                                                />
+                                        <div className="flex items-center flex-1 min-w-0">
+                                            <Avatar className="mr-2 h-5 w-5 transition-all">
+                                                {project.logo && (
+                                                    <AvatarImage
+                                                        src={project.logo}
+                                                        alt={project.name}
+                                                        className={cn(
+                                                            "object-cover transition-all duration-300",
+                                                            activeProject?.id === project.id
+                                                                ? "grayscale-0 !grayscale-0 contrast-125 saturate-150 brightness-110"
+                                                                : "grayscale opacity-40 brightness-90"
+                                                        )}
+                                                    />
+                                                )}
+                                                <AvatarFallback className="text-[10px]">{project.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                            </Avatar>
+                                            <span className="truncate">{project.name}</span>
+                                            {project.status === "INVITED" && (
+                                                <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                                                    Invited
+                                                </span>
                                             )}
-                                            <AvatarFallback className="text-[10px]">{project.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                                        </Avatar>
-                                        {project.name}
-                                        {project.status === "INVITED" && (
-                                            <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-                                                Invited
-                                            </span>
-                                        )}
-                                        <Check
-                                            className={cn(
-                                                "ml-auto h-4 w-4",
-                                                activeProject?.id === project.id
-                                                    ? "opacity-100"
-                                                    : "opacity-0"
+                                        </div>
+
+                                        <div className="flex items-center gap-1">
+                                            {activeProject?.id === project.id && (
+                                                <Check className="h-4 w-4 opacity-100" />
                                             )}
-                                        />
+
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-7 w-7 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all"
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    setLeaveDialog({
+                                                        open: true,
+                                                        projectId: project.id,
+                                                        projectName: project.name
+                                                    })
+                                                    setOpen(false)
+                                                }}
+                                            >
+                                                <LogOut className="h-3.5 w-3.5" />
+                                            </Button>
+                                        </div>
                                     </CommandItem>
                                 ))}
                             </CommandGroup>
@@ -315,6 +349,31 @@ export function ProjectSwitcher({ className }: { className?: string }) {
                     </Command>
                 </PopoverContent>
             </Popover>
+
+            {/* Leave Workspace Confirmation Dialog */}
+            <AlertDialog open={leaveDialog.open} onOpenChange={(val) => setLeaveDialog(prev => ({ ...prev, open: val }))}>
+                <AlertDialogContent dir={isRTL ? "rtl" : "ltr"}>
+                    <AlertDialogHeader className={isRTL ? "text-right" : "text-left"}>
+                        <AlertDialogTitle className="flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5 text-destructive" />
+                            {t('projects.leaveConfirmTitle')}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('projects.leaveConfirmDescription')} <br />
+                            <strong className="text-foreground">{leaveDialog.projectName}</strong>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className={isRTL ? "flex-row-reverse gap-2" : "gap-2"}>
+                        <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => leaveProject(leaveDialog.projectId)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            {t('projects.leaveWorkspace')}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
                 <DialogContent>

@@ -96,6 +96,24 @@ export async function POST(req: Request) {
             }
         })
 
+        // Also activate the project membership record
+        if (user.projectId) {
+            await prisma.projectMember.update({
+                where: {
+                    userId_projectId: {
+                        userId: user.id,
+                        projectId: user.projectId
+                    }
+                },
+                data: {
+                    status: "ACTIVE"
+                }
+            }).catch(err => {
+                console.error("[ACCEPT_INVITATION] Failed to update project member status:", err)
+                // We don't block the whole process if this fails, but it shouldn't
+            })
+        }
+
         // Auto-promote manager if this user has direct reports
         if (user.managerId) {
             const manager = await prisma.user.findUnique({
