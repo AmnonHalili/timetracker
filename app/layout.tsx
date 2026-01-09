@@ -34,13 +34,16 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/collabospecialnoback.png", type: "image/png" },
+      { url: "/collabologocut.png", media: "(prefers-color-scheme: light)", type: "image/png", sizes: "32x32" },
+      { url: "/collabologocutwhite.png", media: "(prefers-color-scheme: dark)", type: "image/png", sizes: "32x32" },
     ],
     shortcut: [
-      { url: "/collabospecialnoback.png", type: "image/png" },
+      { url: "/collabologocut.png", media: "(prefers-color-scheme: light)", type: "image/png" },
+      { url: "/collabologocutwhite.png", media: "(prefers-color-scheme: dark)", type: "image/png" },
     ],
     apple: [
-      { url: "/collabospecialnoback.png", type: "image/png" },
+      { url: "/pwa-setup-icon.png", media: "(prefers-color-scheme: light)", type: "image/png", sizes: "180x180" },
+      { url: "/pwa-setup-icon.png", media: "(prefers-color-scheme: dark)", type: "image/png", sizes: "180x180" },
     ],
     other: [
       {
