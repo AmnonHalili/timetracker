@@ -2,8 +2,10 @@
 
 import { useState } from "react"
 import { motion, useMotionValue, useTransform, useAnimation } from "framer-motion"
-import { Pencil, Trash2 } from "lucide-react"
+import { Pencil, Trash2, MoreVertical } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { useMediaQuery } from "@/hooks/use-media-query"
 
 interface TimeEntry {
     id: string
@@ -50,6 +52,7 @@ export function SwipeableEntryCard({
     getTimeRange,
     getDuration
 }: SwipeableEntryCardProps) {
+    const isDesktop = useMediaQuery("(min-width: 768px)")
     const x = useMotionValue(0)
     const controls = useAnimation()
     const [revealSide, setRevealSide] = useState<'left' | 'right' | null>(null)
@@ -80,47 +83,49 @@ export function SwipeableEntryCard({
 
     return (
         <div className="relative overflow-hidden rounded-xl bg-muted/10 border shadow-sm">
-            {/* Background Actions - RIGHT SIDE (Swiping Left) */}
-            <motion.div
-                style={{ opacity: rightButtonsOpacity }}
-                className="absolute inset-y-0 right-0 flex items-center h-full"
-            >
-                <div className="flex h-full w-[160px]">
-                    {/* Edit Button */}
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            onEdit(entry)
-                            closeActions()
-                        }}
-                        className="w-20 h-full bg-slate-500 active:bg-slate-600 flex flex-col items-center justify-center text-white gap-1 transition-colors px-2 text-center"
-                    >
-                        <Pencil className="h-5 w-5" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider leading-tight">
-                            {t('common.edit')}
-                        </span>
-                    </button>
+            {/* Background Actions - RIGHT SIDE (Swiping Left) - Mobile Only */}
+            {!isDesktop && (
+                <motion.div
+                    style={{ opacity: rightButtonsOpacity }}
+                    className="absolute inset-y-0 right-0 flex items-center h-full"
+                >
+                    <div className="flex h-full w-[160px]">
+                        {/* Edit Button */}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                onEdit(entry)
+                                closeActions()
+                            }}
+                            className="w-20 h-full bg-slate-500 active:bg-slate-600 flex flex-col items-center justify-center text-white gap-1 transition-colors px-2 text-center"
+                        >
+                            <Pencil className="h-5 w-5" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider leading-tight">
+                                {t('common.edit')}
+                            </span>
+                        </button>
 
-                    {/* Delete Button */}
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            onDelete(entry.id)
-                            closeActions()
-                        }}
-                        className="w-20 h-full bg-red-500 active:bg-red-600 flex flex-col items-center justify-center text-white gap-1 transition-colors px-2 text-center"
-                    >
-                        <Trash2 className="h-5 w-5" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider leading-tight">
-                            {t('common.delete')}
-                        </span>
-                    </button>
-                </div>
-            </motion.div>
+                        {/* Delete Button */}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                onDelete(entry.id)
+                                closeActions()
+                            }}
+                            className="w-20 h-full bg-red-500 active:bg-red-600 flex flex-col items-center justify-center text-white gap-1 transition-colors px-2 text-center"
+                        >
+                            <Trash2 className="h-5 w-5" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider leading-tight">
+                                {t('common.delete')}
+                            </span>
+                        </button>
+                    </div>
+                </motion.div>
+            )}
 
             {/* Foreground Entry Card */}
             <motion.div
-                drag="x"
+                drag={isDesktop ? false : "x"}
                 dragConstraints={{ left: -REVEAL_WIDTH, right: 0 }}
                 dragElastic={0.2}
                 onDragEnd={handleDragEnd}
@@ -194,13 +199,49 @@ export function SwipeableEntryCard({
                     </div>
 
                     {/* Net Work - centered vertically */}
-                    <div className={`flex items-center shrink-0 ${isRTL ? 'flex-row-reverse' : 'flex-row'}`}>
+                    <div className={`flex items-center shrink-0 gap-3 ${isRTL ? 'flex-row-reverse' : 'flex-row'}`}>
                         <div className={`${isRTL ? 'text-left' : 'text-right'}`}>
                             <div className="text-[10px] uppercase text-muted-foreground font-semibold tracking-wider">{t('timeEntries.netWork')}</div>
                             <div className="font-mono font-bold text-primary">
                                 {getDuration(entry.startTime, entry.endTime, entry.breaks)}
                             </div>
                         </div>
+                        
+                        {/* Desktop: Three Dots Menu */}
+                        {isDesktop && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <button
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="p-1.5 hover:bg-muted rounded-md transition-colors"
+                                        aria-label="More options"
+                                    >
+                                        <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                                    </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align={isRTL ? "start" : "end"}>
+                                    <DropdownMenuItem
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            onEdit(entry)
+                                        }}
+                                    >
+                                        <Pencil className="h-4 w-4 me-2" />
+                                        {t('common.edit')}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            onDelete(entry.id)
+                                        }}
+                                        className="text-destructive focus:text-destructive"
+                                    >
+                                        <Trash2 className="h-4 w-4 me-2" />
+                                        {t('common.delete')}
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
                     </div>
                 </div>
             </motion.div>
