@@ -59,13 +59,10 @@ export function TasksPageWithOptimisticUpdate({
 
     // Sync tasks when initialTasks changes (from server refresh)
     const prevInitialTasksRef = useRef(initialTasks)
-
-    useEffect(() => {
-        if (prevInitialTasksRef.current !== initialTasks) {
-            prevInitialTasksRef.current = initialTasks
-            setTasks(initialTasks)
-        }
-    }, [initialTasks])
+    if (prevInitialTasksRef.current !== initialTasks) {
+        prevInitialTasksRef.current = initialTasks
+        setTasks(initialTasks)
+    }
 
     const handleOptimisticTaskCreate = useCallback((task: {
         id: string

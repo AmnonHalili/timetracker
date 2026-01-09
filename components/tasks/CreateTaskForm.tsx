@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, Search, Calendar, UserPlus, Clock, AlertCircle, FolderKanban } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -53,8 +53,8 @@ export function CreateTaskForm({
     const [deadline, setDeadline] = useState("")
     const [deadlineTime, setDeadlineTime] = useState("")
     const [description, setDescription] = useState("")
-    const [fetchedUsers, setFetchedUsers] = useState<Array<{ id: string; name: string | null; email: string | null; managerId?: string | null; role?: string; depth?: number }>>([])
-    const [isLoadingUsers, setIsLoadingUsers] = useState(false) // Separate loading state for users
+    const [users, setUsers] = useState<Array<{ id: string; name: string | null; email: string | null; managerId?: string | null; role?: string; depth?: number }>>([])
+    const [loading, setLoading] = useState(false)
     const [showToMe, setShowToMe] = useState(true)
     const [searchTerm, setSearchTerm] = useState("")
 
@@ -69,98 +69,88 @@ export function CreateTaskForm({
     const [newSubtaskDueDateTime, setNewSubtaskDueDateTime] = useState("")
     const [isSubtasksExpanded, setIsSubtasksExpanded] = useState(false)
 
-    // Helper to sort users: Current User first, then Hierarchy
-    const sortUsersHierarchically = (usersToSort: Array<{ id: string; name: string | null; email: string | null; managerId?: string | null; role?: string }>, meId?: string) => {
-        if (!usersToSort.length) return [];
+    useEffect(() => {
+        // Helper to sort users: Current User first, then Hierarchy
+        const sortUsersHierarchically = (usersToSort: Array<{ id: string; name: string | null; email: string | null; managerId?: string | null; role?: string }>, meId?: string) => {
+            if (!usersToSort.length) return [];
 
-        let me: any;
-        const others = usersToSort.map(u => ({ ...u, depth: 0 }));
+            let me: typeof users[0] | undefined;
+            const others = usersToSort.map(u => ({ ...u, depth: 0 }));
 
-        if (meId) {
-            const meIndex = others.findIndex(u => u.id === meId);
-            if (meIndex >= 0) {
-                me = others[meIndex];
-                others.splice(meIndex, 1);
+            if (meId) {
+                const meIndex = others.findIndex(u => u.id === meId);
+                if (meIndex >= 0) {
+                    me = others[meIndex];
+                    others.splice(meIndex, 1);
+                }
             }
+
+            const userMap = new Map<string, typeof users[0]>();
+            const childrenMap = new Map<string, typeof users[0][]>();
+
+            others.forEach(u => {
+                userMap.set(u.id, u);
+                if (!childrenMap.has(u.id)) childrenMap.set(u.id, []);
+            });
+
+            const roots: typeof users = [];
+
+            others.forEach(u => {
+                if (u.managerId && userMap.has(u.managerId)) {
+                    childrenMap.get(u.managerId)?.push(u);
+                } else {
+                    roots.push(u);
+                }
+            });
+
+            const flattened: typeof users = [];
+            const traverse = (nodes: typeof users, currentDepth: number) => {
+                nodes.sort((a, b) => (a.name || a.email || "").localeCompare(b.name || b.email || ""))
+                    .forEach(node => {
+                        flattened.push({ ...node, depth: currentDepth });
+                        const children = childrenMap.get(node.id);
+                        if (children && children.length > 0) {
+                            traverse(children, currentDepth + 1);
+                        }
+                    });
+            };
+
+            traverse(roots, 0);
+
+            return me ? [{ ...me, depth: 0 }, ...flattened] : flattened;
         }
 
-        const userMap = new Map<string, any>();
-        const childrenMap = new Map<string, any[]>();
-
-        others.forEach(u => {
-            userMap.set(u.id, u);
-            if (!childrenMap.has(u.id)) childrenMap.set(u.id, []);
-        });
-
-        const roots: any[] = [];
-
-        others.forEach(u => {
-            if (u.managerId && userMap.has(u.managerId)) {
-                childrenMap.get(u.managerId)?.push(u);
-            } else {
-                roots.push(u);
+        // Initialize users list
+        if (initialUsers && initialUsers.length > 0) {
+            const compatibleUsers = initialUsers as Array<{ id: string; name: string | null; email: string | null; managerId?: string | null; role?: string; depth?: number }>;
+            setUsers(sortUsersHierarchically(compatibleUsers, currentUserId))
+            if (mode === 'create') {
+                if (currentUserId && initialUsers.some(u => u.id === currentUserId)) {
+                    setAssignedToIds([currentUserId])
+                } else if (initialUsers.length === 1) {
+                    setAssignedToIds([initialUsers[0].id])
+                }
             }
-        });
-
-        const flattened: any[] = [];
-        const traverse = (nodes: any[], currentDepth: number) => {
-            nodes.sort((a, b) => (a.name || a.email || "").localeCompare(b.name || b.email || ""))
-                .forEach(node => {
-                    flattened.push({ ...node, depth: currentDepth });
-                    const children = childrenMap.get(node.id);
-                    if (children && children.length > 0) {
-                        traverse(children, currentDepth + 1);
-                    }
-                });
-        };
-
-        traverse(roots, 0);
-
-        return me ? [{ ...me, depth: 0 }, ...flattened] : flattened;
-    }
-
-    // Derived users list
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const users = useMemo(() => {
-        const rawUsers = (initialUsers && initialUsers.length > 0) ? initialUsers : fetchedUsers;
-        return sortUsersHierarchically(rawUsers, currentUserId);
-    }, [initialUsers, fetchedUsers, currentUserId]);
-
-    // Fetch users if needed (separate effect)
-    useEffect(() => {
-        if ((!initialUsers || initialUsers.length === 0) && fetchedUsers.length === 0 && !isLoadingUsers) {
-            setIsLoadingUsers(true);
+        } else {
             fetch("/api/team?all=true")
                 .then(res => res.json())
                 .then(data => {
-                    if (Array.isArray(data)) {
-                        setFetchedUsers(data);
+                    const sorted = sortUsersHierarchically(data, currentUserId)
+                    setUsers(sorted)
+                    if (mode === 'create') {
+                        if (currentUserId && Array.isArray(data) && data.some((u: { id: string }) => u.id === currentUserId)) {
+                            setAssignedToIds([currentUserId])
+                        } else if (Array.isArray(data) && data.length === 1) {
+                            setAssignedToIds([data[0].id])
+                        }
                     }
                 })
                 .catch(() => {
-                    console.error("Failed to load users");
+                    console.error("Failed to load users")
+                    setUsers([])
                 })
-                .finally(() => {
-                    setIsLoadingUsers(false);
-                });
         }
-    }, [initialUsers, fetchedUsers.length, isLoadingUsers]);
 
-
-    // Initialize form defaults (once on mount/mode change)
-    useEffect(() => {
-        if (mode === 'create') {
-            // Set default assignee logic
-            // We use a timeout to allow 'users' to be populated if it's async, but primarily trust 'initialUsers' or 'currentUserId'
-            if (currentUserId) {
-                // Only set if not already set (to prevent overwriting user changes if re-run)
-                setAssignedToIds(prev => prev.length === 0 ? [currentUserId] : prev);
-            }
-        }
-    }, [mode, currentUserId]); // Minimal dependencies
-
-    // Handle Edit Mode Initialization
-    useEffect(() => {
         if (mode === 'edit' && task) {
             setTitle(task.title || "")
             setDescription(task.description || "")
@@ -199,9 +189,8 @@ export function CreateTaskForm({
                 setAssignedToIds(assigneeIds)
             }
         } else if (mode === 'create') {
-            // Reset fields if switching to create mode
             setTitle("")
-            // Note: assignedToIds handled by separate effect
+            setAssignedToIds([])
             setShowToMe(true)
             setPriority("NONE")
             setStartDate("")
@@ -210,7 +199,7 @@ export function CreateTaskForm({
             setDeadlineTime("")
             setDescription("")
         }
-    }, [mode, task]) // REMOVED initialUsers and currentUserId from here to prevent loops
+    }, [initialUsers, mode, task, currentUserId])
 
     const filteredUsers = users.filter(user => {
         const nameMatch = (user.name || "").toLowerCase().includes(searchTerm.toLowerCase())
