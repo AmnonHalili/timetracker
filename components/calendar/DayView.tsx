@@ -45,8 +45,8 @@ interface DayViewProps {
     onOptimisticEventDelete?: (eventId: string) => void
 }
 
-export function DayView({ date, events, tasks, projectId, onOptimisticEventCreate, onOptimisticEventDelete }: DayViewProps) {
-    const { t } = useLanguage()
+export function DayView({ date, events, tasks, projectId, onBack, onOptimisticEventCreate, onOptimisticEventDelete }: DayViewProps) {
+    const { t, isRTL } = useLanguage()
     const [createDialogOpen, setCreateDialogOpen] = useState(false)
     const [selectedHour, setSelectedHour] = useState<Date | undefined>()
 
@@ -58,6 +58,12 @@ export function DayView({ date, events, tasks, projectId, onOptimisticEventCreat
     // Auto-scroll logic
     const scrollContainerRef = useRef<HTMLDivElement>(null)
     const hourRefs = useRef<Map<number, HTMLDivElement>>(new Map())
+
+    // Swipe gesture detection for mobile
+    const swipeContainerRef = useRef<HTMLDivElement>(null)
+    const touchStartRef = useRef<{ x: number; y: number; timestamp: number } | null>(null)
+    const SWIPE_THRESHOLD = 50 // Minimum distance for swipe
+    const SWIPE_VELOCITY_THRESHOLD = 0.3 // Minimum velocity for swipe
 
     useEffect(() => {
         // Scroll to 06:00 on mount or date change
@@ -71,6 +77,65 @@ export function DayView({ date, events, tasks, projectId, onOptimisticEventCreat
             }, 100)
         }
     }, [date])
+
+    // Swipe gesture handlers
+    useEffect(() => {
+        const container = swipeContainerRef.current
+        if (!container || !onBack) return
+
+        const handleTouchStart = (e: TouchEvent) => {
+            const touch = e.touches[0]
+            touchStartRef.current = { x: touch.clientX, y: touch.clientY, timestamp: Date.now() }
+        }
+
+        const handleTouchMove = (e: TouchEvent) => {
+            // Prevent default scrolling if we're swiping horizontally
+            if (touchStartRef.current) {
+                const touch = e.touches[0]
+                const deltaX = touch.clientX - touchStartRef.current.x
+                const deltaY = touch.clientY - touchStartRef.current.y
+                
+                // If horizontal movement is greater than vertical, prevent scroll
+                if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                    e.preventDefault()
+                }
+            }
+        }
+
+        const handleTouchEnd = (e: TouchEvent) => {
+            if (!touchStartRef.current) return
+
+            const touch = e.changedTouches[0]
+            const deltaX = touch.clientX - touchStartRef.current.x
+            const deltaY = touch.clientY - touchStartRef.current.y
+            const distance = Math.abs(deltaX)
+            const time = Date.now() - touchStartRef.current.timestamp
+            const velocity = distance / Math.max(time, 1) // Prevent division by zero
+
+            // Check if it's a horizontal swipe (not vertical scroll)
+            if (Math.abs(deltaX) > Math.abs(deltaY) && distance > SWIPE_THRESHOLD) {
+                // In RTL: swipe from right to left (negative deltaX) = back
+                // In LTR: swipe from left to right (positive deltaX) = back
+                const isBackSwipe = isRTL ? deltaX < 0 : deltaX > 0
+
+                if (isBackSwipe && (distance > SWIPE_THRESHOLD || velocity > SWIPE_VELOCITY_THRESHOLD)) {
+                    onBack()
+                }
+            }
+
+            touchStartRef.current = null
+        }
+
+        container.addEventListener('touchstart', handleTouchStart, { passive: false })
+        container.addEventListener('touchmove', handleTouchMove, { passive: false })
+        container.addEventListener('touchend', handleTouchEnd, { passive: true })
+
+        return () => {
+            container.removeEventListener('touchstart', handleTouchStart)
+            container.removeEventListener('touchmove', handleTouchMove)
+            container.removeEventListener('touchend', handleTouchEnd)
+        }
+    }, [onBack, isRTL])
 
     // Process tasks into event-like objects
     const taskEvents = tasks
@@ -139,7 +204,10 @@ export function DayView({ date, events, tasks, projectId, onOptimisticEventCreat
     }
 
     return (
-        <div className="flex flex-col h-full gap-4">
+        <div 
+            ref={swipeContainerRef}
+            className="flex flex-col h-full gap-4 touch-pan-y"
+        >
 
 
             {/* All-day events section */}

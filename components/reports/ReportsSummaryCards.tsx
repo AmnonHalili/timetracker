@@ -15,7 +15,7 @@ export function ReportsSummaryCards({ totalWorked, totalTarget, hasDailyTarget }
     
     return (
         <div className="grid gap-3 md:gap-4 md:grid-cols-2">
-            <Card className="border-border/60 shadow-sm">
+            <Card className="border-primary/20 bg-primary/5 shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 md:px-6 pt-4 md:pt-6">
                     <CardTitle className="text-xs md:text-sm font-medium">{t('reports.totalWorked')}</CardTitle>
                 </CardHeader>
@@ -24,7 +24,7 @@ export function ReportsSummaryCards({ totalWorked, totalTarget, hasDailyTarget }
                 </CardContent>
             </Card>
 
-            <Card className="border-border/60 shadow-sm">
+            <Card className="border-primary/20 bg-primary/5 shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 md:px-6 pt-4 md:pt-6">
                     <CardTitle className="text-xs md:text-sm font-medium">{t('reports.targetHours')}</CardTitle>
                 </CardHeader>
