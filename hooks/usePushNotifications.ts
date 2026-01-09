@@ -61,22 +61,29 @@ export function usePushNotifications() {
 
     const subscribeToPush = async () => {
         setLoading(true);
+        setError(null); // Clear previous errors
         try {
+            console.log('Starting subscription process...');
             if (!registration) {
-                throw new Error('Service Worker not registered');
+                throw new Error('Service Worker not registered. Try refreshing the page.');
             }
 
             const permission = await Notification.requestPermission();
+            console.log('Notification permission status:', permission);
+
             if (permission !== 'granted') {
-                // User denied permission
                 setLoading(false);
+                setError('Notifications permission denied. Please enable them in your browser settings.');
                 return;
             }
 
             const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
             if (!vapidPublicKey) {
-                throw new Error('VAPID public key not found');
+                console.error('VAPID Public Key missing');
+                throw new Error('System configuration error: VAPID key missing.');
             }
+
+            console.log('Subscribing with key:', vapidPublicKey.substring(0, 10) + '...');
 
             const sub = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
