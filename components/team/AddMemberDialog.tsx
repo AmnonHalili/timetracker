@@ -76,6 +76,7 @@ export function AddMemberDialog({
     const [jobTitle, setJobTitle] = useState("")
     const [managerId, setManagerId] = useState<string>("")
     const [managers, setManagers] = useState<SimpleUser[]>([])
+    const [touched, setTouched] = useState(false) // Track if form was submitted
 
     // Chief type selection: 'partner' | 'independent' | null
     const [chiefType, setChiefType] = useState<'partner' | 'independent' | null>(null)
@@ -111,6 +112,7 @@ export function AddMemberDialog({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+        setTouched(true) // Mark form as touched/submitted
 
         // Require manager selection for team members (EMPLOYEE role)
         if (role === "EMPLOYEE" && (!managerId || managerId === "unassigned")) {
@@ -172,6 +174,7 @@ export function AddMemberDialog({
             setManagerId("")
             setChiefType(null)
             setActiveTab("employee")
+            setTouched(false) // Reset touched state
 
             // Show appropriate success message
             if (responseData.isExistingUser) {
@@ -192,6 +195,7 @@ export function AddMemberDialog({
         if (!open) {
             setChiefType(null)
             setShowChiefType(false)
+            setTouched(false) // Reset touched state when dialog closes
         }
     }, [open])
 
@@ -287,7 +291,7 @@ export function AddMemberDialog({
                                             value={managerId || undefined}
                                             required
                                         >
-                                            <SelectTrigger className={!managerId ? "border-destructive" : ""}>
+                                            <SelectTrigger className={touched && !managerId ? "border-destructive" : ""}>
                                                 <SelectValue placeholder={t('team.selectManagerRequired')} />
                                             </SelectTrigger>
                                             <SelectContent>
