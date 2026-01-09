@@ -24,6 +24,15 @@ export function usePushNotifications() {
 
     useEffect(() => {
         if (typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window) {
+            // Attempt to register service worker manually to ensure it's loaded
+            navigator.serviceWorker.register('/sw.js')
+                .then((reg) => {
+                    console.log('Service Worker registered successfully:', reg);
+                })
+                .catch((err) => {
+                    console.error('Service Worker registration failed:', err);
+                });
+
             // Set a timeout to prevent infinite loading
             const timeoutId = setTimeout(() => {
                 setLoading(false);
