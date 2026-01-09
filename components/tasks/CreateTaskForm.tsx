@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { useState, useEffect, useMemo, useRef } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, Search, Calendar, UserPlus, Clock, AlertCircle, FolderKanban } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -138,12 +138,9 @@ export function CreateTaskForm({
         return sortUsersHierarchically(rawUsers, currentUserId);
     }, [initialUsers, fetchedUsers, currentUserId]);
 
-    const hasAttemptedFetch = useRef(false);
-
     // Fetch users if needed (separate effect)
     useEffect(() => {
-        if ((!initialUsers || initialUsers.length === 0) && fetchedUsers.length === 0 && !isLoadingUsers && !hasAttemptedFetch.current) {
-            hasAttemptedFetch.current = true;
+        if ((!initialUsers || initialUsers.length === 0) && fetchedUsers.length === 0 && !isLoadingUsers) {
             setIsLoadingUsers(true);
             fetch("/api/team?all=true")
                 .then(res => res.json())
