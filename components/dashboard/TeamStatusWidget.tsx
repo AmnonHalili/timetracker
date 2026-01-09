@@ -31,7 +31,7 @@ export function TeamStatusWidget({ teamStatus }: TeamStatusWidgetProps) {
             <CardContent className="p-4 pt-2">
                 <div className="space-y-4 max-h-[calc(100vh-250px)] overflow-y-auto overflow-x-hidden pr-2 custom-scrollbar">
                     {teamStatus.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">{t('common.noTeamMembers')}</p>
+                        <p className="text-sm text-muted-foreground text-center">{t('common.noTeamMembers')}</p>
                     ) : (
                         teamStatus.map((member) => (
                             <div key={member.userId} className="flex items-center justify-between group hover:bg-muted/50 p-2 rounded-lg transition-colors -mx-2">
