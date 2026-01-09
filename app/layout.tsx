@@ -76,7 +76,7 @@ export const metadata: Metadata = {
     images: ["/collabospecialnoback.png"],
   },
   verification: {
-    google: "pD0VM3NjqBMRzZegnSIGRHan7ruRQ0SzdQfrzRgSjmU",
+    google: "9iC0xaaKIkkEin9yWxutKDE6R9hr0I1dKHHTGKmKe5M",
   },
 };
 
