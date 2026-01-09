@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useCallback } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import { TasksPageHeader } from "./TasksPageHeader"
 import { TasksView } from "./TasksView"
 import { useLanguage } from "@/lib/useLanguage"
