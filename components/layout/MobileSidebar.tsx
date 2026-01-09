@@ -11,6 +11,7 @@ import { useState, useEffect } from "react"
 import { signOut, useSession } from "next-auth/react"
 import { stopActiveTimer } from "@/lib/utils"
 import { useLanguage } from "@/lib/useLanguage"
+import { ProjectSwitcher } from "@/components/layout/ProjectSwitcher"
 
 export function MobileSidebar() {
     const pathname = usePathname()
@@ -135,7 +136,11 @@ export function MobileSidebar() {
                         </Link>
                     </div>
 
-                    <nav className="flex-1 overflow-y-auto py-6" aria-label="Mobile navigation">
+                    <div className="px-4 py-2 mt-4">
+                        <ProjectSwitcher />
+                    </div>
+
+                    <nav className="flex-1 overflow-y-auto py-4" aria-label="Mobile navigation">
                         <div className="space-y-1 px-4">
                             {routes.map((route) => (
                                 <Link
