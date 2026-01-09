@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { ProfileForm, SecurityForm, LanguageForm } from "@/components/settings/SettingsForms"
+import { NotificationForm } from "@/components/settings/NotificationForm"
 import { AppearanceForm } from "@/components/settings/AppearanceForm"
 import { CompanyForm } from "@/components/settings/CompanyForm"
 import { WorkLocationForm } from "@/components/settings/WorkLocationForm"
@@ -136,6 +137,10 @@ export default async function SettingsPage() {
 
                 <TabsContent value="language" className="mt-6">
                     <LanguageForm />
+                </TabsContent>
+
+                <TabsContent value="notifications" className="mt-6">
+                    <NotificationForm />
                 </TabsContent>
 
                 <TabsContent value="security" className="mt-6">

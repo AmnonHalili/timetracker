@@ -75,6 +75,7 @@ export const translations = {
     'settings.language': 'Language',
     'settings.security': 'Security',
     'settings.appearance': 'Appearance',
+    'settings.notifications': 'Notifications',
     'settings.workspace': 'Workspace',
 
     // Profile
@@ -803,6 +804,7 @@ export const translations = {
     'settings.language': 'שפה',
     'settings.security': 'אבטחה',
     'settings.appearance': 'מראה',
+    'settings.notifications': 'התראות',
     'settings.workspace': 'סביבת עבודה',
 
     // Profile
