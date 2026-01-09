@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const urlBase64ToUint8Array = (base64String: string) => {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -23,45 +23,34 @@ export function usePushNotifications() {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        let isMounted = true;
+
         if (typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window) {
-            let isMounted = true;
-
-            const handleRegistration = (reg: ServiceWorkerRegistration) => {
-                if (!isMounted) return;
-                setRegistration(reg);
-                reg.pushManager.getSubscription().then((sub) => {
-                    if (isMounted) {
-                        if (sub) {
-                            setSubscription(sub);
-                            setIsSubscribed(true);
-                        }
-                        setLoading(false);
-                    }
-                });
-            };
-
-            // Attempt to register service worker manually to ensure it's loaded
-            navigator.serviceWorker.register('/sw.js')
-                .then((reg) => {
-                    console.log('Service Worker registered successfully:', reg);
-                    handleRegistration(reg);
-                })
-                .catch((err) => {
-                    console.error('Service Worker registration failed:', err);
-                });
-
-            // Set a timeout to prevent infinite loading
-            const timeoutId = setTimeout(() => {
-                if (isMounted) setLoading(false);
-            }, 3000);
-
+            // Wait for next-pwa to register the SW
             navigator.serviceWorker.ready.then((reg) => {
-                clearTimeout(timeoutId);
-                handleRegistration(reg);
+                if (isMounted) {
+                    setRegistration(reg);
+                    reg.pushManager.getSubscription().then((sub) => {
+                        if (isMounted) {
+                            if (sub) {
+                                setSubscription(sub);
+                                setIsSubscribed(true);
+                            }
+                            setLoading(false);
+                        }
+                    });
+                }
             }).catch((err) => {
                 console.error('Service Worker readiness failed:', err);
                 if (isMounted) setLoading(false);
             });
+
+            // Fallback timeout if ready never resolves (e.g. invalid config)
+            const timeoutId = setTimeout(() => {
+                if (isMounted) { // Check isMounted before accessing state
+                    setLoading(false); // Set loading to false if it's still true after timeout
+                }
+            }, 4000);
 
             return () => {
                 isMounted = false;
@@ -71,14 +60,23 @@ export function usePushNotifications() {
             console.log('Push notifications not supported');
             setLoading(false);
         }
-    }, []);
+    }, []); // Empty dependency array ensures this runs once
 
-    const subscribeToPush = async () => {
+    const subscribeToPush = useCallback(async () => {
         setLoading(true);
-        setError(null); // Clear previous errors
+        setError(null);
         try {
             console.log('Starting subscription process...');
-            if (!registration) {
+
+            let currentReg = registration;
+            if (!currentReg) {
+                // Try to retrieve registration if missing
+                console.log('Registration not found, waiting for service worker ready...');
+                currentReg = await navigator.serviceWorker.ready;
+                setRegistration(currentReg); // Update state with the retrieved registration
+            }
+
+            if (!currentReg) {
                 throw new Error('Service Worker not registered. Try refreshing the page.');
             }
 
@@ -99,7 +97,7 @@ export function usePushNotifications() {
 
             console.log('Subscribing with key:', vapidPublicKey.substring(0, 10) + '...');
 
-            const sub = await registration.pushManager.subscribe({
+            const sub = await currentReg.pushManager.subscribe({
                 userVisibleOnly: true,
                 applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
             });
@@ -121,11 +119,11 @@ export function usePushNotifications() {
             setIsSubscribed(true);
         } catch (err: any) {
             console.error('Failed to subscribe to push notification', err);
-            setError(err.message);
+            setError(err.message || 'An error occurred during subscription.');
         } finally {
             setLoading(false);
         }
-    };
+    }, [registration]); // Dependency on registration to ensure it's up-to-date
 
     return { isSubscribed, subscribeToPush, loading, error };
 }
