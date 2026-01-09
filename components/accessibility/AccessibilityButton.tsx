@@ -88,7 +88,7 @@ export function AccessibilityButton({ className, hideOnDashboard = false }: Acce
     }
 
     // Default className - hide on dashboard mobile if hideOnDashboard is true
-    const defaultClassName = `fixed bottom-4 z-50 h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-shadow ${isRTL ? 'left-4 md:left-6' : 'right-4 md:right-6'} ${shouldHide ? 'hidden md:block' : ''}`
+    const defaultClassName = `fixed bottom-4 z-50 h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center ${isRTL ? 'left-4 md:left-6' : 'right-4 md:right-6'} ${shouldHide ? 'hidden md:block' : ''}`
 
     return (
         <Popover open={open} onOpenChange={setOpen}>

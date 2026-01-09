@@ -24,8 +24,8 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Collabo | Teamtracker",
-  description: "Simple time tracking and task management for small projects, growing teams, and large companies. One platform that scales with your business.",
+  title: "Collabo-Web: Time Tracker & Task Manager",
+  description: "The simplest time tracker and task manager. Track hours, manage projects, and collaborate without the complexity.",
   metadataBase: new URL('https://collabo-web.com'),
   manifest: "/site.webmanifest",
   themeColor: "#ffffff",
@@ -36,6 +36,7 @@ export const metadata: Metadata = {
     icon: [
       { url: "/collabologocut.png", media: "(prefers-color-scheme: light)", type: "image/png", sizes: "32x32" },
       { url: "/collabologocutwhite.png", media: "(prefers-color-scheme: dark)", type: "image/png", sizes: "32x32" },
+      { url: "/collabologocut.png", type: "image/png", sizes: "192x192" },
     ],
     shortcut: [
       { url: "/collabologocut.png", media: "(prefers-color-scheme: light)", type: "image/png" },
@@ -53,8 +54,8 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: "Collabo | Teamtracker",
-    description: "Simple time tracking and task management for small projects, growing teams, and large companies. One platform that scales with your business.",
+    title: "Collabo-Web: Time Tracker & Task Manager",
+    description: "The simplest time tracker and task manager. Track hours, manage projects, and collaborate without the complexity.",
     url: "https://collabo-web.com",
     siteName: "Collabo",
     images: [
@@ -70,8 +71,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Collabo | Teamtracker",
-    description: "Simple time tracking and task management for small projects, growing teams, and large companies. One platform that scales with your business.",
+    title: "Collabo-Web: Time Tracker & Task Manager",
+    description: "The simplest time tracker and task manager. Track hours, manage projects, and collaborate without the complexity.",
     images: ["/collabospecialnoback.png"],
   },
   verification: {
