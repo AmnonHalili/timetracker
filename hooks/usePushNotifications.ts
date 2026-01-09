@@ -24,11 +24,27 @@ export function usePushNotifications() {
 
     useEffect(() => {
         if (typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window) {
+            let isMounted = true;
+
+            const handleRegistration = (reg: ServiceWorkerRegistration) => {
+                if (!isMounted) return;
+                setRegistration(reg);
+                reg.pushManager.getSubscription().then((sub) => {
+                    if (isMounted) {
+                        if (sub) {
+                            setSubscription(sub);
+                            setIsSubscribed(true);
+                        }
+                        setLoading(false);
+                    }
+                });
+            };
+
             // Attempt to register service worker manually to ensure it's loaded
             navigator.serviceWorker.register('/sw.js')
                 .then((reg) => {
                     console.log('Service Worker registered successfully:', reg);
-                    setRegistration(reg);
+                    handleRegistration(reg);
                 })
                 .catch((err) => {
                     console.error('Service Worker registration failed:', err);
@@ -36,23 +52,21 @@ export function usePushNotifications() {
 
             // Set a timeout to prevent infinite loading
             const timeoutId = setTimeout(() => {
-                setLoading(false);
+                if (isMounted) setLoading(false);
             }, 3000);
 
             navigator.serviceWorker.ready.then((reg) => {
                 clearTimeout(timeoutId);
-                setRegistration(reg);
-                reg.pushManager.getSubscription().then((sub) => {
-                    if (sub) {
-                        setSubscription(sub);
-                        setIsSubscribed(true);
-                    }
-                    setLoading(false);
-                });
+                handleRegistration(reg);
             }).catch((err) => {
                 console.error('Service Worker readiness failed:', err);
-                setLoading(false);
+                if (isMounted) setLoading(false);
             });
+
+            return () => {
+                isMounted = false;
+                clearTimeout(timeoutId);
+            };
         } else {
             console.log('Push notifications not supported');
             setLoading(false);
