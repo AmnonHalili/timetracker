@@ -560,13 +560,15 @@ export function CreateTaskForm({
                                                 )}
                                                 onClick={() => toggleUser(user.id)}
                                             >
-                                                <Checkbox
-                                                    id={`user-${user.id}`}
-                                                    checked={assignedToIds.includes(user.id)}
-                                                    onCheckedChange={() => toggleUser(user.id)}
-                                                    className="rounded-full h-5 w-5"
-                                                    style={{ marginInlineStart: `${(user.depth || 0) * 1}rem` }}
-                                                />
+                                                <div onClick={(e) => e.stopPropagation()}>
+                                                    <Checkbox
+                                                        id={`user-${user.id}`}
+                                                        checked={assignedToIds.includes(user.id)}
+                                                        onCheckedChange={() => toggleUser(user.id)}
+                                                        className="rounded-full h-5 w-5"
+                                                        style={{ marginInlineStart: `${(user.depth || 0) * 1}rem` }}
+                                                    />
+                                                </div>
                                                 <div className="flex items-center gap-2 flex-1 min-w-0">
                                                     <Avatar className="h-8 w-8 border-2 border-background shadow-xs">
                                                         <AvatarImage src={`/api/users/${user.id}/avatar`} />
