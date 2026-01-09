@@ -9,7 +9,9 @@ import { validateEmail } from "@/lib/email-validation"
 
 export async function POST(req: Request) {
     try {
-        const { email, password, name, role, projectName } = await req.json()
+        const body = await req.json()
+        const email = body.email?.toLowerCase()
+        const { password, name, role, projectName } = body
 
         if (!email || !password || !name) {
             return NextResponse.json(

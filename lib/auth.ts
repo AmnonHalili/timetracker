@@ -27,6 +27,17 @@ export const authOptions: NextAuthOptions = {
                     access_type: "offline",
                     response_type: "code"
                 }
+            },
+            profile(profile) {
+                return {
+                    id: profile.sub,
+                    name: profile.name,
+                    email: profile.email?.toLowerCase(),
+                    image: profile.picture,
+                    role: "EMPLOYEE",
+                    status: "PENDING",
+                    plan: "FREE",
+                }
             }
         }),
         CredentialsProvider({
