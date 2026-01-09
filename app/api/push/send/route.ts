@@ -4,8 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
+// Ensure VAPID_SUBJECT checks valid mailto: format
+const vapidSubject = process.env.VAPID_SUBJECT || "mailto:example@yourdomain.org";
+const subject = vapidSubject.startsWith("mailto:") ? vapidSubject : `mailto:${vapidSubject}`;
+
 webpush.setVapidDetails(
-    process.env.VAPID_SUBJECT || "mailto:example@yourdomain.org",
+    subject,
     process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
     process.env.VAPID_PRIVATE_KEY!
 );
