@@ -32,65 +32,6 @@ interface CreateTaskFormProps {
     onCancel: () => void
 }
 
-// Helper to sort users: Current User first, then Hierarchy
-interface SortableUser {
-    id: string;
-    name: string | null;
-    email: string | null;
-    managerId?: string | null;
-    role?: string;
-    depth?: number;
-}
-
-const sortUsersHierarchically = (usersToSort: Array<{ id: string; name: string | null; email: string | null; managerId?: string | null; role?: string }>, meId?: string) => {
-    if (!usersToSort.length) return [];
-
-    let me: SortableUser | undefined;
-    const others: SortableUser[] = usersToSort.map(u => ({ ...u, depth: 0 }));
-
-    if (meId) {
-        const meIndex = others.findIndex(u => u.id === meId);
-        if (meIndex >= 0) {
-            me = others[meIndex];
-            others.splice(meIndex, 1);
-        }
-    }
-
-    const userMap = new Map<string, SortableUser>();
-    const childrenMap = new Map<string, SortableUser[]>();
-
-    others.forEach(u => {
-        userMap.set(u.id, u);
-        if (!childrenMap.has(u.id)) childrenMap.set(u.id, []);
-    });
-
-    const roots: SortableUser[] = [];
-
-    others.forEach(u => {
-        if (u.managerId && userMap.has(u.managerId)) {
-            childrenMap.get(u.managerId)?.push(u);
-        } else {
-            roots.push(u);
-        }
-    });
-
-    const flattened: SortableUser[] = [];
-    const traverse = (nodes: SortableUser[], currentDepth: number) => {
-        nodes.sort((a, b) => (a.name || a.email || "").localeCompare(b.name || b.email || ""))
-            .forEach(node => {
-                flattened.push({ ...node, depth: currentDepth });
-                const children = childrenMap.get(node.id);
-                if (children && children.length > 0) {
-                    traverse(children, currentDepth + 1);
-                }
-            });
-    };
-
-    traverse(roots, 0);
-
-    return me ? [{ ...me, depth: 0 }, ...flattened] : flattened;
-}
-
 export function CreateTaskForm({
     users: initialUsers,
     onTaskCreated,
@@ -129,7 +70,64 @@ export function CreateTaskForm({
     const [newSubtaskDueDateTime, setNewSubtaskDueDateTime] = useState("")
     const [isSubtasksExpanded, setIsSubtasksExpanded] = useState(false)
 
-    // Derived users list
+    // Helper to sort users: Current User first, then Hierarchy
+    interface SortableUser {
+        id: string;
+        name: string | null;
+        email: string | null;
+        managerId?: string | null;
+        role?: string;
+        depth?: number;
+    }
+
+    const sortUsersHierarchically = (usersToSort: Array<{ id: string; name: string | null; email: string | null; managerId?: string | null; role?: string }>, meId?: string) => {
+        if (!usersToSort.length) return [];
+
+        let me: SortableUser | undefined;
+        const others: SortableUser[] = usersToSort.map(u => ({ ...u, depth: 0 }));
+
+        if (meId) {
+            const meIndex = others.findIndex(u => u.id === meId);
+            if (meIndex >= 0) {
+                me = others[meIndex];
+                others.splice(meIndex, 1);
+            }
+        }
+
+        const userMap = new Map<string, SortableUser>();
+        const childrenMap = new Map<string, SortableUser[]>();
+
+        others.forEach(u => {
+            userMap.set(u.id, u);
+            if (!childrenMap.has(u.id)) childrenMap.set(u.id, []);
+        });
+
+        const roots: SortableUser[] = [];
+
+        others.forEach(u => {
+            if (u.managerId && userMap.has(u.managerId)) {
+                childrenMap.get(u.managerId)?.push(u);
+            } else {
+                roots.push(u);
+            }
+        });
+
+        const flattened: SortableUser[] = [];
+        const traverse = (nodes: SortableUser[], currentDepth: number) => {
+            nodes.sort((a, b) => (a.name || a.email || "").localeCompare(b.name || b.email || ""))
+                .forEach(node => {
+                    flattened.push({ ...node, depth: currentDepth });
+                    const children = childrenMap.get(node.id);
+                    if (children && children.length > 0) {
+                        traverse(children, currentDepth + 1);
+                    }
+                });
+        };
+
+        traverse(roots, 0);
+
+        return me ? [{ ...me, depth: 0 }, ...flattened] : flattened;
+    }
 
     // Derived users list
     // eslint-disable-next-line react-hooks/exhaustive-deps
