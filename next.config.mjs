@@ -6,6 +6,7 @@ const withPWA = withPWAInit({
     register: true,
     skipWaiting: true,
     importScripts: ["/custom-sw.js"],
+    buildExcludes: [/middleware-manifest\.json$/, /app-build-manifest\.json$/],
 });
 
 /** @type {import('next').NextConfig} */
