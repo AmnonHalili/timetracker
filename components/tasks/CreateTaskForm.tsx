@@ -55,6 +55,7 @@ export function CreateTaskForm({
     const [description, setDescription] = useState("")
     const [fetchedUsers, setFetchedUsers] = useState<Array<{ id: string; name: string | null; email: string | null; managerId?: string | null; role?: string; depth?: number }>>([])
     const [isLoadingUsers, setIsLoadingUsers] = useState(false) // Separate loading state for users
+    const [loading, setLoading] = useState(false)
     const [showToMe, setShowToMe] = useState(true)
     const [searchTerm, setSearchTerm] = useState("")
 
@@ -70,11 +71,20 @@ export function CreateTaskForm({
     const [isSubtasksExpanded, setIsSubtasksExpanded] = useState(false)
 
     // Helper to sort users: Current User first, then Hierarchy
+    interface SortableUser {
+        id: string;
+        name: string | null;
+        email: string | null;
+        managerId?: string | null;
+        role?: string;
+        depth?: number;
+    }
+
     const sortUsersHierarchically = (usersToSort: Array<{ id: string; name: string | null; email: string | null; managerId?: string | null; role?: string }>, meId?: string) => {
         if (!usersToSort.length) return [];
 
-        let me: any;
-        const others = usersToSort.map(u => ({ ...u, depth: 0 }));
+        let me: SortableUser | undefined;
+        const others: SortableUser[] = usersToSort.map(u => ({ ...u, depth: 0 }));
 
         if (meId) {
             const meIndex = others.findIndex(u => u.id === meId);
@@ -84,15 +94,15 @@ export function CreateTaskForm({
             }
         }
 
-        const userMap = new Map<string, any>();
-        const childrenMap = new Map<string, any[]>();
+        const userMap = new Map<string, SortableUser>();
+        const childrenMap = new Map<string, SortableUser[]>();
 
         others.forEach(u => {
             userMap.set(u.id, u);
             if (!childrenMap.has(u.id)) childrenMap.set(u.id, []);
         });
 
-        const roots: any[] = [];
+        const roots: SortableUser[] = [];
 
         others.forEach(u => {
             if (u.managerId && userMap.has(u.managerId)) {
@@ -102,8 +112,8 @@ export function CreateTaskForm({
             }
         });
 
-        const flattened: any[] = [];
-        const traverse = (nodes: any[], currentDepth: number) => {
+        const flattened: SortableUser[] = [];
+        const traverse = (nodes: SortableUser[], currentDepth: number) => {
             nodes.sort((a, b) => (a.name || a.email || "").localeCompare(b.name || b.email || ""))
                 .forEach(node => {
                     flattened.push({ ...node, depth: currentDepth });
