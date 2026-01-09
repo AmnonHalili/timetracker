@@ -378,14 +378,8 @@ export function SwipeableTaskCard({
                                                         )}>
                                                             {subtask.title}
                                                         </span>
-                                                        {subtask.priority && subtask.priority !== 'LOW' && (
-                                                            <div className={cn("w-1.5 h-1.5 rounded-full shrink-0 mt-1.5",
-                                                                subtask.priority === 'HIGH' ? "bg-red-500" :
-                                                                    subtask.priority === 'MEDIUM' ? "bg-yellow-500" : "bg-muted"
-                                                            )} />
-                                                        )}
                                                     </div>
-                                                    <div className="flex items-center gap-2 mt-1">
+                                                    <div className="hidden md:flex items-center gap-2 mt-1">
                                                         {subtask.assignedTo && (
                                                             <div className="flex items-center gap-1">
                                                                 <Avatar className="h-3.5 w-3.5">

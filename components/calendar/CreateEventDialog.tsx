@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -15,6 +16,7 @@ import { useSession } from "next-auth/react"
 import { useLanguage } from "@/lib/useLanguage"
 import { filterHierarchyGroup } from "@/lib/hierarchy-utils"
 import { cn } from "@/lib/utils"
+import { useMediaQuery } from "@/hooks/use-media-query"
 
 interface BaseCalendarEvent {
     id: string
@@ -45,6 +47,7 @@ interface CreateEventDialogProps {
     event?: BaseCalendarEvent
     mode?: 'create' | 'edit'
     onOptimisticEventCreate?: (event: BaseCalendarEvent) => void
+    fromMonthView?: boolean
 }
 
 export function CreateEventDialog({
@@ -54,11 +57,13 @@ export function CreateEventDialog({
     projectId,
     event,
     mode = 'create',
-    onOptimisticEventCreate
+    onOptimisticEventCreate,
+    fromMonthView = false
 }: CreateEventDialogProps) {
     const router = useRouter()
     const { data: session } = useSession()
     const { t, isRTL } = useLanguage()
+    const isDesktop = useMediaQuery("(min-width: 768px)")
     const [loading, setLoading] = useState(false)
 
     // Form state
@@ -139,11 +144,11 @@ export function CreateEventDialog({
     }
 
     const [startDate, setStartDate] = useState(
-        defaultDate ? formatDateLocal(defaultDate) : formatDateLocal(new Date())
+        fromMonthView ? formatDateLocal(new Date()) : (defaultDate ? formatDateLocal(defaultDate) : formatDateLocal(new Date()))
     )
     const [startTime, setStartTime] = useState("06:00")
     const [endDate, setEndDate] = useState(
-        defaultDate ? formatDateLocal(defaultDate) : formatDateLocal(new Date())
+        fromMonthView ? "" : (defaultDate ? formatDateLocal(defaultDate) : formatDateLocal(new Date()))
     )
     const [endTime, setEndTime] = useState("07:00")
 
@@ -231,7 +236,7 @@ export function CreateEventDialog({
             }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open, mode, event, defaultDate])
+    }, [open, mode, event, defaultDate, fromMonthView])
 
     const handleSubmit = async (e: React.FormEvent | null, scope?: string) => {
         if (e) e.preventDefault()
@@ -385,6 +390,17 @@ export function CreateEventDialog({
         setRecurrence("NONE")
         setRecurrenceEnd("")
 
+        // If fromMonthView, use current date for startDate and leave endDate empty
+        if (fromMonthView) {
+            const today = new Date()
+            const dateStr = formatDateLocal(today)
+            setStartDate(dateStr)
+            setStartTime("06:00")
+            setEndDate("")
+            setEndTime("07:00")
+            return
+        }
+
         const baseDate = defaultDate || new Date()
         const dateStr = formatDateLocal(baseDate)
         const hour = baseDate.getHours()
@@ -425,24 +441,9 @@ export function CreateEventDialog({
         }
     }
 
-    return (
-        <>
-            <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent
-                    className={cn(
-                        "sm:max-w-[500px] max-h-[90vh] overflow-y-auto",
-                        isRTL ? "[&>button]:left-4 [&>button]:right-auto" : "[&>button]:right-4 [&>button]:left-auto"
-                    )}
-                    dir={isRTL ? "rtl" : "ltr"}
-                >
-                    <form onSubmit={handleSubmit}>
-                        <DialogHeader className={isRTL ? "text-right" : "text-left"}>
-                            <DialogTitle className={isRTL ? "text-right" : "text-left"}>{mode === 'edit' ? t('calendar.editEvent') : t('calendar.createNewEvent')}</DialogTitle>
-                            <DialogDescription className={isRTL ? "text-right" : "text-left"}>
-                                {mode === 'edit' ? t('calendar.updateEventDetails') : t('calendar.addEventToCalendar')}
-                            </DialogDescription>
-                        </DialogHeader>
-
+    // Form content component (shared between Dialog and Sheet)
+    const FormContent = ({ formId }: { formId?: string }) => (
+        <form id={formId} onSubmit={handleSubmit}>
                         <div className="space-y-4 py-4">
                             {/* Title */}
                             <div className="space-y-2">
@@ -640,8 +641,30 @@ export function CreateEventDialog({
                                     </Label>
                                 </div>
                             )}
+            </div>
+        </form>
+    )
 
-                        </div>
+    // Desktop: Dialog
+    if (isDesktop) {
+        return (
+            <>
+                <Dialog open={open} onOpenChange={onOpenChange}>
+                    <DialogContent
+                        className={cn(
+                            "sm:max-w-[500px] max-h-[90vh] overflow-y-auto",
+                            isRTL ? "[&>button]:left-4 [&>button]:right-auto" : "[&>button]:right-4 [&>button]:left-auto"
+                        )}
+                        dir={isRTL ? "rtl" : "ltr"}
+                    >
+                        <DialogHeader className={isRTL ? "text-right" : "text-left"}>
+                            <DialogTitle className={isRTL ? "text-right" : "text-left"}>{mode === 'edit' ? t('calendar.editEvent') : t('calendar.createNewEvent')}</DialogTitle>
+                            <DialogDescription className={isRTL ? "text-right" : "text-left"}>
+                                {mode === 'edit' ? t('calendar.updateEventDetails') : t('calendar.addEventToCalendar')}
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <FormContent formId="event-form-desktop" />
 
                         <DialogFooter className={cn("gap-2", isRTL ? "justify-start" : "justify-end")}>
                             <Button
@@ -652,15 +675,66 @@ export function CreateEventDialog({
                             >
                                 {t('calendar.cancel')}
                             </Button>
-                            <Button type="submit" disabled={loading}>
+                            <Button type="submit" form="event-form-desktop" disabled={loading}>
                                 {loading && <Loader2 className={cn(isRTL ? "ml-2" : "mr-2", "h-4 w-4 animate-spin")} />}
                                 {mode === 'edit' ? <Pencil className={cn(isRTL ? "ml-2" : "mr-2", "h-4 w-4")} /> : <Plus className={cn(isRTL ? "ml-2" : "mr-2", "h-4 w-4")} />}
                                 {mode === 'edit' ? t('calendar.editEvent') : t('calendar.createEvent')}
                             </Button>
                         </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
+                    </DialogContent>
+                </Dialog>
+            </>
+        )
+    }
+
+    // Mobile: Sheet
+    return (
+        <>
+            <Sheet open={open} onOpenChange={onOpenChange}>
+                <SheetContent
+                    side="bottom"
+                    className={cn(
+                        "h-[95vh] rounded-t-xl px-4 pb-0 pt-6",
+                        isRTL && "[&>button]:left-4 [&>button]:right-auto"
+                    )}
+                    dir={isRTL ? "rtl" : "ltr"}
+                >
+                    <div className="flex flex-col h-full">
+                        <SheetHeader className={cn("mb-4 shrink-0", isRTL ? "text-right" : "text-left")}>
+                            <SheetTitle className={isRTL ? "text-right" : "text-left"}>
+                                {mode === 'edit' ? t('calendar.editEvent') : t('calendar.createNewEvent')}
+                            </SheetTitle>
+                            <SheetDescription className={isRTL ? "text-right" : "text-left"}>
+                                {mode === 'edit' ? t('calendar.updateEventDetails') : t('calendar.addEventToCalendar')}
+                            </SheetDescription>
+                        </SheetHeader>
+                        <div className="flex-1 overflow-y-auto pb-4 min-h-0">
+                            <FormContent formId="event-form-mobile" />
+                        </div>
+                        <SheetFooter className={cn("gap-2 pt-4 border-t shrink-0 bg-background pb-4", isRTL ? "justify-start" : "justify-end")}>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => onOpenChange(false)}
+                                disabled={loading}
+                                className="flex-1"
+                            >
+                                {t('calendar.cancel')}
+                            </Button>
+                            <Button 
+                                type="submit" 
+                                form="event-form-mobile" 
+                                disabled={loading}
+                                className="flex-1"
+                            >
+                                {loading && <Loader2 className={cn(isRTL ? "ml-2" : "mr-2", "h-4 w-4 animate-spin")} />}
+                                {mode === 'edit' ? <Pencil className={cn(isRTL ? "ml-2" : "mr-2", "h-4 w-4")} /> : <Plus className={cn(isRTL ? "ml-2" : "mr-2", "h-4 w-4")} />}
+                                {mode === 'edit' ? t('calendar.editEvent') : t('calendar.createEvent')}
+                            </Button>
+                        </SheetFooter>
+                    </div>
+                </SheetContent>
+            </Sheet>
 
             <Dialog open={pendingSave} onOpenChange={setPendingSave}>
                 <DialogContent className="sm:max-w-[500px] z-[60]">

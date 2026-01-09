@@ -409,9 +409,10 @@ export function CalendarView({ initialDate, data, projectId }: CalendarViewProps
             <CreateEventDialog
                 open={createDialogOpen}
                 onOpenChange={setCreateDialogOpen}
-                defaultDate={currentDate}
+                defaultDate={view === 'month' ? new Date() : currentDate}
                 projectId={projectId}
                 onOptimisticEventCreate={handleOptimisticCreate}
+                fromMonthView={view === 'month'}
             />
         </div>
     )
