@@ -54,7 +54,7 @@ export function TimePunchHeader({ workLocation, activeWorkday, activeEntry }: Ti
     const [workingSince, setWorkingSince] = useState<Date | null>(
         activeWorkday ? new Date(activeWorkday.workdayStartTime) : null
     )
-    const [elapsed, setElapsed] = useState(0)
+
 
     // Update current time every second
     useEffect(() => {
@@ -64,38 +64,9 @@ export function TimePunchHeader({ workLocation, activeWorkday, activeEntry }: Ti
         return () => clearInterval(timeInterval)
     }, [])
 
-    // Calculate elapsed time for task timer
-    useEffect(() => {
-        if (!activeEntry) {
-            setElapsed(0)
-            return
-        }
 
-        const calculate = () => {
-            const now = new Date().getTime()
-            const start = new Date(activeEntry.startTime).getTime()
-            let totalBreakTime = 0
 
-            activeEntry.breaks?.forEach((b) => {
-                const bStart = new Date(b.startTime).getTime()
-                const bEnd = b.endTime ? new Date(b.endTime).getTime() : now
-                totalBreakTime += (bEnd - bStart)
-            })
 
-            setElapsed(Math.max(0, Math.floor((now - start - totalBreakTime) / 1000)))
-        }
-
-        calculate()
-        const timerInterval = setInterval(calculate, 1000)
-        return () => clearInterval(timerInterval)
-    }, [activeEntry])
-
-    const formatTimerTime = (seconds: number) => {
-        const h = Math.floor(seconds / 3600)
-        const m = Math.floor((seconds % 3600) / 60)
-        const s = seconds % 60
-        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
-    }
 
     // Update working state when activeWorkday changes
     useEffect(() => {
