@@ -174,6 +174,53 @@ function ProfileForm({ user }: ProfileFormProps) {
         })
     }
 
+    const renderDayItem = (day: { value: number, label: string }) => {
+        const isSelected = selectedDays.includes(day.value);
+        return (
+            <div
+                key={day.value}
+                className={`flex items-center justify-between p-3 rounded-md border transition-all ${isSelected ? 'bg-primary/5 border-primary/20' : 'bg-transparent border-transparent hover:bg-muted/50'} ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}
+            >
+                <div className={`flex items-center gap-3 ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}>
+                    <Switch
+                        checked={isSelected}
+                        onCheckedChange={() => toggleDay(day.value)}
+                        id={`settings-day-switch-${day.value}`}
+                        disabled={!canEditPreferences}
+                    />
+                    <Label
+                        htmlFor={`settings-day-switch-${day.value}`}
+                        className={`font-medium cursor-pointer ${isSelected ? 'text-foreground' : 'text-muted-foreground'}`}
+                    >
+                        {day.label}
+                    </Label>
+                </div>
+
+                {isSelected && (
+                    <div className={`flex items-center gap-1.5 ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}>
+                        <Input
+                            type="number"
+                            step="0.5"
+                            min="0"
+                            value={weeklyHours[day.value]?.toString() || ""}
+                            onChange={e => updateDayHours(day.value, e.target.value)}
+                            placeholder="8"
+                            className="w-16 h-7 text-center text-sm px-1"
+                            dir="ltr"
+                            disabled={!canEditPreferences}
+                            onKeyDown={(e) => {
+                                if (e.key === '-' || e.key === 'Minus') {
+                                    e.preventDefault()
+                                }
+                            }}
+                        />
+                        <span className="text-[10px] text-muted-foreground">{t('preferences.hours') || 'h'}</span>
+                    </div>
+                )}
+            </div>
+        )
+    }
+
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (file) {
@@ -389,53 +436,16 @@ function ProfileForm({ user }: ProfileFormProps) {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                {daysOfWeek.map(day => {
-                                    const isSelected = selectedDays.includes(day.value);
-                                    return (
-                                        <div
-                                            key={day.value}
-                                            className={`flex items-center justify-between p-3 rounded-md border transition-all ${isSelected ? 'bg-primary/5 border-primary/20' : 'bg-transparent border-transparent hover:bg-muted/50'} ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}
-                                        >
-                                            <div className={`flex items-center gap-3 ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}>
-                                                <Switch
-                                                    checked={isSelected}
-                                                    onCheckedChange={() => toggleDay(day.value)}
-                                                    id={`settings-day-switch-${day.value}`}
-                                                    disabled={!canEditPreferences}
-                                                />
-                                                <Label
-                                                    htmlFor={`settings-day-switch-${day.value}`}
-                                                    className={`font-medium cursor-pointer ${isSelected ? 'text-foreground' : 'text-muted-foreground'}`}
-                                                >
-                                                    {day.label}
-                                                </Label>
-                                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6" dir="ltr">
+                                {/* Left Column: Sun-Wed */}
+                                <div className="space-y-3">
+                                    {daysOfWeek.filter(d => d.value <= 3).map(day => renderDayItem(day))}
+                                </div>
 
-                                            {isSelected && (
-                                                <div className={`flex items-center gap-1.5 ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}>
-                                                    <Input
-                                                        type="number"
-                                                        step="0.5"
-                                                        min="0"
-                                                        value={weeklyHours[day.value]?.toString() || ""}
-                                                        onChange={e => updateDayHours(day.value, e.target.value)}
-                                                        placeholder="8"
-                                                        className="w-16 h-7 text-center text-sm px-1"
-                                                        dir="ltr"
-                                                        disabled={!canEditPreferences}
-                                                        onKeyDown={(e) => {
-                                                            if (e.key === '-' || e.key === 'Minus') {
-                                                                e.preventDefault()
-                                                            }
-                                                        }}
-                                                    />
-                                                    <span className="text-[10px] text-muted-foreground">{t('preferences.hours') || 'h'}</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )
-                                })}
+                                {/* Right Column: Thu-Sat */}
+                                <div className="space-y-3">
+                                    {daysOfWeek.filter(d => d.value > 3).map(day => renderDayItem(day))}
+                                </div>
                             </div>
                         </div>
                     </div>

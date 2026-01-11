@@ -33,6 +33,7 @@ export default async function SettingsPage() {
                 jobTitle: true,
                 dailyTarget: true,
                 workDays: true,
+                weeklyHours: true, // Fetch weeklyHours
                 workMode: true,
                 role: true,
                 projectId: true,
@@ -86,6 +87,7 @@ export default async function SettingsPage() {
                 jobTitle: true,
                 dailyTarget: true,
                 workDays: true,
+                weeklyHours: true, // Fetch weeklyHours
                 workMode: true,
                 role: true,
                 projectId: true,
@@ -131,6 +133,7 @@ export default async function SettingsPage() {
                         projectId: user.projectId,
                         dailyTarget: user.dailyTarget,
                         workDays: user.workDays,
+                        weeklyHours: user.weeklyHours, // Pass weeklyHours to form
                         workMode: user.workMode
                     }} />
                 </TabsContent>

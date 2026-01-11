@@ -223,7 +223,8 @@ export default async function DashboardPage() {
         } : null
 
     const hasWorkPreferences = (user.workDays && user.workDays.length > 0) ||
-        (user.dailyTarget !== null && user.dailyTarget > 0)
+        (user.dailyTarget !== null && user.dailyTarget > 0) ||
+        (user.weeklyHours && Object.keys(user.weeklyHours).length > 0)
     const showStats = hasWorkPreferences
     const showTeamStatus = !!user.projectId
     const showSidebar = showStats || showTeamStatus
