@@ -65,6 +65,17 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
     const [isDataLoaded, setIsDataLoaded] = useState(!!activeEntry) // Track if server data has loaded - true if we already have activeEntry
     const inputRef = useRef<HTMLInputElement>(null)
     const isInputFocusedRef = useRef(false)
+    const [isMobile, setIsMobile] = useState(false)
+
+    // Detect mobile device to set proper font size
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768)
+        }
+        checkMobile()
+        window.addEventListener('resize', checkMobile)
+        return () => window.removeEventListener('resize', checkMobile)
+    }, [])
 
     // Sync optimistic state with server state when it arrives
     // Preserve optimistic startTime to prevent jumping while allowing smooth updates
@@ -516,6 +527,27 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                             if (optimisticEntry && activeEntry) {
                                 handleDescriptionUpdate(e.target.value)
                             }
+                            // Reset zoom on mobile after blur (fallback if zoom still occurred)
+                            if (isMobile) {
+                                // Small delay to ensure blur is complete, then reset scroll position
+                                setTimeout(() => {
+                                    const currentScrollY = window.scrollY
+                                    const currentScrollX = window.scrollX
+                                    // Force scroll to reset any zoom that might have occurred
+                                    window.scrollTo({
+                                        top: currentScrollY + 1,
+                                        left: currentScrollX,
+                                        behavior: 'instant'
+                                    })
+                                    setTimeout(() => {
+                                        window.scrollTo({
+                                            top: currentScrollY,
+                                            left: currentScrollX,
+                                            behavior: 'instant'
+                                        })
+                                    }, 10)
+                                }, 100)
+                            }
                         }}
                         onChange={(e) => {
                             setDescription(e.target.value)
@@ -524,7 +556,8 @@ export function ControlBar({ activeEntry, tasks, onTimerStopped, onEntryMerged }
                                 handleDescriptionUpdate(e.target.value)
                             }
                         }}
-                        className="bg-background border-input hover:bg-accent/50 focus:bg-background shadow-sm h-10 md:h-9 text-sm flex-1 min-w-0 rounded-xl md:rounded-md"
+                        className="bg-background border-input hover:bg-accent/50 focus:bg-background shadow-sm h-10 md:h-9 text-base md:text-sm flex-1 min-w-0 rounded-xl md:rounded-md"
+                        style={isMobile ? { fontSize: '16px' } : undefined}
                         aria-label={t('dashboard.whatWorkingOn')}
                     />
 

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { MapPin, Navigation, Loader2, X } from "lucide-react"
 import { toast } from "sonner"
+import { useLanguage } from "@/lib/useLanguage"
 
 interface WorkLocationSetupProps {
     onSave: (location: {
@@ -26,6 +27,7 @@ interface WorkLocationSetupProps {
 }
 
 export function WorkLocationSetup({ onSave, onSkip, initialLocation, isOptional = true }: WorkLocationSetupProps) {
+    const { t } = useLanguage()
     const [isLoading, setIsLoading] = useState(false)
     const [isGettingLocation, setIsGettingLocation] = useState(false)
     const [latitude, setLatitude] = useState<number | null>(initialLocation?.latitude || null)
@@ -109,10 +111,10 @@ export function WorkLocationSetup({ onSave, onSkip, initialLocation, isOptional 
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <MapPin className="h-5 w-5" />
-                    {isOptional ? "Set Work Location (Optional)" : "Set Work Location"}
+                    {t('settings.workLocation')}
                 </CardTitle>
                 <CardDescription>
-                    Define a work location for GPS verification. Members will need to be within this area to start their work day.
+                    {t('settings.workLocationDescription')}
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">

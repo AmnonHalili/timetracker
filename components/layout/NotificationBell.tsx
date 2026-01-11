@@ -160,10 +160,27 @@ export function NotificationBell() {
                                     <div className="flex justify-between items-start gap-2">
                                         <div className="space-y-1">
                                             <p className={`text-sm ${!notification.isRead ? 'font-semibold' : 'font-medium'}`}>
-                                                {notification.title}
+                                                {notification.title === "New Join Request" 
+                                                    ? t('notifications.newJoinRequest')
+                                                    : notification.title}
                                             </p>
                                             <p className="text-xs text-muted-foreground line-clamp-2">
-                                                {notification.message}
+                                                {(() => {
+                                                    // Translate "New Join Request" messages
+                                                    if (notification.title === "New Join Request" || notification.message.includes("has requested to join")) {
+                                                        // Extract name from message (format: "Name has requested to join your project" or "Name has requested to join your project via Team Code")
+                                                        const match = notification.message.match(/^(.+?)\s+has requested to join/)
+                                                        if (match) {
+                                                            const name = match[1]
+                                                            return t('notifications.joinRequestMessage').replace('{name}', name)
+                                                        }
+                                                        // Fallback: try to extract name from "A user" format
+                                                        if (notification.message.includes("A user")) {
+                                                            return t('notifications.joinRequestMessage').replace('{name}', 'A user')
+                                                        }
+                                                    }
+                                                    return notification.message
+                                                })()}
                                             </p>
                                             <p className="text-[10px] text-muted-foreground pt-1">
                                                 {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}

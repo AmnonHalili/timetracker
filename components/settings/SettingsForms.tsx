@@ -374,14 +374,7 @@ function ProfileForm({ user }: ProfileFormProps) {
                     <div className={!canEditPreferences ? "opacity-60 pointer-events-none" : ""}>
                         <div className="space-y-4">
                             <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${dir === 'rtl' ? 'sm:flex-row-reverse' : ''}`}>
-                                <div className="space-y-1">
-                                    <Label>{t('preferences.workDays')}</Label>
-                                    <p className="text-xs text-muted-foreground">
-                                        {t('preferences.selectWorkDays')}
-                                    </p>
-                                </div>
-
-                                {/* Quick Actions */}
+                                {/* Quick Actions - On left in RTL, right in LTR */}
                                 <div className={`flex gap-2 ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}>
                                     <Button
                                         type="button"
@@ -400,7 +393,7 @@ function ProfileForm({ user }: ProfileFormProps) {
                                         }}
                                         className="text-xs h-8 px-2"
                                     >
-                                        Sun-Thu
+                                        {t('preferences.sunThu')}
                                     </Button>
                                     <Button
                                         type="button"
@@ -419,7 +412,7 @@ function ProfileForm({ user }: ProfileFormProps) {
                                         }}
                                         className="text-xs h-8 px-2"
                                     >
-                                        Mon-Fri
+                                        {t('preferences.monFri')}
                                     </Button>
                                     <Button
                                         type="button"
@@ -431,8 +424,16 @@ function ProfileForm({ user }: ProfileFormProps) {
                                         }}
                                         className="text-xs h-8 px-2 text-muted-foreground hover:text-destructive"
                                     >
-                                        Clear
+                                        {t('preferences.clear')}
                                     </Button>
+                                </div>
+
+                                {/* Work Days Label - On right in RTL, left in LTR */}
+                                <div className={`space-y-1 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
+                                    <Label>{t('preferences.workDays')}</Label>
+                                    <p className="text-xs text-muted-foreground">
+                                        {t('preferences.selectWorkDays')}
+                                    </p>
                                 </div>
                             </div>
 

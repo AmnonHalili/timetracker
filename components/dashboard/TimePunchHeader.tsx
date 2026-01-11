@@ -19,6 +19,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { AccessibilityButton } from "@/components/accessibility/AccessibilityButton"
+import { useLanguage } from "@/lib/useLanguage"
 
 interface TimePunchHeaderProps {
     workLocation: WorkLocation | null
@@ -39,6 +40,7 @@ type LocationStatus = "verified" | "unavailable" | "outside_area" | "not_require
 
 export function TimePunchHeader({ workLocation, activeWorkday, activeEntry }: TimePunchHeaderProps) {
     const router = useRouter()
+    const { t, dir } = useLanguage()
     const [currentTime, setCurrentTime] = useState(new Date())
     const [locationStatus, setLocationStatus] = useState<LocationStatus>(
         workLocation ? "checking" : "not_required"
@@ -435,24 +437,24 @@ export function TimePunchHeader({ workLocation, activeWorkday, activeEntry }: Ti
                 >
                     {isWorking ? (
                         <>
-                            <Square className="mr-2 h-5 w-5" />
-                            End Day
-                        </>
-                    ) : (
-                        <>
-                            {isProcessing ? (
-                                <div className="flex items-center gap-2">
-                                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                    Processing...
-                                </div>
+                                    <Square className="mr-2 h-5 w-5" />
+                                    {t('dashboard.endDay')}
+                                </>
                             ) : (
                                 <>
-                                    <Play className="mr-2 h-5 w-5" />
-                                    Start Day
+                                    {isProcessing ? (
+                                        <div className="flex items-center gap-2">
+                                            <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                            {t('dashboard.processing')}
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <Play className="mr-2 h-5 w-5" />
+                                            {t('dashboard.startDay')}
+                                        </>
+                                    )}
                                 </>
                             )}
-                        </>
-                    )}
                 </Button>
 
                     {/* Working since - Mobile (Below Button) */}
@@ -477,7 +479,7 @@ export function TimePunchHeader({ workLocation, activeWorkday, activeEntry }: Ti
                 <CardContent className="p-6">
                     <div className="flex flex-row items-center justify-between gap-4">
                         {/* Time and Status */}
-                        <div className="flex-1 text-left">
+                        <div className={`flex-1 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
                             <div className="text-3xl font-bold mb-1">{format(currentTime, "HH:mm:ss")}</div>
                             <div className="text-sm text-muted-foreground mb-2">{format(currentTime, "EEEE, MMMM d, yyyy")}</div>
                             {isWorking && workingSince && (
@@ -523,19 +525,19 @@ export function TimePunchHeader({ workLocation, activeWorkday, activeEntry }: Ti
                             {isWorking ? (
                                 <>
                                     <Square className="mr-2 h-5 w-5" />
-                                    End Day
+                                    {t('dashboard.endDay')}
                                 </>
                             ) : (
                                 <>
                                     {isProcessing ? (
                                         <div className="flex items-center gap-2">
                                             <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                            Processing...
+                                            {t('dashboard.processing')}
                                         </div>
                                     ) : (
                                         <>
                                             <Play className="mr-2 h-5 w-5" />
-                                            Start Day
+                                            {t('dashboard.startDay')}
                                         </>
                                     )}
                                 </>
@@ -569,7 +571,7 @@ export function TimePunchHeader({ workLocation, activeWorkday, activeEntry }: Ti
                         <AlertDialogCancel>OK</AlertDialogCancel>
                         {isWorking && (
                             <AlertDialogAction onClick={handleEndDay}>
-                                End Day
+                                {t('dashboard.endDay')}
                             </AlertDialogAction>
                         )}
                     </AlertDialogFooter>

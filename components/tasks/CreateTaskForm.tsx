@@ -398,6 +398,7 @@ export function CreateTaskForm({
                     </div>
 
                     <div className="grid gap-4">
+                        {/* 1. Title */}
                         <div className="grid gap-2">
                             <Label htmlFor="title" className="text-sm font-medium flex items-center gap-1.5">
                                 {t('tasks.titleLabel')}
@@ -413,6 +414,21 @@ export function CreateTaskForm({
                             />
                         </div>
 
+                        {/* 2. Description */}
+                        <div className="grid gap-2">
+                            <Label htmlFor="description" className="text-sm font-medium">
+                                {t('tasks.description')}
+                            </Label>
+                            <Textarea
+                                id="description"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                className="min-h-[100px] resize-none bg-background/50 focus:bg-background transition-all border-input shadow-sm p-3"
+                                placeholder={t('tasks.addTaskDescription')}
+                            />
+                        </div>
+
+                        {/* 3. Priority */}
                         <div className="grid gap-2">
                             <Label className="text-sm font-medium">{t('tasks.priority')}</Label>
                             <div className="flex flex-wrap gap-2">
@@ -438,87 +454,12 @@ export function CreateTaskForm({
                                 ))}
                             </div>
                         </div>
-
-                        <div className="grid gap-2">
-                            <Label htmlFor="description" className="text-sm font-medium">
-                                {t('tasks.description')}
-                            </Label>
-                            <Textarea
-                                id="description"
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                className="min-h-[100px] resize-none bg-background/50 focus:bg-background transition-all border-input shadow-sm p-3"
-                                placeholder={t('tasks.addTaskDescription')}
-                            />
-                        </div>
                     </div>
                 </div>
 
                 <Separator className="my-2" />
 
-                {/* Schedule Section */}
-                <div className="space-y-4">
-                    <div className="flex items-center gap-2 mb-2">
-                        <div className="p-1.5 rounded-md bg-primary/10 text-primary">
-                            <Clock className="h-4 w-4" />
-                        </div>
-                        <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                            {t('tasks.schedule') || 'Schedule'}
-                        </h3>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <Label htmlFor="startDate" className="text-sm font-medium flex items-center gap-2">
-                                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                                {t('tasks.startDate') || 'Start Date'}
-                            </Label>
-                            <div className="flex gap-2">
-                                <Input
-                                    id="startDate"
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
-                                    className="h-10 border-input bg-background/50 focus:bg-background transition-all"
-                                />
-                                <Input
-                                    id="startDate-time"
-                                    type="time"
-                                    value={startDateTime}
-                                    onChange={(e) => setStartDateTime(e.target.value)}
-                                    className="h-10 w-[110px] border-input bg-background/50 focus:bg-background transition-all"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="deadline" className="text-sm font-medium flex items-center gap-2">
-                                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                                {t('tasks.deadline')}
-                            </Label>
-                            <div className="flex gap-2">
-                                <Input
-                                    id="deadline"
-                                    type="date"
-                                    value={deadline}
-                                    onChange={(e) => setDeadline(e.target.value)}
-                                    className="h-10 border-input bg-background/50 focus:bg-background transition-all"
-                                />
-                                <Input
-                                    id="deadline-time"
-                                    type="time"
-                                    value={deadlineTime}
-                                    onChange={(e) => setDeadlineTime(e.target.value)}
-                                    className="h-10 w-[110px] border-input bg-background/50 focus:bg-background transition-all"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <Separator className="my-2" />
-
-                {/* Team Section */}
+                {/* 4. Assign To Section */}
                 <div className="space-y-4">
                     <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
@@ -630,7 +571,71 @@ export function CreateTaskForm({
                     )}
                 </div>
 
-                {/* Subtasks Section */}
+                <Separator className="my-2" />
+
+                {/* 5. Schedule Section */}
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2 mb-2">
+                        <div className="p-1.5 rounded-md bg-primary/10 text-primary">
+                            <Clock className="h-4 w-4" />
+                        </div>
+                        <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                            {t('tasks.schedule') || 'Schedule'}
+                        </h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <Label htmlFor="startDate" className="text-sm font-medium flex items-center gap-2">
+                                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                                {t('tasks.startDate') || 'Start Date'}
+                            </Label>
+                            <div className="flex gap-2">
+                                <Input
+                                    id="startDate"
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="h-10 border-input bg-background/50 focus:bg-background transition-all"
+                                />
+                                <Input
+                                    id="startDate-time"
+                                    type="time"
+                                    value={startDateTime}
+                                    onChange={(e) => setStartDateTime(e.target.value)}
+                                    className="h-10 w-[110px] border-input bg-background/50 focus:bg-background transition-all"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="deadline" className="text-sm font-medium flex items-center gap-2">
+                                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                                {t('tasks.deadline')}
+                            </Label>
+                            <div className="flex gap-2">
+                                <Input
+                                    id="deadline"
+                                    type="date"
+                                    value={deadline}
+                                    onChange={(e) => setDeadline(e.target.value)}
+                                    className="h-10 border-input bg-background/50 focus:bg-background transition-all"
+                                />
+                                <Input
+                                    id="deadline-time"
+                                    type="time"
+                                    value={deadlineTime}
+                                    onChange={(e) => setDeadlineTime(e.target.value)}
+                                    className="h-10 w-[110px] border-input bg-background/50 focus:bg-background transition-all"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <Separator className="my-2" />
+
+                {/* 6. Subtasks Section */}
                 {mode === 'create' && (
                     <div className="space-y-4 pt-2">
                         <Button

@@ -251,7 +251,7 @@ export function AddMemberDialog({
                             {/* Common Fields */}
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="email" className="text-left">
-                                    Email
+                                    {t('team.emailLabel')}
                                 </Label>
                                 <Input
                                     id="email"
@@ -266,7 +266,7 @@ export function AddMemberDialog({
 
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="jobTitle" className="text-left">
-                                    Job Title
+                                    {t('team.jobTitleLabel')}
                                 </Label>
                                 <Input
                                     id="jobTitle"
@@ -316,10 +316,10 @@ export function AddMemberDialog({
                                     <div className="space-y-4 pt-2 border-t mt-4">
                                         <div>
                                             <Label className="text-base font-semibold">
-                                                Chief Type <span className="text-destructive">*</span>
+                                                {t('team.chiefType')} <span className="text-destructive">*</span>
                                             </Label>
                                             <p className="text-sm text-muted-foreground mt-1 mb-4">
-                                                Select how this chief should be added to the organization
+                                                {t('team.chiefTypeDescription')}
                                             </p>
                                         </div>
 
@@ -347,10 +347,10 @@ export function AddMemberDialog({
                                                     </div>
                                                     <div className="flex-1 min-w-0">
                                                         <h4 className="font-semibold text-sm mb-1">
-                                                            Partner – Shared Leadership
+                                                            {t('team.partnerSharedLeadership')}
                                                         </h4>
                                                         <p className="text-sm text-muted-foreground mb-2">
-                                                            Acts as a shared manager with you. Both manage the same team.
+                                                            {t('team.partnerDescription')}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -379,10 +379,10 @@ export function AddMemberDialog({
                                                     </div>
                                                     <div className="flex-1 min-w-0">
                                                         <h4 className="font-semibold text-sm mb-1">
-                                                            Independent Chief
+                                                            {t('team.independentChief')}
                                                         </h4>
                                                         <p className="text-sm text-muted-foreground mb-2">
-                                                            Separate top-level manager with their own hierarchy.
+                                                            {t('team.independentDescription')}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -396,7 +396,7 @@ export function AddMemberDialog({
                         <DialogFooter>
                             <Button type="submit" disabled={loading}>
                                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Send Invitation
+                                {t('team.sendInvitation')}
                             </Button>
                         </DialogFooter>
                     </form>
