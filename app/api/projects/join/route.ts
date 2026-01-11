@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
+import { createNotification } from "@/lib/create-notification"
 
 export async function POST(req: Request) {
     try {
@@ -48,7 +49,23 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Membership status: " + existingMember.status }, { status: 400 })
         }
 
-        // 3. Create Pending Membership
+        // Get user info for notification
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { name: true, email: true }
+        })
+
+        // 3. Update user with pendingProjectId (for consistency with /api/team/join)
+        // This allows /api/team/requests to find the pending request
+        await prisma.user.update({
+            where: { id: session.user.id },
+            data: {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                pendingProjectId: project.id as any
+            }
+        })
+
+        // 4. Create Pending Membership (for multi-project support)
         await prisma.projectMember.create({
             data: {
                 userId: session.user.id,
@@ -58,7 +75,24 @@ export async function POST(req: Request) {
             }
         })
 
-        // TODO: Notify Project Admins
+        // Notify Project Admins
+        const admins = await prisma.user.findMany({
+            where: {
+                projectId: project.id,
+                role: "ADMIN"
+            }
+        })
+
+        // Send real-time notifications to each admin
+        await Promise.all(admins.map(admin =>
+            createNotification({
+                userId: admin.id,
+                title: "New Join Request",
+                message: `${user?.name || user?.email || "A user"} has requested to join your project via Team Code.`,
+                type: "INFO",
+                link: "/team"
+            })
+        ))
 
         return NextResponse.json({ success: true, message: "Request sent to admin" })
 

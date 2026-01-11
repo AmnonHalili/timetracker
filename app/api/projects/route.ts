@@ -14,12 +14,11 @@ export async function GET() {
         }
 
         // Fetch projects where user is a member
+        // Only show ACTIVE memberships - PENDING and INVITED are not visible until approved
         const memberships = await prisma.projectMember.findMany({
             where: {
                 userId: session.user.id,
-                status: {
-                    not: "REJECTED"
-                }
+                status: "ACTIVE" // Only show approved/active projects
             },
             include: {
                 project: true
@@ -29,7 +28,7 @@ export async function GET() {
         const projects = memberships.map(m => ({
             ...m.project,
             role: m.role, // Include the role in the project
-            status: m.status // Include membership status
+            status: m.status // Include membership status (should be ACTIVE)
         }))
 
         return NextResponse.json(projects)

@@ -127,17 +127,19 @@ export const authOptions: NextAuthOptions = {
                             })
 
                             if (project) {
-                                // Add to existing project as PENDING
-                                activeProjectId = project.id
-                                updateData.projectId = project.id
+                                // Set as PENDING and don't assign projectId yet
+                                // User won't see the project until admin approves
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                updateData.pendingProjectId = project.id as any
                                 updateData.status = "PENDING"
+                                // Don't set projectId - wait for admin approval
                                 memberRole = "EMPLOYEE"
                                 memberStatus = "PENDING"
                             }
                         }
 
                         // If no project joined (or code was invalid), create a Personal Workspace
-                        if (!activeProjectId) {
+                        if (!updateData.pendingProjectId && !activeProjectId) {
                             const personalProject = await prisma.project.create({
                                 data: {
                                     name: `${user.name}'s Workspace`,

@@ -1,12 +1,14 @@
 "use client"
 
-import { useState, startTransition } from "react"
+import { useState, useEffect, startTransition } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Check, X, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { ApproveUserDialog } from "./ApproveUserDialog"
+import { User } from "@prisma/client"
 
 interface PendingRequest {
     id: string
@@ -24,42 +26,136 @@ export function TeamRequestsList({ initialRequests }: TeamRequestsListProps) {
     const router = useRouter()
     const [requests, setRequests] = useState<PendingRequest[]>(initialRequests)
     const [processingId, setProcessingId] = useState<string | null>(null)
+    const [approveDialogOpen, setApproveDialogOpen] = useState(false)
+    const [selectedRequest, setSelectedRequest] = useState<PendingRequest | null>(null)
+    const [availableManagers, setAvailableManagers] = useState<User[]>([])
+    const [loadingManagers, setLoadingManagers] = useState(false)
 
-    const handleAction = async (userId: string, action: "APPROVE" | "REJECT") => {
+    const fetchManagers = async () => {
+        setLoadingManagers(true)
+        try {
+            const res = await fetch("/api/team")
+            if (res.ok) {
+                const users = await res.json()
+                // Filter to only ADMIN and MANAGER roles
+                const managers = users.filter((u: User) => 
+                    u.role === "ADMIN" || u.role === "MANAGER"
+                )
+                setAvailableManagers(managers)
+            }
+        } catch (error) {
+            console.error("Failed to fetch managers", error)
+        } finally {
+            setLoadingManagers(false)
+        }
+    }
+
+    const fetchRequests = async () => {
+        try {
+            const res = await fetch("/api/team/requests", { cache: 'no-store' })
+            if (res.ok) {
+                const data = await res.json()
+                setRequests(data)
+            }
+        } catch (error) {
+            console.error("Failed to fetch requests", error)
+        }
+    }
+
+    useEffect(() => {
+        fetchManagers()
+    }, [])
+
+    // Poll for new requests every 5-10 seconds
+    // Adaptive: faster when there are requests, slower when none
+    useEffect(() => {
+        let interval: NodeJS.Timeout | null = null
+        
+        const setupPolling = () => {
+            // Clear existing interval
+            if (interval) clearInterval(interval)
+            
+            // Poll every 5 seconds if there are requests, 10 seconds otherwise
+            const pollInterval = requests.length > 0 ? 5000 : 10000
+            interval = setInterval(() => {
+                fetchRequests()
+            }, pollInterval)
+        }
+        
+        // Initial fetch to sync with server
+        fetchRequests()
+        setupPolling()
+        
+        // Handle visibility change - refresh immediately when page becomes visible
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                fetchRequests()
+            }
+        }
+        
+        // Handle window focus - refresh immediately when window gains focus
+        const handleFocus = () => {
+            fetchRequests()
+        }
+        
+        document.addEventListener('visibilitychange', handleVisibilityChange)
+        window.addEventListener('focus', handleFocus)
+        
+        return () => {
+            if (interval) clearInterval(interval)
+            document.removeEventListener('visibilitychange', handleVisibilityChange)
+            window.removeEventListener('focus', handleFocus)
+        }
+    }, [requests.length])
+
+    const handleApproveClick = (request: PendingRequest) => {
+        setSelectedRequest(request)
+        setApproveDialogOpen(true)
+    }
+
+    const handleReject = async (userId: string) => {
         setProcessingId(userId)
+        
+        // Optimistic update: remove from UI immediately
+        const rejectedRequest = requests.find(r => r.id === userId)
+        setRequests((prev) => prev.filter((r) => r.id !== userId))
+        
         try {
             const res = await fetch("/api/team/requests", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userId, action }),
+                body: JSON.stringify({ userId, action: "REJECT" })
             })
 
             if (!res.ok) {
                 const data = await res.json()
-                
-                // Check if this is a user limit error
-                if (res.status === 402 && data.error === "USER_LIMIT_EXCEEDED") {
-                    // Redirect to pricing page
-                    startTransition(() => {
-                        router.push("/pricing")
-                    })
-                    toast.error(data.message || "User limit exceeded. Please upgrade your plan to approve this join request.")
-                    return
-                }
-                
                 throw new Error(data.message || "Failed to process request")
             }
 
-            // Remove from local state
-            setRequests((prev) => prev.filter((r) => r.id !== userId))
-            toast.success(action === "APPROVE" ? "User approved" : "User rejected")
+            toast.success("User rejected")
             router.refresh()
         } catch (error) {
+            // Revert optimistic update on error
+            if (rejectedRequest) {
+                setRequests((prev) => [...prev, rejectedRequest].sort((a, b) => 
+                    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                ))
+            }
             console.error(error)
-            toast.error("Something went wrong")
+            toast.error(error instanceof Error ? error.message : "Something went wrong")
         } finally {
             setProcessingId(null)
         }
+    }
+
+    const handleApproved = () => {
+        // Optimistic update: remove from UI immediately (already done in ApproveUserDialog)
+        // This is called after successful approval
+        if (selectedRequest) {
+            setRequests((prev) => prev.filter((r) => r.id !== selectedRequest.id))
+        }
+        setSelectedRequest(null)
+        router.refresh()
     }
 
     if (requests.length === 0) return null
@@ -100,7 +196,7 @@ export function TeamRequestsList({ initialRequests }: TeamRequestsListProps) {
                                     variant="outline"
                                     className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20 flex-1 sm:flex-initial"
                                     disabled={processingId === request.id}
-                                    onClick={() => handleAction(request.id, "REJECT")}
+                                    onClick={() => handleReject(request.id)}
                                 >
                                     {processingId === request.id ? (
                                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -114,23 +210,29 @@ export function TeamRequestsList({ initialRequests }: TeamRequestsListProps) {
                                 <Button
                                     size="sm"
                                     className="bg-green-600 hover:bg-green-700 text-white flex-1 sm:flex-initial"
-                                    disabled={processingId === request.id}
-                                    onClick={() => handleAction(request.id, "APPROVE")}
+                                    disabled={processingId === request.id || loadingManagers}
+                                    onClick={() => handleApproveClick(request)}
                                 >
-                                    {processingId === request.id ? (
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                    ) : (
-                                        <>
-                                            <Check className="h-4 w-4 mr-1" />
-                                            Approve
-                                        </>
-                                    )}
+                                    <Check className="h-4 w-4 mr-1" />
+                                    Approve
                                 </Button>
                             </div>
                         </div>
                     ))}
                 </div>
             </CardContent>
+            
+            <ApproveUserDialog
+                open={approveDialogOpen}
+                onOpenChange={setApproveDialogOpen}
+                user={selectedRequest ? {
+                    id: selectedRequest.id,
+                    name: selectedRequest.name,
+                    email: selectedRequest.email
+                } : null}
+                managers={availableManagers}
+                onApproved={handleApproved}
+            />
         </Card>
     )
 }

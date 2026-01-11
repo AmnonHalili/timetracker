@@ -43,12 +43,45 @@ export function NotificationBell() {
         }
     }
 
-    // Poll every 30 seconds for live-like updates (reduced from 10s to reduce server load)
+    // Adaptive polling: faster when there are unread notifications, slower when none
+    // Also refresh immediately when page becomes visible or gains focus
     useEffect(() => {
+        let interval: NodeJS.Timeout | null = null
+        
+        const setupPolling = () => {
+            // Clear existing interval
+            if (interval) clearInterval(interval)
+            
+            // Poll every 5 seconds if there are unread notifications, 10 seconds otherwise
+            const pollInterval = unreadCount > 0 ? 5000 : 10000
+            interval = setInterval(fetchNotifications, pollInterval)
+        }
+        
+        // Initial fetch
         fetchNotifications()
-        const interval = setInterval(fetchNotifications, 30000) // 30 seconds
-        return () => clearInterval(interval)
-    }, [])
+        setupPolling()
+        
+        // Handle visibility change - refresh immediately when page becomes visible
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                fetchNotifications()
+            }
+        }
+        
+        // Handle window focus - refresh immediately when window gains focus
+        const handleFocus = () => {
+            fetchNotifications()
+        }
+        
+        document.addEventListener('visibilitychange', handleVisibilityChange)
+        window.addEventListener('focus', handleFocus)
+        
+        return () => {
+            if (interval) clearInterval(interval)
+            document.removeEventListener('visibilitychange', handleVisibilityChange)
+            window.removeEventListener('focus', handleFocus)
+        }
+    }, [unreadCount])
 
     // Refresh when opening
     useEffect(() => {

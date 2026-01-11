@@ -15,7 +15,6 @@ import { ImageCropperDialog } from "@/components/ui/ImageCropperDialog"
 import Image from "next/image"
 import Link from "next/link"
 
-import { JoinRequestsWidget } from "@/components/team/JoinRequestsWidget"
 import { TeamOnboardingWidget } from "@/components/dashboard/TeamOnboardingWidget"
 
 // Defined locally to match RecursiveNode props
@@ -673,12 +672,6 @@ export default function HierarchyPage() {
                         </Button>
                     </div>
                 </div>
-
-                {session?.user?.role === "ADMIN" && hasProject && (
-                    <div className="max-w-2xl mx-auto mb-2 md:mb-4 mt-2 md:mt-0">
-                        <JoinRequestsWidget />
-                    </div>
-                )}
 
                 {/* Show Onboarding Widget for Private Workspace */}
                 {!hasProject && (

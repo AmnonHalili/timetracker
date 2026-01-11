@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { TeamList } from "@/components/team/TeamList"
 import { TeamOnboardingWidget } from "@/components/dashboard/TeamOnboardingWidget"
-import { filterHierarchyGroup } from "@/lib/hierarchy-utils"
+import { filterHierarchyGroup, filterVisibleUsers } from "@/lib/hierarchy-utils"
 import { TeamRequestsList } from "@/components/team/TeamRequestsList"
 import { TeamPageHeader } from "@/components/team/TeamPageHeader"
 import { TeamInvitationsList } from "@/components/team/TeamInvitationsList"
@@ -257,8 +257,8 @@ export default async function TeamPage() {
     }
 
     // Fetch pending join requests (only if currentUser is ADMIN)
-    // We can fetch this in parallel with other data, or just fetch it here.
-    // For simplicity, let's fetch it if the user is an admin.
+    // This should match the logic in /api/team/requests GET handler
+    // Find users with pendingProjectId OR users with PENDING ProjectMember status
     let pendingRequests: {
         id: string
         name: string
@@ -267,10 +267,12 @@ export default async function TeamPage() {
         createdAt: Date
     }[] = []
     if (currentUser.role === "ADMIN") {
-        pendingRequests = await prisma.user.findMany({
+        // Find users with pendingProjectId
+        const requestsByPendingId = await prisma.user.findMany({
             where: {
                 pendingProjectId: currentUser.projectId
-            },
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } as any,
             select: {
                 id: true,
                 name: true,
@@ -280,21 +282,66 @@ export default async function TeamPage() {
             },
             orderBy: { createdAt: "desc" }
         })
+
+        // Also find users with PENDING ProjectMember status for this project
+        const pendingMembers = await prisma.projectMember.findMany({
+            where: {
+                projectId: currentUser.projectId,
+                status: "PENDING"
+            },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        createdAt: true,
+                        image: true
+                    }
+                }
+            },
+            orderBy: {
+                joinedAt: "desc"
+            }
+        })
+
+        // Combine both sources and remove duplicates
+        const requestIds = new Set(requestsByPendingId.map(r => r.id))
+        const additionalRequests = pendingMembers
+            .filter(pm => !requestIds.has(pm.userId))
+            .map(pm => ({
+                id: pm.user.id,
+                name: pm.user.name,
+                email: pm.user.email,
+                createdAt: pm.user.createdAt,
+                image: pm.user.image
+            }))
+
+        pendingRequests = [...requestsByPendingId, ...additionalRequests]
     }
 
-    // Get current user's managerId for hierarchy group filtering
-    const currentUserWithManager = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { id: true, managerId: true }
-    })
+    // Get current user's full data for filtering (including sharedChiefGroupId)
+    let currentUserFull: { id: string; managerId: string | null; role: string; sharedChiefGroupId?: string | null }
+    try {
+        const fetched = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { id: true, managerId: true, role: true, sharedChiefGroupId: true } as never
+        }) as { id: string; managerId: string | null; role: string; sharedChiefGroupId?: string | null } | null
+        currentUserFull = fetched || { id: session.user.id, managerId: null, role: currentUser.role, sharedChiefGroupId: null }
+    } catch {
+        const basic = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { id: true, managerId: true, role: true }
+        })
+        currentUserFull = basic ? { ...basic, sharedChiefGroupId: null } : { id: session.user.id, managerId: null, role: currentUser.role, sharedChiefGroupId: null }
+    }
 
-    // Filter to show only users in the hierarchy group:
-    // - The user's manager
-    // - Siblings (users at the same level under the same manager)
-    // - Direct reports (users one level below)
-    const hierarchyGroupMembers = currentUserWithManager
-        ? filterHierarchyGroup(allTeamMembers, currentUserWithManager)
-        : allTeamMembers
+    // Filter users based on role:
+    // - ADMIN: Use filterVisibleUsers (handles sharedChiefGroupId and shows all chiefs)
+    // - Others: Use filterHierarchyGroup (shows manager, siblings, direct reports)
+    const hierarchyGroupMembers = currentUserFull.role === "ADMIN"
+        ? filterVisibleUsers(allTeamMembers, currentUserFull)
+        : filterHierarchyGroup(allTeamMembers, { id: currentUserFull.id, managerId: currentUserFull.managerId })
 
     const teamMembers = sortByHierarchy(
         hierarchyGroupMembers,

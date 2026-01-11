@@ -34,11 +34,14 @@ export function Sidebar() {
     }, [pathname])
 
     // Check for pending join requests (only for admins)
+    // Adaptive polling: faster when there are pending requests, slower when none
     useEffect(() => {
         if (session?.user?.role === 'ADMIN' && pathname !== '/team') {
+            let interval: NodeJS.Timeout | null = null
+            
             const fetchPendingRequests = async () => {
                 try {
-                    const res = await fetch('/api/team/requests')
+                    const res = await fetch('/api/team/requests', { cache: 'no-store' })
                     if (res.ok) {
                         const data = await res.json()
                         setPendingRequestsCount(data.length || 0)
@@ -47,15 +50,45 @@ export function Sidebar() {
                     console.error('Failed to fetch pending requests:', error)
                 }
             }
+            
+            const setupPolling = () => {
+                // Clear existing interval
+                if (interval) clearInterval(interval)
+                
+                // Poll every 5 seconds if there are pending requests, 15 seconds otherwise
+                const pollInterval = pendingRequestsCount > 0 ? 5000 : 15000
+                interval = setInterval(fetchPendingRequests, pollInterval)
+            }
+            
+            // Initial fetch
             fetchPendingRequests()
-            // Poll every 30 seconds for new requests
-            const interval = setInterval(fetchPendingRequests, 30000)
-            return () => clearInterval(interval)
+            setupPolling()
+            
+            // Handle visibility change - refresh immediately when page becomes visible
+            const handleVisibilityChange = () => {
+                if (!document.hidden) {
+                    fetchPendingRequests()
+                }
+            }
+            
+            // Handle window focus - refresh immediately when window gains focus
+            const handleFocus = () => {
+                fetchPendingRequests()
+            }
+            
+            document.addEventListener('visibilitychange', handleVisibilityChange)
+            window.addEventListener('focus', handleFocus)
+            
+            return () => {
+                if (interval) clearInterval(interval)
+                document.removeEventListener('visibilitychange', handleVisibilityChange)
+                window.removeEventListener('focus', handleFocus)
+            }
         } else {
             // Clear count when on team page or not admin
             setPendingRequestsCount(0)
         }
-    }, [session?.user?.role, pathname])
+    }, [session?.user?.role, pathname, pendingRequestsCount])
 
     // Check if user is a top-level admin with incomplete profile
     // Only show badge if NOT on settings page AND not remembered as seen

@@ -18,7 +18,14 @@ export async function GET() {
         take: 20
     })
 
-    return NextResponse.json(notifications)
+    // Add cache headers to prevent stale data
+    return NextResponse.json(notifications, {
+        headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+        }
+    })
 }
 
 export async function POST(req: Request) {

@@ -126,16 +126,6 @@ export async function POST(req: Request) {
             else {
                 userJobTitle = !projectName ? "Freelancer" : "Team Member"
 
-                // Always create a Personal Workspace
-                const joinCode = Math.random().toString(36).substring(2, 8).toUpperCase()
-                const personalProject = await tx.project.create({
-                    data: {
-                        name: `${name}'s Workspace`,
-                        joinCode: joinCode
-                    }
-                })
-                activeProjectId = personalProject.id
-
                 // If they have a Join Code, validate it and set pending
                 if (projectName) {
                     const projectToJoin = await tx.project.findUnique({
@@ -146,21 +136,35 @@ export async function POST(req: Request) {
 
                     if (projectToJoin) {
                         pendingProjectId = projectToJoin.id
+                        // Don't set activeProjectId - user won't see any project until admin approves
+                        // No personal workspace created if joining a team
                     } else {
                         throw new Error("Invalid Team Code")
                     }
+                } else {
+                    // No join code - create Personal Workspace
+                    const joinCode = Math.random().toString(36).substring(2, 8).toUpperCase()
+                    const personalProject = await tx.project.create({
+                        data: {
+                            name: `${name}'s Workspace`,
+                            joinCode: joinCode
+                        }
+                    })
+                    activeProjectId = personalProject.id
                 }
             }
 
             // Create the User
+            // If joining a team, user should be PENDING until admin approves
+            const userStatus = pendingProjectId ? "PENDING" : "ACTIVE"
             const user = await tx.user.create({
                 data: {
                     email,
                     password: hashedPassword,
                     name,
                     role: activeRole,
-                    status: "ACTIVE", // Always active as they own their current workspace
-                    projectId: activeProjectId,
+                    status: userStatus, // PENDING if joining a team, ACTIVE otherwise
+                    projectId: activeProjectId, // Only set if not joining a team
                     pendingProjectId: pendingProjectId ?? undefined,
                     jobTitle: userJobTitle,
                 }
