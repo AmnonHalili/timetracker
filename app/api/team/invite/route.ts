@@ -119,6 +119,7 @@ export async function POST(req: Request) {
                 pendingProjectId: true,
                 removedAt: true,
                 resetTokenExpiry: true,
+                jobTitle: true,
             }
         })
 
@@ -144,7 +145,7 @@ export async function POST(req: Request) {
 
                 // If they are REJECTED or INVITED, we can arguably re-invite them (update status to INVITED)
                 // For now, let's allow re-inviting if not active
-                
+
                 // Determine final manager ID
                 let finalManagerId: string | null = managerId === "unassigned" || !managerId ? null : managerId
                 if (role === "EMPLOYEE" && !finalManagerId) {
