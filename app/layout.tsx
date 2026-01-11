@@ -34,9 +34,8 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/collabologocut.png", media: "(prefers-color-scheme: light)", type: "image/png", sizes: "32x32" },
-      { url: "/collabologocutwhite.png", media: "(prefers-color-scheme: dark)", type: "image/png", sizes: "32x32" },
-      { url: "/collabologocut.png", type: "image/png", sizes: "192x192" },
+      { url: "/collabologocut.png", media: "(prefers-color-scheme: light)" },
+      { url: "/collabologocutwhite.png", media: "(prefers-color-scheme: dark)" },
     ],
     shortcut: [
       { url: "/collabologocut.png", media: "(prefers-color-scheme: light)", type: "image/png" },
