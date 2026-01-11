@@ -48,11 +48,11 @@ export function WorkLocationForm({ projectId, initialLocation, initialIsRemoteWo
                 throw new Error(data.message || "Failed to save work location")
             }
 
-            toast.success(isRemoteWork ? t('workspace.remoteWorkEnabled') : (location ? "Work location saved successfully" : "Work location removed"))
+            toast.success(isRemoteWork ? t('workspace.remoteWorkEnabled') : (location ? t('settings.workLocationSaved') : t('settings.workLocationRemoved')))
             router.refresh()
         } catch (error) {
             console.error("Error saving work location:", error)
-            toast.error(error instanceof Error ? error.message : "Failed to save work location")
+            toast.error(error instanceof Error ? error.message : t('settings.workLocationSaveError'))
         } finally {
             setIsSaving(false)
         }
@@ -73,14 +73,14 @@ export function WorkLocationForm({ projectId, initialLocation, initialIsRemoteWo
 
             if (!response.ok) {
                 const data = await response.json()
-                throw new Error(data.message || "Failed to update work location settings")
+                throw new Error(data.message || t('settings.workLocationUpdateError'))
             }
 
             toast.success(remote ? t('workspace.remoteWorkEnabled') : t('workspace.remoteWorkDisabled'))
             router.refresh()
         } catch (error) {
             console.error("Error updating remote work setting:", error)
-            toast.error(error instanceof Error ? error.message : "Failed to update settings")
+            toast.error(error instanceof Error ? error.message : t('settings.workLocationSettingsUpdateError'))
             setIsRemoteWork(!remote) // Revert on error
         } finally {
             setIsSaving(false)
@@ -92,10 +92,10 @@ export function WorkLocationForm({ projectId, initialLocation, initialIsRemoteWo
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <MapPin className="h-5 w-5" />
-                    Work Location
+                    {t('settings.workLocation')}
                 </CardTitle>
                 <CardDescription>
-                    Configure work location settings. Choose between remote work (no location verification) or location-based work (GPS verification required).
+                    {t('settings.workLocationDescription')}
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">

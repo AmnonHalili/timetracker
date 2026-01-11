@@ -127,8 +127,8 @@ export function ProjectSwitcher({ className }: { className?: string }) {
                 }}
                 className="cursor-pointer"
             >
-                <PlusCircle className="mr-2 h-5 w-5" />
-                Create Team
+                <PlusCircle className={cn("h-5 w-5", isRTL ? "ml-3" : "mr-3")} />
+                {t('projects.createTeam')}
             </CommandItem>
             <CommandItem
                 onSelect={() => {
@@ -137,8 +137,8 @@ export function ProjectSwitcher({ className }: { className?: string }) {
                 }}
                 className="cursor-pointer"
             >
-                <Building2 className="mr-2 h-5 w-5" />
-                Join Team
+                <Building2 className={cn("h-5 w-5", isRTL ? "ml-3" : "mr-3")} />
+                {t('projects.joinTeam')}
             </CommandItem>
         </>
     )
@@ -157,7 +157,7 @@ export function ProjectSwitcher({ className }: { className?: string }) {
                         >
                             <div className="flex items-center gap-2 text-muted-foreground truncate flex-1">
                                 <PlusCircle className="h-5 w-5 shrink-0" />
-                                <span className="text-sm font-medium truncate">Select Workspace</span>
+                                <span className="text-sm font-medium truncate">{t('projects.selectWorkspace')}</span>
                             </div>
                             <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
                         </Button>
@@ -176,14 +176,14 @@ export function ProjectSwitcher({ className }: { className?: string }) {
                 <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Create Team</DialogTitle>
+                            <DialogTitle>{t('projects.createTeam')}</DialogTitle>
                             <DialogDescription>
-                                Add a new workspace to manage projects and tasks.
+                                {t('projects.addNewWorkspace')}
                             </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 py-2 pb-4">
                             <div className="space-y-2">
-                                <Label htmlFor="name">Team Name</Label>
+                                <Label htmlFor="name">{t('projects.teamName')}</Label>
                                 <Input
                                     id="name"
                                     placeholder="Acme Inc."
@@ -193,9 +193,9 @@ export function ProjectSwitcher({ className }: { className?: string }) {
                             </div>
                         </div>
                         <DialogFooter>
-                            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancel</Button>
+                            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>{t('common.cancel')}</Button>
                             <Button onClick={handleCreateProject} disabled={isSubmitting}>
-                                {isSubmitting ? "Creating..." : "Create Team"}
+                                {isSubmitting ? t('projects.creating') : t('projects.createTeam')}
                             </Button>
                         </DialogFooter>
                     </DialogContent>
@@ -204,26 +204,26 @@ export function ProjectSwitcher({ className }: { className?: string }) {
                 <Dialog open={showJoinDialog} onOpenChange={setShowJoinDialog}>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Join Team</DialogTitle>
+                            <DialogTitle>{t('projects.joinTeam')}</DialogTitle>
                             <DialogDescription>
-                                Enter the invite code shared by your team administrator.
+                                {t('projects.enterInviteCode')}
                             </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 py-2 pb-4">
                             <div className="space-y-2">
-                                <Label htmlFor="code">Invite Code</Label>
+                                <Label htmlFor="code">{t('projects.inviteCode')}</Label>
                                 <Input
                                     id="code"
-                                    placeholder="Enter code"
+                                    placeholder={t('projects.enterCode')}
                                     value={joinCode}
                                     onChange={(e) => setJoinCode(e.target.value)}
                                 />
                             </div>
                         </div>
                         <DialogFooter>
-                            <Button variant="outline" onClick={() => setShowJoinDialog(false)}>Cancel</Button>
+                            <Button variant="outline" onClick={() => setShowJoinDialog(false)}>{t('common.cancel')}</Button>
                             <Button onClick={handleJoinProject} disabled={isSubmitting}>
-                                {isSubmitting ? "Sending Request..." : "Join Team"}
+                                {isSubmitting ? t('projects.sendingRequest') : t('projects.joinTeam')}
                             </Button>
                         </DialogFooter>
                     </DialogContent>
@@ -245,33 +245,57 @@ export function ProjectSwitcher({ className }: { className?: string }) {
                         role="combobox"
                         aria-expanded={open}
                         aria-label="Select a team"
-                        className={cn("w-full justify-between h-12 px-3", className)}
+                        className={cn("w-full h-12 px-3", isRTL ? "flex-row-reverse" : "justify-between", className)}
                     >
-                        <div className="flex items-center gap-2 text-left truncate">
-                            <Avatar className="h-6 w-6">
-                                {activeProject?.logo && (
-                                    <AvatarImage
-                                        src={activeProject.logo}
-                                        alt={activeProject.name}
-                                        className="object-cover contrast-[1.1] saturate-[1.1]"
-                                    />
-                                )}
-                                <AvatarFallback className="text-[10px]">{activeProject?.name?.substring(0, 2).toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex flex-col gap-0.5 truncate">
-                                <span className="truncate text-sm font-medium leading-none">{activeProject?.name}</span>
-                                <span className="truncate text-xs text-muted-foreground">{activeProject?.plan || "Free"}</span>
-                            </div>
-                        </div>
-                        <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+                        {isRTL ? (
+                            <>
+                                <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+                                <div className="flex items-center gap-2 truncate flex-1">
+                                    <div className="flex flex-col gap-0.5 truncate text-right">
+                                        <span className="truncate text-sm font-medium leading-none">{activeProject?.name}</span>
+                                        <span className="truncate text-xs text-muted-foreground">{activeProject?.plan ? (activeProject.plan === 'FREE' ? t('projects.free') : activeProject.plan) : t('projects.free')}</span>
+                                    </div>
+                                </div>
+                                <Avatar className="h-6 w-6 shrink-0">
+                                    {activeProject?.logo && (
+                                        <AvatarImage
+                                            src={activeProject.logo}
+                                            alt={activeProject.name}
+                                            className="object-cover contrast-[1.1] saturate-[1.1]"
+                                        />
+                                    )}
+                                    <AvatarFallback className="text-[10px]">{activeProject?.name?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                            </>
+                        ) : (
+                            <>
+                                <div className="flex items-center gap-2 truncate">
+                                    <Avatar className="h-6 w-6">
+                                        {activeProject?.logo && (
+                                            <AvatarImage
+                                                src={activeProject.logo}
+                                                alt={activeProject.name}
+                                                className="object-cover contrast-[1.1] saturate-[1.1]"
+                                            />
+                                        )}
+                                        <AvatarFallback className="text-[10px]">{activeProject?.name?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex flex-col gap-0.5 truncate text-left">
+                                        <span className="truncate text-sm font-medium leading-none">{activeProject?.name}</span>
+                                        <span className="truncate text-xs text-muted-foreground">{activeProject?.plan ? (activeProject.plan === 'FREE' ? t('projects.free') : activeProject.plan) : t('projects.free')}</span>
+                                    </div>
+                                </div>
+                                <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+                            </>
+                        )}
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[200px] p-0" align="start">
                     <Command>
                         <CommandList>
-                            <CommandInput placeholder="Search team..." />
-                            <CommandEmpty>No team found.</CommandEmpty>
-                            <CommandGroup heading="Teams">
+                            <CommandInput placeholder={t('projects.searchTeam')} />
+                            <CommandEmpty>{t('projects.noTeamFound')}</CommandEmpty>
+                            <CommandGroup heading={t('projects.teams')}>
                                 {projects.map((project) => (
                                     <CommandItem
                                         key={project.id}
@@ -309,7 +333,7 @@ export function ProjectSwitcher({ className }: { className?: string }) {
                                             <span className="truncate">{project.name}</span>
                                             {project.status === "INVITED" && (
                                                 <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-                                                    Invited
+                                                    {t('projects.invited')}
                                                 </span>
                                             )}
                                         </div>
@@ -434,17 +458,17 @@ export function ProjectSwitcher({ className }: { className?: string }) {
             <Dialog open={invitationDialog.open} onOpenChange={(val) => setInvitationDialog(prev => ({ ...prev, open: val }))}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Team Invitation</DialogTitle>
+                        <DialogTitle>{t('projects.teamInvitation')}</DialogTitle>
                         <DialogDescription>
-                            You have been invited to join <strong>{invitationDialog.projectName}</strong>.
+                            {t('projects.invitedToJoin')} <strong>{invitationDialog.projectName}</strong>.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter className="gap-2 sm:gap-0">
                         <Button variant="outline" onClick={handleRejectInvitation} disabled={isSubmitting}>
-                            Decline
+                            {t('projects.decline')}
                         </Button>
                         <Button onClick={handleAcceptInvitation} disabled={isSubmitting}>
-                            {isSubmitting ? "Accepting..." : "Accept Invitation"}
+                            {isSubmitting ? t('projects.accepting') : t('projects.acceptInvitation')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
