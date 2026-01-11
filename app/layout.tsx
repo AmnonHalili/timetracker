@@ -24,7 +24,7 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Collabo-Web: Time Tracker & Task Manager",
+  title: "Collabo-Web | Team Tracker",
   description: "The simplest time tracker and task manager. Track hours, manage projects, and collaborate without the complexity.",
   metadataBase: new URL('https://collabo-web.com'),
   manifest: "/site.webmanifest",
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: "Collabo-Web: Time Tracker & Task Manager",
+    title: "Collabo-Web | Team Tracker",
     description: "The simplest time tracker and task manager. Track hours, manage projects, and collaborate without the complexity.",
     url: "https://collabo-web.com",
     siteName: "Collabo",
@@ -70,7 +70,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Collabo-Web: Time Tracker & Task Manager",
+    title: "Collabo-Web | Team Tracker",
     description: "The simplest time tracker and task manager. Track hours, manage projects, and collaborate without the complexity.",
     images: ["/collabospecialnoback.png"],
   },
