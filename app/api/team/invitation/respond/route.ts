@@ -38,9 +38,41 @@ export async function POST(req: Request) {
             // Get the role from ProjectMember
             const userRole = membership.role || "EMPLOYEE"
 
+            // Read current User record to preserve existing data
+            const currentUser = await prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: {
+                    managerId: true,
+                    jobTitle: true,
+                    sharedChiefGroupId: true
+                } as never
+            }) as { managerId: string | null; jobTitle: string | null; sharedChiefGroupId?: string | null } | null
+
             // Calculate sharedChiefGroupId for ADMIN role
             let sharedChiefGroupId: string | null = null
-            const finalManagerId: string | null = null
+            let finalManagerId: string | null = null
+
+            // For EMPLOYEE role: Preserve managerId if it exists and belongs to current project
+            if (userRole === "EMPLOYEE") {
+                if (currentUser?.managerId) {
+                    // Validate that managerId belongs to the current project
+                    const manager = await prisma.user.findUnique({
+                        where: { id: currentUser.managerId },
+                        select: { projectId: true }
+                    })
+                    
+                    if (manager && manager.projectId === projectId) {
+                        // Manager belongs to current project, preserve it
+                        finalManagerId = currentUser.managerId
+                    } else {
+                        // Manager doesn't belong to current project, set to null
+                        finalManagerId = null
+                    }
+                } else {
+                    // No managerId set, keep as null
+                    finalManagerId = null
+                }
+            }
 
             if (userRole === "ADMIN") {
                 // For ADMIN, check if there are other top-level admins in the project
@@ -81,14 +113,34 @@ export async function POST(req: Request) {
                     console.warn("Could not determine sharedChiefGroupId, defaulting to null:", error)
                     sharedChiefGroupId = null
                 }
+                
+                // For ADMIN, preserve managerId if it was set (though typically null for top-level admins)
+                if (currentUser?.managerId) {
+                    const manager = await prisma.user.findUnique({
+                        where: { id: currentUser.managerId },
+                        select: { projectId: true }
+                    })
+                    
+                    if (manager && manager.projectId === projectId) {
+                        finalManagerId = currentUser.managerId
+                    } else {
+                        finalManagerId = null
+                    }
+                } else {
+                    finalManagerId = null
+                }
             }
+
+            // Preserve jobTitle from existing user data if it exists
+            const finalJobTitle = currentUser?.jobTitle || null
 
             // Update User record with project information
             const updateData: Record<string, unknown> = {
                 projectId: projectId,
                 role: userRole,
                 status: "ACTIVE",
-                managerId: finalManagerId
+                managerId: finalManagerId,
+                jobTitle: finalJobTitle
             }
 
             if (userRole === "ADMIN" && sharedChiefGroupId !== undefined) {

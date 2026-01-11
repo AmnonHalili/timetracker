@@ -144,6 +144,23 @@ export async function POST(req: Request) {
 
                 // If they are REJECTED or INVITED, we can arguably re-invite them (update status to INVITED)
                 // For now, let's allow re-inviting if not active
+                
+                // Determine final manager ID
+                let finalManagerId: string | null = managerId === "unassigned" || !managerId ? null : managerId
+                if (role === "EMPLOYEE" && !finalManagerId) {
+                    finalManagerId = currentUser.id
+                }
+
+                // Update User record with managerId and jobTitle for re-invites
+                // This ensures the managerId is preserved when they accept the invitation
+                await prisma.user.update({
+                    where: { id: existingUser.id },
+                    data: {
+                        managerId: finalManagerId,
+                        jobTitle: jobTitle || existingUser.jobTitle || null,
+                    } as never
+                })
+
                 await prisma.projectMember.update({
                     where: { id: existingMembership.id },
                     data: {
@@ -159,8 +176,15 @@ export async function POST(req: Request) {
                     finalManagerId = currentUser.id
                 }
 
-                // Handle Chief/Shared logic (simplified for invites - usually applied when they accept, but we store it now if possible or defer)
-                // Keeping it simple: Invite as role. Advanced hierarchy settings might need to be applied upon acceptance.
+                // Update User record with managerId and jobTitle for existing users
+                // This ensures the managerId is preserved when they accept the invitation
+                await prisma.user.update({
+                    where: { id: existingUser.id },
+                    data: {
+                        managerId: finalManagerId,
+                        jobTitle: jobTitle || existingUser.jobTitle || null,
+                    } as never
+                })
 
                 // Create INVITED membership
                 await prisma.projectMember.create({

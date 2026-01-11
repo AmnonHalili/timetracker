@@ -487,6 +487,82 @@ export function CreateEventDialog({
                                 </Select>
                             </div>
 
+                            {/* Location */}
+                            <div className="space-y-2">
+                                <Label htmlFor="location">{t('calendar.location')}</Label>
+                                <Input
+                                    id="location"
+                                    value={location}
+                                    onChange={(e) => setLocation(e.target.value)}
+                                    placeholder={t('calendar.location')}
+                                />
+                            </div>
+
+                            {/* Day - All Day Toggle, Start Date/Time, End Date/Time */}
+                            <div className="space-y-4">
+                                {/* All Day Toggle */}
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="checkbox"
+                                        id="allDay"
+                                        checked={allDay}
+                                        onChange={(e) => setAllDay(e.target.checked)}
+                                        className="h-4 w-4"
+                                    />
+                                    <Label htmlFor="allDay" className="cursor-pointer">{t('calendar.allDayEvent')}</Label>
+                                </div>
+
+                                {/* Start Date/Time */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="startDate">{t('calendar.startDate')} *</Label>
+                                        <Input
+                                            id="startDate"
+                                            type="date"
+                                            value={startDate}
+                                            onChange={(e) => setStartDate(e.target.value)}
+                                            required
+                                        />
+                                    </div>
+                                    {!allDay && (
+                                        <div className="space-y-2">
+                                            <Label htmlFor="startTime">{t('calendar.startTime')}</Label>
+                                            <Input
+                                                id="startTime"
+                                                type="time"
+                                                value={startTime}
+                                                onChange={(e) => setStartTime(e.target.value)}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* End Date/Time */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="endDate">{t('calendar.endDate')} *</Label>
+                                        <Input
+                                            id="endDate"
+                                            type="date"
+                                            value={endDate}
+                                            onChange={(e) => setEndDate(e.target.value)}
+                                            required
+                                        />
+                                    </div>
+                                    {!allDay && (
+                                        <div className="space-y-2">
+                                            <Label htmlFor="endTime">{t('calendar.endTime')}</Label>
+                                            <Input
+                                                id="endTime"
+                                                type="time"
+                                                value={endTime}
+                                                onChange={(e) => setEndTime(e.target.value)}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
                             {/* Recurrence */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
@@ -515,79 +591,6 @@ export function CreateEventDialog({
                                         />
                                     </div>
                                 )}
-                            </div>
-
-                            {/* All Day Toggle */}
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    id="allDay"
-                                    checked={allDay}
-                                    onChange={(e) => setAllDay(e.target.checked)}
-                                    className="h-4 w-4"
-                                />
-                                <Label htmlFor="allDay" className="cursor-pointer">{t('calendar.allDayEvent')}</Label>
-                            </div>
-
-                            {/* Start Date/Time */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="startDate">{t('calendar.startDate')} *</Label>
-                                    <Input
-                                        id="startDate"
-                                        type="date"
-                                        value={startDate}
-                                        onChange={(e) => setStartDate(e.target.value)}
-                                        required
-                                    />
-                                </div>
-                                {!allDay && (
-                                    <div className="space-y-2">
-                                        <Label htmlFor="startTime">{t('calendar.startTime')}</Label>
-                                        <Input
-                                            id="startTime"
-                                            type="time"
-                                            value={startTime}
-                                            onChange={(e) => setStartTime(e.target.value)}
-                                        />
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* End Date/Time */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="endDate">{t('calendar.endDate')} *</Label>
-                                    <Input
-                                        id="endDate"
-                                        type="date"
-                                        value={endDate}
-                                        onChange={(e) => setEndDate(e.target.value)}
-                                        required
-                                    />
-                                </div>
-                                {!allDay && (
-                                    <div className="space-y-2">
-                                        <Label htmlFor="endTime">{t('calendar.endTime')}</Label>
-                                        <Input
-                                            id="endTime"
-                                            type="time"
-                                            value={endTime}
-                                            onChange={(e) => setEndTime(e.target.value)}
-                                        />
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Location */}
-                            <div className="space-y-2">
-                                <Label htmlFor="location">{t('calendar.location')}</Label>
-                                <Input
-                                    id="location"
-                                    value={location}
-                                    onChange={(e) => setLocation(e.target.value)}
-                                    placeholder={t('calendar.location')}
-                                />
                             </div>
 
                             {/* Participants */}
