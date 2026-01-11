@@ -383,15 +383,7 @@ export function TimePunchHeader({ workLocation, activeWorkday, activeEntry }: Ti
         <>
             {/* Mobile View - Timer at Top (Fixed), Button at Bottom (Fixed) */}
             {/* Task Timer Display - Mobile (fixed at top) */}
-            {activeEntry ? (
-                <div className="fixed top-[56px] left-0 right-0 z-40 md:hidden bg-background/95 backdrop-blur border-b border-border/40 py-2">
-                    <div className="text-center">
-                        <div className="font-mono text-2xl font-bold text-primary tabular-nums tracking-wider">
-                            {formatTimerTime(elapsed)}
-                        </div>
-                    </div>
-                </div>
-            ) : null}
+            {/* Mobile View - Timer at Top (Fixed) REMOVED */}
 
             <div className={`flex flex-col md:hidden gap-2 mb-1 ${activeEntry ? 'pt-[96px]' : ''}`}>
                 {/* Location Status - Mobile */}
@@ -420,54 +412,54 @@ export function TimePunchHeader({ workLocation, activeWorkday, activeEntry }: Ti
             {/* Mobile Fixed Button at Bottom */}
             <div className="fixed bottom-4 left-0 right-0 z-40 md:hidden">
                 <div className="px-4 pt-4 pb-4 bg-white dark:bg-background border border-border rounded-2xl shadow-lg mx-4">
-                <Button
-                    onClick={isWorking ? handleEndDay : handleStartDay}
-                    disabled={(isProcessing || (workLocation && locationStatus === "outside_area" && !isWorking)) || undefined}
-                    size="lg"
-                    className={`
+                    <Button
+                        onClick={isWorking ? handleEndDay : handleStartDay}
+                        disabled={(isProcessing || (workLocation && locationStatus === "outside_area" && !isWorking)) || undefined}
+                        size="lg"
+                        className={`
                             w-full h-12 text-lg font-bold rounded-full
                         shadow-lg active:scale-[0.98] transition-all duration-200
                             border-0 mb-3
                         ${isWorking
-                            ? "bg-red-500 hover:bg-red-600 text-white"
-                            : "bg-primary hover:bg-primary/90 text-primary-foreground"
-                        }
+                                ? "bg-red-500 hover:bg-red-600 text-white"
+                                : "bg-primary hover:bg-primary/90 text-primary-foreground"
+                            }
                         ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}
                     `}
-                >
-                    {isWorking ? (
-                        <>
-                                    <Square className="mr-2 h-5 w-5" />
-                                    {t('dashboard.endDay')}
-                                </>
-                            ) : (
-                                <>
-                                    {isProcessing ? (
-                                        <div className="flex items-center gap-2">
-                                            <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                            {t('dashboard.processing')}
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <Play className="mr-2 h-5 w-5" />
-                                            {t('dashboard.startDay')}
-                                        </>
-                                    )}
-                                </>
-                            )}
-                </Button>
+                    >
+                        {isWorking ? (
+                            <>
+                                <Square className="mr-2 h-5 w-5" />
+                                {t('dashboard.endDay')}
+                            </>
+                        ) : (
+                            <>
+                                {isProcessing ? (
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                        {t('dashboard.processing')}
+                                    </div>
+                                ) : (
+                                    <>
+                                        <Play className="mr-2 h-5 w-5" />
+                                        {t('dashboard.startDay')}
+                                    </>
+                                )}
+                            </>
+                        )}
+                    </Button>
 
                     {/* Working since - Mobile (Below Button) */}
-                {isWorking && workingSince && (
-                    <div className="text-center text-sm">
-                        <span className="text-muted-foreground">Working since </span>
-                        <span className="font-semibold">
-                            {format(workingSince, "HH:mm")} ({getWorkingDuration()})
-                        </span>
-                    </div>
-                )}
+                    {isWorking && workingSince && (
+                        <div className="text-center text-sm">
+                            <span className="text-muted-foreground">Working since </span>
+                            <span className="font-semibold">
+                                {format(workingSince, "HH:mm")} ({getWorkingDuration()})
+                            </span>
+                        </div>
+                    )}
                 </div>
-                    </div>
+            </div>
 
             {/* Mobile Accessibility Button - Above Main Button (Fixed) */}
             <div className="fixed bottom-[112px] right-4 z-50 md:hidden transition-all duration-200">
