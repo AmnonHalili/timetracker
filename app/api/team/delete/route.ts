@@ -150,14 +150,48 @@ export async function DELETE(req: Request) {
             }
         })
 
-        // Update user record: Clear project context and manager links
+        // Check for other active memberships
+        const otherMembership = await prisma.projectMember.findFirst({
+            where: {
+                userId,
+                status: "ACTIVE"
+            },
+            select: { projectId: true }
+        })
+
+        let nextProjectId = otherMembership?.projectId || null
+
+        if (!nextProjectId) {
+            // Create personal workspace
+            const targetUserDetails = await prisma.user.findUnique({
+                where: { id: userId },
+                select: { name: true }
+            })
+
+            const personalWrapped = await prisma.project.create({
+                data: {
+                    name: `${targetUserDetails?.name || 'My'}'s Workspace`,
+                    joinCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+                    members: {
+                        create: {
+                            userId,
+                            role: "ADMIN",
+                            status: "ACTIVE"
+                        }
+                    }
+                }
+            })
+            nextProjectId = personalWrapped.id
+        }
+
+        // Update user record: Clear manager links and set new project
         await prisma.user.update({
             where: { id: userId },
             data: {
                 removedAt: new Date(),
                 managerId: null,
                 sharedChiefGroupId: null,
-                projectId: null // Clear project context so they don't see "Join Team" for a project they were removed from
+                projectId: nextProjectId
             }
         })
 

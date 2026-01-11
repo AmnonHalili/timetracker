@@ -70,10 +70,36 @@ export async function POST(
                 select: { projectId: true }
             })
 
+            let nextProjectId = nextMembership?.projectId
+
+            // Check if we need to create a Personal Workspace
+            if (!nextProjectId) {
+                // Fetch user name for the workspace name
+                const user = await prisma.user.findUnique({
+                    where: { id: userId },
+                    select: { name: true }
+                })
+
+                const personalWrapped = await prisma.project.create({
+                    data: {
+                        name: `${user?.name || 'My'}'s Workspace`,
+                        joinCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+                        members: {
+                            create: {
+                                userId,
+                                role: "ADMIN",
+                                status: "ACTIVE"
+                            }
+                        }
+                    }
+                })
+                nextProjectId = personalWrapped.id
+            }
+
             await prisma.user.update({
                 where: { id: userId },
                 data: {
-                    projectId: nextMembership?.projectId || null
+                    projectId: nextProjectId
                 }
             })
         }
