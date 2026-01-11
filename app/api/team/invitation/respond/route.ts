@@ -40,7 +40,7 @@ export async function POST(req: Request) {
 
             // Calculate sharedChiefGroupId for ADMIN role
             let sharedChiefGroupId: string | null = null
-            let finalManagerId: string | null = null
+            const finalManagerId: string | null = null
 
             if (userRole === "ADMIN") {
                 // For ADMIN, check if there are other top-level admins in the project
